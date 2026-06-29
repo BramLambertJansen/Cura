@@ -262,6 +262,21 @@ export function PillButton({
   );
 }
 
+/** Rounded container that groups rows (InstRij, member rows) with a hairline divider between them. */
+export function GroupCard({ children }: { children: ReactNode[] }) {
+  const items = children.filter(Boolean);
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "var(--secondary)" }}>
+      {items.map((child, i) => (
+        <div key={i}>
+          {child}
+          {i < items.length - 1 && <div className="h-px mx-4" style={{ background: "var(--border)" }} />}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function InstRij({
   icon, label, right, onClick,
 }: { icon: ReactNode; label: ReactNode; right: ReactNode; onClick?: () => void }) {

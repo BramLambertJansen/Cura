@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from "react";
-import { Plus, Link2, Home } from "lucide-react";
+import { Plus, Link2, Home, Bell, ChevronRight } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import { SAGE } from "../../lib/constants";
 import {
-  Avatar, Checkbox, DubbelKnop, HintBanner, IconBadge, Leeg,
+  Avatar, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, Leeg,
   PillButton, RingProgress, Toggle, VeldInput,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
@@ -138,13 +138,25 @@ export function DesignSystemPage() {
         </div>
       </Section>
 
-      <Section title="Kamerkaart">
-        <KamerKaart room={demoRoom} onClick={() => {}} />
-      </Section>
-
-      <Section title="Routinekaart">
-        <RoutineKaartCompact routine={demoRoutine} onToggleTask={() => {}} />
-        <RoutineKaart routine={demoRoutine} onToggleTask={() => {}} onEdit={() => {}} />
+      <Section title="Kaarten">
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Kamerkaart</p>
+          <KamerKaart room={demoRoom} onClick={() => {}} />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Routinekaart — compact & uitgeklapt</p>
+          <div className="space-y-3">
+            <RoutineKaartCompact routine={demoRoutine} onToggleTask={() => {}} />
+            <RoutineKaart routine={demoRoutine} onToggleTask={() => {}} onEdit={() => {}} />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">GroupCard — rijen gegroepeerd met scheidingslijnen, voor lijsten in sheets (Profiel, Huishouden)</p>
+          <GroupCard>
+            <InstRij icon={<Bell size={15} />} label="Meldingen" right={<ChevronRight size={14} className="text-muted-foreground" />} />
+            <InstRij icon={<Home size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" />} />
+          </GroupCard>
+        </div>
       </Section>
     </div>
   );

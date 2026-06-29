@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { SAGE } from "../lib/constants";
 import { spring } from "../lib/motion";
-import { Sheet, SheetHeader, Kop, Avatar } from "../components/shared";
+import { Sheet, SheetHeader, Kop, Avatar, GroupCard } from "../components/shared";
 
 export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
@@ -45,10 +45,10 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
       </div>
 
       <Kop>Leden</Kop>
-      <div className="rounded-2xl overflow-hidden mb-7" style={{ background: "var(--secondary)" }}>
-        {members.map((m, i) => (
-          <div key={m.id}>
-            <div className="px-4 py-3.5 flex items-center gap-3">
+      <div className="mb-7">
+        <GroupCard>
+          {members.map((m) => (
+            <div key={m.id} className="px-4 py-3.5 flex items-center gap-3">
               <Avatar name={m.displayName} size={40} tone={m.userId === currentUserId ? "softStrong" : "soft"} />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">{m.displayName}</p>
@@ -61,9 +61,8 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
                 </motion.button>
               )}
             </div>
-            {i < members.length - 1 && <div className="h-px mx-4" style={{ background: "var(--border)" }} />}
-          </div>
-        ))}
+          ))}
+        </GroupCard>
       </div>
 
       <Kop>Uitnodigen</Kop>

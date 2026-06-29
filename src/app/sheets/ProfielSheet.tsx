@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Bell, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner } from "../components/shared";
+import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
@@ -46,22 +46,21 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
       </motion.button>
 
       <Kop>Instellingen</Kop>
-      <div className="bg-secondary rounded-2xl overflow-hidden mb-7">
-        <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={(v) => { setNotif(v); toast(v ? "Meldingen aan" : "Meldingen uit"); }} />} />
-        <div className="h-px mx-4 bg-border" />
-        <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<Toggle checked={donker} label="Donkere modus" onChange={(v) => { setDonker(v); toast(v ? "Donker aan" : "Donker uit"); }} />} />
-        <div className="h-px mx-4 bg-border" />
-        <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" />} onClick={() => toast("Account — binnenkort")} />
+      <div className="mb-7">
+        <GroupCard>
+          <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={(v) => { setNotif(v); toast(v ? "Meldingen aan" : "Meldingen uit"); }} />} />
+          <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<Toggle checked={donker} label="Donkere modus" onChange={(v) => { setDonker(v); toast(v ? "Donker aan" : "Donker uit"); }} />} />
+          <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" />} onClick={() => toast("Account — binnenkort")} />
+        </GroupCard>
       </div>
 
       <Kop>Meer</Kop>
-      <div className="bg-secondary rounded-2xl overflow-hidden">
+      <GroupCard>
         <InstRij icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" />} onClick={() => toast("Help — binnenkort")} />
-        <div className="h-px mx-4 bg-border" />
         <InstRij icon={<LogOut size={15} style={{ color: "var(--destructive)" }} />}
           label={<span style={{ color: "var(--destructive)" }}>Uitloggen</span>} right={null}
           onClick={() => toast("Uitloggen?", { description: "Je kunt altijd terugkomen.", action: { label: "Uitloggen", onClick: () => toast("Tot de volgende keer.") } })} />
-      </div>
+      </GroupCard>
       <p className="text-center text-xs text-muted-foreground mt-7">Cura · versie 0.1</p>
     </Sheet>
   );
