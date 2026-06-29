@@ -1,0 +1,118 @@
+import { motion, AnimatePresence } from "motion/react";
+import { useCuraStore } from "../../../stores/useCuraStore";
+import { useRoutineViews, useTaskViews } from "../../../stores/useViews";
+import { SAGE } from "../../lib/constants";
+import { getGreeting } from "../../lib/format";
+import { spring, stagger, fadeUp } from "../../lib/motion";
+import { Kop, Leeg, RingProgress } from "../../components/shared";
+import { TaakRij } from "../../components/TaakRij";
+import { RoutineKaartCompact } from "../../components/RoutineKaart";
+import { useSheets } from "../../sheetContext";
+
+export function VandaagPage() {
+  const { openProfiel } = useSheets();
+  const toggleTask = useCuraStore((s) => s.toggleTask);
+  const members = useCuraStore((s) => s.members);
+  const currentUserId = useCuraStore((s) => s.currentUserId);
+  const tasks = useTaskViews();
+  const routines = useRoutineViews();
+
+  const greeting = getGreeting();
+  const plannedOpen = tasks.filter((t) => t.planned && !t.done);
+  const plannedDone = tasks.filter((t) => t.planned && t.done);
+  const allPlanned = [...plannedDone, ...plannedOpen];
+  const doneCount = plannedDone.length;
+  const total = allPlanned.length;
+
+  const me = members.find((m) => m.userId === currentUserId);
+  const huisgenootActivity = tasks.filter(
+    (t) => t.done && t.doneBy && t.doneBy !== (me?.displayName ?? ""),
+  );
+
+  return (
+    <div>
+      <div className="relative overflow-hidden" style={{ background: greeting.gradient }}>
+        <div className="absolute inset-0 opacity-[0.32]" style={{
+          backgroundImage: "radial-gradient(circle,rgba(73,110,70,0.13) 1.5px,transparent 1.5px)",
+          backgroundSize: "22px 22px",
+        }} />
+        <div className="relative z-10 px-5 pt-14 pb-8">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">{greeting.date}</p>
+              <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium" style={{ fontFamily: "Lora,Georgia,serif" }}>
+                {greeting.text}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
+            </div>
+            <div className="flex flex-col items-center gap-2.5 flex-shrink-0 pt-1">
+              {total > 0 && (
+                <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...spring, delay: 0.18 }}>
+                  <RingProgress value={doneCount / total} size={46} stroke={3.5} />
+                </motion.div>
+              )}
+              <motion.button onClick={openProfiel} whileTap={{ scale: 0.88 }}
+                aria-label="Profiel openen"
+                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center"
+                style={{ boxShadow: `0 3px 14px rgba(73,110,70,0.32)` }}>
+                <span className="text-sm font-semibold text-white" style={{ fontFamily: "Lora,Georgia,serif" }}>
+                  {(me?.displayName ?? "J").charAt(0).toUpperCase()}
+                </span>
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 pt-7 pb-8 space-y-8">
+        <AnimatePresence>
+          {huisgenootActivity.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring}>
+              <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5" style={{ background: "rgba(184,207,175,0.22)", border: "1px solid rgba(184,207,175,0.4)" }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm font-bold" style={{ background: "rgba(184,207,175,0.5)", color: SAGE }}>
+                  {huisgenootActivity[0].doneBy!.charAt(0).toUpperCase()}
+                </div>
+                <div className="space-y-0.5">
+                  {huisgenootActivity.map((t) => (
+                    <p key={t.id} className="text-sm text-foreground leading-snug">
+                      <span className="font-semibold">{t.doneBy}</span> heeft {t.title.toLowerCase()} gedaan
+                      {t.doneAt && <span className="text-muted-foreground"> · {t.doneAt}</span>}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <section>
+          <Kop>Mijn dag</Kop>
+          {allPlanned.length === 0
+            ? <Leeg icon="🌿" text="Niets op de planning. Geniet ervan." />
+            : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
+                {allPlanned.map((task) => (
+                  <motion.div key={task.id} variants={fadeUp}>
+                    <TaakRij task={task} onToggle={() => toggleTask(task.id, !task.done)} />
+                  </motion.div>
+                ))}
+              </motion.div>
+          }
+        </section>
+
+        <section>
+          <Kop>Routines van vandaag</Kop>
+          <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
+            {routines.slice(0, 2).map((r) => (
+              <motion.div key={r.id} variants={fadeUp}>
+                <RoutineKaartCompact routine={r} onToggleTask={(taskId) => {
+                  const t = r.tasks.find((x) => x.id === taskId);
+                  toggleTask(taskId, !(t?.done ?? false));
+                }} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </section>
+      </div>
+    </div>
+  );
+}
