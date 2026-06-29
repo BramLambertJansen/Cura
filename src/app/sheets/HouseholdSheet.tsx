@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { SAGE } from "../lib/constants";
 import { spring } from "../lib/motion";
-import { Sheet, SheetHeader, Kop } from "../components/shared";
+import { Sheet, SheetHeader, Kop, Avatar } from "../components/shared";
 
 export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
@@ -49,10 +49,7 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
         {members.map((m, i) => (
           <div key={m.id}>
             <div className="px-4 py-3.5 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                style={{ background: m.userId === currentUserId ? "rgba(73,110,70,0.18)" : "rgba(184,207,175,0.45)", color: SAGE }}>
-                {m.displayName.charAt(0).toUpperCase()}
-              </div>
+              <Avatar name={m.displayName} size={40} tone={m.userId === currentUserId ? "softStrong" : "soft"} />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">{m.displayName}</p>
                 <p className="text-xs text-muted-foreground">{m.userId === currentUserId ? "Jij" : "Huisgenoot"}</p>

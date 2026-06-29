@@ -1,10 +1,9 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoutineViews, useTaskViews } from "../../../stores/useViews";
-import { SAGE } from "../../lib/constants";
 import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { Kop, Leeg, RingProgress } from "../../components/shared";
+import { Avatar, Kop, Leeg, RingProgress } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
 import { useSheets } from "../../sheetContext";
@@ -51,13 +50,8 @@ export function VandaagPage() {
                   <RingProgress value={doneCount / total} size={46} stroke={3.5} />
                 </motion.div>
               )}
-              <motion.button onClick={openProfiel} whileTap={{ scale: 0.88 }}
-                aria-label="Profiel openen"
-                className="w-9 h-9 rounded-full bg-primary flex items-center justify-center"
-                style={{ boxShadow: `0 3px 14px rgba(73,110,70,0.32)` }}>
-                <span className="text-sm font-semibold text-white" style={{ fontFamily: "Lora,Georgia,serif" }}>
-                  {(me?.displayName ?? "J").charAt(0).toUpperCase()}
-                </span>
+              <motion.button onClick={openProfiel} whileTap={{ scale: 0.88 }} aria-label="Profiel openen">
+                <Avatar name={me?.displayName ?? "Jij"} size={36} tone="solid" serif />
               </motion.button>
             </div>
           </div>
@@ -69,8 +63,8 @@ export function VandaagPage() {
           {huisgenootActivity.length > 0 && (
             <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring}>
               <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5" style={{ background: "rgba(184,207,175,0.22)", border: "1px solid rgba(184,207,175,0.4)" }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm font-bold" style={{ background: "rgba(184,207,175,0.5)", color: SAGE }}>
-                  {huisgenootActivity[0].doneBy!.charAt(0).toUpperCase()}
+                <div className="mt-0.5">
+                  <Avatar name={huisgenootActivity[0].doneBy!} size={32} tone="soft" />
                 </div>
                 <div className="space-y-0.5">
                   {huisgenootActivity.map((t) => (

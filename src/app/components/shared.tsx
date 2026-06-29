@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, X } from "lucide-react";
 import { SAGE, SHADOW } from "../lib/constants";
@@ -163,6 +163,101 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       transition={{ duration: 0.18 }}
       className="relative w-11 h-6 rounded-full flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)] focus-visible:ring-offset-1">
       <motion.div animate={{ x: checked ? 22 : 3 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm" aria-hidden="true" />
+    </motion.button>
+  );
+}
+
+/** Page title + subtitle + optional action, used at the top of every tab. */
+export function PageHeader({
+  title, subtitle, action,
+}: { title: string; subtitle: string; action?: ReactNode }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[2rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{title}</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">{subtitle}</p>
+        </div>
+        {action && <div className="mb-0.5 flex-shrink-0">{action}</div>}
+      </div>
+    </motion.div>
+  );
+}
+
+/** Initial-letter avatar for a member. Decorative — always pair with a visible name nearby. */
+export function Avatar({
+  name, size = 36, tone = "soft", shape = "circle", serif = false,
+}: {
+  name: string;
+  size?: number;
+  tone?: "solid" | "soft" | "softStrong";
+  shape?: "circle" | "rounded";
+  serif?: boolean;
+}) {
+  const toneStyle: CSSProperties =
+    tone === "solid"
+      ? { background: `linear-gradient(135deg,#6B9968,${SAGE})`, color: "#fff", boxShadow: `0 4px 16px rgba(73,110,70,0.3)` }
+      : tone === "softStrong"
+      ? { background: "rgba(73,110,70,0.18)", color: SAGE }
+      : { background: "rgba(184,207,175,0.45)", color: SAGE };
+  return (
+    <div
+      aria-hidden="true"
+      className="flex items-center justify-center flex-shrink-0 font-bold"
+      style={{
+        width: size, height: size,
+        borderRadius: shape === "circle" ? "9999px" : "1.1rem",
+        fontSize: size * 0.4,
+        fontFamily: serif ? "Lora,Georgia,serif" : undefined,
+        fontWeight: serif ? 500 : 700,
+        ...toneStyle,
+      }}>
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+/** Icon in a tinted rounded box — the lead visual on menu rows and link cards. */
+export function IconBadge({
+  icon, tone = "soft", size = 36,
+}: { icon: ReactNode; tone?: "soft" | "muted"; size?: number }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex items-center justify-center flex-shrink-0 rounded-xl"
+      style={{
+        width: size, height: size,
+        background: tone === "soft" ? "rgba(73,110,70,0.1)" : "var(--secondary)",
+        color: tone === "soft" ? SAGE : "var(--muted-foreground)",
+      }}>
+      {icon}
+    </div>
+  );
+}
+
+/** Soft, italic hint line in a tinted card — the "waarschijnlijk weer toe" / quote pattern. Never a hard claim. */
+export function HintBanner({ children, tone = "sage" }: { children: ReactNode; tone?: "sage" | "muted" }) {
+  return (
+    <div className="rounded-2xl px-4 py-3.5" style={{ background: "rgba(184,207,175,0.2)", border: "1px solid rgba(184,207,175,0.36)" }}>
+      <p className="text-sm leading-snug" style={{ color: tone === "sage" ? SAGE : "var(--foreground)", opacity: tone === "muted" ? 0.7 : 1, fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+        {children}
+      </p>
+    </div>
+  );
+}
+
+/** Sage pill button — secondary actions like "Nieuw" or "Ik pak dit". */
+export function PillButton({
+  children, icon, onClick, ariaLabel, size = "md",
+}: { children: ReactNode; icon?: ReactNode; onClick: () => void; ariaLabel?: string; size?: "sm" | "md" }) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileTap={{ scale: 0.9 }}
+      aria-label={ariaLabel}
+      className={`flex items-center gap-1.5 rounded-full font-semibold ${size === "md" ? "px-3.5 py-2 text-sm" : "px-3 py-1.5 text-xs"}`}
+      style={{ background: "rgba(73,110,70,0.1)", color: SAGE }}>
+      {icon}{children}
     </motion.button>
   );
 }

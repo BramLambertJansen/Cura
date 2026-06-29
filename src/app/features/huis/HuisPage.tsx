@@ -3,10 +3,9 @@ import { motion } from "motion/react";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
-import { SAGE } from "../../lib/constants";
 import { roomIcon } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { Leeg } from "../../components/shared";
+import { Leeg, PageHeader, HintBanner } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { useSheets } from "../../sheetContext";
@@ -55,8 +54,8 @@ export function HuisPage() {
           </div>
         </div>
 
-        <div className="mx-5 mt-4 px-4 py-3 rounded-2xl" style={{ background: "rgba(184,207,175,0.2)", border: "1px solid rgba(184,207,175,0.36)" }}>
-          <p className="text-sm leading-snug" style={{ color: SAGE, fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>{room.hint}</p>
+        <div className="mx-5 mt-4">
+          <HintBanner>{room.hint}</HintBanner>
         </div>
 
         <div className="px-5 pt-4 pb-8 space-y-2.5">
@@ -82,10 +81,7 @@ export function HuisPage() {
 
   return (
     <div className="px-5 pt-14 pb-8">
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
-        <h1 className="text-[2rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>Huis</h1>
-        <p className="text-sm text-muted-foreground mt-1.5">Wat staat er te doen?</p>
-      </motion.div>
+      <PageHeader title="Huis" subtitle="Wat staat er te doen?" />
       <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
         {rooms.map((r) => (
           <motion.div key={r.id} variants={fadeUp}>

@@ -11,6 +11,7 @@ import { VandaagPage } from "./features/vandaag/VandaagPage";
 import { HuisPage } from "./features/huis/HuisPage";
 import { RoutinesPage } from "./features/routines/RoutinesPage";
 import { SamenPage } from "./features/samen/SamenPage";
+import { DesignSystemPage } from "./features/design-system/DesignSystemPage";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { NewRoomSheet } from "./sheets/NewRoomSheet";
 import { EditRoomSheet } from "./sheets/EditRoomSheet";
@@ -29,6 +30,7 @@ function AnimatedRoutes() {
         <Route path="/huis" element={<PageTx><HuisPage /></PageTx>} />
         <Route path="/routines" element={<PageTx><RoutinesPage /></PageTx>} />
         <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
+        <Route path="/dev/design-system" element={<PageTx><DesignSystemPage /></PageTx>} />
       </Routes>
     </AnimatePresence>
   );
