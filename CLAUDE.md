@@ -55,13 +55,51 @@ This split is deliberate: domain schemas (`src/data/schemas.ts`) store no derive
 
 Phase 1–2 work with zero backend (`VITE_DATA_MODE=local`, seeded via `src/data/local/seed.ts`). Switching to `VITE_DATA_MODE=cloud` swaps in `SupabaseStore` without touching feature code.
 
-## 5. Conventions
+## 5. Features
+
+Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase verandert — dit is de bron van waarheid voor "wat zit erin", niet alleen de phasing-tabel in §4.
+
+- **Vandaag** (`src/app/features/vandaag/VandaagPage.tsx`) — geplande taken van vandaag, afvinken, routines-van-vandaag, zacht zichtbaarheidsstrookje.
+- **Huis** (`src/app/features/huis/HuisPage.tsx`) — kamer-kaarten met interval-hint, kamer-detail als pool-lijst, claim-actie ("ik pak dit"), kamer toevoegen/bewerken (`NewRoomSheet`, `EditRoomSheet`).
+- **Routines** (`src/app/features/routines/RoutinesPage.tsx`) — bundels van taken, dichtheid-feedback (ratio-over-venster), routine toevoegen/bewerken (`NewRoutineSheet`, `EditRoutineSheet`, `IntervalKiezer`).
+- **Samen** (`src/app/features/samen/SamenPage.tsx`) — chronologische "vandaag in huis"-feed, huishouden-instellingen-ingang (`HouseholdSheet`).
+- **Taak toevoegen** (`AddTaskSheet`) — FAB-flow, één invoerveld + inklapbare opties, belandt standaard in de pool.
+- **Profiel** (`ProfielSheet`) — eigen weergavenaam/instellingen.
+- Nog niet gebouwd: onboarding/invite-flow en cloud-auth (Phase 3, zie §4), AI-invoer (Phase 4).
+
+## 6. Toegankelijkheid (A11Y) — verplicht
+
+Elke nieuwe of gewijzigde UI moet toegankelijk zijn, niet als nazorg maar als onderdeel van "klaar":
+
+- Semantische HTML eerst (`button`, `nav`, `label`, koppen in volgorde) vóór `div` + ARIA.
+- Interactieve elementen (checkbox, claim-actie, FAB, sheets) zijn met toetsenbord bedienbaar en hebben een zichtbare focus-state.
+- Afbeeldingen en iconen-only-knoppen hebben `alt`/`aria-label`; decoratieve iconen krijgen `aria-hidden`.
+- Kleurcontrast volgt WCAG AA — het sage/crème-palet mag niet onder de drempel zakken, test bij het kiezen van nieuwe tinten.
+- Dynamische updates (afvinken, claimen, toasts) zijn aangekondigd voor screenreaders (bv. `aria-live` op de Sonner-toasts, status op de checkbox).
+- shadcn/Radix-primitives in `src/app/components/ui/` zijn toegankelijk by default — bouw daarop voort in plaats van eigen ARIA-loze varianten te schrijven.
+
+## 7. Component-based werken & design system
+
+We bouwen component-based: nieuwe UI is samengesteld uit herbruikbare, uniforme componenten — geen ad-hoc gestylede markup direct in een feature-pagina.
+
+- Herbruikbare bouwstenen horen in `src/app/components/` (eigen Cura-componenten zoals `KamerKaart`, `RoutineKaart`, `TaakRij`) of `src/app/components/ui/` (shadcn-primitives). Feature-pagina's componeren deze, ze herdefiniëren geen eigen knop/kaart/badge-stijl inline.
+- Er komt een **design system-pagina** (style guide) in de app, bv. `src/app/features/design-system/`, die alle uniforme componenten (knoppen, kaarten, badges, inputs, checkboxen, sheets) met hun states en varianten op één plek toont. Doel: in één oogopslag kunnen restylen of een nieuw thema toevoegen zonder elk scherm te doorzoeken.
+- Tokens (kleur, radius, schaduw, spacing) horen in `src/styles/theme.css` / Tailwind config, niet hardcoded in componenten — dat is wat een thema-wissel een CSS-variabelenwijziging maakt in plaats van een refactor.
+- Nieuwe visuele varianten gaan eerst als variant/prop op een bestaand component (cva-variants, zoals in `button.tsx`), niet als losse component met bijna-dezelfde stijl.
+
+## 8. Conventions
 
 - Domain code (schemas, store interface, selectors) is in English; user-facing copy and Dutch domain nouns (Vandaag, Huis, Routines, Samen, kamer, taak) stay Dutch — match the existing files.
 - New screens/components go under `src/app/features/<naam>/`; shared UI in `src/app/components/`; shadcn primitives in `src/app/components/ui/` (don't hand-edit generated shadcn internals beyond what's needed — regenerate via shadcn conventions if a primitive needs real changes).
 - Any new persisted field starts in `src/data/schemas.ts`, gets a domain type via inference in `types.ts`, and is exposed to screens through a view-model + selector — never read raw entities in a feature component.
 - Run `pnpm typecheck` before considering a data-layer change done.
 
-## 6. Stack
+## 9. Devstraat
+
+- `pnpm dev` — Vite dev server. `pnpm build` — productie-build (ook PWA-manifest/service worker via `vite-plugin-pwa`). `pnpm preview` — preview van de build. `pnpm typecheck` — `tsc --noEmit`, verplicht vóór elke data-layer wijziging (zie §8).
+- Er is nog **geen lint-script, testrunner of CI-workflow** in deze repo — alleen typecheck is geautomatiseerd. Voeg je linting/tests/CI toe, werk deze sectie dan bij zodat dit overzicht klopt.
+- Omgevingsvariabelen staan in `.env.example` (`VITE_DATA_MODE`, Supabase-keys voor Phase 3+, VAPID-key voor push, AI-keys voor Phase 4 — die laatste twee blijven server-side, nooit `VITE_`-geprefixt).
+
+## 10. Stack
 
 React 19, TypeScript, Vite, Tailwind v4, shadcn/ui (Radix), Zustand, Zod, react-router, motion (Framer Motion), Supabase (Phase 3+), vite-plugin-pwa. Package manager is `pnpm`.
