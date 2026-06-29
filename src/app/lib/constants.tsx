@@ -4,9 +4,19 @@ import {
   BookOpen, Shirt, Coffee, Wind, ShoppingBasket, Dumbbell, Baby, Sparkles,
 } from "lucide-react";
 
-export const SAGE = "#496E46";
-export const SHADOW = "0 2px 20px rgba(80,65,45,0.07),0 1px 4px rgba(80,65,45,0.05)";
-export const SHADOW_LG = "0 6px 32px rgba(80,65,45,0.1),0 2px 8px rgba(80,65,45,0.07)";
+/** Reads a CSS custom property from :root so JS-side color constants stay tied to theme.css instead of duplicating its values. */
+function cssVar(name: string, fallback: string): string {
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+/** Resolved theme colors. Framer Motion needs concrete colors (not var() strings) to animate between states, so these are read once from theme.css rather than hardcoded. */
+export const SAGE = cssVar("--primary", "#496E46");
+export const MUTED_FG = cssVar("--muted-foreground", "#85786C");
+export const DESTRUCTIVE = cssVar("--destructive", "#B04535");
+export const SHADOW = "var(--shadow-card)";
+export const SHADOW_LG = "var(--shadow-card-lg)";
 
 export interface IconOption {
   key: string;

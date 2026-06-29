@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { SAGE } from "../lib/constants";
 import { spring } from "../lib/motion";
-import { Sheet, SheetHeader, Kop } from "../components/shared";
+import { Sheet, SheetHeader, Kop, Avatar, GroupCard } from "../components/shared";
 
 export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
@@ -35,24 +35,21 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
       <div className="flex gap-2 mb-7">
         <input value={naam} onChange={(e) => setNaam(e.target.value)} disabled={!editing}
           className="flex-1 rounded-2xl px-4 py-3.5 text-foreground outline-none text-sm transition-all"
-          style={{ background: editing ? "var(--secondary)" : "var(--muted)", boxShadow: editing ? `0 0 0 2px rgba(73,110,70,0.26)` : "none" }} />
+          style={{ background: editing ? "var(--secondary)" : "var(--muted)", boxShadow: editing ? `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "none" }} />
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => { if (editing) toast("Naam opgeslagen — binnenkort"); setEditing(!editing); }}
           aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
-          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]"
+          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
           style={{ background: editing ? SAGE : "var(--secondary)" }}>
           {editing ? <Check size={15} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
         </motion.button>
       </div>
 
       <Kop>Leden</Kop>
-      <div className="rounded-2xl overflow-hidden mb-7" style={{ background: "var(--secondary)" }}>
-        {members.map((m, i) => (
-          <div key={m.id}>
-            <div className="px-4 py-3.5 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm"
-                style={{ background: m.userId === currentUserId ? "rgba(73,110,70,0.18)" : "rgba(184,207,175,0.45)", color: SAGE }}>
-                {m.displayName.charAt(0).toUpperCase()}
-              </div>
+      <div className="mb-7">
+        <GroupCard>
+          {members.map((m) => (
+            <div key={m.id} className="px-4 py-3.5 flex items-center gap-3">
+              <Avatar name={m.displayName} size={40} tone={m.userId === currentUserId ? "softStrong" : "soft"} />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">{m.displayName}</p>
                 <p className="text-xs text-muted-foreground">{m.userId === currentUserId ? "Jij" : "Huisgenoot"}</p>
@@ -64,9 +61,8 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
                 </motion.button>
               )}
             </div>
-            {i < members.length - 1 && <div className="h-px mx-4" style={{ background: "var(--border)" }} />}
-          </div>
-        ))}
+          ))}
+        </GroupCard>
       </div>
 
       <Kop>Uitnodigen</Kop>
@@ -74,11 +70,11 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
       {!code
         ? <motion.button whileTap={{ scale: 0.97 }} onClick={genCode}
             className="w-full py-4 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-2"
-            style={{ background: `linear-gradient(135deg,#5A8457 0%,${SAGE} 100%)`, boxShadow: `0 5px 18px rgba(73,110,70,0.3)` }}>
+            style={{ background: "var(--gradient-primary)", boxShadow: `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` }}>
             <Sparkles size={15} /> Uitnodigingscode genereren
           </motion.button>
         : <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}
-            className="rounded-2xl p-5 space-y-4" style={{ background: "rgba(73,110,70,0.07)", border: `1px solid rgba(73,110,70,0.17)` }}>
+            className="rounded-2xl p-5 space-y-4" style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)", border: `1px solid color-mix(in srgb, var(--primary) 17%, transparent)` }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Uitnodigingscode</p>
@@ -87,13 +83,13 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
               <motion.button whileTap={{ scale: 0.88 }} onClick={copy}
                 aria-label={copied ? "Code gekopieerd" : "Code kopiëren"}
                 aria-live="polite"
-                animate={{ backgroundColor: copied ? SAGE : "rgba(73,110,70,0.12)" }}
-                className="w-10 h-10 rounded-2xl flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+                animate={{ backgroundColor: copied ? SAGE : "color-mix(in srgb, var(--primary) 12%, transparent)" }}
+                className="w-10 h-10 rounded-2xl flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
                 {copied ? <Check size={15} className="text-white" aria-hidden="true" /> : <Copy size={15} style={{ color: SAGE }} aria-hidden="true" />}
               </motion.button>
             </div>
             <div className="flex gap-2">
-              <motion.button whileTap={{ scale: 0.95 }} onClick={copy} className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5" style={{ background: "rgba(73,110,70,0.1)", color: SAGE }}><Copy size={12} /> Kopieer</motion.button>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={copy} className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}><Copy size={12} /> Kopieer</motion.button>
               <motion.button whileTap={{ scale: 0.95 }} onClick={() => toast("Gedeeld via WhatsApp (demo)")} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-1.5" style={{ background: "#25D366" }}><Share2 size={12} /> WhatsApp</motion.button>
             </div>
             <motion.button whileTap={{ scale: 0.95 }} onClick={genCode} className="w-full text-xs text-center text-muted-foreground">Nieuwe code genereren</motion.button>

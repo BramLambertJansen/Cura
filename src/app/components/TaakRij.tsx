@@ -16,7 +16,7 @@ export function TaakRij({
       className="flex items-center gap-3.5 bg-card rounded-2xl px-4 py-[0.9rem] border border-border/50"
       style={{
         boxShadow: SHADOW,
-        borderLeft: !task.done && !claimed ? `2.5px solid rgba(73,110,70,0.18)` : "2.5px solid transparent",
+        borderLeft: !task.done && !claimed ? `2.5px solid color-mix(in srgb, var(--primary) 18%, transparent)` : "2.5px solid transparent",
       }}>
       <Checkbox checked={task.done} onToggle={onToggle} label={task.done ? `${task.title} als niet gedaan markeren` : `${task.title} afvinken`} />
       <div className="flex-1 min-w-0">
@@ -27,7 +27,7 @@ export function TaakRij({
           {task.duration && <span className="text-xs text-muted-foreground opacity-50">· {task.duration}</span>}
           {task.intervalDays && (
             <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-              style={{ background: "rgba(73,110,70,0.09)", color: SAGE }}>
+              style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)", color: SAGE }}>
               <RefreshCw size={8} aria-hidden="true" /> {intervalLabel(task.intervalDays)}
             </span>
           )}
@@ -37,7 +37,7 @@ export function TaakRij({
       {showClaim && !task.done && !claimed && onClaim && (
         <motion.button whileTap={{ scale: 0.9 }} onClick={onClaim}
           className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none"
-          style={{ background: "rgba(73,110,70,0.09)", color: SAGE }}>Ik pak dit</motion.button>
+          style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)", color: SAGE }}>Ik pak dit</motion.button>
       )}
     </motion.div>
   );

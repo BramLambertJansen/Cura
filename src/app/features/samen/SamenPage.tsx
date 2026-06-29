@@ -5,7 +5,7 @@ import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed } from "../../../stores/useViews";
 import { SAGE, SHADOW } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Leeg } from "../../components/shared";
+import { Leeg, PageHeader, IconBadge } from "../../components/shared";
 import { useSheets } from "../../sheetContext";
 
 export function SamenPage() {
@@ -23,10 +23,7 @@ export function SamenPage() {
 
   return (
     <div className="px-5 pt-14 pb-8">
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
-        <h1 className="text-[2rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>Samen</h1>
-        <p className="text-sm text-muted-foreground mt-1.5">Wat is er vandaag gedaan?</p>
-      </motion.div>
+      <PageHeader title="Samen" subtitle="Wat is er vandaag gedaan?" />
 
       {completedToday.length === 0
         ? <Leeg icon="🤍" text="Nog niks gedaan vandaag. De dag is jong." />
@@ -35,7 +32,7 @@ export function SamenPage() {
               <motion.div key={`${activity.taskId}-${activity.doneAt}`} variants={fadeUp} className="flex gap-3 items-stretch">
                 <div className="flex flex-col items-center pt-2 flex-shrink-0">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: activity.doneBy === me?.displayName ? "rgba(73,110,70,0.12)" : "rgba(184,207,175,0.45)" }}>
+                    style={{ background: activity.doneBy === me?.displayName ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "color-mix(in srgb, var(--accent) 45%, transparent)" }}>
                     <Check size={13} strokeWidth={2.5} style={{ color: SAGE }} />
                   </div>
                   {i < completedToday.length - 1 && <div className="w-px flex-1 bg-border mt-1.5" />}
@@ -59,7 +56,7 @@ export function SamenPage() {
       <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }} onClick={openHousehold}
         className="w-full flex items-center gap-3.5 bg-card rounded-2xl px-4 py-4 border border-border/60 transition-colors"
         style={{ boxShadow: SHADOW }}>
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(73,110,70,0.1)" }}><Link2 size={16} style={{ color: SAGE }} /></div>
+        <IconBadge icon={<Link2 size={16} />} size={36} />
         <span className="flex-1 text-sm font-semibold text-foreground text-left">Huishouden beheren</span>
         <ChevronRight size={15} className="text-muted-foreground" />
       </motion.button>

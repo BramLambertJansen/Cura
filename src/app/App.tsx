@@ -11,6 +11,7 @@ import { VandaagPage } from "./features/vandaag/VandaagPage";
 import { HuisPage } from "./features/huis/HuisPage";
 import { RoutinesPage } from "./features/routines/RoutinesPage";
 import { SamenPage } from "./features/samen/SamenPage";
+import { DesignSystemPage } from "./features/design-system/DesignSystemPage";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { NewRoomSheet } from "./sheets/NewRoomSheet";
 import { EditRoomSheet } from "./sheets/EditRoomSheet";
@@ -29,6 +30,7 @@ function AnimatedRoutes() {
         <Route path="/huis" element={<PageTx><HuisPage /></PageTx>} />
         <Route path="/routines" element={<PageTx><RoutinesPage /></PageTx>} />
         <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
+        <Route path="/dev/design-system" element={<PageTx><DesignSystemPage /></PageTx>} />
       </Routes>
     </AnimatePresence>
   );
@@ -78,7 +80,7 @@ export default function App() {
       <SheetContext.Provider value={sheetActions}>
         <div className="relative w-full h-screen flex flex-col bg-background overflow-hidden">
           <div className="fixed inset-0 pointer-events-none z-0" style={{
-            backgroundImage: "radial-gradient(ellipse 70% 50% at 15% 10%,rgba(255,235,170,0.06) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 90%,rgba(170,210,155,0.05) 0%,transparent 60%)",
+            backgroundImage: "radial-gradient(ellipse 70% 50% at 15% 10%,color-mix(in srgb, var(--ambient-warm) 6%, transparent) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 90%,color-mix(in srgb, var(--ambient-cool) 5%, transparent) 0%,transparent 60%)",
           }} />
 
           <Toaster position="top-center" toastOptions={{
@@ -92,7 +94,7 @@ export default function App() {
 
           <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-30" style={{
             height: "6rem",
-            background: "linear-gradient(to top,rgba(233,226,213,0.96) 0%,rgba(233,226,213,0.6) 45%,transparent 100%)",
+            background: "linear-gradient(to top,color-mix(in srgb, var(--background) 96%, transparent) 0%,color-mix(in srgb, var(--background) 60%, transparent) 45%,transparent 100%)",
           }} />
 
           <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 relative z-10">

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, X } from "lucide-react";
 import { SAGE, SHADOW } from "../lib/constants";
@@ -11,7 +11,7 @@ export function Sheet({
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }}
         className="absolute inset-0 z-40"
-        style={{ background: "rgba(22,18,12,0.32)", backdropFilter: "blur(6px)" }}
+        style={{ background: "color-mix(in srgb, var(--overlay-color) 32%, transparent)", backdropFilter: "blur(6px)" }}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -22,7 +22,7 @@ export function Sheet({
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 440, damping: 42 }}
         className={`absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] px-5 pt-5 ${tall ? "pb-8 max-h-[90vh] overflow-y-auto" : "pb-10"} scrollbar-hide`}
-        style={{ background: "var(--card)", boxShadow: `0 -16px 56px rgba(80,65,45,0.14),0 -2px 10px rgba(80,65,45,0.06)` }}
+        style={{ background: "var(--card)", boxShadow: `0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent),0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent)` }}
         onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-center mb-6" aria-hidden="true">
           <div className="w-14 h-[5px] rounded-full" style={{ background: "var(--muted)" }} />
@@ -42,7 +42,7 @@ export function SheetHeader({
       <motion.button
         whileTap={{ scale: 0.88 }} onClick={onClose}
         aria-label="Sluiten"
-        className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+        className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
         <X size={15} className="text-muted-foreground" aria-hidden="true" />
       </motion.button>
     </div>
@@ -61,10 +61,10 @@ export function Checkbox({
       aria-label={label ?? (checked ? "Taak afgevinkt" : "Taak afvinken")}
       whileTap={{ scale: 0.7 }}
       transition={{ type: "spring", stiffness: 500, damping: 25 }}
-      className={`${dim} relative flex-shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)] focus-visible:ring-offset-1`}>
+      className={`${dim} relative flex-shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1`}>
       <motion.div
-        initial={{ backgroundColor: "rgba(0,0,0,0)", borderColor: "rgba(107,98,90,0.28)" }}
-        animate={{ backgroundColor: checked ? SAGE : "rgba(0,0,0,0)", borderColor: checked ? SAGE : "rgba(107,98,90,0.28)" }}
+        initial={{ backgroundColor: "rgba(0,0,0,0)", borderColor: "color-mix(in srgb, var(--outline-color) 28%, transparent)" }}
+        animate={{ backgroundColor: checked ? SAGE : "rgba(0,0,0,0)", borderColor: checked ? SAGE : "color-mix(in srgb, var(--outline-color) 28%, transparent)" }}
         transition={{ type: "spring", stiffness: 320, damping: 24 }}
         className="absolute inset-0 rounded-full border-2" aria-hidden="true" />
       <AnimatePresence>
@@ -83,11 +83,11 @@ export function RingProgress({ value, size = 44, stroke = 3 }: { value: number; 
   const r = (size - stroke * 2) / 2;
   const circ = 2 * Math.PI * r;
   const v = Math.min(1, Math.max(0, value));
-  const col = v >= 1 ? "#C4A45A" : v > 0.7 ? "#7DA87A" : SAGE;
+  const col = v >= 1 ? "var(--chart-4)" : v > 0.7 ? "var(--progress-near)" : SAGE;
   const c = size / 2;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
-      <circle cx={c} cy={c} r={r} fill="none" stroke="rgba(107,98,90,0.14)" strokeWidth={stroke} />
+      <circle cx={c} cy={c} r={r} fill="none" stroke="color-mix(in srgb, var(--outline-color) 14%, transparent)" strokeWidth={stroke} />
       <circle
         cx={c} cy={c} r={r} fill="none" stroke={col} strokeWidth={stroke}
         strokeLinecap="round"
@@ -129,10 +129,10 @@ export function VeldInput({
       onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
       placeholder={placeholder}
       aria-label={ariaLabel ?? placeholder}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] transition-all focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.28)]"
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] transition-all focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
       style={{
         background: "var(--secondary)",
-        boxShadow: value ? `0 0 0 2px rgba(73,110,70,0.28),0 2px 12px rgba(73,110,70,0.06)` : "none",
+        boxShadow: value ? `0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),0 2px 12px color-mix(in srgb, var(--primary) 6%, transparent)` : "none",
         transition: "box-shadow 0.18s ease",
       }} />
   );
@@ -146,7 +146,7 @@ export function DubbelKnop({
       <motion.button whileTap={{ scale: 0.96 }} onClick={onCancel} className="flex-1 py-3.5 rounded-2xl border border-border text-foreground text-sm font-medium">Annuleren</motion.button>
       <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm} disabled={disabled}
         className="flex-1 py-3.5 rounded-2xl text-white text-sm font-semibold disabled:opacity-35 transition-opacity"
-        style={{ background: `linear-gradient(135deg,#5A8457 0%,${SAGE} 100%)`, boxShadow: disabled ? "none" : `0 4px 16px rgba(73,110,70,0.28)` }}>{label}</motion.button>
+        style={{ background: "var(--gradient-primary)", boxShadow: disabled ? "none" : `0 4px 16px color-mix(in srgb, var(--primary) 28%, transparent)` }}>{label}</motion.button>
     </div>
   );
 }
@@ -161,9 +161,119 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       whileTap={{ scale: 0.9 }}
       animate={{ backgroundColor: checked ? SAGE : "var(--muted)" }}
       transition={{ duration: 0.18 }}
-      className="relative w-11 h-6 rounded-full flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)] focus-visible:ring-offset-1">
+      className="relative w-11 h-6 rounded-full flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1">
       <motion.div animate={{ x: checked ? 22 : 3 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm" aria-hidden="true" />
     </motion.button>
+  );
+}
+
+/** Page title + subtitle + optional action, used at the top of every tab. */
+export function PageHeader({
+  title, subtitle, action,
+}: { title: string; subtitle: string; action?: ReactNode }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[2rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{title}</h1>
+          <p className="text-sm text-muted-foreground mt-1.5">{subtitle}</p>
+        </div>
+        {action && <div className="mb-0.5 flex-shrink-0">{action}</div>}
+      </div>
+    </motion.div>
+  );
+}
+
+/** Initial-letter avatar for a member. Decorative — always pair with a visible name nearby. */
+export function Avatar({
+  name, size = 36, tone = "soft", shape = "circle", serif = false,
+}: {
+  name: string;
+  size?: number;
+  tone?: "solid" | "soft" | "softStrong";
+  shape?: "circle" | "rounded";
+  serif?: boolean;
+}) {
+  const toneStyle: CSSProperties =
+    tone === "solid"
+      ? { background: "var(--gradient-primary)", color: "#fff", boxShadow: `0 4px 16px color-mix(in srgb, var(--primary) 30%, transparent)` }
+      : tone === "softStrong"
+      ? { background: "color-mix(in srgb, var(--primary) 18%, transparent)", color: SAGE }
+      : { background: "color-mix(in srgb, var(--accent) 45%, transparent)", color: SAGE };
+  return (
+    <div
+      aria-hidden="true"
+      className="flex items-center justify-center flex-shrink-0 font-bold"
+      style={{
+        width: size, height: size,
+        borderRadius: shape === "circle" ? "9999px" : "1.1rem",
+        fontSize: size * 0.4,
+        fontFamily: serif ? "Lora,Georgia,serif" : undefined,
+        fontWeight: serif ? 500 : 700,
+        ...toneStyle,
+      }}>
+      {name.charAt(0).toUpperCase()}
+    </div>
+  );
+}
+
+/** Icon in a tinted rounded box — the lead visual on menu rows and link cards. */
+export function IconBadge({
+  icon, tone = "soft", size = 36,
+}: { icon: ReactNode; tone?: "soft" | "muted"; size?: number }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="flex items-center justify-center flex-shrink-0 rounded-xl"
+      style={{
+        width: size, height: size,
+        background: tone === "soft" ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "var(--secondary)",
+        color: tone === "soft" ? SAGE : "var(--muted-foreground)",
+      }}>
+      {icon}
+    </div>
+  );
+}
+
+/** Soft, italic hint line in a tinted card — the "waarschijnlijk weer toe" / quote pattern. Never a hard claim. */
+export function HintBanner({ children, tone = "sage" }: { children: ReactNode; tone?: "sage" | "muted" }) {
+  return (
+    <div className="rounded-2xl px-4 py-3.5" style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 36%, transparent)" }}>
+      <p className="text-sm leading-snug" style={{ color: tone === "sage" ? SAGE : "var(--foreground)", opacity: tone === "muted" ? 0.7 : 1, fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+        {children}
+      </p>
+    </div>
+  );
+}
+
+/** Sage pill button — secondary actions like "Nieuw" or "Ik pak dit". */
+export function PillButton({
+  children, icon, onClick, ariaLabel, size = "md",
+}: { children: ReactNode; icon?: ReactNode; onClick: () => void; ariaLabel?: string; size?: "sm" | "md" }) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileTap={{ scale: 0.9 }}
+      aria-label={ariaLabel}
+      className={`flex items-center gap-1.5 rounded-full font-semibold ${size === "md" ? "px-3.5 py-2 text-sm" : "px-3 py-1.5 text-xs"}`}
+      style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
+      {icon}{children}
+    </motion.button>
+  );
+}
+
+/** Rounded container that groups rows (InstRij, member rows) with a hairline divider between them. */
+export function GroupCard({ children }: { children: ReactNode[] }) {
+  const items = children.filter(Boolean);
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: "var(--secondary)" }}>
+      {items.map((child, i) => (
+        <div key={i}>
+          {child}
+          {i < items.length - 1 && <div className="h-px mx-4" style={{ background: "var(--border)" }} />}
+        </div>
+      ))}
+    </div>
   );
 }
 

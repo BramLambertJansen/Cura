@@ -69,7 +69,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
               color: trigger === opt.id ? "#ffffff" : "var(--muted-foreground)",
             }}
             transition={{ duration: 0.14 }}
-            className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+            className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
             {opt.label}
           </motion.button>
         ))}
@@ -88,7 +88,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
               <span className="flex-1 text-sm text-foreground">{t}</span>
               <motion.button whileTap={{ scale: 0.85 }} onClick={() => setTasks((p) => p.filter((_, j) => j !== i))}
                 aria-label={`${t} verwijderen`}
-                className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+                className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
                 <X size={10} className="text-muted-foreground" aria-hidden="true" />
               </motion.button>
             </motion.div>
@@ -102,11 +102,11 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
           onKeyDown={(e) => e.key === "Enter" && addTask()}
           placeholder="Taak toevoegen…"
           aria-label="Nieuwe taak omschrijving"
-          className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.28)]"
-          style={{ background: "var(--secondary)", boxShadow: input ? `0 0 0 2px rgba(73,110,70,0.26)` : "none" }} />
+          className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
+          style={{ background: "var(--secondary)", boxShadow: input ? `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "none" }} />
         <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
           aria-label="Taak toevoegen"
-          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]"
+          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
           style={{ background: SAGE }}>
           <Plus size={17} className="text-white" aria-hidden="true" />
         </motion.button>

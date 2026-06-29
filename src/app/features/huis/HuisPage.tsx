@@ -3,10 +3,9 @@ import { motion } from "motion/react";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
-import { SAGE } from "../../lib/constants";
 import { roomIcon } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { Leeg } from "../../components/shared";
+import { Leeg, PageHeader, HintBanner } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { useSheets } from "../../sheetContext";
@@ -37,12 +36,12 @@ export function HuisPage() {
           <div className="absolute top-12 left-4 right-4 flex items-center justify-between">
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedRoomId(null)}
               aria-label="Terug naar kamers"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
             </motion.button>
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => openEditRoom(room.id)}
               aria-label={`${room.name} bewerken`}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <Pencil size={14} className="text-foreground" aria-hidden="true" />
             </motion.button>
           </div>
@@ -55,8 +54,8 @@ export function HuisPage() {
           </div>
         </div>
 
-        <div className="mx-5 mt-4 px-4 py-3 rounded-2xl" style={{ background: "rgba(184,207,175,0.2)", border: "1px solid rgba(184,207,175,0.36)" }}>
-          <p className="text-sm leading-snug" style={{ color: SAGE, fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>{room.hint}</p>
+        <div className="mx-5 mt-4">
+          <HintBanner>{room.hint}</HintBanner>
         </div>
 
         <div className="px-5 pt-4 pb-8 space-y-2.5">
@@ -82,10 +81,7 @@ export function HuisPage() {
 
   return (
     <div className="px-5 pt-14 pb-8">
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
-        <h1 className="text-[2rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>Huis</h1>
-        <p className="text-sm text-muted-foreground mt-1.5">Wat staat er te doen?</p>
-      </motion.div>
+      <PageHeader title="Huis" subtitle="Wat staat er te doen?" />
       <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
         {rooms.map((r) => (
           <motion.div key={r.id} variants={fadeUp}>
@@ -95,7 +91,7 @@ export function HuisPage() {
         <motion.div variants={fadeUp}>
           <motion.button onClick={openNewRoom} whileTap={{ scale: 0.985 }}
             className="w-full flex items-center gap-4 bg-card rounded-2xl px-4 py-3.5 border-2 border-dashed"
-            style={{ borderColor: "rgba(90,75,55,0.16)", color: "var(--muted-foreground)" }}>
+            style={{ borderColor: "color-mix(in srgb, var(--border-color) 16%, transparent)", color: "var(--muted-foreground)" }}>
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-secondary">
               <Plus size={20} strokeWidth={1.75} />
             </div>
