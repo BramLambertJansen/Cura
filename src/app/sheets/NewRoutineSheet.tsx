@@ -1,0 +1,107 @@
+import { useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Check, ChevronLeft, Plus, X } from "lucide-react";
+import { useCuraStore } from "../../stores/useCuraStore";
+import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
+import { spring } from "../lib/motion";
+import { Sheet, SheetHeader, VeldInput, DubbelKnop } from "../components/shared";
+
+function cadenceAndLabel(triggerId: string): { cadence: "daily" | "weekly"; windowLabel: string } {
+  if (["ochtend", "middag", "avond", "dagelijks"].includes(triggerId)) {
+    return { cadence: "daily", windowLabel: triggerId === "dagelijks" ? "dagen" : triggerId + "en" };
+  }
+  return { cadence: "weekly", windowLabel: triggerId === "weekend" ? "weekenden" : "weken" };
+}
+
+export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
+  const createBundle = useCuraStore((s) => s.createBundle);
+  const [step, setStep] = useState(0);
+  const [name, setName] = useState("");
+  const [trigger, setTrigger] = useState("");
+  const [input, setInput] = useState("");
+  const [tasks, setTasks] = useState<string[]>([]);
+  const [saved, setSaved] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+
+  function addTask() {
+    if (!input.trim()) return;
+    setTasks((p) => [...p, input.trim()]);
+    setInput("");
+    ref.current?.focus();
+  }
+
+  function save() {
+    const tLabel = TRIGGER_OPTIONS.find((t) => t.id === trigger)?.label ?? trigger;
+    const { cadence, windowLabel } = cadenceAndLabel(trigger);
+    createBundle({ name: name.trim(), trigger: tLabel, cadence, windowLabel }, tasks);
+    setSaved(true);
+    setTimeout(onClose, 1500);
+  }
+
+  return (
+    <Sheet onClose={onClose}>
+      <div className="flex items-center gap-1.5 justify-center mb-7">
+        {[0, 1].map((i) => (
+          <motion.div key={i} animate={{ width: step === i ? "28px" : "8px", backgroundColor: step >= i ? SAGE : "var(--muted)" }} transition={spring} className="h-2 rounded-full" />
+        ))}
+      </div>
+      <AnimatePresence mode="wait">
+        {saved ? (
+          <motion.div key="done" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={spring}
+            className="flex flex-col items-center gap-4 py-10">
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 26, delay: 0.1 }}
+              className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: SAGE, boxShadow: `0 6px 24px rgba(73,110,70,0.38)` }}>
+              <Check size={28} strokeWidth={2.5} className="text-white" />
+            </motion.div>
+            <p className="text-lg font-medium text-center" style={{ fontFamily: "Lora,Georgia,serif" }}>"{name}" aangemaakt</p>
+            <p className="text-sm text-muted-foreground text-center">Je vindt de routine terug in het overzicht.</p>
+          </motion.div>
+        ) : step === 0 ? (
+          <motion.div key="s0" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18 }}>
+            <SheetHeader title="Naam & moment" onClose={onClose} />
+            <VeldInput autoFocus value={name} onChange={setName} placeholder="Bijv. Ochtendroutine" />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 mt-6">Wanneer</p>
+            <div className="flex flex-wrap gap-2 mb-8">
+              {TRIGGER_OPTIONS.map((opt) => (
+                <motion.button key={opt.id} whileTap={{ scale: 0.93 }} onClick={() => setTrigger(opt.id)}
+                  animate={{ backgroundColor: trigger === opt.id ? SAGE : "var(--secondary)", color: trigger === opt.id ? "#fff" : "var(--muted-foreground)" }}
+                  transition={{ duration: 0.14 }} className="px-4 py-2 rounded-full text-sm font-medium">{opt.label}</motion.button>
+              ))}
+            </div>
+            <DubbelKnop onCancel={onClose} onConfirm={() => setStep(1)} label="Volgende" disabled={!name.trim() || !trigger} />
+          </motion.div>
+        ) : (
+          <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18 }}>
+            <div className="flex items-center gap-2 mb-7">
+              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setStep(0)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"><ChevronLeft size={16} className="text-muted-foreground" /></motion.button>
+              <h3 className="text-xl font-medium text-foreground" style={{ fontFamily: "Lora,Georgia,serif" }}>Taken toevoegen</h3>
+            </div>
+            <div className="space-y-2 mb-4 max-h-40 overflow-y-auto scrollbar-hide">
+              <AnimatePresence>
+                {tasks.map((t, i) => (
+                  <motion.div key={`${t}-${i}`} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }} transition={spring}
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "var(--secondary)" }}>
+                    <Check size={12} strokeWidth={3} style={{ color: SAGE, flexShrink: 0 }} />
+                    <span className="flex-1 text-sm text-foreground">{t}</span>
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setTasks((p) => p.filter((_, j) => j !== i))} className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0"><X size={9} className="text-muted-foreground" /></motion.button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+            <div className="flex gap-2 mb-7">
+              <input ref={ref} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()}
+                placeholder="Taak omschrijving…"
+                className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm"
+                style={{ background: "var(--secondary)", boxShadow: input ? `0 0 0 2px rgba(73,110,70,0.26)` : "none" }} />
+              <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
+                className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40" style={{ background: SAGE }}>
+                <Plus size={17} className="text-white" />
+              </motion.button>
+            </div>
+            <DubbelKnop onCancel={onClose} onConfirm={save} label="Opslaan" disabled={tasks.length === 0} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Sheet>
+  );
+}
