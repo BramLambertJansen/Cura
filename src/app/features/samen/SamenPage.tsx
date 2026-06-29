@@ -32,7 +32,7 @@ export function SamenPage() {
               <motion.div key={`${activity.taskId}-${activity.doneAt}`} variants={fadeUp} className="flex gap-3 items-stretch">
                 <div className="flex flex-col items-center pt-2 flex-shrink-0">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: activity.doneBy === me?.displayName ? "rgba(73,110,70,0.12)" : "rgba(184,207,175,0.45)" }}>
+                    style={{ background: activity.doneBy === me?.displayName ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "color-mix(in srgb, var(--accent) 45%, transparent)" }}>
                     <Check size={13} strokeWidth={2.5} style={{ color: SAGE }} />
                   </div>
                   {i < completedToday.length - 1 && <div className="w-px flex-1 bg-border mt-1.5" />}

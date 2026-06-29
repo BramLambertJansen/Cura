@@ -24,7 +24,7 @@ export function RoutineKaartCompact({
         {routine.tasks.map((t) => (
           <motion.button key={t.id} whileTap={{ scale: 0.97 }} onClick={() => onToggleTask(t.id)} className="flex items-center gap-2.5 w-full">
             <div className="w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-all duration-200"
-              style={{ background: t.done ? SAGE : "transparent", borderColor: t.done ? SAGE : "rgba(107,98,90,0.32)" }}>
+              style={{ background: t.done ? SAGE : "transparent", borderColor: t.done ? SAGE : "color-mix(in srgb, var(--outline-color) 32%, transparent)" }}>
               {t.done && <Check size={8} strokeWidth={3.5} className="text-white" />}
             </div>
             <span className={`text-xs leading-snug text-left flex-1 ${t.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{t.title}</span>
@@ -48,7 +48,7 @@ export function RoutineKaart({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-label={`${routine.name} ${open ? "inklappen" : "uitklappen"}`}
-        className="w-full flex items-center gap-4 text-left transition-colors px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgba(73,110,70,0.4)]"
+        className="w-full flex items-center gap-4 text-left transition-colors px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--primary)_40%,transparent)]"
         style={{ paddingTop: "1.1rem", paddingBottom: "1.1rem" }}>
         <RingProgress value={total > 0 ? done / total : 0} size={50} stroke={4} />
         <div className="flex-1 min-w-0">
@@ -57,7 +57,7 @@ export function RoutineKaart({
             {done === total && done > 0 && (
               <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 26 }}
                 className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: "rgba(73,110,70,0.1)", color: SAGE }}>Klaar</motion.span>
+                style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>Klaar</motion.span>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{routine.trigger}</p>
@@ -84,7 +84,7 @@ export function RoutineKaart({
                   onClick={onEdit}
                   whileTap={{ scale: 0.96 }}
                   aria-label={`${routine.name} bewerken`}
-                  className="flex items-center gap-2 text-xs font-medium py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)] rounded-lg px-1"
+                  className="flex items-center gap-2 text-xs font-medium py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] rounded-lg px-1"
                   style={{ color: "var(--muted-foreground)" }}>
                   <Pencil size={12} aria-hidden="true" />
                   Routine bewerken

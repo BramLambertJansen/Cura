@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Plus, Link2, Home, Bell, ChevronRight } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
-import { SAGE } from "../../lib/constants";
 import {
   Avatar, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, Leeg,
   PillButton, RingProgress, Toggle, VeldInput,
@@ -68,11 +67,23 @@ export function DesignSystemPage() {
       </div>
 
       <Section title="Kleuren">
-        <Swatch label="Sage (accent)" value={SAGE} />
+        <p className="text-sm text-muted-foreground -mt-1">Alles hieronder wijst naar <code>src/styles/theme.css</code> — pas daar een token aan en elk component dat ernaar verwijst volgt automatisch.</p>
+        <Swatch label="Primair (Sage)" value="var(--primary)" />
         <Swatch label="Achtergrond" value="var(--background)" />
         <Swatch label="Kaart" value="var(--card)" />
         <Swatch label="Secundair" value="var(--secondary)" />
         <Swatch label="Rand" value="var(--border)" />
+        <Swatch label="Destructief" value="var(--destructive)" />
+        <div>
+          <p className="text-sm font-medium text-foreground mb-1.5">Gradient (primair)</p>
+          <div className="w-full h-10 rounded-xl border border-border/50" style={{ background: "var(--gradient-primary)" }} />
+          <p className="text-xs text-muted-foreground font-mono mt-1">var(--gradient-primary)</p>
+        </div>
+        <div className="flex gap-4">
+          <div className="flex-1 rounded-2xl bg-card border border-border/50 h-12" style={{ boxShadow: "var(--shadow-card)" }} />
+          <div className="flex-1 rounded-2xl bg-card border border-border/50 h-12" style={{ boxShadow: "var(--shadow-card-lg)" }} />
+        </div>
+        <p className="text-xs text-muted-foreground font-mono">var(--shadow-card) · var(--shadow-card-lg)</p>
       </Section>
 
       <Section title="Page header">

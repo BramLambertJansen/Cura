@@ -36,12 +36,12 @@ export function HuisPage() {
           <div className="absolute top-12 left-4 right-4 flex items-center justify-between">
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedRoomId(null)}
               aria-label="Terug naar kamers"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
             </motion.button>
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => openEditRoom(room.id)}
               aria-label={`${room.name} bewerken`}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <Pencil size={14} className="text-foreground" aria-hidden="true" />
             </motion.button>
           </div>
@@ -91,7 +91,7 @@ export function HuisPage() {
         <motion.div variants={fadeUp}>
           <motion.button onClick={openNewRoom} whileTap={{ scale: 0.985 }}
             className="w-full flex items-center gap-4 bg-card rounded-2xl px-4 py-3.5 border-2 border-dashed"
-            style={{ borderColor: "rgba(90,75,55,0.16)", color: "var(--muted-foreground)" }}>
+            style={{ borderColor: "color-mix(in srgb, var(--border-color) 16%, transparent)", color: "var(--muted-foreground)" }}>
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-secondary">
               <Plus size={20} strokeWidth={1.75} />
             </div>

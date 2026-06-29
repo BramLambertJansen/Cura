@@ -20,7 +20,7 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
             onClick={() => onChange(clamp(value - 1))}
             disabled={value <= 1}
             aria-label="Minder dagen"
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
             style={{ background: "var(--secondary)", color: "var(--foreground)" }}>
             −
           </motion.button>
@@ -38,7 +38,7 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
             onClick={() => onChange(clamp(value + 1))}
             disabled={value >= 365}
             aria-label="Meer dagen"
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
             style={{ background: "var(--secondary)", color: "var(--foreground)" }}>
             +
           </motion.button>
@@ -55,11 +55,11 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
               aria-pressed={active}
               initial={{ backgroundColor: "var(--secondary)", borderColor: "rgba(0,0,0,0)" }}
               animate={{
-                backgroundColor: active ? "rgba(73,110,70,0.12)" : "var(--secondary)",
-                borderColor: active ? "rgba(73,110,70,0.45)" : "rgba(0,0,0,0)",
+                backgroundColor: active ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "var(--secondary)",
+                borderColor: active ? "color-mix(in srgb, var(--primary) 45%, transparent)" : "rgba(0,0,0,0)",
               }}
               transition={{ duration: 0.14 }}
-              className="py-2.5 rounded-2xl border-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]">
+              className="py-2.5 rounded-2xl border-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <span className="text-xs font-semibold block" style={{ color: active ? SAGE : "var(--foreground)" }}>
                 {p.label}
               </span>

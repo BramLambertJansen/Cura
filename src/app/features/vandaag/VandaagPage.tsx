@@ -32,7 +32,7 @@ export function VandaagPage() {
     <div>
       <div className="relative overflow-hidden" style={{ background: greeting.gradient }}>
         <div className="absolute inset-0 opacity-[0.32]" style={{
-          backgroundImage: "radial-gradient(circle,rgba(73,110,70,0.13) 1.5px,transparent 1.5px)",
+          backgroundImage: "radial-gradient(circle,color-mix(in srgb, var(--primary) 13%, transparent) 1.5px,transparent 1.5px)",
           backgroundSize: "22px 22px",
         }} />
         <div className="relative z-10 px-5 pt-14 pb-8">
@@ -62,7 +62,7 @@ export function VandaagPage() {
         <AnimatePresence>
           {huisgenootActivity.length > 0 && (
             <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring}>
-              <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5" style={{ background: "rgba(184,207,175,0.22)", border: "1px solid rgba(184,207,175,0.4)" }}>
+              <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5" style={{ background: "color-mix(in srgb, var(--accent) 22%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 40%, transparent)" }}>
                 <div className="mt-0.5">
                   <Avatar name={huisgenootActivity[0].doneBy!} size={32} tone="soft" />
                 </div>

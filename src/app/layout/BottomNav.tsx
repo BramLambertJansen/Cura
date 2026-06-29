@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { NavLink, useLocation } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { CalendarDays, Home, RefreshCw, Heart, Plus } from "lucide-react";
-import { SAGE } from "../lib/constants";
+import { SAGE, MUTED_FG, DESTRUCTIVE } from "../lib/constants";
 
 const LEFT = [
   { to: "/vandaag", label: "Vandaag", icon: (a: boolean) => <CalendarDays size={20} strokeWidth={a ? 2.4 : 1.7} /> },
@@ -24,24 +24,24 @@ function NavTab({ tab }: { tab: typeof LEFT[number] }) {
       aria-label={tab.label}
       aria-current={active ? "page" : undefined}
       className="relative flex-1 flex flex-col items-center justify-center gap-1 h-full z-10 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0"
-      style={{ "--tw-ring-color": "rgba(73,110,70,0.5)" } as CSSProperties}
+      style={{ "--tw-ring-color": "color-mix(in srgb, var(--primary) 50%, transparent)" } as CSSProperties}
     >
       {active && (
         <motion.div layoutId="nav-pill"
           className="absolute inset-x-1.5 top-2 bottom-2 rounded-xl"
-          style={{ background: "rgba(73,110,70,0.09)" }}
+          style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)" }}
           transition={{ type: "spring", stiffness: 420, damping: 36 }}
         />
       )}
       <motion.div
-        animate={{ color: active ? SAGE : "#85786C", y: active ? -1 : 0 }}
+        animate={{ color: active ? SAGE : MUTED_FG, y: active ? -1 : 0 }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
         className="relative z-10"
       >
         {tab.icon(active)}
       </motion.div>
       <motion.span
-        animate={{ color: active ? SAGE : "#85786C", fontWeight: active ? 600 : 500 }}
+        animate={{ color: active ? SAGE : MUTED_FG, fontWeight: active ? 600 : 500 }}
         className="text-[10px] leading-none relative z-10"
       >
         {tab.label}
@@ -56,9 +56,9 @@ export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => v
       aria-label="Hoofdnavigatie"
       className="absolute bottom-0 left-0 right-0 z-40"
       style={{
-        background: "rgba(254,252,247,0.94)",
+        background: "color-mix(in srgb, var(--card) 94%, transparent)",
         backdropFilter: "blur(24px) saturate(200%)",
-        borderTop: "1px solid rgba(90,75,55,0.09)",
+        borderTop: "1px solid color-mix(in srgb, var(--border-color) 9%, transparent)",
       }}>
       <div className="flex items-center h-[4.25rem]" role="tablist">
         {LEFT.map((t) => <NavTab key={t.to} tab={t} />)}
@@ -76,11 +76,11 @@ export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => v
             )}
           </AnimatePresence>
           <motion.button onClick={onAdd}
-            animate={{ rotate: showAdd ? 45 : 0, backgroundColor: showAdd ? "#B04535" : SAGE }}
+            animate={{ rotate: showAdd ? 45 : 0, backgroundColor: showAdd ? DESTRUCTIVE : SAGE }}
             whileTap={{ scale: 0.87 }} whileHover={{ scale: 1.06 }}
             transition={{ type: "spring", stiffness: 420, damping: 26 }}
-            className="relative rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[rgba(73,110,70,0.6)]"
-            style={{ width: "3.625rem", height: "3.625rem", boxShadow: `0 6px 28px rgba(73,110,70,0.42),0 2px 8px rgba(0,0,0,0.1),0 0 0 3.5px rgba(254,252,247,0.96)` }}
+            className="relative rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_60%,transparent)]"
+            style={{ width: "3.625rem", height: "3.625rem", boxShadow: "var(--shadow-fab)" }}
             aria-label="Toevoegen">
             <Plus size={24} className="text-white" strokeWidth={2.2} />
           </motion.button>

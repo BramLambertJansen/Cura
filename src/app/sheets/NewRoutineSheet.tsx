@@ -50,7 +50,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
           <motion.div key="done" initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={spring}
             className="flex flex-col items-center gap-4 py-10">
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 26, delay: 0.1 }}
-              className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: SAGE, boxShadow: `0 6px 24px rgba(73,110,70,0.38)` }}>
+              className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: SAGE, boxShadow: `0 6px 24px color-mix(in srgb, var(--primary) 38%, transparent)` }}>
               <Check size={28} strokeWidth={2.5} className="text-white" />
             </motion.div>
             <p className="text-lg font-medium text-center" style={{ fontFamily: "Lora,Georgia,serif" }}>"{name}" aangemaakt</p>
@@ -92,7 +92,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
               <input ref={ref} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()}
                 placeholder="Taak omschrijving…"
                 className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm"
-                style={{ background: "var(--secondary)", boxShadow: input ? `0 0 0 2px rgba(73,110,70,0.26)` : "none" }} />
+                style={{ background: "var(--secondary)", boxShadow: input ? `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "none" }} />
               <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
                 className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40" style={{ background: SAGE }}>
                 <Plus size={17} className="text-white" />

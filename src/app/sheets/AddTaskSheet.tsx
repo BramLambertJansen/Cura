@@ -50,7 +50,7 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
                 borderColor: active ? color + "60" : "rgba(0,0,0,0)",
               }}
               transition={{ duration: 0.15 }}
-              className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl border-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(73,110,70,0.5)]"
+              className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl border-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
             >
               <motion.span
                 animate={{
@@ -83,7 +83,7 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
             <RefreshCw size={16} style={{ color: herhalenAan ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
             <span className="text-sm font-medium text-foreground">Herhalen</span>
             {herhalenAan && (
-              <motion.span initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(73,110,70,0.12)", color: SAGE }}>
+              <motion.span initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: SAGE }}>
                 {intervalLabel(intervalDagen)}
               </motion.span>
             )}
