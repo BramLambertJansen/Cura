@@ -28,33 +28,29 @@ export function HuisPage() {
     const done = roomTasks.filter((t) => t.done);
     return (
       <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={spring}>
-        <div className="relative h-52 overflow-hidden flex items-center justify-center"
-          style={{ background: `linear-gradient(145deg,${c}1C 0%,${c}38 100%)` }}>
-          <div style={{ color: c, opacity: 0.14, transform: "rotate(-6deg) scale(1)" }}>
-            {ic.iconLg}
-          </div>
-          <div className="absolute top-12 left-4 right-4 flex items-center justify-between">
+        <div className="px-5 pt-14">
+          <div className="flex items-center justify-between">
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedRoomId(null)}
               aria-label="Terug naar kamers"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
             </motion.button>
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => openEditRoom(room.id)}
               aria-label={`${room.name} bewerken`}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <Pencil size={14} className="text-foreground" aria-hidden="true" />
             </motion.button>
           </div>
-          <div className="absolute bottom-5 left-5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: c + "28", color: c }}>{ic.icon}</div>
+          <div className="flex items-center gap-2.5 mt-5">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: c + "28", color: c }}>{ic.icon}</div>
+            <div>
               <h2 className="text-[1.65rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{room.name}</h2>
+              {room.owner && <p className="text-muted-foreground text-xs mt-0.5">Meestal {room.owner}</p>}
             </div>
-            {room.owner && <p className="text-muted-foreground text-xs mt-0.5 ml-[2.625rem]">Meestal {room.owner}</p>}
           </div>
         </div>
 
-        <div className="mx-5 mt-4">
+        <div className="mx-5 mt-5">
           <HintBanner>{room.hint}</HintBanner>
         </div>
 
