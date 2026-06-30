@@ -51,8 +51,6 @@
   --outline-color: #6B625A;
   --shadow-color: #50412D;
   --overlay-color: #16120C;
-  --ambient-warm: #FFEBAA;
-  --ambient-cool: #AAD29B;
   --gradient-primary: linear-gradient(135deg, color-mix(in srgb, var(--primary) 75%, white) 0%, var(--primary) 100%);
   --shadow-card: 0 2px 20px color-mix(in srgb, var(--shadow-color) 7%, transparent), 0 1px 4px color-mix(in srgb, var(--shadow-color) 5%, transparent);
   --shadow-card-lg: 0 6px 32px color-mix(in srgb, var(--shadow-color) 10%, transparent), 0 2px 8px color-mix(in srgb, var(--shadow-color) 7%, transparent);

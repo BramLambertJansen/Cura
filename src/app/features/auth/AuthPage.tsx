@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useAuth } from "../../auth/AuthProvider";
 import { Logo } from "../../components/Logo";
+import { AppBackground } from "../../components/AppBackground";
 import { AuthForm, type AuthMode } from "./AuthForm";
 
 export function AuthPage() {
@@ -37,7 +38,8 @@ export function AuthPage() {
         paddingRight: "calc(1.5rem + var(--safe-right))",
       }}
     >
-      <div className="w-full max-w-sm">
+      <AppBackground />
+      <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-10">
           <Logo size={56} className="mx-auto mb-4 rounded-xl" />
           <h1 className="text-[2rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>Cura</h1>
