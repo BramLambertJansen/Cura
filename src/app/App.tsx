@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useTaskReminders } from "./lib/useTaskReminders";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
@@ -11,6 +12,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppBackground } from "./components/AppBackground";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
+import { EditTaskSheet } from "./sheets/EditTaskSheet";
 import { NewRoomSheet } from "./sheets/NewRoomSheet";
 import { EditRoomSheet } from "./sheets/EditRoomSheet";
 import { NewRoutineSheet } from "./sheets/NewRoutineSheet";
@@ -55,7 +57,10 @@ function PageTx({ children }: { children: ReactNode }) {
 
 /** The existing app shell — tabs, sheets, FAB. Assumes useCuraStore is already ready. */
 function MainShell() {
+  useTaskReminders();
+
   const [showAdd, setShowAdd] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [showNewRoutine, setShowNewRoutine] = useState(false);
@@ -66,6 +71,7 @@ function MainShell() {
   const sheetActions: SheetActions = useMemo(
     () => ({
       openAddTask: () => setShowAdd(true),
+      openEditTask: (taskId) => setEditingTaskId(taskId),
       openNewRoom: () => setShowNewRoom(true),
       openEditRoom: (roomId) => setEditingRoomId(roomId),
       openNewRoutine: () => setShowNewRoutine(true),
@@ -104,6 +110,7 @@ function MainShell() {
 
         <AnimatePresence>
           {showAdd && <AddTaskSheet key="add" onClose={() => setShowAdd(false)} />}
+          {editingTaskId && <EditTaskSheet key="edit-task" taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />}
           {showNewRoutine && <NewRoutineSheet key="nr" onClose={() => setShowNewRoutine(false)} />}
           {editingRoutineId && <EditRoutineSheet key="er" bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} />}
           {showNewRoom && <NewRoomSheet key="room" onClose={() => setShowNewRoom(false)} />}

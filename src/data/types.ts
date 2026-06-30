@@ -58,6 +58,8 @@ export interface TaskView {
   doneAt?: string; // formatted time of the completion, e.g. "08:42"
   claimedBy?: string; // resolved member display name ("ik pak dit")
   dueHint?: string; // soft: "Waarschijnlijk weer toe" / "Nog even goed"
+  dueDate?: string; // raw ISO, for the reminder engine — not for display
+  wekkerLabel?: string; // soft, calm label: "wo 2 jul, 15:00" (one-off) or "Wekker om 09:00" (recurring)
 }
 
 /** A room with its pooled tasks and a soft, honest hint. */

@@ -9,7 +9,7 @@ import { RoutineKaartCompact } from "../../components/RoutineKaart";
 import { useSheets } from "../../sheetContext";
 
 export function VandaagPage() {
-  const { openProfiel } = useSheets();
+  const { openProfiel, openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
@@ -73,7 +73,7 @@ export function VandaagPage() {
             : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                 {allPlanned.map((task) => (
                   <motion.div key={task.id} variants={fadeUp}>
-                    <TaakRij task={task} onToggle={() => toggleTask(task.id, !task.done)} />
+                    <TaakRij task={task} onToggle={() => toggleTask(task.id, !task.done)} onEdit={() => openEditTask(task.id)} />
                   </motion.div>
                 ))}
               </motion.div>
