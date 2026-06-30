@@ -59,6 +59,18 @@
   --shadow-sheet: 0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent), 0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent);
   --shadow-fab: 0 6px 28px color-mix(in srgb, var(--primary) 42%, transparent), 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 3.5px color-mix(in srgb, var(--card) 96%, transparent);
   --progress-near: #7DA87A;
+
+  /*
+   * Device safe-area insets (notch, status bar, home indicator). Fall back to
+   * 0px on devices/browsers without them. index.html sets viewport-fit=cover
+   * so these env() values actually resolve instead of always reading 0.
+   * Components reference these tokens instead of calling env() directly, so
+   * the fallback and naming stay consistent across the app (CLAUDE.md §7).
+   */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 .dark {

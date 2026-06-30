@@ -77,17 +77,25 @@ function MainShell() {
 
   return (
     <SheetContext.Provider value={sheetActions}>
-      <div className="relative w-full h-screen flex flex-col bg-background overflow-hidden">
+      <div className="relative w-full h-dvh flex flex-col bg-background overflow-hidden">
         <div className="fixed inset-0 pointer-events-none z-0" style={{
           backgroundImage: "radial-gradient(ellipse 70% 50% at 15% 10%,color-mix(in srgb, var(--ambient-warm) 6%, transparent) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 90%,color-mix(in srgb, var(--ambient-cool) 5%, transparent) 0%,transparent 60%)",
         }} />
 
         <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-30" style={{
-          height: "6rem",
+          height: "calc(6rem + var(--safe-bottom))",
           background: "linear-gradient(to top,color-mix(in srgb, var(--background) 96%, transparent) 0%,color-mix(in srgb, var(--background) 60%, transparent) 45%,transparent 100%)",
         }} />
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 relative z-10">
+        <div
+          className="flex-1 overflow-y-auto scrollbar-hide relative z-10"
+          style={{
+            paddingTop: "var(--safe-top)",
+            paddingLeft: "var(--safe-left)",
+            paddingRight: "var(--safe-right)",
+            paddingBottom: "calc(6rem + var(--safe-bottom))",
+          }}
+        >
           <Suspense fallback={null}>
             <AnimatedRoutes />
           </Suspense>

@@ -21,8 +21,14 @@ export function Sheet({
         aria-labelledby={labelId}
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 440, damping: 42 }}
-        className={`absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] px-5 pt-5 ${tall ? "pb-8 max-h-[90vh] overflow-y-auto" : "pb-10"} scrollbar-hide`}
-        style={{ background: "var(--card)", boxShadow: `0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent),0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent)` }}
+        className={`absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] pt-5 ${tall ? "max-h-[90vh] overflow-y-auto" : ""} scrollbar-hide`}
+        style={{
+          background: "var(--card)",
+          boxShadow: `0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent),0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent)`,
+          paddingBottom: tall ? "calc(2rem + var(--safe-bottom))" : "calc(2.5rem + var(--safe-bottom))",
+          paddingLeft: "calc(1.25rem + var(--safe-left))",
+          paddingRight: "calc(1.25rem + var(--safe-right))",
+        }}
         onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-center mb-6" aria-hidden="true">
           <div className="w-14 h-[5px] rounded-full" style={{ background: "var(--muted)" }} />
