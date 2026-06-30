@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Toaster } from "sonner";
@@ -8,14 +8,6 @@ import { SHADOW_LG } from "./lib/constants";
 import { pageIn, pageTx } from "./lib/motion";
 import { BottomNav } from "./layout/BottomNav";
 import { SheetContext, type SheetActions } from "./sheetContext";
-import { VandaagPage } from "./features/vandaag/VandaagPage";
-import { HuisPage } from "./features/huis/HuisPage";
-import { RoutinesPage } from "./features/routines/RoutinesPage";
-import { SamenPage } from "./features/samen/SamenPage";
-import { DesignSystemPage } from "./features/design-system/DesignSystemPage";
-import { AuthPage } from "./features/auth/AuthPage";
-import { CreateHouseholdPage } from "./features/auth/CreateHouseholdPage";
-import { AcceptInvitePage } from "./features/invite/AcceptInvitePage";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { NewRoomSheet } from "./sheets/NewRoomSheet";
 import { EditRoomSheet } from "./sheets/EditRoomSheet";
@@ -23,6 +15,17 @@ import { NewRoutineSheet } from "./sheets/NewRoutineSheet";
 import { EditRoutineSheet } from "./sheets/EditRoutineSheet";
 import { HouseholdSheet } from "./sheets/HouseholdSheet";
 import { ProfielSheet } from "./sheets/ProfielSheet";
+
+// Route-level code splitting — each tab/screen becomes its own chunk instead
+// of shipping in the single main bundle (CLAUDE.md §9 build verification).
+const VandaagPage = lazy(() => import("./features/vandaag/VandaagPage").then((m) => ({ default: m.VandaagPage })));
+const HuisPage = lazy(() => import("./features/huis/HuisPage").then((m) => ({ default: m.HuisPage })));
+const RoutinesPage = lazy(() => import("./features/routines/RoutinesPage").then((m) => ({ default: m.RoutinesPage })));
+const SamenPage = lazy(() => import("./features/samen/SamenPage").then((m) => ({ default: m.SamenPage })));
+const DesignSystemPage = lazy(() => import("./features/design-system/DesignSystemPage").then((m) => ({ default: m.DesignSystemPage })));
+const AuthPage = lazy(() => import("./features/auth/AuthPage").then((m) => ({ default: m.AuthPage })));
+const CreateHouseholdPage = lazy(() => import("./features/auth/CreateHouseholdPage").then((m) => ({ default: m.CreateHouseholdPage })));
+const AcceptInvitePage = lazy(() => import("./features/invite/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -84,7 +87,9 @@ function MainShell() {
         }} />
 
         <div className="flex-1 overflow-y-auto scrollbar-hide pb-24 relative z-10">
-          <AnimatedRoutes />
+          <Suspense fallback={null}>
+            <AnimatedRoutes />
+          </Suspense>
         </div>
 
         <BottomNav showAdd={showAdd} onAdd={() => setShowAdd((s) => !s)} />
@@ -121,9 +126,9 @@ function Gate() {
   }, [status, init]);
 
   if (status === "loading") return null;
-  if (status === "signedOut") return <AuthPage />;
+  if (status === "signedOut") return <Suspense fallback={null}><AuthPage /></Suspense>;
   if (!ready) return null;
-  if (households.length === 0) return <CreateHouseholdPage />;
+  if (households.length === 0) return <Suspense fallback={null}><CreateHouseholdPage /></Suspense>;
   return <MainShell />;
 }
 
@@ -139,7 +144,7 @@ export default function App() {
         },
       }} />
       <Routes>
-        <Route path="/uitnodiging/:token" element={<AcceptInvitePage />} />
+        <Route path="/uitnodiging/:token" element={<Suspense fallback={null}><AcceptInvitePage /></Suspense>} />
         <Route path="/*" element={<Gate />} />
       </Routes>
     </BrowserRouter>

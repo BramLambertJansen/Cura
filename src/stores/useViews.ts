@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useCuraStore } from "./useCuraStore";
-import { toActivityFeed, toRoomView, toRoutineView, toTaskView } from "../data/selectors";
+import { buildLatestCompletionMap, toActivityFeed, toRoomView, toRoutineView, toTaskView } from "../data/selectors";
 import type { ActivityView, RoomView, RoutineView, TaskView } from "../data/types";
 
 /** Every task as a view-model — done/dueHint/claimedBy resolved, never stored. */
@@ -9,9 +9,10 @@ export function useTaskViews(): TaskView[] {
   const completions = useCuraStore((s) => s.completions);
   const rooms = useCuraStore((s) => s.rooms);
   const members = useCuraStore((s) => s.members);
+  const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
-    () => tasks.map((t) => toTaskView(t, completions, rooms, members)),
-    [tasks, completions, rooms, members],
+    () => tasks.map((t) => toTaskView(t, latestByTask, rooms, members)),
+    [tasks, latestByTask, rooms, members],
   );
 }
 
@@ -21,9 +22,10 @@ export function useRoomViews(): RoomView[] {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
   const members = useCuraStore((s) => s.members);
+  const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
-    () => rooms.map((r) => toRoomView(r, tasks, completions, members)),
-    [rooms, tasks, completions, members],
+    () => rooms.map((r) => toRoomView(r, tasks, latestByTask, members)),
+    [rooms, tasks, latestByTask, members],
   );
 }
 
@@ -33,9 +35,10 @@ export function useRoutineViews(): RoutineView[] {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
   const members = useCuraStore((s) => s.members);
+  const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
-    () => bundles.map((b) => toRoutineView(b, tasks, completions, members)),
-    [bundles, tasks, completions, members],
+    () => bundles.map((b) => toRoutineView(b, tasks, completions, latestByTask, members)),
+    [bundles, tasks, completions, latestByTask, members],
   );
 }
 

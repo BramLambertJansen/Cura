@@ -24,6 +24,7 @@ export function AcceptInvitePage() {
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const attempted = useRef(false);
 
   useEffect(() => {
@@ -38,8 +39,12 @@ export function AcceptInvitePage() {
   async function handleAuth(fields: { email: string; password: string; displayName: string }) {
     setBusy(true);
     try {
-      if (authMode === "signup") await signUp(fields.email, fields.password, fields.displayName);
-      else await signIn(fields.email, fields.password);
+      if (authMode === "signup") {
+        const { needsConfirmation } = await signUp(fields.email, fields.password, fields.displayName);
+        if (needsConfirmation) setPendingConfirmation(true);
+      } else {
+        await signIn(fields.email, fields.password);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Inloggen lukte niet");
     } finally {
@@ -57,7 +62,13 @@ export function AcceptInvitePage() {
           <p className="text-sm text-muted-foreground">Je bent uitgenodigd voor een huishouden in Cura.</p>
         </div>
 
-        {status === "signedOut" && (
+        {status === "signedOut" && pendingConfirmation && (
+          <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground leading-relaxed">
+            Check je e-mail om je account te bevestigen, log daarna hier in om de uitnodiging te accepteren.
+          </p>
+        )}
+
+        {status === "signedOut" && !pendingConfirmation && (
           <>
             <AuthForm
               mode={authMode} busy={busy} onSubmit={handleAuth}
@@ -72,13 +83,13 @@ export function AcceptInvitePage() {
         )}
 
         {(status === "loading" || (status === "signedIn" && !result)) && (
-          <p className="text-center text-sm text-muted-foreground">Even geduld…</p>
+          <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground">Even geduld…</p>
         )}
 
         {result && !result.ok && (
-          <p className="text-center text-sm text-muted-foreground leading-relaxed">{REASON_COPY[result.reason]}</p>
+          <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground leading-relaxed">{REASON_COPY[result.reason]}</p>
         )}
-        {result?.ok && <p className="text-center text-sm text-muted-foreground">Welkom! Je wordt doorgestuurd…</p>}
+        {result?.ok && <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground">Welkom! Je wordt doorgestuurd…</p>}
       </div>
     </div>
   );

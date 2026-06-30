@@ -119,20 +119,35 @@ export class SupabaseStore implements DataStore {
     return mapHousehold({ id: householdId, name });
   }
 
+  async updateHousehold(householdId: string, name: string): Promise<Household> {
+    const { data, error } = await supabase.from("households").update({ name }).eq("id", householdId).select().single();
+    if (error || !data) throw new Error(error?.message ?? `Household not found: ${householdId}`);
+    return mapHousehold(data as HouseholdRow);
+  }
+
   // ── Invites ──────────────────────────────────────────────────────────────
+  // Invite links expire 7 days after creation and are single-use — accept_invite
+  // deletes the row on successful redemption (see the migration).
   async createInvite(householdId: string): Promise<HouseholdInvite> {
     const authUserId = await this.currentUserId();
     const memberId = await this.memberIdFor(authUserId, householdId);
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
     const row: InviteRow = {
       token: uid(),
       household_id: householdId,
       created_by_id: memberId,
-      created_at: new Date().toISOString(),
-      expires_at: null,
+      created_at: createdAt.toISOString(),
+      expires_at: expiresAt.toISOString(),
     };
     const { error } = await supabase.from("household_invites").insert(row);
     if (error) throw new Error(error.message);
     return mapInvite(row);
+  }
+
+  async revokeInvite(token: string): Promise<void> {
+    const { error } = await supabase.from("household_invites").delete().eq("token", token);
+    if (error) throw new Error(error.message);
   }
 
   async acceptInvite(token: string): Promise<{ ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" }> {

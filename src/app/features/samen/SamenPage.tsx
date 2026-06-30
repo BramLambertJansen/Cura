@@ -27,7 +27,7 @@ export function SamenPage() {
 
       {completedToday.length === 0
         ? <Leeg icon="🤍" text="Nog niks gedaan vandaag. De dag is jong." />
-        : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-1.5 mb-8">
+        : <motion.div variants={stagger} initial="initial" animate="animate" aria-live="polite" className="space-y-1.5 mb-8">
             {completedToday.map((activity, i) => (
               <motion.div key={`${activity.taskId}-${activity.doneAt}`} variants={fadeUp} className="flex gap-3 items-stretch">
                 <div className="flex flex-col items-center pt-2 flex-shrink-0">
