@@ -54,7 +54,7 @@ export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => v
   return (
     <nav
       aria-label="Hoofdnavigatie"
-      className="absolute bottom-0 left-0 right-0 z-40"
+      className="fixed bottom-0 left-0 right-0 z-40"
       style={{
         background: "color-mix(in srgb, var(--card) 94%, transparent)",
         backdropFilter: "blur(24px) saturate(200%)",

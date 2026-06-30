@@ -77,7 +77,7 @@ function MainShell() {
 
   return (
     <SheetContext.Provider value={sheetActions}>
-      <div className="relative w-full h-dvh flex flex-col bg-background overflow-hidden">
+      <div className="fixed inset-0 flex flex-col bg-background overflow-hidden">
         <div className="fixed inset-0 pointer-events-none z-0" style={{
           backgroundImage: "radial-gradient(ellipse 70% 50% at 15% 10%,color-mix(in srgb, var(--ambient-warm) 6%, transparent) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 90%,color-mix(in srgb, var(--ambient-cool) 5%, transparent) 0%,transparent 60%)",
         }} />
