@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useAuth } from "../../auth/AuthProvider";
+import { Logo } from "../../components/Logo";
 import { AuthForm, type AuthMode } from "./AuthForm";
 
 export function AuthPage() {
@@ -38,6 +39,7 @@ export function AuthPage() {
     >
       <div className="w-full max-w-sm">
         <div className="text-center mb-10">
+          <Logo size={56} className="mx-auto mb-4 rounded-xl" />
           <h1 className="text-[2rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>Cura</h1>
           <p className="text-sm text-muted-foreground">
             {mode === "signin" ? "Welkom terug." : "Maak een account aan om te beginnen."}
