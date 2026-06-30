@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { Logo } from "../../components/Logo";
+import { AppBackground } from "../../components/AppBackground";
 import { VeldInput } from "../../components/shared";
 
 /** "Create your first household" onboarding — for a signed-in user with zero households. */
@@ -33,7 +34,8 @@ export function CreateHouseholdPage() {
         paddingRight: "calc(1.5rem + var(--safe-right))",
       }}
     >
-      <div className="w-full max-w-sm text-center">
+      <AppBackground />
+      <div className="w-full max-w-sm text-center relative z-10">
         <Logo size={56} className="mx-auto mb-4 rounded-xl" />
         <h1 className="text-[2rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>Welkom</h1>
         <p className="text-sm text-muted-foreground mb-8">Geef je huishouden een naam om te beginnen.</p>

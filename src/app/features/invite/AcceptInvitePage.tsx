@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { useAuth } from "../../auth/AuthProvider";
 import { useCuraStore } from "../../../stores/useCuraStore";
+import { AppBackground } from "../../components/AppBackground";
 import { AuthForm, type AuthMode } from "../auth/AuthForm";
 
 type Reason = "already_member" | "invalid" | "expired";
@@ -69,7 +70,8 @@ export function AcceptInvitePage() {
         paddingRight: "calc(1.5rem + var(--safe-right))",
       }}
     >
-      <div className="w-full max-w-sm">
+      <AppBackground />
+      <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
           <h1 className="text-[2rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>Uitnodiging</h1>
           <p className="text-sm text-muted-foreground">Je bent uitgenodigd voor een huishouden in Cura.</p>

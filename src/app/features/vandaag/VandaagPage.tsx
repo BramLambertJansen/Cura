@@ -30,30 +30,24 @@ export function VandaagPage() {
 
   return (
     <div>
-      <div className="relative overflow-hidden" style={{ background: greeting.gradient }}>
-        <div className="absolute inset-0 opacity-[0.32]" style={{
-          backgroundImage: "radial-gradient(circle,color-mix(in srgb, var(--primary) 13%, transparent) 1.5px,transparent 1.5px)",
-          backgroundSize: "22px 22px",
-        }} />
-        <div className="relative z-10 px-5 pt-14 pb-8">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">{greeting.date}</p>
-              <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium" style={{ fontFamily: "Lora,Georgia,serif" }}>
-                {greeting.text}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
-            </div>
-            <div className="flex flex-col items-center gap-2.5 flex-shrink-0 pt-1">
-              {total > 0 && (
-                <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...spring, delay: 0.18 }}>
-                  <RingProgress value={doneCount / total} size={46} stroke={3.5} />
-                </motion.div>
-              )}
-              <motion.button onClick={openProfiel} whileTap={{ scale: 0.88 }} aria-label="Profiel openen">
-                <Avatar name={me?.displayName ?? "Jij"} size={36} tone="solid" serif />
-              </motion.button>
-            </div>
+      <div className="px-5 pt-14 pb-8">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">{greeting.date}</p>
+            <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium" style={{ fontFamily: "Lora,Georgia,serif" }}>
+              {greeting.text}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
+          </div>
+          <div className="flex flex-col items-center gap-2.5 flex-shrink-0 pt-1">
+            {total > 0 && (
+              <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...spring, delay: 0.18 }}>
+                <RingProgress value={doneCount / total} size={46} stroke={3.5} />
+              </motion.div>
+            )}
+            <motion.button onClick={openProfiel} whileTap={{ scale: 0.88 }} aria-label="Profiel openen">
+              <Avatar name={me?.displayName ?? "Jij"} size={36} tone="solid" serif />
+            </motion.button>
           </div>
         </div>
       </div>

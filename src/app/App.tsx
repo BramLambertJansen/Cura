@@ -8,6 +8,7 @@ import { SHADOW_LG } from "./lib/constants";
 import { pageIn, pageTx } from "./lib/motion";
 import { BottomNav } from "./layout/BottomNav";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { AppBackground } from "./components/AppBackground";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { NewRoomSheet } from "./sheets/NewRoomSheet";
@@ -78,9 +79,7 @@ function MainShell() {
   return (
     <SheetContext.Provider value={sheetActions}>
       <div className="fixed inset-0 flex flex-col bg-background overflow-hidden">
-        <div className="fixed inset-0 pointer-events-none z-0" style={{
-          backgroundImage: "radial-gradient(ellipse 70% 50% at 15% 10%,color-mix(in srgb, var(--ambient-warm) 6%, transparent) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 85% 90%,color-mix(in srgb, var(--ambient-cool) 5%, transparent) 0%,transparent 60%)",
-        }} />
+        <AppBackground />
 
         <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-30" style={{
           height: "calc(6rem + var(--safe-bottom))",
