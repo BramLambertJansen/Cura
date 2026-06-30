@@ -1,12 +1,13 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
 import { useCuraStore } from "../stores/useCuraStore";
 import { SHADOW_LG } from "./lib/constants";
 import { pageIn, pageTx } from "./lib/motion";
 import { BottomNav } from "./layout/BottomNav";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { NewRoomSheet } from "./sheets/NewRoomSheet";
@@ -134,19 +135,23 @@ function Gate() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Toaster position="top-center" toastOptions={{
-        style: {
-          background: "var(--card)", color: "var(--foreground)",
-          border: "1px solid var(--border)", borderRadius: "0.875rem",
-          fontSize: "0.875rem", fontFamily: "'Plus Jakarta Sans',sans-serif",
-          boxShadow: SHADOW_LG,
-        },
-      }} />
-      <Routes>
-        <Route path="/uitnodiging/:token" element={<Suspense fallback={null}><AcceptInvitePage /></Suspense>} />
-        <Route path="/*" element={<Gate />} />
-      </Routes>
-    </BrowserRouter>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <Toaster position="top-center" toastOptions={{
+          style: {
+            background: "var(--card)", color: "var(--foreground)",
+            border: "1px solid var(--border)", borderRadius: "0.875rem",
+            fontSize: "0.875rem", fontFamily: "'Plus Jakarta Sans',sans-serif",
+            boxShadow: SHADOW_LG,
+          },
+        }} />
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/uitnodiging/:token" element={<Suspense fallback={null}><AcceptInvitePage /></Suspense>} />
+            <Route path="/*" element={<Gate />} />
+          </Routes>
+        </ErrorBoundary>
+      </BrowserRouter>
+    </MotionConfig>
   );
 }

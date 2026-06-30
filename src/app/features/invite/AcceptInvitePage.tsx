@@ -30,10 +30,15 @@ export function AcceptInvitePage() {
   useEffect(() => {
     if (status !== "signedIn" || !token || attempted.current) return;
     attempted.current = true;
-    acceptInvite(token).then((res) => {
-      setResult(res);
-      if (res.ok) setTimeout(() => navigate("/vandaag", { replace: true }), 1200);
-    });
+    acceptInvite(token)
+      .then((res) => {
+        setResult(res);
+        if (res.ok) setTimeout(() => navigate("/vandaag", { replace: true }), 1200);
+      })
+      .catch((e) => {
+        toast.error(e instanceof Error ? e.message : "Uitnodiging accepteren lukte niet");
+        setResult({ ok: false, reason: "invalid" });
+      });
   }, [status, token, acceptInvite, navigate]);
 
   async function handleAuth(fields: { email: string; password: string; displayName: string }) {
