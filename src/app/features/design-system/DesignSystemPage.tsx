@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Plus, Link2, Home, Bell, ChevronRight } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, Leeg,
+  Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, Leeg,
   PillButton, RingProgress, Toggle, VeldInput,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
@@ -150,6 +150,16 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Kaarten">
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Card — algemene kaart-chrome, gebruik dit i.p.v. bg-card/border/shadow zelf opnieuw te schrijven</p>
+          <div className="space-y-2.5">
+            <Card>Statische kaart-inhoud</Card>
+            <Card onClick={() => {}} className="flex items-center justify-between px-4 py-3.5">
+              <span className="text-sm font-medium text-foreground">Tikbare kaart</span>
+              <ChevronRight size={15} className="text-muted-foreground" aria-hidden="true" />
+            </Card>
+          </div>
+        </div>
         <div>
           <p className="text-xs text-muted-foreground mb-2">Kamerkaart</p>
           <KamerKaart room={demoRoom} onClick={() => {}} />

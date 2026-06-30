@@ -100,14 +100,31 @@ export function RingProgress({ value, size = 44, stroke = 3 }: { value: number; 
   );
 }
 
+/** Standard card chrome — bg-card, hairline border, soft shadow. Compose content inside instead of redefining this style inline; pass onClick to render a tappable row. */
+export function Card({
+  children, onClick, className = "px-4 py-3.5", ariaLabel,
+}: { children: ReactNode; onClick?: () => void; className?: string; ariaLabel?: string }) {
+  const chrome = "bg-card rounded-2xl border border-border/60";
+  if (onClick) {
+    return (
+      <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }} onClick={onClick} aria-label={ariaLabel}
+        className={`w-full text-left transition-colors ${chrome} ${className}`}
+        style={{ boxShadow: SHADOW }}>
+        {children}
+      </motion.button>
+    );
+  }
+  return <div className={`${chrome} ${className}`} style={{ boxShadow: SHADOW }}>{children}</div>;
+}
+
 export function Leeg({ icon, text }: { icon: string; text: string }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="flex flex-col items-center gap-4 py-14 px-8 text-center rounded-2xl bg-card border border-border/50"
-      style={{ boxShadow: SHADOW }}>
-      <span className="text-4xl select-none">{icon}</span>
-      <p className="text-[0.875rem] text-muted-foreground leading-relaxed max-w-[200px]"
-        style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", lineHeight: 1.65 }}>{text}</p>
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, ease: [0.25, 0.46, 0.45, 0.94] }}>
+      <Card className="flex flex-col items-center gap-4 py-14 px-8 text-center">
+        <span className="text-4xl select-none">{icon}</span>
+        <p className="text-[0.875rem] text-muted-foreground leading-relaxed max-w-[200px]"
+          style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", lineHeight: 1.65 }}>{text}</p>
+      </Card>
     </motion.div>
   );
 }

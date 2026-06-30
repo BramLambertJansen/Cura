@@ -1,14 +1,14 @@
 import { motion } from "motion/react";
-import { SAGE, SHADOW, INTERVAL_PRESETS } from "../lib/constants";
+import { SAGE, INTERVAL_PRESETS } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
+import { Card } from "../components/shared";
 
 export function IntervalKiezer({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const clamp = (n: number) => Math.min(365, Math.max(1, n));
 
   return (
     <div className="pt-3 px-1 space-y-4">
-      <div className="flex items-center justify-between gap-4 bg-card rounded-2xl px-5 py-4 border border-border/50"
-        style={{ boxShadow: SHADOW }}>
+      <Card className="flex items-center justify-between gap-4 px-5 py-4">
         <div className="text-left">
           <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Interval</p>
           <p className="text-sm text-foreground font-semibold mt-0.5" style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
@@ -43,7 +43,7 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
             +
           </motion.button>
         </div>
-      </div>
+      </Card>
 
       <div className="grid grid-cols-3 gap-2">
         {INTERVAL_PRESETS.map((p) => {

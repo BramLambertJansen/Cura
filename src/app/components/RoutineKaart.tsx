@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Check, ChevronRight, Pencil } from "lucide-react";
 import type { RoutineView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
-import { RingProgress } from "./shared";
+import { RingProgress, Card } from "./shared";
 
 export const RoutineKaartCompact = memo(function RoutineKaartCompact({
   routine, onToggleTask,
@@ -11,7 +11,7 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
   return (
-    <div className="bg-card rounded-2xl px-4 py-4 border border-border/60" style={{ boxShadow: SHADOW }}>
+    <Card className="px-4 py-4">
       <div className="flex items-center gap-3.5 mb-3.5">
         <RingProgress value={total > 0 ? done / total : 0} size={40} stroke={3} />
         <div className="flex-1">
@@ -38,7 +38,7 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({
           </motion.button>
         ))}
       </div>
-    </div>
+    </Card>
   );
 });
 
