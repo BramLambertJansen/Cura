@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Check, Pencil, Copy, Share2, Sparkles } from "lucide-react";
+import { Check, Copy, Share2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { resolveDataMode } from "../../data/store";
 import { SAGE } from "../lib/constants";
 import { spring } from "../lib/motion";
 import { Sheet, SheetHeader, Kop, Avatar, GroupCard } from "../components/shared";
+import { CuraIcon } from "../components/CuraIcon";
 
 export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
@@ -76,7 +77,7 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
           aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
           className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] disabled:opacity-60"
           style={{ background: editing ? SAGE : "var(--secondary)" }}>
-          {editing ? <Check size={15} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
+          {editing ? <CuraIcon name="save" size={15} className="text-white" /> : <CuraIcon name="edit" size={13} className="text-muted-foreground" />}
         </motion.button>
       </div>
 

@@ -1,12 +1,13 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Plus, Trash2, X } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoutineViews } from "../../stores/useViews";
 import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
 import { spring } from "../lib/motion";
 import { cadenceAndLabel } from "../lib/format";
 import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop } from "../components/shared";
+import { CuraIcon } from "../components/CuraIcon";
 
 export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onClose: () => void }) {
   const bundle = useCuraStore((s) => s.bundles.find((b) => b.id === bundleId));
@@ -83,7 +84,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
               <motion.button whileTap={{ scale: 0.85 }} onClick={() => setTasks((p) => p.filter((_, j) => j !== i))}
                 aria-label={`${t} verwijderen`}
                 className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-                <X size={10} className="text-muted-foreground" aria-hidden="true" />
+                <CuraIcon name="close" size={10} className="text-muted-foreground" />
               </motion.button>
             </motion.div>
           ))}
@@ -116,7 +117,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
               aria-label={`${bundle.name} verwijderen`}
               className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
               style={{ color: "var(--destructive)" }}>
-              <Trash2 size={14} aria-hidden="true" /> Routine verwijderen
+              <CuraIcon name="delete" size={14} /> Routine verwijderen
             </motion.button>
           : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
               <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}

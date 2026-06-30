@@ -1,7 +1,8 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
+import { CuraIcon } from "./CuraIcon";
 import { SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
 
@@ -111,7 +112,7 @@ export function SheetHeader({
         whileTap={{ scale: 0.88 }} onClick={onClose}
         aria-label="Sluiten"
         className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-        <X size={15} className="text-muted-foreground" aria-hidden="true" />
+        <CuraIcon name="close" size={15} className="text-muted-foreground" />
       </motion.button>
     </div>
   );

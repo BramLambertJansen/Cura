@@ -1,0 +1,42 @@
+@font-face {
+  font-family: "Cura Icons";
+  src: url("/fonts/cura-icons.woff2") format("woff2"), url("/fonts/cura-icons.woff") format("woff"), url("/fonts/cura-icons.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.cura-icon {
+  font-family: "Cura Icons" !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ci-today::before { content: "\e001"; }
+.ci-home::before { content: "\e002"; }
+.ci-tasks::before { content: "\e003"; }
+.ci-routines::before { content: "\e004"; }
+.ci-together::before { content: "\e005"; }
+.ci-my-tasks::before { content: "\e006"; }
+.ci-all-tasks::before { content: "\e007"; }
+.ci-planning::before { content: "\e008"; }
+.ci-reminder::before { content: "\e009"; }
+.ci-priority::before { content: "\e00a"; }
+.ci-progress::before { content: "\e00b"; }
+.ci-habit::before { content: "\e00c"; }
+.ci-category::before { content: "\e00d"; }
+.ci-groceries::before { content: "\e00e"; }
+.ci-settings::before { content: "\e00f"; }
+.ci-more::before { content: "\e010"; }
+.ci-back::before { content: "\e011"; }
+.ci-close::before { content: "\e012"; }
+.ci-save::before { content: "\e013"; }
+.ci-edit::before { content: "\e014"; }
+.ci-delete::before { content: "\e015"; }

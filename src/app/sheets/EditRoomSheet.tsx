@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { ICONS, ICON_BY_KEY, SAGE } from "../lib/constants";
 import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop } from "../components/shared";
+import { CuraIcon } from "../components/CuraIcon";
 
 export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: () => void }) {
   const room = useCuraStore((s) => s.rooms.find((r) => r.id === roomId));
@@ -76,7 +76,7 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
       </div>
       <AnimatePresence>
         {!confirm
-          ? <motion.button key="del" whileTap={{ scale: 0.96 }} onClick={() => setConfirm(true)} className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2" style={{ color: "var(--destructive)" }}><Trash2 size={14} /> Kamer verwijderen</motion.button>
+          ? <motion.button key="del" whileTap={{ scale: 0.96 }} onClick={() => setConfirm(true)} className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2" style={{ color: "var(--destructive)" }}><CuraIcon name="delete" size={14} /> Kamer verwijderen</motion.button>
           : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
               <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)} className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium">Toch niet</motion.button>
               <motion.button whileTap={{ scale: 0.96 }} onClick={remove} className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold" style={{ background: "var(--destructive)" }}>Ja, verwijder</motion.button>

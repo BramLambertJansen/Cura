@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { roomIcon } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
 import { Leeg, PageHeader, HintBanner } from "../../components/shared";
+import { CuraIcon } from "../../components/CuraIcon";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { useSheets } from "../../sheetContext";
@@ -37,12 +38,12 @@ export function HuisPage() {
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedRoomId(null)}
               aria-label="Terug naar kamers"
               className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-              <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
+              <CuraIcon name="back" size={16} className="text-foreground" />
             </motion.button>
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => openEditRoom(room.id)}
               aria-label={`${room.name} bewerken`}
               className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-              <Pencil size={14} className="text-foreground" aria-hidden="true" />
+              <CuraIcon name="edit" size={14} className="text-foreground" />
             </motion.button>
           </div>
           <div className="absolute bottom-5 left-5">

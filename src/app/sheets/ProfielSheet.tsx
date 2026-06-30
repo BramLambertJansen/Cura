@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Bell, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, UserRound } from "lucide-react";
+import { Bell, ChevronRight, HelpCircle, Home, LogOut, Moon, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
+import { CuraIcon } from "../components/CuraIcon";
 
 export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
   const { signOut } = useAuth();
@@ -28,7 +29,7 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => toast("Profiel bewerken — binnenkort")}
           aria-label="Profiel bewerken"
           className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-          <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />
+          <CuraIcon name="edit" size={13} className="text-muted-foreground" />
         </motion.button>
       </div>
 

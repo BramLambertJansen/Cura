@@ -1,9 +1,10 @@
 import { memo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, ChevronRight, Pencil } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import type { RoutineView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { RingProgress, Card } from "./shared";
+import { CuraIcon } from "./CuraIcon";
 
 export const RoutineKaartCompact = memo(function RoutineKaartCompact({
   routine, onToggleTask,
@@ -108,7 +109,7 @@ export const RoutineKaart = memo(function RoutineKaart({
                   aria-label={`${routine.name} bewerken`}
                   className="flex items-center gap-2 text-xs font-medium py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] rounded-lg px-1"
                   style={{ color: "var(--muted-foreground)" }}>
-                  <Pencil size={12} aria-hidden="true" />
+                  <CuraIcon name="edit" size={12} />
                   Routine bewerken
                 </motion.button>
               </div>

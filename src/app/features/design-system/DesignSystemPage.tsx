@@ -11,6 +11,13 @@ import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { Logo } from "../../components/Logo";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
+import { CuraIcon, type CuraIconName } from "../../components/CuraIcon";
+
+const CURA_ICON_NAMES: CuraIconName[] = [
+  "today", "home", "tasks", "routines", "together", "my-tasks", "all-tasks",
+  "planning", "reminder", "priority", "progress", "habit", "category", "groceries",
+  "settings", "more", "back", "close", "save", "edit", "delete",
+];
 
 /**
  * Living style guide — not a tab, no route in BottomNav. Visit /dev/design-system
@@ -123,6 +130,18 @@ export function DesignSystemPage() {
         <div className="flex flex-wrap items-center gap-3">
           <IconBadge icon={<Link2 size={16} />} />
           <IconBadge icon={<Home size={16} />} tone="muted" />
+        </div>
+      </Section>
+
+      <Section title="Iconfont (Cura Icons)">
+        <p className="text-sm text-muted-foreground -mt-1">Custom iconfont — gebruik via <code>&lt;CuraIcon name="..." /&gt;</code> (<code>src/app/components/CuraIcon.tsx</code>). Iconen zonder huidig gebruik in de app staan hier al klaar voor latere features.</p>
+        <div className="grid grid-cols-4 gap-3">
+          {CURA_ICON_NAMES.map((name) => (
+            <div key={name} className="flex flex-col items-center gap-1.5 rounded-2xl bg-card border border-border/60 py-4" style={{ boxShadow: "var(--shadow-card)" }}>
+              <CuraIcon name={name} size={26} className="text-primary" />
+              <span className="text-[0.6875rem] text-muted-foreground">{name}</span>
+            </div>
+          ))}
         </div>
       </Section>
 

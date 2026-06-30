@@ -1,16 +1,17 @@
 import type { CSSProperties } from "react";
 import { NavLink, useLocation } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { CalendarDays, Home, RefreshCw, Heart, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
+import { CuraIcon } from "../components/CuraIcon";
 import { SAGE, MUTED_FG, DESTRUCTIVE } from "../lib/constants";
 
 const LEFT = [
-  { to: "/vandaag", label: "Vandaag", icon: (a: boolean) => <CalendarDays size={20} strokeWidth={a ? 2.4 : 1.7} /> },
-  { to: "/huis", label: "Huis", icon: (a: boolean) => <Home size={20} strokeWidth={a ? 2.4 : 1.7} /> },
+  { to: "/vandaag", label: "Vandaag", icon: () => <CuraIcon name="today" size={20} /> },
+  { to: "/huis", label: "Huis", icon: () => <CuraIcon name="home" size={20} /> },
 ];
 const RIGHT = [
-  { to: "/routines", label: "Routines", icon: (a: boolean) => <RefreshCw size={19} strokeWidth={a ? 2.4 : 1.7} /> },
-  { to: "/samen", label: "Samen", icon: (a: boolean) => <Heart size={19} strokeWidth={a ? 2.4 : 1.7} fill={a ? "currentColor" : "none"} /> },
+  { to: "/routines", label: "Routines", icon: () => <CuraIcon name="routines" size={19} /> },
+  { to: "/samen", label: "Samen", icon: () => <CuraIcon name="together" size={19} /> },
 ];
 
 function NavTab({ tab }: { tab: typeof LEFT[number] }) {
@@ -34,11 +35,11 @@ function NavTab({ tab }: { tab: typeof LEFT[number] }) {
         />
       )}
       <motion.div
-        animate={{ color: active ? SAGE : MUTED_FG, y: active ? -1 : 0 }}
+        animate={{ color: active ? SAGE : MUTED_FG, y: active ? -1 : 0, scale: active ? 1.1 : 1 }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
         className="relative z-10"
       >
-        {tab.icon(active)}
+        {tab.icon()}
       </motion.div>
       <motion.span
         animate={{ color: active ? SAGE : MUTED_FG, fontWeight: active ? 600 : 500 }}
