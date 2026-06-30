@@ -50,10 +50,12 @@ This split is deliberate: domain schemas (`src/data/schemas.ts`) store no derive
 |---|---|---|
 | 1 | Vandaag, Huis, taak toevoegen — solo, `local` data mode | Built |
 | 2 | Routines + dichtheid-feedback | Built |
-| 3 | Samen, onboarding/invite-flow, `cloud` data mode (Supabase auth/RLS/realtime) | In progress — see `.mcp.json` / Supabase MCP |
+| 3 | Samen, onboarding/invite-flow, `cloud` data mode (Supabase auth/RLS) | Built — Realtime explicitly deferred (see below) |
 | 4 | AI-invoer (natuurlijke taal bij toevoegen/aanpassen) | Not started |
 
 Phase 1–2 work with zero backend (`VITE_DATA_MODE=local`, seeded via `src/data/local/seed.ts`). Switching to `VITE_DATA_MODE=cloud` swaps in `SupabaseStore` without touching feature code.
+
+**Phase 3 implementation notes:** schema + RLS live in `supabase/migrations/20260630000000_init.sql` (apply manually via the Supabase Dashboard SQL editor — this repo's sandbox has no live DB access, so it's never been run automatically). Email/password auth via `AuthProvider`/`AuthPage`; "create your first household" onboarding via `CreateHouseholdPage`; invites are shareable links (`/uitnodiging/:token`, `AcceptInvitePage`) backed by the `accept_invite`/`create_household` Postgres RPCs, not typed codes. `SupabaseStore` (`src/data/cloud/supabaseStore.ts`) resolves `members.id` from the Supabase auth uid via a private `memberIdFor()` helper wherever it writes `completedById`/`claimedById`/`createdById`/`ownerId` — those columns reference `members.id`, never `auth.uid()` directly. **Realtime is deferred**: `listCompletions` stays pull-based, so the Samen feed only picks up the other person's completions on refresh, not live.
 
 ## 5. Features
 
@@ -64,8 +66,10 @@ Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase ver
 - **Routines** (`src/app/features/routines/RoutinesPage.tsx`) — bundels van taken, dichtheid-feedback (ratio-over-venster), routine toevoegen/bewerken (`NewRoutineSheet`, `EditRoutineSheet`, `IntervalKiezer`).
 - **Samen** (`src/app/features/samen/SamenPage.tsx`) — chronologische "vandaag in huis"-feed, huishouden-instellingen-ingang (`HouseholdSheet`).
 - **Taak toevoegen** (`AddTaskSheet`) — FAB-flow, één invoerveld + inklapbare opties, belandt standaard in de pool.
-- **Profiel** (`ProfielSheet`) — eigen weergavenaam/instellingen.
-- Nog niet gebouwd: onboarding/invite-flow en cloud-auth (Phase 3, zie §4), AI-invoer (Phase 4).
+- **Profiel** (`ProfielSheet`) — eigen weergavenaam/instellingen, uitloggen.
+- **Auth & onboarding** (`src/app/features/auth/`) — `AuthPage` (e-mail/wachtwoord login + registratie), `CreateHouseholdPage` ("noem je huishouden" voor een ingelogde gebruiker zonder huishouden). Gated in `App.tsx`'s `Gate`-component via `useAuth()`; in `local` mode resolved `AuthProvider` synchroon naar "ingelogd" (CLAUDE.md §4).
+- **Uitnodigen** (`src/app/features/invite/AcceptInvitePage.tsx`, route `/uitnodiging/:token`) — deelbare link, geen typecode; `HouseholdSheet` genereert de link via `createInvite`.
+- Nog niet gebouwd: AI-invoer (Phase 4); Realtime-updates op de Samen-feed (Phase 3, bewust uitgesteld, zie §4).
 
 ## 6. Toegankelijkheid (A11Y) — verplicht
 

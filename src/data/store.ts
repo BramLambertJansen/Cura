@@ -51,6 +51,12 @@ export interface DataStore {
    */
   getHouseholdsForUser(userId: string): Promise<Household[]>;
   listMembers(householdId: string): Promise<Member[]>;
+  /**
+   * "Create your first household" onboarding — for a signed-in user with zero
+   * households. Atomically creates the household, the creator's member row,
+   * and household membership. Disabled in local mode (always exactly one).
+   */
+  createHousehold(name: string): Promise<Household>;
 
   // ── Invites ──────────────────────────────────────────────────────────────────
   // Disabled in local mode (single-device). Implementations should throw a clear,

@@ -2,10 +2,12 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Bell, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, UserRound } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
+  const { signOut } = useAuth();
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
@@ -59,7 +61,7 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
         <InstRij icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" />} onClick={() => toast("Help — binnenkort")} />
         <InstRij icon={<LogOut size={15} style={{ color: "var(--destructive)" }} />}
           label={<span style={{ color: "var(--destructive)" }}>Uitloggen</span>} right={null}
-          onClick={() => toast("Uitloggen?", { description: "Je kunt altijd terugkomen.", action: { label: "Uitloggen", onClick: () => toast("Tot de volgende keer.") } })} />
+          onClick={() => toast("Uitloggen?", { description: "Je kunt altijd terugkomen.", action: { label: "Uitloggen", onClick: () => { signOut(); toast("Tot de volgende keer."); } } })} />
       </GroupCard>
       <p className="text-center text-xs text-muted-foreground mt-7">Cura · versie 0.1</p>
     </Sheet>

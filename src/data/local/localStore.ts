@@ -58,6 +58,10 @@ export class LocalStore implements DataStore {
     return this.db.members.filter((m) => m.householdId === householdId);
   }
 
+  async createHousehold(): Promise<Household> {
+    throw new Error("Creating a household isn't available in local mode (there's always exactly one).");
+  }
+
   async createInvite(): Promise<HouseholdInvite> {
     throw new Error("Invites are not available in local mode (single device, solo).");
   }
