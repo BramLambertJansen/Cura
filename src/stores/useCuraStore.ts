@@ -26,8 +26,10 @@ interface CuraState {
 
   init: () => Promise<void>;
   createHousehold: (name: string) => Promise<void>;
+  updateHousehold: (name: string) => Promise<void>;
   createInvite: () => Promise<HouseholdInvite | undefined>;
   acceptInvite: (token: string) => Promise<AcceptInviteResult>;
+  revokeInvite: (token: string) => Promise<void>;
 
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   claimTask: (taskId: string, claimed: boolean) => Promise<void>;
@@ -108,6 +110,19 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     await get().init();
   },
 
+  async updateHousehold(name) {
+    try {
+      const store = await getDataStore();
+      const { householdId } = get();
+      if (!householdId) return;
+      const updated = await store.updateHousehold(householdId, name);
+      toast("Naam opgeslagen");
+      set({ households: get().households.map((h) => (h.id === householdId ? updated : h)) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Opslaan lukte niet");
+    }
+  },
+
   async createInvite() {
     const store = await getDataStore();
     const { householdId } = get();
@@ -128,22 +143,37 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     return result;
   },
 
+  async revokeInvite(token) {
+    try {
+      const store = await getDataStore();
+      await store.revokeInvite(token);
+      toast("Link ingetrokken");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Intrekken lukte niet");
+    }
+  },
+
   async toggleTask(taskId, done) {
     try {
       const store = await getDataStore();
-      const { currentUserId, tasks } = get();
+      const { currentUserId, tasks, completions } = get();
       if (!currentUserId) return;
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
       if (done) {
-        await store.completeTask(taskId, currentUserId);
+        const completion = await store.completeTask(taskId, currentUserId);
         toast.success(`${task.title} gedaan`, { description: "Zichtbaar voor de rest van het huishouden." });
+        set({ completions: [...get().completions, completion] });
       } else {
+        // Mirrors uncompleteTask's own "remove the most recent one" rule, so we
+        // know which row disappeared without refetching the whole history.
+        const latest = completions
+          .filter((c) => c.taskId === taskId)
+          .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
         await store.uncompleteTask(taskId);
         toast(`${task.title} terug op de lijst`);
+        if (latest) set({ completions: get().completions.filter((c) => c.id !== latest.id) });
       }
-      const { householdId } = get();
-      if (householdId) set({ completions: await store.listCompletions(householdId) });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Afvinken lukte niet");
     }

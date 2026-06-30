@@ -36,14 +36,22 @@ const formatDuration = (min?: number): string | undefined =>
 const formatTime = (iso: string): string =>
   new Date(iso).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
 
-/** Most recent completion for a task, or undefined. */
-const latestCompletion = (
-  taskId: string,
+/**
+ * taskId -> most recent completion, built in a single O(n) pass. Callers used to
+ * filter+sort the full completions array per task (O(tasks * completions)); this
+ * lets a hook build the map once and every toTaskView/toRoomView/toRoutineView
+ * call below just look it up.
+ */
+export function buildLatestCompletionMap(
   completions: TaskCompletion[],
-): TaskCompletion | undefined =>
-  completions
-    .filter((c) => c.taskId === taskId)
-    .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
+): Map<string, TaskCompletion> {
+  const map = new Map<string, TaskCompletion>();
+  for (const c of completions) {
+    const existing = map.get(c.taskId);
+    if (!existing || c.completedAt > existing.completedAt) map.set(c.taskId, c);
+  }
+  return map;
+}
 
 // ─── Task "done" + soft due hint ─────────────────────────────────────────────
 
@@ -80,12 +88,12 @@ function dueHint(task: Task, latest?: TaskCompletion, now = Date.now()): string 
 
 export function toTaskView(
   task: Task,
-  completions: TaskCompletion[],
+  latestByTask: Map<string, TaskCompletion>,
   rooms: Room[],
   members: Member[],
   now = Date.now(),
 ): TaskView {
-  const latest = latestCompletion(task.id, completions);
+  const latest = latestByTask.get(task.id);
   const done = isDone(task, latest, now);
   return {
     id: task.id,
@@ -112,13 +120,13 @@ export function toTaskView(
 export function toRoomView(
   room: Room,
   tasks: Task[],
-  completions: TaskCompletion[],
+  latestByTask: Map<string, TaskCompletion>,
   members: Member[],
   now = Date.now(),
 ): RoomView {
   const roomTasks = tasks
     .filter((t) => t.roomId === room.id)
-    .map((t) => toTaskView(t, completions, [room], members, now));
+    .map((t) => toTaskView(t, latestByTask, [room], members, now));
   const openCount = roomTasks.filter((t) => !t.done).length;
   const anyDue = roomTasks.some((t) => t.dueHint === "Waarschijnlijk weer toe");
   return {
@@ -158,6 +166,7 @@ export function toRoutineView(
   bundle: Bundle,
   tasks: Task[],
   completions: TaskCompletion[],
+  latestByTask: Map<string, TaskCompletion>,
   members: Member[],
   now = Date.now(),
 ): RoutineView {
@@ -182,7 +191,7 @@ export function toRoutineView(
     trigger: bundle.trigger,
     tasks: tasks
       .filter((t) => t.bundleId === bundle.id)
-      .map((t) => toTaskView(t, completions, [], members, now)),
+      .map((t) => toTaskView(t, latestByTask, [], members, now)),
     doneInWindow,
     windowSize,
     windowLabel: bundle.windowLabel,

@@ -8,12 +8,17 @@ export function AuthPage() {
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<AuthMode>("signin");
   const [busy, setBusy] = useState(false);
+  const [pendingConfirmation, setPendingConfirmation] = useState(false);
 
   async function handleSubmit(fields: { email: string; password: string; displayName: string }) {
     setBusy(true);
     try {
-      if (mode === "signup") await signUp(fields.email, fields.password, fields.displayName);
-      else await signIn(fields.email, fields.password);
+      if (mode === "signup") {
+        const { needsConfirmation } = await signUp(fields.email, fields.password, fields.displayName);
+        if (needsConfirmation) setPendingConfirmation(true);
+      } else {
+        await signIn(fields.email, fields.password);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Inloggen lukte niet");
     } finally {
@@ -30,12 +35,19 @@ export function AuthPage() {
             {mode === "signin" ? "Welkom terug." : "Maak een account aan om te beginnen."}
           </p>
         </div>
-        <AuthForm
-          mode={mode} busy={busy} onSubmit={handleSubmit}
-          submitLabel={mode === "signin" ? "Inloggen" : "Account aanmaken"}
-        />
+        {pendingConfirmation ? (
+          <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground leading-relaxed">
+            Check je e-mail om je account te bevestigen, log daarna hier in.
+          </p>
+        ) : (
+          <AuthForm
+            mode={mode} busy={busy} onSubmit={handleSubmit}
+            submitLabel={mode === "signin" ? "Inloggen" : "Account aanmaken"}
+          />
+        )}
         <motion.button
-          whileTap={{ scale: 0.97 }} onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setPendingConfirmation(false); }}
           className="w-full text-center text-sm text-muted-foreground mt-6">
           {mode === "signin" ? "Nog geen account? Registreren" : "Al een account? Inloggen"}
         </motion.button>

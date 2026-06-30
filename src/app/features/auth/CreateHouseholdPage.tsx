@@ -30,7 +30,7 @@ export function CreateHouseholdPage() {
         <div className="space-y-3 text-left">
           <VeldInput value={naam} onChange={setNaam} placeholder="Bijv. Thuis" ariaLabel="Naam van je huishouden" autoFocus onEnter={submit} />
           <motion.button
-            whileTap={{ scale: 0.97 }} onClick={submit} disabled={!naam.trim() || busy}
+            whileTap={{ scale: 0.97 }} onClick={submit} disabled={!naam.trim() || busy} aria-busy={busy}
             className="w-full py-4 rounded-2xl text-white text-sm font-semibold disabled:opacity-40 transition-opacity"
             style={{
               background: "var(--gradient-primary)",
@@ -38,6 +38,7 @@ export function CreateHouseholdPage() {
             }}>
             {busy ? "Even geduld…" : "Huishouden aanmaken"}
           </motion.button>
+          <p role="status" aria-live="polite" className="sr-only">{busy ? "Huishouden wordt aangemaakt…" : ""}</p>
         </div>
       </div>
     </div>

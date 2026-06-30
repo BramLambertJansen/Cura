@@ -1,9 +1,10 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { Check, ChevronRight } from "lucide-react";
 import type { RoomView } from "../../data/types";
 import { SHADOW, roomIcon } from "../lib/constants";
 
-export function KamerKaart({
+export const KamerKaart = memo(function KamerKaart({
   room, onClick,
 }: { room: RoomView; onClick: () => void }) {
   const ic = roomIcon(room.iconKey);
@@ -50,13 +51,13 @@ export function KamerKaart({
             </span>
           </div>
         ) : (
-          <div className="w-6 h-6 rounded-full flex items-center justify-center"
+          <div className="w-6 h-6 rounded-full flex items-center justify-center" aria-hidden="true"
             style={{ background: `${c}14` }}>
             <Check size={11} strokeWidth={2.5} style={{ color: c, opacity: 0.65 }} />
           </div>
         )}
-        <ChevronRight size={15} className="text-muted-foreground/40" />
+        <ChevronRight size={15} className="text-muted-foreground/40" aria-hidden="true" />
       </div>
     </motion.button>
   );
-}
+});

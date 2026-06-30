@@ -14,7 +14,6 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
   const me = members.find((m) => m.userId === currentUserId);
 
   const [notif, setNotif] = useState(true);
-  const [donker, setDonker] = useState(false);
 
   const naam = me?.displayName ?? "Jij";
 
@@ -27,8 +26,9 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
           <p className="text-sm text-muted-foreground mt-0.5">{household?.name ?? "Thuis"}</p>
         </div>
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => toast("Profiel bewerken — binnenkort")}
-          className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
-          <Pencil size={13} className="text-muted-foreground" />
+          aria-label="Profiel bewerken"
+          className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+          <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />
         </motion.button>
       </div>
 
@@ -44,21 +44,21 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
           <p className="text-sm font-semibold text-foreground">{household?.name ?? "Thuis"}</p>
           <p className="text-xs text-muted-foreground">{members.length} {members.length === 1 ? "lid" : "leden"}</p>
         </div>
-        <ChevronRight size={15} className="text-muted-foreground" />
+        <ChevronRight size={15} className="text-muted-foreground" aria-hidden="true" />
       </motion.button>
 
       <Kop>Instellingen</Kop>
       <div className="mb-7">
         <GroupCard>
           <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={(v) => { setNotif(v); toast(v ? "Meldingen aan" : "Meldingen uit"); }} />} />
-          <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<Toggle checked={donker} label="Donkere modus" onChange={(v) => { setDonker(v); toast(v ? "Donker aan" : "Donker uit"); }} />} />
-          <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" />} onClick={() => toast("Account — binnenkort")} />
+          <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Donkere modus — binnenkort")} />
+          <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Account — binnenkort")} />
         </GroupCard>
       </div>
 
       <Kop>Meer</Kop>
       <GroupCard>
-        <InstRij icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" />} onClick={() => toast("Help — binnenkort")} />
+        <InstRij icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Help — binnenkort")} />
         <InstRij icon={<LogOut size={15} style={{ color: "var(--destructive)" }} />}
           label={<span style={{ color: "var(--destructive)" }}>Uitloggen</span>} right={null}
           onClick={() => toast("Uitloggen?", { description: "Je kunt altijd terugkomen.", action: { label: "Uitloggen", onClick: () => { signOut(); toast("Tot de volgende keer."); } } })} />

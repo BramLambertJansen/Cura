@@ -57,6 +57,8 @@ export interface DataStore {
    * and household membership. Disabled in local mode (always exactly one).
    */
   createHousehold(name: string): Promise<Household>;
+  /** Renames the household. Disabled in local mode (there's nothing to sync the rename to). */
+  updateHousehold(householdId: string, name: string): Promise<Household>;
 
   // ── Invites ──────────────────────────────────────────────────────────────────
   // Disabled in local mode (single-device). Implementations should throw a clear,
@@ -69,6 +71,8 @@ export interface DataStore {
    * line, not a migration.
    */
   acceptInvite(token: string, userId: string): Promise<{ ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" }>;
+  /** Revokes a not-yet-accepted invite so its link stops working. Disabled in local mode. */
+  revokeInvite(token: string): Promise<void>;
 
   // ── Rooms ────────────────────────────────────────────────────────────────────
   listRooms(householdId: string): Promise<Room[]>;

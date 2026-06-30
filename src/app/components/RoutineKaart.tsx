@@ -1,17 +1,17 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, ChevronRight, Pencil } from "lucide-react";
 import type { RoutineView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
-import { Checkbox, RingProgress } from "./shared";
+import { RingProgress, Card } from "./shared";
 
-export function RoutineKaartCompact({
+export const RoutineKaartCompact = memo(function RoutineKaartCompact({
   routine, onToggleTask,
 }: { routine: RoutineView; onToggleTask: (taskId: string) => void }) {
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
   return (
-    <div className="bg-card rounded-2xl px-4 py-4 border border-border/60" style={{ boxShadow: SHADOW }}>
+    <Card className="px-4 py-4">
       <div className="flex items-center gap-3.5 mb-3.5">
         <RingProgress value={total > 0 ? done / total : 0} size={40} stroke={3} />
         <div className="flex-1">
@@ -22,8 +22,15 @@ export function RoutineKaartCompact({
       </div>
       <div className="space-y-2.5">
         {routine.tasks.map((t) => (
-          <motion.button key={t.id} whileTap={{ scale: 0.97 }} onClick={() => onToggleTask(t.id)} className="flex items-center gap-2.5 w-full">
-            <div className="w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-all duration-200"
+          <motion.button
+            key={t.id}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => onToggleTask(t.id)}
+            role="checkbox"
+            aria-checked={t.done}
+            aria-label={t.done ? `${t.title} als niet gedaan markeren` : `${t.title} afvinken`}
+            className="flex items-center gap-2.5 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] rounded-lg">
+            <div className="w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-all duration-200" aria-hidden="true"
               style={{ background: t.done ? SAGE : "transparent", borderColor: t.done ? SAGE : "color-mix(in srgb, var(--outline-color) 32%, transparent)" }}>
               {t.done && <Check size={8} strokeWidth={3.5} className="text-white" />}
             </div>
@@ -31,11 +38,11 @@ export function RoutineKaartCompact({
           </motion.button>
         ))}
       </div>
-    </div>
+    </Card>
   );
-}
+});
 
-export function RoutineKaart({
+export const RoutineKaart = memo(function RoutineKaart({
   routine, onToggleTask, onEdit,
 }: { routine: RoutineView; onToggleTask: (taskId: string) => void; onEdit: () => void }) {
   const [open, setOpen] = useState(false);
@@ -66,7 +73,7 @@ export function RoutineKaart({
           </p>
         </div>
         <motion.div animate={{ rotate: open ? 90 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }}>
-          <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+          <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
         </motion.div>
       </motion.button>
       <AnimatePresence initial={false}>
@@ -74,10 +81,25 @@ export function RoutineKaart({
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ type: "spring", stiffness: 360, damping: 34 }} className="overflow-hidden">
             <div className="px-5 pb-4 pt-2 border-t border-border/40 space-y-3.5">
               {routine.tasks.map((t) => (
-                <motion.div key={t.id} whileTap={{ scale: 0.97 }} onClick={() => onToggleTask(t.id)} className="flex items-center gap-3 cursor-pointer">
-                  <Checkbox checked={t.done} onToggle={() => onToggleTask(t.id)} size="md" label={t.title} />
+                <motion.button
+                  key={t.id}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => onToggleTask(t.id)}
+                  role="checkbox"
+                  aria-checked={t.done}
+                  aria-label={t.done ? `${t.title} als niet gedaan markeren` : `${t.title} afvinken`}
+                  className="flex items-center gap-3 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1 rounded-lg">
+                  <div className="w-6 h-6 relative flex-shrink-0 rounded-full" aria-hidden="true">
+                    <div className="absolute inset-0 rounded-full border-2 transition-colors duration-200"
+                      style={{ background: t.done ? SAGE : "transparent", borderColor: t.done ? SAGE : "color-mix(in srgb, var(--outline-color) 28%, transparent)" }} />
+                    {t.done && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Check size={10} strokeWidth={3.5} className="text-white" />
+                      </div>
+                    )}
+                  </div>
                   <span className={`text-sm text-left flex-1 ${t.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{t.title}</span>
-                </motion.div>
+                </motion.button>
               ))}
               <div className="pt-1 border-t border-border/30">
                 <motion.button
@@ -96,4 +118,4 @@ export function RoutineKaart({
       </AnimatePresence>
     </div>
   );
-}
+});

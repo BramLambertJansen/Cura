@@ -4,14 +4,8 @@ import { Check, ChevronLeft, Plus, X } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
 import { spring } from "../lib/motion";
+import { cadenceAndLabel } from "../lib/format";
 import { Sheet, SheetHeader, VeldInput, DubbelKnop } from "../components/shared";
-
-function cadenceAndLabel(triggerId: string): { cadence: "daily" | "weekly"; windowLabel: string } {
-  if (["ochtend", "middag", "avond", "dagelijks"].includes(triggerId)) {
-    return { cadence: "daily", windowLabel: triggerId === "dagelijks" ? "dagen" : triggerId + "en" };
-  }
-  return { cadence: "weekly", windowLabel: triggerId === "weekend" ? "weekenden" : "weken" };
-}
 
 export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
   const createBundle = useCuraStore((s) => s.createBundle);

@@ -13,24 +13,47 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const createInvite = useCuraStore((s) => s.createInvite);
+  const updateHousehold = useCuraStore((s) => s.updateHousehold);
+  const revokeInvite = useCuraStore((s) => s.revokeInvite);
 
   const [naam, setNaam] = useState(household?.name ?? "Thuis");
   const [editing, setEditing] = useState(false);
-  const [link, setLink] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const isLocal = resolveDataMode() === "local";
+  const link = token ? `${window.location.origin}/uitnodiging/${token}` : null;
 
+  async function saveName() {
+    const trimmed = naam.trim();
+    if (!trimmed || trimmed === household?.name) {
+      setEditing(false);
+      return;
+    }
+    setSavingName(true);
+    try {
+      await updateHousehold(trimmed);
+    } finally {
+      setSavingName(false);
+      setEditing(false);
+    }
+  }
   async function genLink() {
     if (busy) return;
     setBusy(true);
     try {
       const invite = await createInvite();
-      if (invite) setLink(`${window.location.origin}/uitnodiging/${invite.token}`);
+      if (invite) setToken(invite.token);
     } finally {
       setBusy(false);
     }
+  }
+  async function revokeLink() {
+    if (!token) return;
+    await revokeInvite(token);
+    setToken(null);
   }
   function copy() {
     if (!link) return;
@@ -48,9 +71,10 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
         <input value={naam} onChange={(e) => setNaam(e.target.value)} disabled={!editing}
           className="flex-1 rounded-2xl px-4 py-3.5 text-foreground outline-none text-sm transition-all"
           style={{ background: editing ? "var(--secondary)" : "var(--muted)", boxShadow: editing ? `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "none" }} />
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => { if (editing) toast("Naam opgeslagen — binnenkort"); setEditing(!editing); }}
+        <motion.button whileTap={{ scale: 0.9 }} disabled={savingName}
+          onClick={() => { if (editing) saveName(); else setEditing(true); }}
           aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
-          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] disabled:opacity-60"
           style={{ background: editing ? SAGE : "var(--secondary)" }}>
           {editing ? <Check size={15} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
         </motion.button>
@@ -108,7 +132,11 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
                   <motion.button whileTap={{ scale: 0.95 }} onClick={copy} className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}><Copy size={12} /> Kopieer</motion.button>
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-1.5" style={{ background: "#25D366" }}><Share2 size={12} /> WhatsApp</motion.button>
                 </div>
-                <motion.button whileTap={{ scale: 0.95 }} onClick={genLink} disabled={busy} className="w-full text-xs text-center text-muted-foreground">Nieuwe link genereren</motion.button>
+                <p className="text-xs text-center text-muted-foreground/80">Geldig tot 7 dagen na aanmaken, werkt één keer.</p>
+                <div className="flex items-center justify-center gap-4">
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={genLink} disabled={busy} className="text-xs text-center text-muted-foreground">Nieuwe link genereren</motion.button>
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={revokeLink} className="text-xs text-center" style={{ color: "var(--destructive)" }}>Intrekken</motion.button>
+                </div>
               </motion.div>
           }
         </>

@@ -62,12 +62,24 @@ export class LocalStore implements DataStore {
     throw new Error("Creating a household isn't available in local mode (there's always exactly one).");
   }
 
+  async updateHousehold(householdId: string, name: string): Promise<Household> {
+    const household = this.db.households.find((h) => h.id === householdId);
+    if (!household) throw new Error(`Household not found: ${householdId}`);
+    household.name = name;
+    this.persist();
+    return household;
+  }
+
   async createInvite(): Promise<HouseholdInvite> {
     throw new Error("Invites are not available in local mode (single device, solo).");
   }
 
   async acceptInvite(): Promise<{ ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" }> {
     return { ok: false, reason: "invalid" };
+  }
+
+  async revokeInvite(): Promise<void> {
+    throw new Error("Invites are not available in local mode (single device, solo).");
   }
 
   async listRooms(householdId: string): Promise<Room[]> {

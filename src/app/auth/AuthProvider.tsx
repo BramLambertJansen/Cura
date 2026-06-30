@@ -8,7 +8,9 @@ export type AuthStatus = "loading" | "signedOut" | "signedIn";
 interface AuthContextValue {
   status: AuthStatus;
   userId: string | null;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  /** Resolves with needsConfirmation: true when the Supabase project requires
+   *  email confirmation — signUp then succeeds without starting a session. */
+  signUp: (email: string, password: string, displayName: string) => Promise<{ needsConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -42,12 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     status,
     userId,
     async signUp(email, password, displayName) {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { displayName } },
       });
       if (error) throw error;
+      // No session back means the project requires email confirmation —
+      // the caller needs to tell the user to check their inbox.
+      return { needsConfirmation: !data.session };
     },
     async signIn(email, password) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });

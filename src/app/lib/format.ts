@@ -22,3 +22,11 @@ export function intervalLabel(days: number): string {
   if (days === 30) return "Maandelijks";
   return `Elke ${days} dagen`;
 }
+
+/** Derives a routine's completion-window cadence + label from its trigger id (used by Nieuw/Bewerk routine sheets). */
+export function cadenceAndLabel(triggerId: string): { cadence: "daily" | "weekly"; windowLabel: string } {
+  if (["ochtend", "middag", "avond", "dagelijks"].includes(triggerId)) {
+    return { cadence: "daily", windowLabel: triggerId === "dagelijks" ? "dagen" : triggerId + "en" };
+  }
+  return { cadence: "weekly", windowLabel: triggerId === "weekend" ? "weekenden" : "weken" };
+}

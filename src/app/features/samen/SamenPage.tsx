@@ -3,9 +3,9 @@ import { motion } from "motion/react";
 import { Check, ChevronRight, Link2 } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed } from "../../../stores/useViews";
-import { SAGE, SHADOW } from "../../lib/constants";
+import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Leeg, PageHeader, IconBadge } from "../../components/shared";
+import { Leeg, PageHeader, IconBadge, Card } from "../../components/shared";
 import { useSheets } from "../../sheetContext";
 
 export function SamenPage() {
@@ -27,7 +27,7 @@ export function SamenPage() {
 
       {completedToday.length === 0
         ? <Leeg icon="🤍" text="Nog niks gedaan vandaag. De dag is jong." />
-        : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-1.5 mb-8">
+        : <motion.div variants={stagger} initial="initial" animate="animate" aria-live="polite" className="space-y-1.5 mb-8">
             {completedToday.map((activity, i) => (
               <motion.div key={`${activity.taskId}-${activity.doneAt}`} variants={fadeUp} className="flex gap-3 items-stretch">
                 <div className="flex flex-col items-center pt-2 flex-shrink-0">
@@ -38,7 +38,7 @@ export function SamenPage() {
                   {i < completedToday.length - 1 && <div className="w-px flex-1 bg-border mt-1.5" />}
                 </div>
                 <div className="flex-1 pb-3">
-                  <div className="bg-card rounded-2xl px-4 py-3.5 border border-border/60" style={{ boxShadow: SHADOW }}>
+                  <Card>
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-foreground leading-snug">{activity.title}</p>
                       <span className="text-xs font-semibold flex-shrink-0" style={{ color: SAGE }}>{activity.doneBy}</span>
@@ -46,20 +46,18 @@ export function SamenPage() {
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {activity.room}{activity.doneAt && ` · ${new Date(activity.doneAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}`}
                     </p>
-                  </div>
+                  </Card>
                 </div>
               </motion.div>
             ))}
           </motion.div>
       }
 
-      <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }} onClick={openHousehold}
-        className="w-full flex items-center gap-3.5 bg-card rounded-2xl px-4 py-4 border border-border/60 transition-colors"
-        style={{ boxShadow: SHADOW }}>
+      <Card onClick={openHousehold} className="flex items-center gap-3.5 px-4 py-4">
         <IconBadge icon={<Link2 size={16} />} size={36} />
         <span className="flex-1 text-sm font-semibold text-foreground text-left">Huishouden beheren</span>
-        <ChevronRight size={15} className="text-muted-foreground" />
-      </motion.button>
+        <ChevronRight size={15} className="text-muted-foreground" aria-hidden="true" />
+      </Card>
     </div>
   );
 }

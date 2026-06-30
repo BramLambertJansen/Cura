@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "motion/react";
 import { RefreshCw } from "lucide-react";
 import type { TaskView } from "../../data/types";
@@ -5,7 +6,7 @@ import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
 import { Checkbox } from "./shared";
 
-export function TaakRij({
+export const TaakRij = memo(function TaakRij({
   task, onToggle, showClaim = false, onClaim,
 }: { task: TaskView; onToggle: () => void; showClaim?: boolean; onClaim?: () => void }) {
   const claimed = !!task.claimedBy;
@@ -41,4 +42,4 @@ export function TaakRij({
       )}
     </motion.div>
   );
-}
+});
