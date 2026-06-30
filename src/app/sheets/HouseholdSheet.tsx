@@ -74,7 +74,7 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
         <motion.button whileTap={{ scale: 0.9 }} disabled={savingName}
           onClick={() => { if (editing) saveName(); else setEditing(true); }}
           aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
-          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] disabled:opacity-60"
+          className="w-11 rounded-2xl flex items-center justify-center flex-shrink-0 self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] disabled:opacity-60"
           style={{ background: editing ? SAGE : "var(--secondary)" }}>
           {editing ? <Check size={15} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
         </motion.button>
