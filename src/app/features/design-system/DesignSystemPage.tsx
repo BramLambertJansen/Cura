@@ -7,6 +7,7 @@ import {
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
+import { Logo } from "../../components/Logo";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
 
 /**
@@ -65,6 +66,15 @@ export function DesignSystemPage() {
         <h1 className="text-[2rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>Design system</h1>
         <p className="text-sm text-muted-foreground mt-1.5">Alle uniforme bouwstenen op één plek — restylen of een nieuw thema beginnen hier.</p>
       </div>
+
+      <Section title="Merk">
+        <div className="flex items-end gap-4">
+          <Logo size={36} className="rounded-lg" />
+          <Logo size={56} className="rounded-xl" />
+          <Logo size={80} className="rounded-2xl" />
+        </div>
+        <p className="text-xs text-muted-foreground font-mono">public/logo.svg — ook favicon en PWA-icoon</p>
+      </Section>
 
       <Section title="Kleuren">
         <p className="text-sm text-muted-foreground -mt-1">Alles hieronder wijst naar <code>src/styles/theme.css</code> — pas daar een token aan en elk component dat ernaar verwijst volgt automatisch.</p>
