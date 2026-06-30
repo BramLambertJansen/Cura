@@ -1,8 +1,16 @@
-import type { CSSProperties, ReactNode } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
 import { Check, X } from "lucide-react";
 import { SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
+
+// How far (as a fraction of the sheet's own height) or how fast (px/s) a
+// downward drag from the handle has to go before it counts as "let go of
+// this" rather than "just repositioning" — below both, it springs back.
+const DRAG_CLOSE_DISTANCE_FRACTION = 0.25;
+const DRAG_CLOSE_VELOCITY = 700;
+const SHEET_SPRING = { type: "spring" as const, stiffness: 440, damping: 42 };
 
 export function Sheet({
   onClose, children, tall = false, labelId = "sheet-title",
@@ -12,21 +20,54 @@ export function Sheet({
   // height so its bottom action row stays above the keyboard instead of
   // being covered by it (CLAUDE.md mobile safe-area handling).
   const keyboardInset = useKeyboardInset();
+  const reduceMotion = useReducedMotion();
+  const dragControls = useDragControls();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+  const [dragY, setDragY] = useState(0);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+    setDragging(false);
+    setDragY(0);
+    const sheetHeight = sheetRef.current?.offsetHeight ?? 0;
+    const distanceThreshold = sheetHeight * DRAG_CLOSE_DISTANCE_FRACTION;
+    if (info.offset.y > distanceThreshold || info.velocity.y > DRAG_CLOSE_VELOCITY) onClose();
+  }
+
   return (
     <>
       <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }}
+        initial={{ opacity: 0 }} animate={{ opacity: dragging ? Math.max(0, 1 - dragY / 300) : 1 }} exit={{ opacity: 0 }}
+        transition={dragging ? { duration: 0 } : { duration: 0.22 }}
         className="absolute inset-0 z-40"
         style={{ background: "color-mix(in srgb, var(--overlay-color) 32%, transparent)", backdropFilter: "blur(6px)" }}
         onClick={onClose}
         aria-hidden="true"
       />
       <motion.div
+        ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelId}
+        drag={reduceMotion ? false : "y"}
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.55 }}
+        dragTransition={{ bounceStiffness: SHEET_SPRING.stiffness, bounceDamping: SHEET_SPRING.damping }}
+        onDragStart={() => setDragging(true)}
+        onDrag={(_, info) => setDragY(Math.max(0, info.offset.y))}
+        onDragEnd={handleDragEnd}
         initial={{ y: "100%" }} animate={{ y: -keyboardInset }} exit={{ y: "100%" }}
-        transition={{ type: "spring", stiffness: 440, damping: 42 }}
+        transition={dragging ? { duration: 0 } : SHEET_SPRING}
         className="absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] pt-5 overflow-y-auto scrollbar-hide"
         style={{
           background: "var(--card)",
@@ -44,8 +85,15 @@ export function Sheet({
           paddingRight: "calc(1.25rem + var(--safe-right))",
         }}
         onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-center mb-6" aria-hidden="true">
-          <div className="w-14 h-[5px] rounded-full" style={{ background: "var(--muted)" }} />
+        <div
+          className="flex justify-center items-center -mt-5 py-5 mb-1 cursor-grab active:cursor-grabbing"
+          style={{ touchAction: "none" }}
+          onPointerDown={(e: ReactPointerEvent) => !reduceMotion && dragControls.start(e)}
+          aria-hidden="true">
+          <motion.div
+            animate={{ scaleX: dragging ? 1.15 : 1, opacity: dragging ? 0.9 : 0.6 }}
+            transition={{ duration: 0.12 }}
+            className="w-14 h-[5px] rounded-full" style={{ background: "var(--muted)" }} />
         </div>
         {children}
       </motion.div>
