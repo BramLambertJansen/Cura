@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence } from "motion/react";
 import { Plus, Link2, Home, Bell, ChevronRight } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
   Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, Leeg,
-  PillButton, RingProgress, Toggle, VeldInput,
+  PillButton, RingProgress, Sheet, SheetHeader, Toggle, VeldInput,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
@@ -59,6 +61,7 @@ export function DesignSystemPage() {
   const [checked, setChecked] = useState(true);
   const [toggled, setToggled] = useState(false);
   const [veld, setVeld] = useState("");
+  const [showSheet, setShowSheet] = useState(false);
 
   return (
     <div className="px-5 pt-14 pb-16 space-y-10">
@@ -145,6 +148,26 @@ export function DesignSystemPage() {
 
       <Section title="Veld">
         <VeldInput value={veld} onChange={setVeld} placeholder="Taaknaam" />
+      </Section>
+
+      <Section title="Sheet">
+        <p className="text-sm text-muted-foreground -mt-1">Elk detailscherm bouwt op deze sheet — sleep de greep bovenaan omlaag om te sluiten, of gebruik de X-knop of Escape.</p>
+        <PillButton onClick={() => setShowSheet(true)}>Open sheet</PillButton>
+        {createPortal(
+          <AnimatePresence>
+            {showSheet && (
+              <div className="fixed inset-0 z-50">
+                <Sheet onClose={() => setShowSheet(false)}>
+                  <SheetHeader title="Sheet" onClose={() => setShowSheet(false)} />
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Sleep de greep omlaag om te sluiten — past een eindje terug als je niet ver genoeg sleept.
+                  </p>
+                </Sheet>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
       </Section>
 
       <Section title="Lege staat">
