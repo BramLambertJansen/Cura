@@ -11,7 +11,16 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { hasError
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-background text-center" role="alert">
+        <div
+          className="min-h-dvh flex flex-col items-center justify-center bg-background text-center"
+          style={{
+            paddingTop: "var(--safe-top)",
+            paddingBottom: "var(--safe-bottom)",
+            paddingLeft: "calc(1.5rem + var(--safe-left))",
+            paddingRight: "calc(1.5rem + var(--safe-right))",
+          }}
+          role="alert"
+        >
           <span className="text-4xl mb-4 select-none" aria-hidden="true">🌿</span>
           <h1 className="text-xl font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>
             Er ging iets mis

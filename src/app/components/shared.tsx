@@ -2,10 +2,16 @@ import type { CSSProperties, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, X } from "lucide-react";
 import { SAGE, SHADOW } from "../lib/constants";
+import { useKeyboardInset } from "../lib/useKeyboardInset";
 
 export function Sheet({
   onClose, children, tall = false, labelId = "sheet-title",
 }: { onClose: () => void; children: ReactNode; tall?: boolean; labelId?: string }) {
+  // On browsers that don't resize the layout viewport for the on-screen
+  // keyboard (notably older iOS Safari), nudge the sheet up by the keyboard
+  // height so its bottom action row stays above the keyboard instead of
+  // being covered by it (CLAUDE.md mobile safe-area handling).
+  const keyboardInset = useKeyboardInset();
   return (
     <>
       <motion.div
@@ -19,10 +25,24 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelId}
-        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+        initial={{ y: "100%" }} animate={{ y: -keyboardInset }} exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 440, damping: 42 }}
-        className={`absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] px-5 pt-5 ${tall ? "pb-8 max-h-[90vh] overflow-y-auto" : "pb-10"} scrollbar-hide`}
-        style={{ background: "var(--card)", boxShadow: `0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent),0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent)` }}
+        className="absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] pt-5 overflow-y-auto scrollbar-hide"
+        style={{
+          background: "var(--card)",
+          boxShadow: `0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent),0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent)`,
+          // Always capped + scrollable, not just for `tall` sheets: when the
+          // keyboard opens (often instantly, since most sheets autoFocus
+          // their first field) it eats into the available height without
+          // shrinking this absolutely-positioned sheet's own box, and the
+          // shell behind it is overflow-hidden. Without an internal scroll
+          // region here, content below the fold (e.g. the submit button)
+          // would be unreachable rather than just offscreen.
+          maxHeight: tall ? "calc(90dvh - var(--safe-top))" : "calc(100dvh - var(--safe-top) - 1rem)",
+          paddingBottom: tall ? "calc(2rem + var(--safe-bottom))" : "calc(2.5rem + var(--safe-bottom))",
+          paddingLeft: "calc(1.25rem + var(--safe-left))",
+          paddingRight: "calc(1.25rem + var(--safe-right))",
+        }}
         onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-center mb-6" aria-hidden="true">
           <div className="w-14 h-[5px] rounded-full" style={{ background: "var(--muted)" }} />

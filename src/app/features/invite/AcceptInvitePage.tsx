@@ -60,7 +60,15 @@ export function AcceptInvitePage() {
   if (!token) return null;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-background">
+    <div
+      className="min-h-dvh flex flex-col items-center justify-center bg-background"
+      style={{
+        paddingTop: "var(--safe-top)",
+        paddingBottom: "var(--safe-bottom)",
+        paddingLeft: "calc(1.5rem + var(--safe-left))",
+        paddingRight: "calc(1.5rem + var(--safe-right))",
+      }}
+    >
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-[2rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>Uitnodiging</h1>

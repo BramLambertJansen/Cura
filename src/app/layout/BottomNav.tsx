@@ -59,6 +59,9 @@ export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => v
         background: "color-mix(in srgb, var(--card) 94%, transparent)",
         backdropFilter: "blur(24px) saturate(200%)",
         borderTop: "1px solid color-mix(in srgb, var(--border-color) 9%, transparent)",
+        paddingBottom: "var(--safe-bottom)",
+        paddingLeft: "var(--safe-left)",
+        paddingRight: "var(--safe-right)",
       }}>
       <div className="flex items-center h-[4.25rem]" role="tablist">
         {LEFT.map((t) => <NavTab key={t.to} tab={t} />)}
