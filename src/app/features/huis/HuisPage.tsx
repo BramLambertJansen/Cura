@@ -11,7 +11,7 @@ import { KamerKaart } from "../../components/KamerKaart";
 import { useSheets } from "../../sheetContext";
 
 export function HuisPage() {
-  const { openNewRoom, openEditRoom } = useSheets();
+  const { openNewRoom, openEditRoom, openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const claimTask = useCuraStore((s) => s.claimTask);
   const rooms = useRoomViews();
@@ -61,12 +61,12 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                   {open.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} />
+                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onEdit={() => openEditTask(t.id)} />
                     </motion.div>
                   ))}
                 </motion.div>
                 {done.map((t) => (
-                  <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} />
+                  <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} />
                 ))}
               </>
           }

@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 
 export interface SheetActions {
   openAddTask: () => void;
+  openEditTask: (taskId: string) => void;
   openNewRoom: () => void;
   openEditRoom: (roomId: string) => void;
   openNewRoutine: () => void;

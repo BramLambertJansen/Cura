@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { motion } from "motion/react";
 import { Bell, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { useNotificationPreference } from "../lib/useTaskReminders";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
@@ -13,7 +13,7 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const me = members.find((m) => m.userId === currentUserId);
 
-  const [notif, setNotif] = useState(true);
+  const { enabled: notif, toggle: toggleNotif } = useNotificationPreference();
 
   const naam = me?.displayName ?? "Jij";
 
@@ -50,7 +50,7 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
       <Kop>Instellingen</Kop>
       <div className="mb-7">
         <GroupCard>
-          <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={(v) => { setNotif(v); toast(v ? "Meldingen aan" : "Meldingen uit"); }} />} />
+          <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={() => toggleNotif()} />} />
           <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Donkere modus — binnenkort")} />
           <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Account — binnenkort")} />
         </GroupCard>

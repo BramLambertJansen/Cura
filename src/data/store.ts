@@ -31,6 +31,7 @@ export interface CreateTaskInput {
   roomId?: string;
   durationMin?: number;
   intervalDays?: number;
+  dueDate?: string; // ISO; one-off = full deadline (date+time); recurring = only HH:mm is read
   bundleId?: string;
   planned?: boolean;
 }

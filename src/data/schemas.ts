@@ -72,6 +72,7 @@ export const TaskSchema = z.object({
   title: z.string().min(1),
   durationMin: z.number().int().positive().optional(), // view formats as "10 min"
   intervalDays: z.number().int().positive().optional(), // recurring rhythm; absent = one-off
+  dueDate: Iso.optional(), // "wekker": one-off = exact deadline (date+time); recurring = only HH:mm is read (daily reminder time)
   bundleId: Id.optional(), // belongs to a routine bundle (a grouping, see below)
   claimedById: Id.optional(), // "ik pak dit" — optional, never required
   planned: z.boolean().default(false), // is it on today's plan?

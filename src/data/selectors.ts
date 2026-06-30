@@ -86,6 +86,15 @@ function dueHint(task: Task, latest?: TaskCompletion, now = Date.now()): string 
   return "Waarschijnlijk weer toe";
 }
 
+function wekkerLabel(task: Task): string | undefined {
+  if (!task.dueDate) return undefined;
+  const d = new Date(task.dueDate);
+  const time = d.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+  if (task.intervalDays) return `Wekker om ${time}`;
+  const dateLabel = d.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
+  return `${dateLabel}, ${time}`;
+}
+
 export function toTaskView(
   task: Task,
   latestByTask: Map<string, TaskCompletion>,
@@ -108,7 +117,67 @@ export function toTaskView(
     doneAt: done && latest ? formatTime(latest.completedAt) : undefined,
     claimedBy: memberName(members, task.claimedById),
     dueHint: done ? undefined : dueHint(task, latest, now),
+    dueDate: task.dueDate,
+    wekkerLabel: wekkerLabel(task),
   };
+}
+
+// ─── Reminder engine — pure, no DOM/React, reusable server-side ──────────────
+
+export interface DueReminder {
+  taskId: string;
+  title: string;
+  /** Dedup key: task.id for one-off; `${task.id}:yyyy-mm-dd` for recurring (new day = new reminder). */
+  firedForKey: string;
+}
+
+/**
+ * Which tasks' wekker should fire right now?
+ *
+ * Pure (domain data, now) -> results — no DOM, no React, no Notification API.
+ * This is the seam between in-app dispatch (useTaskReminders) and a future
+ * server-side push scheduler (Supabase edge function + pg_cron): the "which
+ * tasks are due" logic lives here and is shared by both, unchanged.
+ *
+ * - One-off: fires once when now >= dueDate (within a 24h lookback window to
+ *   avoid re-pinging for forgotten deadlines from previous days).
+ * - Recurring: fires daily at the time-of-day encoded in dueDate (date portion
+ *   is ignored); one fire per calendar day per task.
+ * - Already-done tasks (per isDone) are skipped — no reminder for finished work.
+ */
+export function getDueReminders(
+  tasks: Task[],
+  latestByTask: Map<string, TaskCompletion>,
+  now = Date.now(),
+): DueReminder[] {
+  const result: DueReminder[] = [];
+  for (const task of tasks) {
+    if (!task.dueDate) continue;
+    const latest = latestByTask.get(task.id);
+    if (isDone(task, latest, now)) continue;
+
+    const due = new Date(task.dueDate);
+
+    if (!task.intervalDays) {
+      const dueMs = due.getTime();
+      // Fire once, within 24h of the set moment (don't resurrect week-old missed reminders)
+      if (now >= dueMs && now - dueMs < DAY_MS) {
+        result.push({ taskId: task.id, title: task.title, firedForKey: task.id });
+      }
+    } else {
+      // Recurring: only HH:mm from dueDate matters; compute "today at that time"
+      const today = new Date(now);
+      const todaysInstance = new Date(
+        today.getFullYear(), today.getMonth(), today.getDate(),
+        due.getHours(), due.getMinutes(), 0, 0,
+      );
+      const todayStr = todaysInstance.toISOString().slice(0, 10);
+      if (now >= todaysInstance.getTime()) {
+        result.push({ taskId: task.id, title: task.title, firedForKey: `${task.id}:${todayStr}` });
+      }
+    }
+  }
+  return result;
 }
 
 // ─── Room view + soft room hint ──────────────────────────────────────────────

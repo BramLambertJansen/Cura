@@ -34,6 +34,7 @@ interface CuraState {
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   claimTask: (taskId: string, claimed: boolean) => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<void>;
+  updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 
   createRoom: (room: Omit<Room, "id" | "householdId">) => Promise<void>;
@@ -207,6 +208,16 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ tasks: [...get().tasks, created] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+    }
+  },
+
+  async updateTask(taskId, patch) {
+    try {
+      const store = await getDataStore();
+      const updated = await store.updateTask(taskId, patch);
+      set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
     }
   },
 

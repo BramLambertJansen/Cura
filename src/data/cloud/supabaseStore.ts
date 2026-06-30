@@ -23,8 +23,8 @@ interface RoomRow { id: string; household_id: string; name: string; icon_key: st
 interface BundleRow { id: string; household_id: string; name: string; trigger: string; cadence: "daily" | "weekly"; window_label: string }
 interface TaskRow {
   id: string; household_id: string; room_id: string | null; title: string;
-  duration_min: number | null; interval_days: number | null; bundle_id: string | null;
-  claimed_by_id: string | null; planned: boolean;
+  duration_min: number | null; interval_days: number | null; due_date: string | null;
+  bundle_id: string | null; claimed_by_id: string | null; planned: boolean;
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
 
@@ -50,7 +50,8 @@ function mapTask(r: TaskRow): Task {
   return TaskSchema.parse({
     id: r.id, householdId: r.household_id, roomId: r.room_id ?? undefined, title: r.title,
     durationMin: r.duration_min ?? undefined, intervalDays: r.interval_days ?? undefined,
-    bundleId: r.bundle_id ?? undefined, claimedById: r.claimed_by_id ?? undefined, planned: r.planned,
+    dueDate: r.due_date ?? undefined, bundleId: r.bundle_id ?? undefined,
+    claimedById: r.claimed_by_id ?? undefined, planned: r.planned,
   });
 }
 function mapCompletion(r: CompletionRow): TaskCompletion {
@@ -208,7 +209,8 @@ export class SupabaseStore implements DataStore {
     const row: TaskRow = {
       id: uid(), household_id: householdId, room_id: input.roomId ?? null, title: input.title,
       duration_min: input.durationMin ?? null, interval_days: input.intervalDays ?? null,
-      bundle_id: input.bundleId ?? null, claimed_by_id: null, planned: input.planned ?? false,
+      due_date: input.dueDate ?? null, bundle_id: input.bundleId ?? null,
+      claimed_by_id: null, planned: input.planned ?? false,
     };
     const { error } = await supabase.from("tasks").insert(row);
     if (error) throw new Error(error.message);
@@ -221,6 +223,7 @@ export class SupabaseStore implements DataStore {
     if (patch.roomId !== undefined) update.room_id = patch.roomId ?? null;
     if (patch.durationMin !== undefined) update.duration_min = patch.durationMin ?? null;
     if (patch.intervalDays !== undefined) update.interval_days = patch.intervalDays ?? null;
+    if (patch.dueDate !== undefined) update.due_date = patch.dueDate ?? null;
     if (patch.bundleId !== undefined) update.bundle_id = patch.bundleId ?? null;
     if (patch.planned !== undefined) update.planned = patch.planned;
     const { data, error } = await supabase.from("tasks").update(update).eq("id", taskId).select().single();
