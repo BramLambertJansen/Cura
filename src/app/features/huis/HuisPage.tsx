@@ -36,12 +36,12 @@ export function HuisPage() {
           <div className="absolute top-12 left-4 right-4 flex items-center justify-between">
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedRoomId(null)}
               aria-label="Terug naar kamers"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
             </motion.button>
             <motion.button whileTap={{ scale: 0.9 }} onClick={() => openEditRoom(room.id)}
               aria-label={`${room.name} bewerken`}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card/80 backdrop-blur-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+              className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <Pencil size={14} className="text-foreground" aria-hidden="true" />
             </motion.button>
           </div>
