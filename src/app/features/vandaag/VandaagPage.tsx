@@ -3,7 +3,7 @@ import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { Avatar, Kop, Leeg, RingProgress } from "../../components/shared";
+import { Avatar, Kop, Leeg } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
 import { useSheets } from "../../sheetContext";
@@ -20,8 +20,6 @@ export function VandaagPage() {
   const plannedOpen = tasks.filter((t) => t.planned && !t.done);
   const plannedDone = tasks.filter((t) => t.planned && t.done);
   const allPlanned = [...plannedDone, ...plannedOpen];
-  const doneCount = plannedDone.length;
-  const total = allPlanned.length;
 
   const me = members.find((m) => m.userId === currentUserId);
   const huisgenootActivity = tasks.filter(
@@ -40,11 +38,6 @@ export function VandaagPage() {
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
           </div>
           <div className="flex flex-col items-center gap-2.5 flex-shrink-0 pt-1">
-            {total > 0 && (
-              <motion.div initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ ...spring, delay: 0.18 }}>
-                <RingProgress value={doneCount / total} size={46} stroke={3.5} />
-              </motion.div>
-            )}
             <motion.button onClick={openProfiel} whileTap={{ scale: 0.88 }} aria-label="Profiel openen">
               <Avatar name={me?.displayName ?? "Jij"} size={36} tone="solid" serif />
             </motion.button>
