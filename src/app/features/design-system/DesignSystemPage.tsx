@@ -40,7 +40,7 @@ function Swatch({ label, value }: { label: string; value: string }) {
 }
 
 const demoTaskOpen: TaskView = { id: "t1", title: "Stofzuigen woonkamer", room: "Woonkamer", duration: "10 min", intervalDays: 7, planned: true, done: false };
-const demoTaskClaimed: TaskView = { ...demoTaskOpen, id: "t2", title: "Planten water geven", claimedBy: "Sanne", intervalDays: 3 };
+const demoTaskClaimed: TaskView = { ...demoTaskOpen, id: "t2", title: "Planten water geven", claimedBy: "Stéphanie", intervalDays: 3 };
 const demoTaskDone: TaskView = { ...demoTaskOpen, id: "t3", title: "Vaatwasser uitruimen", done: true, doneBy: "Bram", doneAt: "08:42" };
 
 const demoRoom: RoomView = {
@@ -114,7 +114,7 @@ export function DesignSystemPage() {
       <Section title="Avatar">
         <div className="flex flex-wrap items-center gap-4">
           <Avatar name="Bram" tone="solid" serif size={56} shape="rounded" />
-          <Avatar name="Sanne" tone="soft" size={40} />
+          <Avatar name="Stéphanie" tone="soft" size={40} />
           <Avatar name="Jij" tone="softStrong" size={40} />
         </div>
       </Section>

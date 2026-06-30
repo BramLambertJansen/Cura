@@ -63,7 +63,7 @@ Het eerste wat je ziet. Antwoordt op: "wat ga ik nu doen?"
 - **Header:** warme begroeting met dagdeel ("Goedemorgen") + een korte, zachte ondertitel die wisselt ("Rustig aan, stap voor stap"). Géén cijfers in de header.
 - **Mijn dag:** de geplande taken voor vandaag, als afvinkbare regels. Elke regel: titel, kamer-label, geschatte duur, ronde checkbox. Eén tik vinkt af; afgevinkt = zachte doorhaling + groen vinkje, blijft zichtbaar (niet weggemoffeld).
 - **Routines van vandaag:** de routines die vandaag aan de beurt zijn, compact (zie §4.3 voor hun gedrag). Zacht, geen harde "voltooid/mislukt".
-- **Wat de ander deed (zichtbaarheid, ingebed):** een rustig strookje — "Sanne heeft de planten water gegeven" — zodat je niet dubbel werk doet. Klein, niet dominant.
+- **Wat de ander deed (zichtbaarheid, ingebed):** een rustig strookje — "Stéphanie heeft de planten water gegeven" — zodat je niet dubbel werk doet. Klein, niet dominant.
 - **Empty state:** als er niets gepland is → uitnodigende, rustige leegte. "Niets op de planning. Geniet ervan, of voeg iets toe." Niet alarmerend.
 
 ### 4.2 Huis — de pool per kamer · `Fase 1`
@@ -98,7 +98,7 @@ Schermopbouw:
 De view die de gedeelde versie bestaansrecht geeft. Antwoordt op: "wat is er vandaag in huis gedaan, en door wie?"
 
 - **Vandaag in huis:** een rustige, chronologische lijst van afgevinkte taken met wie + wanneer. Feitelijk, niet competitief — een verslag, geen ranglijst.
-- **Bewust géén** totalen-per-persoon, géén "jij 7 / Sanne 4", géén balk-vergelijking. (Zie §6.)
+- **Bewust géén** totalen-per-persoon, géén "jij 7 / Stéphanie 4", géén balk-vergelijking. (Zie §6.)
 - **Huishouden-instellingen-ingang:** leden, de invite-flow (§4.6), en de naam van het huishouden.
 - **Empty state:** "Nog niks gedaan vandaag. De dag is jong."
 
@@ -186,7 +186,7 @@ Elke fase test één ding. Wireframe gefaseerd zodat je niet alles tegelijk hoef
 - Interval-hint: "Badkamer is waarschijnlijk weer toe." (niet: "5 dagen geleden")
 - Routine-dichtheid: "Zit lekker in je ritme — 11 van de 14 ochtenden." (niet: "streak: 11")
 - Al-lid: "Je zit al in een huishouden." (vriendelijk, niet als fout)
-- Zichtbaarheid: "Sanne heeft de keuken gedaan." (feitelijk, geen score)
+- Zichtbaarheid: "Stéphanie heeft de keuken gedaan." (feitelijk, geen score)
 
 UI-taal: **Nederlands** (de app is voor jullie tweeën). Makkelijk te vertalen als je later wisselt.
 

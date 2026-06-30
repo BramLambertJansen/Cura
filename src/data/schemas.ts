@@ -30,7 +30,7 @@ export const HouseholdSchema = z.object({
 export const MemberSchema = z.object({
   id: Id,
   householdId: Id,
-  displayName: z.string().min(1), // "Bram", "Sanne" — what the UI shows
+  displayName: z.string().min(1), // "Bram", "Stéphanie" — what the UI shows
   userId: Id.optional(), // links to an auth user in cloud mode; absent in local mode
 });
 
@@ -79,7 +79,7 @@ export const TaskSchema = z.object({
 });
 
 // ─── Completions — the event layer ───────────────────────────────────────────
-// Both VISIBILITY ("Sanne heeft de keuken gedaan") and routine DENSITY
+// Both VISIBILITY ("Stéphanie heeft de keuken gedaan") and routine DENSITY
 // ("11 van de 14 ochtenden") are derived from these. Never store a rollup.
 
 export const TaskCompletionSchema = z.object({
