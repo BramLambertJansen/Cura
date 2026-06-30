@@ -118,12 +118,12 @@ export function Kop({ children }: { children: ReactNode }) {
 }
 
 export function VeldInput({
-  value, onChange, placeholder, autoFocus, onEnter, ariaLabel,
-}: { value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean; onEnter?: () => void; ariaLabel?: string }) {
+  value, onChange, placeholder, autoFocus, onEnter, ariaLabel, type = "text",
+}: { value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean; onEnter?: () => void; ariaLabel?: string; type?: "text" | "email" | "password" }) {
   return (
     <input
       autoFocus={autoFocus}
-      type="text"
+      type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => e.key === "Enter" && onEnter?.()}

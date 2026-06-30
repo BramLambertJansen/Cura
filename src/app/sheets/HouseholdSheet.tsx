@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Check, Pencil, Copy, Share2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { resolveDataMode } from "../../data/store";
 import { SAGE } from "../lib/constants";
 import { spring } from "../lib/motion";
 import { Sheet, SheetHeader, Kop, Avatar, GroupCard } from "../components/shared";
@@ -11,20 +12,31 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
+  const createInvite = useCuraStore((s) => s.createInvite);
 
   const [naam, setNaam] = useState(household?.name ?? "Thuis");
   const [editing, setEditing] = useState(false);
-  const [code, setCode] = useState<string | null>(null);
+  const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  function genCode() {
-    setCode(`CURA-${Math.random().toString(36).slice(2, 6).toUpperCase()}`);
+  const isLocal = resolveDataMode() === "local";
+
+  async function genLink() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const invite = await createInvite();
+      if (invite) setLink(`${window.location.origin}/uitnodiging/${invite.token}`);
+    } finally {
+      setBusy(false);
+    }
   }
   function copy() {
-    if (!code) return;
-    navigator.clipboard?.writeText(code).catch(() => {});
+    if (!link) return;
+    navigator.clipboard?.writeText(link).catch(() => {});
     setCopied(true);
-    toast("Code gekopieerd!");
+    toast("Link gekopieerd!");
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -66,35 +78,41 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
       </div>
 
       <Kop>Uitnodigen</Kop>
-      <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Genereer een code en deel hem via WhatsApp. De uitgenodigde tikt op accepteren.</p>
-      {!code
-        ? <motion.button whileTap={{ scale: 0.97 }} onClick={genCode}
-            className="w-full py-4 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-2"
-            style={{ background: "var(--gradient-primary)", boxShadow: `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` }}>
-            <Sparkles size={15} /> Uitnodigingscode genereren
-          </motion.button>
-        : <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}
-            className="rounded-2xl p-5 space-y-4" style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)", border: `1px solid color-mix(in srgb, var(--primary) 17%, transparent)` }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Uitnodigingscode</p>
-                <p className="text-2xl font-bold tracking-[0.15em]" style={{ fontFamily: "monospace", color: SAGE }}>{code}</p>
-              </div>
-              <motion.button whileTap={{ scale: 0.88 }} onClick={copy}
-                aria-label={copied ? "Code gekopieerd" : "Code kopiëren"}
-                aria-live="polite"
-                animate={{ backgroundColor: copied ? SAGE : "color-mix(in srgb, var(--primary) 12%, transparent)" }}
-                className="w-10 h-10 rounded-2xl flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-                {copied ? <Check size={15} className="text-white" aria-hidden="true" /> : <Copy size={15} style={{ color: SAGE }} aria-hidden="true" />}
+      {isLocal ? (
+        <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Uitnodigen kan zodra je huishouden in de cloud staat.</p>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Genereer een link en deel hem via WhatsApp. De uitgenodigde tikt op accepteren.</p>
+          {!link
+            ? <motion.button whileTap={{ scale: 0.97 }} onClick={genLink} disabled={busy}
+                className="w-full py-4 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ background: "var(--gradient-primary)", boxShadow: `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` }}>
+                <Sparkles size={15} /> {busy ? "Even geduld…" : "Uitnodigingslink genereren"}
               </motion.button>
-            </div>
-            <div className="flex gap-2">
-              <motion.button whileTap={{ scale: 0.95 }} onClick={copy} className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}><Copy size={12} /> Kopieer</motion.button>
-              <motion.button whileTap={{ scale: 0.95 }} onClick={() => toast("Gedeeld via WhatsApp (demo)")} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-1.5" style={{ background: "#25D366" }}><Share2 size={12} /> WhatsApp</motion.button>
-            </div>
-            <motion.button whileTap={{ scale: 0.95 }} onClick={genCode} className="w-full text-xs text-center text-muted-foreground">Nieuwe code genereren</motion.button>
-          </motion.div>
-      }
+            : <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}
+                className="rounded-2xl p-5 space-y-4" style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)", border: `1px solid color-mix(in srgb, var(--primary) 17%, transparent)` }}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground mb-1">Uitnodigingslink</p>
+                    <p className="text-sm font-medium truncate" style={{ color: SAGE }}>{link}</p>
+                  </div>
+                  <motion.button whileTap={{ scale: 0.88 }} onClick={copy}
+                    aria-label={copied ? "Link gekopieerd" : "Link kopiëren"}
+                    aria-live="polite"
+                    animate={{ backgroundColor: copied ? SAGE : "color-mix(in srgb, var(--primary) 12%, transparent)" }}
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+                    {copied ? <Check size={15} className="text-white" aria-hidden="true" /> : <Copy size={15} style={{ color: SAGE }} aria-hidden="true" />}
+                  </motion.button>
+                </div>
+                <div className="flex gap-2">
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={copy} className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}><Copy size={12} /> Kopieer</motion.button>
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-1.5" style={{ background: "#25D366" }}><Share2 size={12} /> WhatsApp</motion.button>
+                </div>
+                <motion.button whileTap={{ scale: 0.95 }} onClick={genLink} disabled={busy} className="w-full text-xs text-center text-muted-foreground">Nieuwe link genereren</motion.button>
+              </motion.div>
+          }
+        </>
+      )}
     </Sheet>
   );
 }
