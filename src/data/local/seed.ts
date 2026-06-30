@@ -10,7 +10,7 @@ import type { Database } from "../types";
 
 const HOUSEHOLD_ID = "household-thuis";
 export const LOCAL_USER_ID = "member-bram";
-const SANNE_ID = "member-sanne";
+const STEPHANIE_ID = "member-stephanie";
 
 const todayAt = (hours: number, minutes: number): string => {
   const d = new Date();
@@ -23,7 +23,7 @@ export function seedDatabase(): Database {
     households: [{ id: HOUSEHOLD_ID, name: "Thuis" }],
     members: [
       { id: LOCAL_USER_ID, householdId: HOUSEHOLD_ID, displayName: "Bram", userId: LOCAL_USER_ID },
-      { id: SANNE_ID, householdId: HOUSEHOLD_ID, displayName: "Sanne" },
+      { id: STEPHANIE_ID, householdId: HOUSEHOLD_ID, displayName: "Stéphanie" },
     ],
     householdMembers: [
       { userId: LOCAL_USER_ID, householdId: HOUSEHOLD_ID },
@@ -60,7 +60,7 @@ export function seedDatabase(): Database {
       { id: "task-r10", householdId: HOUSEHOLD_ID, title: "Was doen", bundleId: "bundle-weekend", intervalDays: 7, planned: false },
     ],
     completions: [
-      { id: "completion-1", taskId: "task-3", completedById: SANNE_ID, completedAt: todayAt(8, 42) },
+      { id: "completion-1", taskId: "task-3", completedById: STEPHANIE_ID, completedAt: todayAt(8, 42) },
     ],
     bundles: [
       { id: "bundle-ochtend", householdId: HOUSEHOLD_ID, name: "Ochtendroutine", trigger: "'s ochtends", cadence: "daily", windowLabel: "ochtenden" },
