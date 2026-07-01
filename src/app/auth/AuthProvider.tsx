@@ -8,6 +8,7 @@ export type AuthStatus = "loading" | "signedOut" | "signedIn";
 interface AuthContextValue {
   status: AuthStatus;
   userId: string | null;
+  email: string | null;
   /** Resolves with needsConfirmation: true when the Supabase project requires
    *  email confirmation — signUp then succeeds without starting a session. */
   signUp: (email: string, password: string, displayName: string) => Promise<{ needsConfirmation: boolean }>;
@@ -26,16 +27,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const mode = resolveDataMode();
   const [status, setStatus] = useState<AuthStatus>(mode === "local" ? "signedIn" : "loading");
   const [userId, setUserId] = useState<string | null>(mode === "local" ? LOCAL_USER_ID : null);
+  const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (mode === "local") return;
     supabase.auth.getSession().then(({ data }) => {
       setStatus(data.session ? "signedIn" : "signedOut");
       setUserId(data.session?.user.id ?? null);
+      setEmail(data.session?.user.email ?? null);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setStatus(session ? "signedIn" : "signedOut");
       setUserId(session?.user.id ?? null);
+      setEmail(session?.user.email ?? null);
     });
     return () => sub.subscription.unsubscribe();
   }, [mode]);
@@ -43,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     status,
     userId,
+    email,
     async signUp(email, password, displayName) {
       const { data, error } = await supabase.auth.signUp({
         email,
