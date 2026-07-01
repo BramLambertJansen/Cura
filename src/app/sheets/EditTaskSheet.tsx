@@ -73,12 +73,13 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       />
 
       <div className="mt-2 mb-4">
-        <DubbelKnop onCancel={onClose} onConfirm={save} label="Opslaan" disabled={!title.trim()} />
+        <DubbelKnop onCancel={onClose} onConfirm={save} label="Opslaan"
+          disabled={!title.trim() || (formState.wekkerAan && !formState.herhalenAan && !formState.wekkerDatum)} />
       </div>
       <AnimatePresence>
         {!confirm
           ? <motion.button key="del" whileTap={{ scale: 0.96 }} onClick={() => setConfirm(true)}
-              className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
               style={{ color: "var(--destructive)" }}>
               <Trash2 size={14} aria-hidden="true" /> Taak verwijderen
             </motion.button>

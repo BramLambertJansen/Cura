@@ -216,14 +216,18 @@ const PARTIAL_THRESHOLD = 1; // a period "counts" if >= this many bundle tasks w
 const DAILY_WINDOW = 14; // last 14 days
 const WEEKLY_WINDOW = 8; // last 8 weeks
 
-/** Key a completion into its period bucket (yyyy-mm-dd for daily, iso-week for weekly). */
+/** Key a completion into its period bucket (yyyy-mm-dd for daily, Monday-date for weekly). */
 function periodKey(iso: string, cadence: "daily" | "weekly"): string {
   const d = new Date(iso);
   if (cadence === "daily") return d.toISOString().slice(0, 10);
-  // crude iso-week bucket: year + week number
-  const jan1 = new Date(d.getFullYear(), 0, 1).getTime();
-  const week = Math.floor((d.getTime() - jan1) / (7 * DAY_MS));
-  return `${d.getFullYear()}-w${week}`;
+  // Monday-aligned week bucket: find the Monday of the week containing d.
+  // Using the Monday's date as the key is stable across year/DST boundaries and
+  // never splits a calendar week between two buckets the way days-since-Jan-1 does.
+  const day = d.getDay(); // 0 = Sun, 1 = Mon, …, 6 = Sat
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString().slice(0, 10);
 }
 
 /**

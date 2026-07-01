@@ -84,8 +84,9 @@ export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => v
             transition={{ type: "spring", stiffness: 420, damping: 26 }}
             className="relative rounded-full flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_60%,transparent)]"
             style={{ width: "3.625rem", height: "3.625rem", boxShadow: "var(--shadow-fab)" }}
-            aria-label="Toevoegen">
-            <Plus size={24} className="text-white" strokeWidth={2.2} />
+            aria-label={showAdd ? "Sluiten" : "Toevoegen"}
+            aria-expanded={showAdd}>
+            <Plus size={24} className="text-white" strokeWidth={2.2} aria-hidden="true" />
           </motion.button>
         </div>
         {RIGHT.map((t) => <NavTab key={t.to} tab={t} />)}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Check, Pencil, Copy, Share2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -16,7 +16,12 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   const updateHousehold = useCuraStore((s) => s.updateHousehold);
   const revokeInvite = useCuraStore((s) => s.revokeInvite);
 
-  const [naam, setNaam] = useState(household?.name ?? "Thuis");
+  const [naam, setNaam] = useState(household?.name ?? "");
+  // Guard: if household hadn't resolved yet at mount, sync the name when it arrives.
+  useEffect(() => {
+    if (household?.name && !naam) setNaam(household.name);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [household?.name]);
   const [editing, setEditing] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [token, setToken] = useState<string | null>(null);
