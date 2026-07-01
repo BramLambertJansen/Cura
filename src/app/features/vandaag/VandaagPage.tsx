@@ -9,6 +9,7 @@ import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { Avatar, Card, Kop, Leeg } from "../../components/shared";
+import { MorningScene } from "../../components/DecorativeIllustrations";
 import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
@@ -115,9 +116,12 @@ export function VandaagPage() {
             </motion.button>
           </div>
         </div>
+        <div className="mt-6">
+          <MorningScene />
+        </div>
       </div>
 
-      <div className="px-5 pt-7 pb-8 space-y-8">
+      <div className="px-5 pt-3 pb-8 space-y-8">
         <DayStatusCard openCount={plannedOpen.length} doneCount={plannedDone.length} suggestionCount={suggestions.length} />
         <AnimatePresence>
           {huisgenootActivity.length > 0 && (

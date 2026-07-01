@@ -3,9 +3,10 @@ import { motion } from "motion/react";
 import { ArrowLeft, Pencil, Plus, Sparkles } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
-import { roomIcon, SAGE } from "../../lib/constants";
+import { SAGE } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
 import { PageHeader, HintBanner, Card } from "../../components/shared";
+import { RoomIllustration } from "../../components/DecorativeIllustrations";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { useSheets } from "../../sheetContext";
@@ -21,8 +22,6 @@ export function HuisPage() {
   const room = rooms.find((r) => r.id === selectedRoomId);
 
   if (room) {
-    const ic = roomIcon(room.iconKey);
-    const c = room.color || ic.color;
     const roomTasks = tasks.filter((t) => t.roomId === room.id);
     const open = roomTasks.filter((t) => !t.done);
     const done = roomTasks.filter((t) => t.done);
@@ -41,8 +40,8 @@ export function HuisPage() {
               <Pencil size={14} className="text-foreground" aria-hidden="true" />
             </motion.button>
           </div>
-          <div className="flex items-center gap-2.5 mt-5">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: c + "28", color: c }}>{ic.icon}</div>
+          <div className="mt-5 flex items-center gap-3">
+            <RoomIllustration iconKey={room.iconKey} />
             <div>
               <h2 className="text-[1.65rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{room.name}</h2>
               {room.owner && <p className="text-muted-foreground text-xs mt-0.5">Meestal {room.owner}</p>}

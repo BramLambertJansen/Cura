@@ -9,6 +9,7 @@ import { stagger, fadeUp } from "../../lib/motion";
 import { householdStatusLine } from "../../lib/format";
 import { useReacties, type ReactieKind } from "../../lib/useReacties";
 import { Leeg, PageHeader, Card, HintBanner } from "../../components/shared";
+import { TogetherScene } from "../../components/DecorativeIllustrations";
 import { ActiviteitReacties } from "../../components/ActiviteitReacties";
 
 const REACTIE_TOAST: Record<ReactieKind, string> = {
@@ -33,6 +34,10 @@ export function SamenPage() {
   return (
     <div className="px-5 pt-14 pb-8">
       <PageHeader title="Samen" subtitle="Wat is er vandaag gedaan?" />
+
+      <div className="mb-5">
+        <TogetherScene />
+      </div>
 
       <div className="mb-6">
         <HintBanner tone="muted">{householdStatusLine(completedToday.length)}</HintBanner>
