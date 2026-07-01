@@ -70,6 +70,7 @@ export const TaskSchema = z.object({
   householdId: Id,
   roomId: Id.optional(),
   title: z.string().min(1),
+  description: z.string().min(1).optional(), // free-form note, shown as a subtitle
   durationMin: z.number().int().positive().optional(), // view formats as "10 min"
   intervalDays: z.number().int().positive().optional(), // recurring rhythm; absent = one-off
   dueDate: Iso.optional(), // "wekker": one-off = exact deadline (date+time); recurring = only HH:mm is read (daily reminder time)

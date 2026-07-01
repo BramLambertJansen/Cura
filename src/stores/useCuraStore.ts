@@ -5,6 +5,13 @@ import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskComple
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
+/** A routine-taak zoals ingevoerd in NewRoutineSheet/EditRoutineSheet, vóór opslaan. */
+export interface TaakDraft {
+  title: string;
+  durationMin?: number;
+  description?: string;
+}
+
 /**
  * Zustand store — the one place feature code touches to read/write data.
  * It owns a DataStore instance (mode resolved by VITE_DATA_MODE, CLAUDE.md §4)
@@ -45,12 +52,12 @@ interface CuraState {
 
   createBundle: (
     bundle: Omit<Bundle, "id" | "householdId">,
-    taskTitles: string[],
+    taskDrafts: TaakDraft[],
   ) => Promise<void>;
   updateBundle: (
     bundleId: string,
     patch: Partial<Omit<Bundle, "id" | "householdId">>,
-    taskTitles?: string[],
+    taskDrafts?: TaakDraft[],
   ) => Promise<void>;
   deleteBundle: (bundleId: string) => Promise<void>;
 }
@@ -296,18 +303,20 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     }
   },
 
-  async createBundle(bundle, taskTitles) {
+  async createBundle(bundle, taskDrafts) {
     try {
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
       const created = await store.createBundle(householdId, bundle);
       const createdTasks = await Promise.all(
-        taskTitles
-          .filter((title) => title.trim())
-          .map((title) =>
+        taskDrafts
+          .filter((draft) => draft.title.trim())
+          .map((draft) =>
             store.createTask(householdId, {
-              title: title.trim(),
+              title: draft.title.trim(),
+              durationMin: draft.durationMin,
+              description: draft.description,
               bundleId: created.id,
               intervalDays: bundle.cadence === "daily" ? 1 : 7,
             }),
@@ -320,14 +329,14 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     }
   },
 
-  async updateBundle(bundleId, patch, taskTitles) {
+  async updateBundle(bundleId, patch, taskDrafts) {
     try {
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
       const updated = await store.updateBundle(bundleId, patch);
       let { tasks } = get();
-      if (taskTitles !== undefined) {
+      if (taskDrafts !== undefined) {
         const newIntervalDays = updated.cadence === "daily" ? 1 : 7;
         // Diff the task list to preserve completions for unchanged tasks.
         // Greedy title-match: for each new title consume one existing task with
@@ -336,33 +345,41 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         // titles are created fresh.
         const existing = tasks.filter((t) => t.bundleId === bundleId);
         const pool = [...existing];
-        const toKeep: Task[] = [];
-        const toCreate: string[] = [];
-        for (const rawTitle of taskTitles) {
-          const title = rawTitle.trim();
+        const toKeep: { task: Task; draft: TaakDraft }[] = [];
+        const toCreate: TaakDraft[] = [];
+        for (const rawDraft of taskDrafts) {
+          const title = rawDraft.title.trim();
           if (!title) continue;
+          const draft = { ...rawDraft, title };
           const idx = pool.findIndex((t) => t.title === title);
           if (idx !== -1) {
-            toKeep.push(pool[idx]);
+            toKeep.push({ task: pool[idx], draft });
             pool.splice(idx, 1);
           } else {
-            toCreate.push(title);
+            toCreate.push(draft);
           }
         }
         // pool = tasks no longer in the list — delete (cascades their completions).
         await Promise.all(pool.map((t) => store.deleteTask(t.id)));
         const created = await Promise.all(
-          toCreate.map((title) =>
-            store.createTask(householdId, { title, bundleId, intervalDays: newIntervalDays }),
+          toCreate.map((draft) =>
+            store.createTask(householdId, {
+              title: draft.title, bundleId, intervalDays: newIntervalDays,
+              durationMin: draft.durationMin, description: draft.description,
+            }),
           ),
         );
-        // Update intervalDays for kept tasks whose cadence changed.
+        // Update kept tasks whose cadence, duration, or description changed.
         const kept = await Promise.all(
-          toKeep.map((t) =>
-            t.intervalDays !== newIntervalDays
-              ? store.updateTask(t.id, { intervalDays: newIntervalDays })
-              : Promise.resolve(t),
-          ),
+          toKeep.map(({ task, draft }) => {
+            const changedPatch: Partial<CreateTaskInput> = {};
+            if (task.intervalDays !== newIntervalDays) changedPatch.intervalDays = newIntervalDays;
+            if (task.durationMin !== draft.durationMin) changedPatch.durationMin = draft.durationMin;
+            if (task.description !== draft.description) changedPatch.description = draft.description;
+            return Object.keys(changedPatch).length > 0
+              ? store.updateTask(task.id, changedPatch)
+              : Promise.resolve(task);
+          }),
         );
         tasks = [...tasks.filter((t) => t.bundleId !== bundleId), ...kept, ...created];
       }

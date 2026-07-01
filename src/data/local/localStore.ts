@@ -124,6 +124,7 @@ export class LocalStore implements DataStore {
       householdId,
       roomId: input.roomId,
       title: input.title,
+      description: input.description,
       durationMin: input.durationMin,
       intervalDays: input.intervalDays,
       dueDate: input.dueDate,

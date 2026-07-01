@@ -226,6 +226,25 @@ export function VeldInput({
   );
 }
 
+export function VeldTextarea({
+  value, onChange, placeholder, ariaLabel, rows = 3,
+}: { value: string; onChange: (v: string) => void; placeholder: string; ariaLabel?: string; rows?: number }) {
+  return (
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      aria-label={ariaLabel ?? placeholder}
+      rows={rows}
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none transition-all focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
+      style={{
+        background: "var(--secondary)",
+        boxShadow: value ? `0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),0 2px 12px color-mix(in srgb, var(--primary) 6%, transparent)` : "none",
+        transition: "box-shadow 0.18s ease",
+      }} />
+  );
+}
+
 export function DubbelKnop({
   onCancel, onConfirm, label, disabled = false,
 }: { onCancel: () => void; onConfirm: () => void; label: string; disabled?: boolean }) {

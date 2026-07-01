@@ -1,16 +1,14 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { useRoutineViews } from "../../stores/useViews";
 import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
-import { spring } from "../lib/motion";
 import { cadenceAndLabel } from "../lib/format";
 import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop } from "../components/shared";
+import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onClose: () => void }) {
   const bundle = useCuraStore((s) => s.bundles.find((b) => b.id === bundleId));
-  const routine = useRoutineViews().find((r) => r.id === bundleId);
   const updateBundle = useCuraStore((s) => s.updateBundle);
   const deleteBundle = useCuraStore((s) => s.deleteBundle);
 
@@ -18,7 +16,13 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
   const [trigger, setTrigger] = useState(
     TRIGGER_OPTIONS.find((o) => o.label === bundle?.trigger)?.id ?? "ochtend",
   );
-  const [tasks, setTasks] = useState<string[]>(routine?.tasks.map((t) => t.title) ?? []);
+  // One-time read (not a subscription): this seeds the local draft list, which
+  // then owns its own edits until save — it must not live-resync with the store.
+  const [tasks, setTasks] = useState<TaakDraftItem[]>(
+    () => useCuraStore.getState().tasks
+      .filter((t) => t.bundleId === bundleId)
+      .map((t) => ({ key: t.id, title: t.title, durationMin: t.durationMin, description: t.description })),
+  );
   const [input, setInput] = useState("");
   const [confirm, setConfirm] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,7 +31,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
 
   function addTask() {
     if (!input.trim()) return;
-    setTasks((p) => [...p, input.trim()]);
+    setTasks((p) => [...p, { key: crypto.randomUUID(), title: input.trim() }]);
     setInput("");
     inputRef.current?.focus();
   }
@@ -70,22 +74,15 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
       </div>
 
       <Kop>Taken</Kop>
-      <div className="space-y-2 mb-3 max-h-44 overflow-y-auto scrollbar-hide">
+      <div className="space-y-2 mb-3 max-h-72 overflow-y-auto scrollbar-hide">
         <AnimatePresence>
           {tasks.map((t, i) => (
-            <motion.div key={`${t}-${i}`}
-              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}
-              transition={spring}
-              className="flex items-center gap-3 rounded-2xl px-4 py-3"
-              style={{ background: "var(--secondary)" }}>
-              <Check size={12} strokeWidth={3} style={{ color: SAGE, flexShrink: 0 }} aria-hidden="true" />
-              <span className="flex-1 text-sm text-foreground">{t}</span>
-              <motion.button whileTap={{ scale: 0.85 }} onClick={() => setTasks((p) => p.filter((_, j) => j !== i))}
-                aria-label={`${t} verwijderen`}
-                className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-                <X size={10} className="text-muted-foreground" aria-hidden="true" />
-              </motion.button>
-            </motion.div>
+            <TaakDraftRij
+              key={t.key}
+              draft={t}
+              onChange={(patch) => setTasks((p) => p.map((d, j) => (j === i ? { ...d, ...patch } : d)))}
+              onRemove={() => setTasks((p) => p.filter((_, j) => j !== i))}
+            />
           ))}
         </AnimatePresence>
       </div>

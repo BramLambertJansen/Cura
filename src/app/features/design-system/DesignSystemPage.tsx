@@ -5,7 +5,7 @@ import { Plus, Link2, Home, Bell, ChevronRight } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
   Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, Leeg,
-  PillButton, RingProgress, Sheet, SheetHeader, Toggle, VeldInput,
+  PillButton, RingProgress, Sheet, SheetHeader, Toggle, VeldInput, VeldTextarea,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
@@ -61,6 +61,7 @@ export function DesignSystemPage() {
   const [checked, setChecked] = useState(true);
   const [toggled, setToggled] = useState(false);
   const [veld, setVeld] = useState("");
+  const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
 
   return (
@@ -148,6 +149,7 @@ export function DesignSystemPage() {
 
       <Section title="Veld">
         <VeldInput value={veld} onChange={setVeld} placeholder="Taaknaam" />
+        <VeldTextarea value={veldTextarea} onChange={setVeldTextarea} placeholder="Beschrijving (optioneel)" />
       </Section>
 
       <Section title="Sheet">

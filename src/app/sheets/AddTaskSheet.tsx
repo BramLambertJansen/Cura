@@ -17,6 +17,7 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
     wekkerDatum: undefined,
     wekkerTijd: "08:00",
     duurMin: undefined,
+    beschrijving: "",
   });
 
   async function handleAdd() {
@@ -30,6 +31,7 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
     );
     createTask({
       title: title.trim(),
+      description: formState.beschrijving.trim() || undefined,
       roomId: formState.selectedRoomId ?? undefined,
       intervalDays: formState.herhalenAan ? formState.intervalDagen : undefined,
       dueDate,
@@ -55,6 +57,7 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
         onWekkerDatumChange={(d) => setFormState((s) => ({ ...s, wekkerDatum: d }))}
         onWekkerTijdChange={(v) => setFormState((s) => ({ ...s, wekkerTijd: v }))}
         onDuurMinChange={(v) => setFormState((s) => ({ ...s, duurMin: v }))}
+        onBeschrijvingChange={(v) => setFormState((s) => ({ ...s, beschrijving: v }))}
       />
 
       <DubbelKnop onCancel={onClose} onConfirm={handleAdd} label="Toevoegen"

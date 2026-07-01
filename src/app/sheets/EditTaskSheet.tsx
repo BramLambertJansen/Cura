@@ -25,6 +25,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       wekkerDatum: hasWekker && !task?.intervalDays ? new Date(task!.dueDate!) : undefined,
       wekkerTijd: hasWekker ? extractTijd(task!.dueDate!) : "08:00",
       duurMin: task?.durationMin,
+      beschrijving: task?.description ?? "",
     };
   });
 
@@ -41,6 +42,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
     );
     await updateTask(taskId, {
       title: title.trim(),
+      description: formState.beschrijving.trim() || undefined,
       roomId: formState.selectedRoomId ?? undefined,
       intervalDays: formState.herhalenAan ? formState.intervalDagen : undefined,
       dueDate,
@@ -70,6 +72,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
         onWekkerDatumChange={(d) => setFormState((s) => ({ ...s, wekkerDatum: d }))}
         onWekkerTijdChange={(v) => setFormState((s) => ({ ...s, wekkerTijd: v }))}
         onDuurMinChange={(v) => setFormState((s) => ({ ...s, duurMin: v }))}
+        onBeschrijvingChange={(v) => setFormState((s) => ({ ...s, beschrijving: v }))}
       />
 
       <div className="mt-2 mb-4">

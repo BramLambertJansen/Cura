@@ -36,6 +36,9 @@ export const TaakRij = memo(function TaakRij({
       <div className="flex-1 min-w-0">
         <motion.p animate={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}
           className={`text-[0.9375rem] font-medium leading-snug ${task.done ? "line-through" : ""}`}>{task.title}</motion.p>
+        {task.description && (
+          <p className="text-xs text-muted-foreground mt-0.5 leading-snug truncate">{task.description}</p>
+        )}
         <div className="flex items-center gap-1.5 mt-[0.3rem] flex-wrap">
           {task.room && <span className="text-xs text-muted-foreground">{task.room}</span>}
           {task.duration && <span className="text-xs text-muted-foreground opacity-50">· {task.duration}</span>}
