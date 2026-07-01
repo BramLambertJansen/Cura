@@ -44,7 +44,7 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet onClose={onClose}>
       <SheetHeader title="Taak toevoegen" onClose={onClose} />
-      <VeldInput autoFocus value={title} onChange={setTitle} onEnter={handleAdd} placeholder="Wat moet er gebeuren?" />
+      <VeldInput value={title} onChange={setTitle} onEnter={handleAdd} placeholder="Wat moet er gebeuren?" />
       <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">De taak komt in de gedeelde pool. Kies optioneel een kamer.</p>
 
       <TaskFormFields

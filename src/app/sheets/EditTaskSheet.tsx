@@ -59,7 +59,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
   return (
     <Sheet onClose={onClose} tall>
       <SheetHeader title="Taak bewerken" onClose={onClose} />
-      <VeldInput autoFocus value={title} onChange={setTitle} onEnter={save} placeholder="Wat moet er gebeuren?" />
+      <VeldInput value={title} onChange={setTitle} onEnter={save} placeholder="Wat moet er gebeuren?" />
       <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">Pas de taak aan en sla op.</p>
 
       <TaskFormFields
