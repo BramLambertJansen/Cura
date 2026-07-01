@@ -52,9 +52,9 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
         {ICONS.map((ic) => (
           <motion.button key={ic.key} whileTap={{ scale: 0.9 }} onClick={() => setIconKey(ic.key)}
             aria-pressed={iconKey === ic.key}
-            initial={{ backgroundColor: "var(--secondary)", borderColor: "rgba(0,0,0,0)", scale: 1 }}
+            initial={{ backgroundColor: "var(--input-background)", borderColor: "rgba(0,0,0,0)", scale: 1 }}
             animate={{
-              backgroundColor: iconKey === ic.key ? ic.color + "22" : "var(--secondary)",
+              backgroundColor: iconKey === ic.key ? ic.color + "22" : "var(--input-background)",
               borderColor: iconKey === ic.key ? ic.color + "70" : "rgba(0,0,0,0)",
               scale: iconKey === ic.key ? 1.04 : 1,
             }}
@@ -75,7 +75,7 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
           <motion.button key={m.id} whileTap={{ scale: 0.93 }} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}
             aria-pressed={ownerId === m.id}
             animate={{
-              backgroundColor: ownerId === m.id ? SAGE : "var(--secondary)",
+              backgroundColor: ownerId === m.id ? SAGE : "var(--input-background)",
               color: ownerId === m.id ? "#ffffff" : "var(--muted-foreground)",
             }}
             transition={{ duration: 0.14 }}

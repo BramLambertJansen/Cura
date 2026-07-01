@@ -20,7 +20,7 @@
   --destructive-foreground: #ffffff;
   --border: color-mix(in srgb, var(--border-color) 9%, transparent);
   --input: transparent;
-  --input-background: #E3DCD1;
+  --input-background: #F6ECDC;
   --switch-background: #B8CFAF;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
