@@ -34,7 +34,7 @@ export const SuggestieRij = memo(function SuggestieRij({
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={onPlan}
-            className="flex-1 py-2 rounded-full text-xs font-semibold text-white"
+            className="flex-1 py-2 rounded-full text-xs font-semibold text-white transition-[box-shadow,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2"
             style={{ background: "var(--gradient-primary)", boxShadow: `0 3px 12px color-mix(in srgb, var(--primary) 24%, transparent)` }}>
             Zet op mijn dag
           </motion.button>
@@ -42,7 +42,7 @@ export const SuggestieRij = memo(function SuggestieRij({
             whileTap={{ scale: 0.96 }}
             onClick={onNietVandaag}
             aria-label={`${task.title}: niet vandaag`}
-            className="px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground border border-border/70"
+            className="px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground border border-border/70 transition-[background-color,transform] hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2"
             style={{ boxShadow: SHADOW }}>
             Niet vandaag
           </motion.button>

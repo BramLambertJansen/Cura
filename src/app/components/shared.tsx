@@ -232,10 +232,10 @@ function fieldBackground({ disabled }: FieldState): string {
 }
 
 export function VeldInput({
-  value, onChange, placeholder, autoFocus, onEnter, ariaLabel, type = "text", disabled, invalid,
+  value, onChange, placeholder, autoFocus, onEnter, ariaLabel, type = "text", disabled, invalid, name, autoComplete, inputMode, spellCheck,
 }: {
   value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean; onEnter?: () => void;
-  ariaLabel?: string; type?: "text" | "email" | "password"; disabled?: boolean; invalid?: boolean;
+  ariaLabel?: string; type?: "text" | "email" | "password"; disabled?: boolean; invalid?: boolean; name?: string; autoComplete?: string; inputMode?: "text" | "email" | "numeric" | "tel" | "url" | "search"; spellCheck?: boolean;
 }) {
   const [active, setActive] = useState(false);
   const state: FieldState = { active, hasValue: value.length > 0, invalid, disabled };
@@ -243,6 +243,10 @@ export function VeldInput({
     <input
       autoFocus={autoFocus}
       type={type}
+      name={name}
+      autoComplete={autoComplete}
+      inputMode={inputMode}
+      spellCheck={spellCheck}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
@@ -252,7 +256,7 @@ export function VeldInput({
       aria-label={ariaLabel ?? placeholder}
       aria-invalid={invalid || undefined}
       disabled={disabled}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-all disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: fieldBackground(state),
         borderColor: fieldBorderColor(state),
@@ -278,7 +282,7 @@ export function VeldTextarea({
       aria-invalid={invalid || undefined}
       disabled={disabled}
       rows={rows}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none border transition-all disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: fieldBackground(state),
         borderColor: fieldBorderColor(state),
@@ -312,9 +316,9 @@ export function DubbelKnop({
 }: { onCancel: () => void; onConfirm: () => void; label: string; disabled?: boolean }) {
   return (
     <div className="flex gap-3">
-      <motion.button whileTap={{ scale: 0.96 }} onClick={onCancel} className="flex-1 py-3.5 rounded-2xl border border-border text-foreground text-sm font-medium">Annuleren</motion.button>
+      <motion.button whileTap={{ scale: 0.96 }} onClick={onCancel} className="flex-1 py-3.5 rounded-2xl border border-border text-foreground text-sm font-medium transition-[background-color,transform] hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">Annuleren</motion.button>
       <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm} disabled={disabled}
-        className="flex-1 py-3.5 rounded-2xl text-white text-sm font-semibold disabled:opacity-35 transition-opacity"
+        className="flex-1 py-3.5 rounded-2xl text-white text-sm font-semibold disabled:opacity-35 transition-[opacity,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2"
         style={{ background: "var(--gradient-primary)", boxShadow: disabled ? "none" : `0 4px 16px color-mix(in srgb, var(--primary) 28%, transparent)` }}>{label}</motion.button>
     </div>
   );
@@ -424,7 +428,7 @@ export function PillButton({
       onClick={onClick}
       whileTap={{ scale: 0.9 }}
       aria-label={ariaLabel}
-      className={`flex items-center gap-1.5 rounded-full font-semibold ${size === "md" ? "px-3.5 py-2 text-sm" : "px-3 py-1.5 text-xs"}`}
+      className={`flex items-center gap-1.5 rounded-full font-semibold transition-[background-color,box-shadow,transform] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${size === "md" ? "px-3.5 py-2 text-sm" : "px-3 py-1.5 text-xs"}`}
       style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
       {icon}{children}
     </motion.button>
