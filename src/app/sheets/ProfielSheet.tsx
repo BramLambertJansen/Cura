@@ -1,9 +1,11 @@
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Bell, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, UserRound } from "lucide-react";
+import { Bell, Check, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useNotificationPreference } from "../lib/useTaskReminders";
+import { SAGE } from "../lib/constants";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
@@ -11,24 +13,60 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
+  const updateMember = useCuraStore((s) => s.updateMember);
   const me = members.find((m) => m.userId === currentUserId);
 
   const { enabled: notif, toggle: toggleNotif } = useNotificationPreference();
 
-  const naam = me?.displayName ?? "Jij";
+  const [naam, setNaam] = useState(me?.displayName ?? "");
+  // Guard: if the member hadn't resolved yet at mount, sync the name when it arrives.
+  useEffect(() => {
+    if (me?.displayName && !naam) setNaam(me.displayName);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.displayName]);
+  const [editing, setEditing] = useState(false);
+  const [savingName, setSavingName] = useState(false);
+
+  const weergaveNaam = me?.displayName ?? "Jij";
+
+  async function saveName() {
+    const trimmed = naam.trim();
+    if (!trimmed || trimmed === me?.displayName) {
+      setEditing(false);
+      return;
+    }
+    setSavingName(true);
+    try {
+      await updateMember(trimmed);
+    } finally {
+      setSavingName(false);
+      setEditing(false);
+    }
+  }
 
   return (
     <Sheet onClose={onClose} tall>
       <div className="flex items-center gap-4 mb-7">
-        <Avatar name={naam} size={64} tone="solid" shape="rounded" serif />
-        <div className="flex-1">
-          <h3 className="text-xl font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{naam}</h3>
+        <Avatar name={weergaveNaam} size={64} tone="solid" shape="rounded" serif />
+        <div className="flex-1 min-w-0">
+          {editing ? (
+            <input value={naam} onChange={(e) => setNaam(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && saveName()}
+              autoFocus
+              aria-label="Naam"
+              className="w-full rounded-2xl px-3.5 py-2.5 text-foreground outline-none text-base transition-all"
+              style={{ background: "var(--secondary)", boxShadow: `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` }} />
+          ) : (
+            <h3 className="text-xl font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{weergaveNaam}</h3>
+          )}
           <p className="text-sm text-muted-foreground mt-0.5">{household?.name ?? "Thuis"}</p>
         </div>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => toast("Profiel bewerken — binnenkort")}
-          aria-label="Profiel bewerken"
-          className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-          <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />
+        <motion.button whileTap={{ scale: 0.9 }} disabled={savingName}
+          onClick={() => (editing ? saveName() : setEditing(true))}
+          aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
+          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] disabled:opacity-60"
+          style={{ background: editing ? SAGE : "var(--secondary)" }}>
+          {editing ? <Check size={14} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
         </motion.button>
       </div>
 

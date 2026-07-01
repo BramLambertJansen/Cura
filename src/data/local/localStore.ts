@@ -58,6 +58,14 @@ export class LocalStore implements DataStore {
     return this.db.members.filter((m) => m.householdId === householdId);
   }
 
+  async updateMember(memberId: string, patch: { displayName: string }): Promise<Member> {
+    const member = this.db.members.find((m) => m.id === memberId);
+    if (!member) throw new Error(`Member not found: ${memberId}`);
+    Object.assign(member, patch);
+    this.persist();
+    return member;
+  }
+
   async createHousehold(): Promise<Household> {
     throw new Error("Creating a household isn't available in local mode (there's always exactly one).");
   }
