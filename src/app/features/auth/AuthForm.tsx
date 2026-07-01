@@ -27,16 +27,18 @@ export function AuthForm({
   return (
     <div className="space-y-3">
       {mode === "signup" && (
-        <VeldInput value={displayName} onChange={setDisplayName} placeholder="Je naam" ariaLabel="Je naam" autoFocus />
+        <VeldInput value={displayName} onChange={setDisplayName} placeholder="Je naam" ariaLabel="Je naam" name="name" autoComplete="name" autoFocus />
       )}
       <VeldInput
         value={email} onChange={setEmail} placeholder="E-mailadres" type="email" ariaLabel="E-mailadres"
+        name="email" autoComplete="email" inputMode="email" spellCheck={false}
         autoFocus={mode === "signin"}
       />
-      <VeldInput value={password} onChange={setPassword} placeholder="Wachtwoord" type="password" ariaLabel="Wachtwoord" onEnter={submit} />
+      <VeldInput value={password} onChange={setPassword} placeholder="Wachtwoord" type="password" ariaLabel="Wachtwoord" name="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} onEnter={submit} />
       <motion.button
         whileTap={{ scale: 0.97 }} onClick={submit} disabled={!canSubmit || busy}
-        className="w-full py-4 rounded-2xl text-white text-sm font-semibold disabled:opacity-40 transition-opacity"
+        aria-busy={busy}
+        className="w-full py-4 rounded-2xl text-white text-sm font-semibold disabled:opacity-40 transition-[opacity,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2"
         style={{
           background: "var(--gradient-primary)",
           boxShadow: canSubmit && !busy ? `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` : "none",
