@@ -10,6 +10,9 @@ import {
 import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { KamerKaart } from "../../components/KamerKaart";
+import { RoomThumb } from "../../components/RoomThumb";
+import { EmptyIllustration } from "../../components/EmptyIllustration";
+import { roomIcon } from "../../lib/constants";
 import { Logo } from "../../components/Logo";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
 import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
@@ -227,6 +230,19 @@ export function DesignSystemPage() {
         <div>
           <p className="text-xs text-muted-foreground mb-2">Kamerkaart</p>
           <KamerKaart room={demoRoom} onClick={() => {}} />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">RoomThumb — illustratie met fallback naar het lijn-icoon als het beeld ontbreekt</p>
+          <div className="flex items-center gap-3">
+            <RoomThumb ic={roomIcon("utensils")} color={roomIcon("utensils").color} className="w-14 h-14" />
+            <RoomThumb ic={roomIcon("droplets")} color={roomIcon("droplets").color} className="w-14 h-14" />
+            <RoomThumb ic={roomIcon("bed")} color={roomIcon("bed").color} className="w-14 h-14" />
+            <RoomThumb ic={roomIcon("monitor")} color={roomIcon("monitor").color} className="w-14 h-14" />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">EmptyIllustration — rustige lege staat</p>
+          <EmptyIllustration />
         </div>
         <div>
           <p className="text-xs text-muted-foreground mb-2">Routinekaart — compact & uitgeklapt</p>
