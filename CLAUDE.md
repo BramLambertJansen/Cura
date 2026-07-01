@@ -108,8 +108,8 @@ We bouwen component-based: nieuwe UI is samengesteld uit herbruikbare, uniforme 
 
 ## 9. Devstraat
 
-- `pnpm dev` — Vite dev server. `pnpm build` — productie-build (ook PWA-manifest/service worker via `vite-plugin-pwa`). `pnpm preview` — preview van de build. `pnpm typecheck` — `tsc --noEmit`, verplicht vóór elke data-layer wijziging (zie §8).
-- Er is nog **geen lint-script, testrunner of CI-workflow** in deze repo — alleen typecheck is geautomatiseerd. Voeg je linting/tests/CI toe, werk deze sectie dan bij zodat dit overzicht klopt.
+- `pnpm dev` — Vite dev server. `pnpm build` — productie-build (ook PWA-manifest/service worker via `vite-plugin-pwa`). `pnpm preview` — preview van de build. `pnpm typecheck` — `tsc --noEmit`, verplicht vóór elke data-layer wijziging (zie §8). `pnpm test` — `vitest run`, unit tests voor pure logica (`src/**/*.test.ts`, config in `vitest.config.ts`); vandaag dekt dat `src/data/selectors.ts` (done-state, due hints, routine-dichtheid, activiteitenfeed-sortering, reminder-triggers).
+- Er is nog **geen lint-script of CI-workflow** in deze repo — typecheck en `pnpm test` zijn geautomatiseerd. Voeg je linting/CI toe, werk deze sectie dan bij zodat dit overzicht klopt.
 - Omgevingsvariabelen staan in `.env.example` (`VITE_DATA_MODE`, Supabase-keys voor Phase 3+, VAPID-key voor push, AI-keys voor Phase 4 — die laatste twee blijven server-side, nooit `VITE_`-geprefixt).
 
 ## 10. Stack
