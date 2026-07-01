@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { NavLink, useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { CalendarDays, Home, RefreshCw, MoreHorizontal, Plus } from "lucide-react";
 import { SAGE, MUTED_FG, DESTRUCTIVE } from "../lib/constants";
@@ -15,9 +15,12 @@ const RIGHT = [
 
 function NavTab({ tab }: { tab: typeof LEFT[number] }) {
   const location = useLocation();
-  const active = location.pathname.startsWith(tab.to);
+  // Samen heeft geen eigen tab (CLAUDE.md §1) — bereikbaar via Meer, dus die tab blijft actief.
+  const active =
+    location.pathname.startsWith(tab.to) ||
+    (tab.to === "/meer" && location.pathname.startsWith("/samen"));
   return (
-    <NavLink
+    <Link
       to={tab.to}
       role="tab"
       aria-selected={active}
@@ -59,7 +62,7 @@ function NavTab({ tab }: { tab: typeof LEFT[number] }) {
       >
         {tab.label}
       </motion.span>
-    </NavLink>
+    </Link>
   );
 }
 
