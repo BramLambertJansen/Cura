@@ -2,13 +2,14 @@ import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Plus, Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { useRoutineView } from "../../stores/useViews";
 import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
 import { cadenceAndLabel } from "../lib/format";
 import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onClose: () => void }) {
-  const bundle = useCuraStore((s) => s.bundles.find((b) => b.id === bundleId));
+  const bundle = useRoutineView(bundleId);
   const updateBundle = useCuraStore((s) => s.updateBundle);
   const deleteBundle = useCuraStore((s) => s.deleteBundle);
 
@@ -19,8 +20,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
   // One-time read (not a subscription): this seeds the local draft list, which
   // then owns its own edits until save — it must not live-resync with the store.
   const [tasks, setTasks] = useState<TaakDraftItem[]>(
-    () => useCuraStore.getState().tasks
-      .filter((t) => t.bundleId === bundleId)
+    () => (bundle?.tasks ?? [])
       .map((t) => ({ key: t.id, title: t.title, durationMin: t.durationMin, description: t.description })),
   );
   const [input, setInput] = useState("");

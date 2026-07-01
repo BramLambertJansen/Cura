@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Check, ChevronRight, Pencil } from "lucide-react";
 import type { RoutineView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
-import { RingProgress, Card } from "./shared";
+import { CARD_CHROME, RingProgress, Card } from "./shared";
 
 export const RoutineKaartCompact = memo(function RoutineKaartCompact({
   routine, onToggleTask,
@@ -49,7 +49,7 @@ export const RoutineKaart = memo(function RoutineKaart({
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
   return (
-    <div className="bg-card rounded-3xl border border-border/60 overflow-hidden" style={{ boxShadow: SHADOW }}>
+    <div className={`rounded-3xl overflow-hidden ${CARD_CHROME}`} style={{ boxShadow: SHADOW }}>
       <motion.button
         whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }}
         onClick={() => setOpen(!open)}

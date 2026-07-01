@@ -10,10 +10,11 @@ import {
 import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { KamerKaart } from "../../components/KamerKaart";
-import { RoomThumb } from "../../components/RoomThumb";
+import { RoomHero, RoomThumb } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { roomIcon } from "../../lib/constants";
 import { Logo } from "../../components/Logo";
+import { LandingHeader } from "../../components/LandingHeader";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
 import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
 import { ActiviteitReacties } from "../../components/ActiviteitReacties";
@@ -86,6 +87,13 @@ export function DesignSystemPage() {
           <Logo size={80} className="rounded-2xl" />
         </div>
         <p className="text-xs text-muted-foreground font-mono">public/logo.svg — ook favicon en PWA-icoon</p>
+      </Section>
+
+      <Section title="Landingsheader">
+        <p className="text-sm text-muted-foreground -mt-1">Volledig-breed illustratie-blok boven auth/onboarding-schermen — valt terug op alleen logo + titel als <code>public/landing-header.png</code> ontbreekt.</p>
+        <div className="rounded-2xl overflow-hidden border border-border/50">
+          <LandingHeader subtitle="Rustig plannen, samen." />
+        </div>
       </Section>
 
       <Section title="Kleuren">
@@ -239,6 +247,10 @@ export function DesignSystemPage() {
             <RoomThumb ic={roomIcon("bed")} color={roomIcon("bed").color} className="w-14 h-14" />
             <RoomThumb ic={roomIcon("monitor")} color={roomIcon("monitor").color} className="w-14 h-14" />
           </div>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">RoomHero — brede kamer-illustratie voor de kamer-detailheader, verdwijnt stil als het beeld ontbreekt</p>
+          <RoomHero ic={roomIcon("utensils")} />
         </div>
         <div>
           <p className="text-xs text-muted-foreground mb-2">EmptyIllustration — rustige lege staat</p>

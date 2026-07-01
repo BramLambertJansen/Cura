@@ -64,7 +64,9 @@ export function TemplatesSheet({
               key={t.title}
               whileTap={{ scale: 0.985 }}
               onClick={() => toggle(t.title)}
-              aria-pressed={checked}
+              role="checkbox"
+              aria-checked={checked}
+              aria-label={t.title}
               className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
               style={{
                 background: checked ? "color-mix(in srgb, var(--primary) 8%, transparent)" : "var(--input-background)",
@@ -72,8 +74,6 @@ export function TemplatesSheet({
               }}
             >
               <span
-                role="checkbox"
-                aria-checked={checked}
                 aria-hidden="true"
                 className="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
                 style={{ borderColor: checked ? SAGE : "color-mix(in srgb, var(--outline-color) 28%, transparent)", background: checked ? SAGE : "transparent" }}

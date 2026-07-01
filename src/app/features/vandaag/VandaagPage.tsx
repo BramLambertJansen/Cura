@@ -37,27 +37,16 @@ function dayStatusLine(openCount: number, doneCount: number, suggestionCount: nu
 }
 
 function DayStatusCard({ openCount, doneCount, suggestionCount }: { openCount: number; doneCount: number; suggestionCount: number }) {
-  const total = openCount + doneCount;
-  const progress = total > 0 ? doneCount / total : 0;
-  const percent = Math.round(progress * 100);
   return (
-    <Card className="relative overflow-hidden px-4 py-4">
-      <motion.div
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 rounded-2xl"
-        initial={{ width: 0 }}
-        animate={{ width: `${Math.max(8, percent)}%` }}
-        transition={{ type: "spring", stiffness: 220, damping: 30 }}
-        style={{ background: "linear-gradient(90deg,color-mix(in srgb,var(--accent) 32%,transparent),transparent)" }}
-      />
-      <div className="relative flex items-center justify-between gap-4">
+    <Card className="px-4 py-4">
+      <div className="flex items-center gap-4">
+        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>
+          <Leaf size={18} aria-hidden="true" />
+        </div>
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Vandaag voelt</p>
           <p className="mt-1 text-sm font-semibold text-foreground leading-snug">{dayStatusLine(openCount, doneCount, suggestionCount)}</p>
           <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Geen haast — pak wat past bij je energie.</p>
-        </div>
-        <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>
-          <span className="text-sm font-bold tabular-nums">{doneCount}/{Math.max(total, 1)}</span>
         </div>
       </div>
     </Card>

@@ -34,9 +34,9 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
             initial={{ opacity: 0, scale: 0.92, y: -6 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92 }}
             className="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 mb-6"
-            style={{ background: `${selectedIcon!.color}14`, border: `1.5px solid ${selectedIcon!.color}30` }}>
+            style={{ background: `color-mix(in srgb, ${selectedIcon!.color} 8%, transparent)`, border: `1.5px solid color-mix(in srgb, ${selectedIcon!.color} 19%, transparent)` }}>
             <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `${selectedIcon!.color}22`, color: selectedIcon!.color }}>
+              style={{ background: `color-mix(in srgb, ${selectedIcon!.color} 13%, transparent)`, color: selectedIcon!.color }}>
               {selectedIcon!.icon}
             </div>
             <div>

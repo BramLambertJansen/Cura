@@ -195,8 +195,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
 
   async acceptInvite(token) {
     const store = await getDataStore();
-    const userId = await store.currentUserId();
-    const result = await store.acceptInvite(token, userId);
+    const result = await store.acceptInvite(token);
     if (result.ok) await get().init();
     return result;
   },
@@ -413,8 +412,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
           }
         }
         // pool = tasks no longer in the list — delete (cascades their completions).
-        await Promise.all(pool.map((t) => store.deleteTask(t.id)));
-        const created = await Promise.all(
+        // allSettled, not all: one rejection shouldn't hide which of the other
+        // deletes/creates/updates in the batch actually landed on the backend.
+        const deleteResults = await Promise.allSettled(pool.map((t) => store.deleteTask(t.id)));
+        const deletedIds = new Set(pool.filter((_, i) => deleteResults[i].status === "fulfilled").map((t) => t.id));
+        const createResults = await Promise.allSettled(
           toCreate.map((draft) =>
             store.createTask(householdId, {
               title: draft.title, bundleId, intervalDays: newIntervalDays,
@@ -422,8 +424,9 @@ export const useCuraStore = create<CuraState>((set, get) => ({
             }),
           ),
         );
+        const created = createResults.filter((r) => r.status === "fulfilled").map((r) => r.value);
         // Update kept tasks whose cadence, duration, or description changed.
-        const kept = await Promise.all(
+        const keptResults = await Promise.allSettled(
           toKeep.map(({ task, draft }) => {
             const changedPatch: Partial<CreateTaskInput> = {};
             if (task.intervalDays !== newIntervalDays) changedPatch.intervalDays = newIntervalDays;
@@ -434,7 +437,23 @@ export const useCuraStore = create<CuraState>((set, get) => ({
               : Promise.resolve(task);
           }),
         );
-        tasks = [...tasks.filter((t) => t.bundleId !== bundleId), ...kept, ...created];
+        const kept = toKeep.map(({ task }, i) => {
+          const r = keptResults[i];
+          return r.status === "fulfilled" ? r.value : task;
+        });
+        // Tasks whose delete/create/update rejected keep their last-known state
+        // instead of vanishing, so local state can't drift further from the backend
+        // than the failed call already caused.
+        tasks = [
+          ...tasks.filter((t) => t.bundleId !== bundleId),
+          ...pool.filter((t) => !deletedIds.has(t.id)),
+          ...kept,
+          ...created,
+        ];
+        const anyFailed = [...deleteResults, ...createResults, ...keptResults].some((r) => r.status === "rejected");
+        set({ bundles: get().bundles.map((b) => (b.id === bundleId ? updated : b)), tasks });
+        toast[anyFailed ? "error" : "success"](anyFailed ? "Routine deels bijgewerkt — niet alles is gelukt" : "Routine bijgewerkt");
+        return;
       }
       toast("Routine bijgewerkt");
       set({ bundles: get().bundles.map((b) => (b.id === bundleId ? updated : b)), tasks });

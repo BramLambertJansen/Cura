@@ -34,6 +34,49 @@ export function Sheet({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [onClose]);
 
+  // Focus trap + focus return: a modal dialog must keep Tab inside it, and give
+  // focus back to whatever opened it once it unmounts — otherwise a keyboard
+  // user can Tab straight through into BottomNav (mounted earlier in the DOM,
+  // behind the backdrop) or lose their place entirely on close.
+  useEffect(() => {
+    const node = sheetRef.current;
+    if (!node) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    function getFocusable(): HTMLElement[] {
+      return Array.from(
+        node!.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => el.offsetParent !== null);
+    }
+
+    // Most sheets autoFocus a field already; only steal focus if nothing inside got it.
+    if (!node.contains(document.activeElement)) {
+      (getFocusable()[0] ?? node).focus();
+    }
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const focusable = getFocusable();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+    node.addEventListener("keydown", onKeyDown);
+    return () => {
+      node.removeEventListener("keydown", onKeyDown);
+      if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus();
+    };
+  }, []);
+
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
     setDragging(false);
     setDragY(0);
@@ -57,6 +100,7 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelId}
+        tabIndex={-1}
         drag={reduceMotion ? false : "y"}
         dragControls={dragControls}
         dragListener={false}
@@ -168,11 +212,14 @@ export function RingProgress({ value, size = 44, stroke = 3 }: { value: number; 
   );
 }
 
+/** Canonical bg-card/hairline-border chrome, minus radius (callers with a non-default corner — RoutineKaart's rounded-3xl — append their own). Reference this instead of duplicating the border/background literal inline. */
+export const CARD_CHROME = "bg-card border border-border/60";
+
 /** Standard card chrome — bg-card, hairline border, soft shadow. Compose content inside instead of redefining this style inline; pass onClick to render a tappable row. */
 export function Card({
   children, onClick, className = "px-4 py-3.5", ariaLabel,
 }: { children: ReactNode; onClick?: () => void; className?: string; ariaLabel?: string }) {
-  const chrome = "bg-card rounded-2xl border border-border/60";
+  const chrome = `${CARD_CHROME} rounded-2xl`;
   if (onClick) {
     return (
       // A `ring-*` utility renders via `box-shadow`, which the inline `boxShadow`

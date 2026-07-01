@@ -42,6 +42,24 @@ export function useRoutineViews(): RoutineView[] {
   );
 }
 
+/** A single task as a view-model, for edit sheets — never the raw entity. */
+export function useTaskView(taskId: string): TaskView | undefined {
+  const tasks = useTaskViews();
+  return useMemo(() => tasks.find((t) => t.id === taskId), [tasks, taskId]);
+}
+
+/** A single room as a view-model, for edit sheets — never the raw entity. */
+export function useRoomView(roomId: string): RoomView | undefined {
+  const rooms = useRoomViews();
+  return useMemo(() => rooms.find((r) => r.id === roomId), [rooms, roomId]);
+}
+
+/** A single routine as a view-model, for edit sheets — never the raw entity. */
+export function useRoutineView(bundleId: string): RoutineView | undefined {
+  const routines = useRoutineViews();
+  return useMemo(() => routines.find((b) => b.id === bundleId), [routines, bundleId]);
+}
+
 /** Recent completions as a calm chronological feed for Samen. */
 export function useActivityFeed(sinceIso?: string): ActivityView[] {
   const completions = useCuraStore((s) => s.completions);

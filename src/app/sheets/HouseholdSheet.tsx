@@ -60,12 +60,16 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
     await revokeInvite(token);
     setToken(null);
   }
-  function copy() {
+  async function copy() {
     if (!link) return;
-    navigator.clipboard?.writeText(link).catch(() => {});
-    setCopied(true);
-    toast("Link gekopieerd!");
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      toast("Link gekopieerd!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Kopiëren lukte niet. Selecteer de link handmatig.");
+    }
   }
 
   return (
