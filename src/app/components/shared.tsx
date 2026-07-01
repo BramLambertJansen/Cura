@@ -202,7 +202,7 @@ export function Leeg({ icon, text }: { icon: string; text: string }) {
 
 /** Section heading — Lora italic, warm muted, sentence case */
 export function Kop({ children }: { children: ReactNode }) {
-  return <p className="text-[0.8125rem] text-muted-foreground mb-3.5 ml-1" style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", letterSpacing: "0.01em" }}>{children}</p>;
+  return <p className="text-sm text-muted-foreground mb-2 ml-1" style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", letterSpacing: "0.01em" }}>{children}</p>;
 }
 
 /** Shared visual state for every "field" surface (VeldInput, VeldTextarea, FieldShell) — active means real DOM focus, never just "has a value". */
