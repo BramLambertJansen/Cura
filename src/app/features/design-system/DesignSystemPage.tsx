@@ -86,6 +86,7 @@ export function DesignSystemPage() {
         <Swatch label="Achtergrond" value="var(--background)" />
         <Swatch label="Kaart" value="var(--card)" />
         <Swatch label="Secundair" value="var(--secondary)" />
+        <Swatch label="Invoerveld" value="var(--input-background)" />
         <Swatch label="Rand" value="var(--border)" />
         <Swatch label="Destructief" value="var(--destructive)" />
         <div>

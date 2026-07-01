@@ -74,8 +74,8 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
       <Kop>Naam</Kop>
       <div className="flex gap-2 mb-7">
         <input value={naam} onChange={(e) => setNaam(e.target.value)} disabled={!editing}
-          className="flex-1 rounded-2xl px-4 py-3.5 text-foreground outline-none text-sm transition-all"
-          style={{ background: editing ? "var(--secondary)" : "var(--muted)", boxShadow: editing ? `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "none" }} />
+          className={`flex-1 rounded-2xl px-4 py-3.5 text-foreground outline-none text-sm transition-all ${editing ? "border border-border" : ""}`}
+          style={{ background: editing ? "var(--input-background)" : "var(--input-background-disabled)", boxShadow: editing ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "none" }} />
         <motion.button whileTap={{ scale: 0.9 }} disabled={savingName}
           onClick={() => { if (editing) saveName(); else setEditing(true); }}
           aria-label={editing ? "Naam opslaan" : "Naam bewerken"}

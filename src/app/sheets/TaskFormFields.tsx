@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { Kop, Toggle, VeldTextarea } from "../components/shared";
+import { Kop, Toggle, VeldTextarea, FieldShell, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { IntervalKiezer } from "./IntervalKiezer";
 import { Calendar } from "../components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
@@ -65,6 +65,8 @@ export function TaskFormFields({
   beschrijving, onBeschrijvingChange,
 }: TaskFormFieldsProps) {
   const [calOpen, setCalOpen] = useState(false);
+  const [tijdActive, setTijdActive] = useState(false);
+  const [duurActive, setDuurActive] = useState(false);
 
   return (
     <>
@@ -80,12 +82,13 @@ export function TaskFormFields({
               whileTap={{ scale: 0.94 }}
               aria-pressed={active}
               aria-label={active ? `${r.name} deselecteren` : `${r.name} selecteren`}
-              initial={{ backgroundColor: "var(--secondary)", borderColor: "rgba(0,0,0,0)" }}
+              initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
               animate={{
-                backgroundColor: active ? color + "18" : "var(--secondary)",
-                borderColor: active ? color + "60" : "rgba(0,0,0,0)",
+                backgroundColor: active ? color + "18" : "var(--input-background)",
+                borderColor: active ? color + "60" : "var(--border-input)",
               }}
               transition={{ duration: 0.15 }}
+              style={{ boxShadow: "var(--shadow-input)" }}
               className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl border-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
             >
               <motion.span
@@ -115,7 +118,7 @@ export function TaskFormFields({
 
       {/* Herhalen */}
       <div className="mb-4">
-        <div className="flex items-center justify-between py-3.5 px-4 rounded-2xl" style={{ background: "var(--secondary)" }}>
+        <FieldShell hasValue={herhalenAan} className="flex items-center justify-between py-3.5 px-4">
           <div className="flex items-center gap-2.5">
             <RefreshCw size={16} style={{ color: herhalenAan ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
             <span className="text-sm font-medium text-foreground">Herhalen</span>
@@ -131,7 +134,7 @@ export function TaskFormFields({
             )}
           </div>
           <Toggle checked={herhalenAan} onChange={onHerhalenChange} label="Taak herhalen" />
-        </div>
+        </FieldShell>
         <AnimatePresence initial={false}>
           {herhalenAan && (
             <motion.div
@@ -147,7 +150,7 @@ export function TaskFormFields({
 
       {/* Wekker */}
       <div className="mb-4">
-        <div className="flex items-center justify-between py-3.5 px-4 rounded-2xl" style={{ background: "var(--secondary)" }}>
+        <FieldShell hasValue={wekkerAan} className="flex items-center justify-between py-3.5 px-4">
           <div className="flex items-center gap-2.5">
             <Bell size={16} style={{ color: wekkerAan ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
             <span className="text-sm font-medium text-foreground">Wekker</span>
@@ -163,7 +166,7 @@ export function TaskFormFields({
             )}
           </div>
           <Toggle checked={wekkerAan} onChange={onWekkerChange} label="Wekker instellen" />
-        </div>
+        </FieldShell>
 
         <AnimatePresence initial={false}>
           {wekkerAan && (
@@ -182,8 +185,13 @@ export function TaskFormFields({
                         <motion.button
                           whileTap={{ scale: 0.98 }}
                           aria-label="Deadline-datum kiezen"
-                          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
-                          style={{ background: "var(--secondary)" }}
+                          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-sm text-left transition-all"
+                          style={{
+                            background: "var(--input-background)",
+                            borderColor: fieldBorderColor({ active: calOpen, hasValue: !!wekkerDatum }),
+                            boxShadow: fieldBoxShadow({ active: calOpen }),
+                            transition: "box-shadow 0.18s ease, border-color 0.18s ease",
+                          }}
                         >
                           <CalendarDays size={16} style={{ color: wekkerDatum ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
                           <span style={{ color: wekkerDatum ? "var(--foreground)" : "var(--muted-foreground)" }}>
@@ -211,16 +219,18 @@ export function TaskFormFields({
                   <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide mb-2 ml-1">
                     {herhalenAan ? "Herinner me elke dag om" : "Tijdstip"}
                   </p>
-                  <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl" style={{ background: "var(--secondary)" }}>
+                  <FieldShell active={tijdActive} hasValue={!!wekkerTijd} className="flex items-center gap-3 px-4 py-3.5">
                     <Clock size={16} style={{ color: SAGE }} aria-hidden="true" />
                     <input
                       type="time"
                       value={wekkerTijd}
                       onChange={(e) => onWekkerTijdChange(e.target.value)}
+                      onFocus={() => setTijdActive(true)}
+                      onBlur={() => setTijdActive(false)}
                       aria-label="Wekker-tijdstip"
-                      className="flex-1 bg-transparent text-sm text-foreground outline-none focus-visible:ring-0"
+                      className="flex-1 bg-transparent text-sm text-foreground outline-none"
                     />
-                  </div>
+                  </FieldShell>
                 </div>
 
                 <p className="text-xs text-muted-foreground px-1 leading-relaxed">
@@ -235,7 +245,7 @@ export function TaskFormFields({
       {/* Duur */}
       <div className="mb-6">
         <Kop>Duur <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
-        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl" style={{ background: "var(--secondary)" }}>
+        <FieldShell active={duurActive} hasValue={duurMin !== undefined} className="flex items-center gap-3 px-4 py-3.5">
           <input
             type="number"
             min={1}
@@ -245,12 +255,14 @@ export function TaskFormFields({
               const v = parseInt(e.target.value, 10);
               onDuurMinChange(isNaN(v) || v <= 0 ? undefined : v);
             }}
+            onFocus={() => setDuurActive(true)}
+            onBlur={() => setDuurActive(false)}
             placeholder="bijv. 10"
             aria-label="Duur in minuten"
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
           <span className="text-xs text-muted-foreground flex-shrink-0">min</span>
-        </div>
+        </FieldShell>
       </div>
 
       {/* Beschrijving */}

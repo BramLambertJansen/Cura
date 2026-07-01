@@ -21,7 +21,7 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
             disabled={value <= 1}
             aria-label="Minder dagen"
             className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
-            style={{ background: "var(--secondary)", color: "var(--foreground)" }}>
+            style={{ background: "var(--input-background)", color: "var(--foreground)", boxShadow: "var(--shadow-input)" }}>
             −
           </motion.button>
           <div className="w-12 text-center">
@@ -39,7 +39,7 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
             disabled={value >= 365}
             aria-label="Meer dagen"
             className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
-            style={{ background: "var(--secondary)", color: "var(--foreground)" }}>
+            style={{ background: "var(--input-background)", color: "var(--foreground)", boxShadow: "var(--shadow-input)" }}>
             +
           </motion.button>
         </div>
@@ -53,12 +53,13 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
               onClick={() => onChange(p.days)}
               whileTap={{ scale: 0.94 }}
               aria-pressed={active}
-              initial={{ backgroundColor: "var(--secondary)", borderColor: "rgba(0,0,0,0)" }}
+              initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
               animate={{
-                backgroundColor: active ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "var(--secondary)",
-                borderColor: active ? "color-mix(in srgb, var(--primary) 45%, transparent)" : "rgba(0,0,0,0)",
+                backgroundColor: active ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "var(--input-background)",
+                borderColor: active ? "color-mix(in srgb, var(--primary) 45%, transparent)" : "var(--border-input)",
               }}
               transition={{ duration: 0.14 }}
+              style={{ boxShadow: "var(--shadow-input)" }}
               className="py-2.5 rounded-2xl border-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
               <span className="text-xs font-semibold block" style={{ color: active ? SAGE : "var(--foreground)" }}>
                 {p.label}

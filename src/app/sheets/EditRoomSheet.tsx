@@ -39,12 +39,14 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
         {ICONS.map((opt) => (
           <motion.button key={opt.key} whileTap={{ scale: 0.9 }} onClick={() => setIconKey(opt.key)}
             aria-pressed={iconKey === opt.key}
+            initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
             animate={{
-              backgroundColor: iconKey === opt.key ? opt.color + "22" : "var(--secondary)",
-              borderColor: iconKey === opt.key ? opt.color + "70" : "rgba(0,0,0,0)",
+              backgroundColor: iconKey === opt.key ? opt.color + "22" : "var(--input-background)",
+              borderColor: iconKey === opt.key ? opt.color + "70" : "var(--border-input)",
               scale: iconKey === opt.key ? 1.04 : 1,
             }}
             transition={{ duration: 0.14 }}
+            style={{ boxShadow: "var(--shadow-input)" }}
             className="flex flex-col items-center gap-1.5 py-3 rounded-2xl border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
             <div style={{ color: iconKey === opt.key ? opt.color : "var(--muted-foreground)" }} aria-hidden="true">{opt.icon}</div>
             <span className="text-[9px] font-medium text-muted-foreground text-center leading-tight">{opt.label}</span>
@@ -63,8 +65,9 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
           <motion.button key={m.id} whileTap={{ scale: 0.93 }} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}
             aria-pressed={ownerId === m.id}
             animate={{
-              backgroundColor: ownerId === m.id ? SAGE : "var(--secondary)",
+              backgroundColor: ownerId === m.id ? SAGE : "var(--input-background)",
               color: ownerId === m.id ? "#ffffff" : "var(--muted-foreground)",
+              boxShadow: ownerId === m.id ? "none" : "var(--shadow-input)",
             }}
             transition={{ duration: 0.14 }}
             className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">{m.displayName}</motion.button>

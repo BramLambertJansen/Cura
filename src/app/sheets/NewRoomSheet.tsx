@@ -52,13 +52,14 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
         {ICONS.map((ic) => (
           <motion.button key={ic.key} whileTap={{ scale: 0.9 }} onClick={() => setIconKey(ic.key)}
             aria-pressed={iconKey === ic.key}
-            initial={{ backgroundColor: "var(--secondary)", borderColor: "rgba(0,0,0,0)", scale: 1 }}
+            initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)", scale: 1 }}
             animate={{
-              backgroundColor: iconKey === ic.key ? ic.color + "22" : "var(--secondary)",
-              borderColor: iconKey === ic.key ? ic.color + "70" : "rgba(0,0,0,0)",
+              backgroundColor: iconKey === ic.key ? ic.color + "22" : "var(--input-background)",
+              borderColor: iconKey === ic.key ? ic.color + "70" : "var(--border-input)",
               scale: iconKey === ic.key ? 1.04 : 1,
             }}
             transition={{ duration: 0.14 }}
+            style={{ boxShadow: "var(--shadow-input)" }}
             className="flex flex-col items-center gap-1.5 py-3 rounded-2xl border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
             <div style={{ color: iconKey === ic.key ? ic.color : "var(--muted-foreground)" }} aria-hidden="true">{ic.icon}</div>
             <span className="text-[9px] font-medium text-muted-foreground text-center leading-tight">{ic.label}</span>
@@ -75,8 +76,9 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
           <motion.button key={m.id} whileTap={{ scale: 0.93 }} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}
             aria-pressed={ownerId === m.id}
             animate={{
-              backgroundColor: ownerId === m.id ? SAGE : "var(--secondary)",
+              backgroundColor: ownerId === m.id ? SAGE : "var(--input-background)",
               color: ownerId === m.id ? "#ffffff" : "var(--muted-foreground)",
+              boxShadow: ownerId === m.id ? "none" : "var(--shadow-input)",
             }}
             transition={{ duration: 0.14 }}
             className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">{m.displayName}</motion.button>
