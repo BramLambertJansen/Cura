@@ -52,6 +52,8 @@ export interface DataStore {
    */
   getHouseholdsForUser(userId: string): Promise<Household[]>;
   listMembers(householdId: string): Promise<Member[]>;
+  /** Self-service profile edit — a member renaming their own display name. */
+  updateMember(memberId: string, patch: { displayName: string }): Promise<Member>;
   /**
    * "Create your first household" onboarding — for a signed-in user with zero
    * households. Atomically creates the household, the creator's member row,

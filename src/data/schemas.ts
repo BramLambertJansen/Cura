@@ -17,6 +17,9 @@ import { z } from "zod";
 const Id = z.string().min(1);
 const Iso = z.string().datetime(); // ISO 8601 timestamp
 
+// Longest a single task is expected to take — matches the TaskFormFields input's max attribute.
+export const MAX_DURATION_MIN = 480;
+
 // ─── Household & membership ─────────────────────────────────────────────────
 // Many-to-many by design (multi-user ready). The "one household per user" cap
 // is enforced in the APP layer (accept-invite), NOT by a unique constraint here.
@@ -70,7 +73,7 @@ export const TaskSchema = z.object({
   householdId: Id,
   roomId: Id.optional(),
   title: z.string().min(1),
-  durationMin: z.number().int().positive().optional(), // view formats as "10 min"
+  durationMin: z.number().int().positive().max(MAX_DURATION_MIN).optional(), // view formats as "10 min"
   intervalDays: z.number().int().positive().optional(), // recurring rhythm; absent = one-off
   dueDate: Iso.optional(), // "wekker": one-off = exact deadline (date+time); recurring = only HH:mm is read (daily reminder time)
   bundleId: Id.optional(), // belongs to a routine bundle (a grouping, see below)

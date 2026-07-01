@@ -1,7 +1,14 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { createDataStore, type CreateTaskInput, type DataStore } from "../data/store";
+import { MAX_DURATION_MIN } from "../data/schemas";
 import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion } from "../data/types";
+
+/** Clamps durationMin to the schema's max so a stray client-side bypass can't persist an oversized value. */
+function clampDuration<T extends { durationMin?: number }>(input: T): T {
+  if (input.durationMin === undefined) return input;
+  return { ...input, durationMin: Math.min(input.durationMin, MAX_DURATION_MIN) };
+}
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
@@ -30,6 +37,7 @@ interface CuraState {
   createInvite: () => Promise<HouseholdInvite | undefined>;
   acceptInvite: (token: string) => Promise<AcceptInviteResult>;
   revokeInvite: (token: string) => Promise<void>;
+  updateMyDisplayName: (displayName: string) => Promise<void>;
 
   reset: () => void;
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
@@ -158,6 +166,20 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     }
   },
 
+  async updateMyDisplayName(displayName) {
+    try {
+      const store = await getDataStore();
+      const { currentUserId, members } = get();
+      const me = members.find((m) => m.userId === currentUserId);
+      if (!me) return;
+      const updated = await store.updateMember(me.id, { displayName });
+      toast("Naam opgeslagen");
+      set({ members: get().members.map((m) => (m.id === me.id ? updated : m)) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Opslaan lukte niet");
+    }
+  },
+
   reset() {
     set({ ready: false, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [] });
     dataStorePromise = null;
@@ -214,7 +236,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
-      const created = await store.createTask(householdId, input);
+      const created = await store.createTask(householdId, clampDuration(input));
       toast.success(`"${created.title}" toegevoegd`, {
         description: input.roomId ? undefined : "Gedeelde pool",
       });
@@ -227,7 +249,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   async updateTask(taskId, patch) {
     try {
       const store = await getDataStore();
-      const updated = await store.updateTask(taskId, patch);
+      const updated = await store.updateTask(taskId, clampDuration(patch));
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");

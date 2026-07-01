@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { buildLatestCompletionMap, getDueReminders } from "../../data/selectors";
 
 const POLL_MS = 30_000;
 const NOTIF_PREF_KEY = "cura:notif-pref";
+const FIRED_STORAGE_KEY = "cura:fired-reminders";
+const PRUNE_AFTER_MS = 24 * 60 * 60 * 1000; // 1 day — matches getDueReminders' own one-off lookback window
 
 function dispatchReminder(title: string) {
   const userDisabled = localStorage.getItem(NOTIF_PREF_KEY) === "disabled";
@@ -19,6 +21,28 @@ function dispatchReminder(title: string) {
   }
 }
 
+/** Fired-reminder keys, stored as key -> the timestamp they fired at. */
+function loadFiredMap(): Map<string, number> {
+  try {
+    const raw = localStorage.getItem(FIRED_STORAGE_KEY);
+    if (!raw) return new Map();
+    return new Map(Object.entries(JSON.parse(raw) as Record<string, number>));
+  } catch {
+    return new Map();
+  }
+}
+
+function persistFiredMap(map: Map<string, number>): void {
+  localStorage.setItem(FIRED_STORAGE_KEY, JSON.stringify(Object.fromEntries(map)));
+}
+
+/** Drops entries older than a day in place — bounds the map's growth over a long-running tab. */
+function pruneFiredMap(map: Map<string, number>, now: number): void {
+  for (const [key, firedAt] of map) {
+    if (now - firedAt > PRUNE_AFTER_MS) map.delete(key);
+  }
+}
+
 /**
  * Polls every 30s for tasks whose wekker should fire now and dispatches either
  * a browser Notification (when permission is granted) or a Sonner toast fallback.
@@ -27,20 +51,30 @@ function dispatchReminder(title: string) {
  * (selectors.ts) — pure, no DOM. This hook only owns the dispatch + dedup.
  * A future push-notification phase replaces just the dispatch with a Supabase
  * edge function + web-push; the selector stays unchanged.
+ *
+ * Fired keys are re-read from localStorage (not kept only in a ref) on every
+ * poll, and pruned to the last day — this both bounds memory over a long-lived
+ * tab and stops two open tabs from double-firing the same reminder, since they
+ * share the same underlying storage.
  */
 export function useTaskReminders(): void {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
-  const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const id = setInterval(() => {
+      const now = Date.now();
+      const fired = loadFiredMap();
+      pruneFiredMap(fired, now);
       const latestByTask = buildLatestCompletionMap(completions);
-      for (const reminder of getDueReminders(tasks, latestByTask, Date.now())) {
-        if (firedRef.current.has(reminder.firedForKey)) continue;
-        firedRef.current.add(reminder.firedForKey);
+      let changed = false;
+      for (const reminder of getDueReminders(tasks, latestByTask, now)) {
+        if (fired.has(reminder.firedForKey)) continue;
+        fired.set(reminder.firedForKey, now);
+        changed = true;
         dispatchReminder(reminder.title);
       }
+      if (changed) persistFiredMap(fired);
     }, POLL_MS);
     return () => clearInterval(id);
   }, [tasks, completions]);

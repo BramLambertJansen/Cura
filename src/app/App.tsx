@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTaskReminders } from "./lib/useTaskReminders";
+import { useServiceWorkerUpdate } from "./lib/useServiceWorkerUpdate";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
@@ -157,6 +158,7 @@ function Gate() {
 }
 
 export default function App() {
+  useServiceWorkerUpdate();
   return (
     <MotionConfig reducedMotion="user">
       <BrowserRouter>

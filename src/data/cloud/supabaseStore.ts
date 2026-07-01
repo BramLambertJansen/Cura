@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { supabase } from "./supabaseClient";
 import type { CreateTaskInput, DataStore } from "../store";
 import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle } from "../types";
@@ -27,6 +28,13 @@ interface TaskRow {
   bundle_id: string | null; claimed_by_id: string | null; planned: boolean;
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
+
+// Runtime shape for the households(...) join in getHouseholdsForUser — the
+// blind `as unknown as` cast this replaces would crash later, unclearly, if
+// Supabase ever returned a different shape (e.g. after a schema change).
+const HouseholdJoinRowSchema = z.object({
+  households: z.object({ id: z.string().min(1), name: z.string().min(1) }).nullable(),
+});
 
 function mapHousehold(r: HouseholdRow): Household {
   return HouseholdSchema.parse({ id: r.id, name: r.name });
@@ -94,7 +102,7 @@ export class SupabaseStore implements DataStore {
       .select("households(id, name)")
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
-    const rows = (data ?? []) as unknown as { households: HouseholdRow | null }[];
+    const rows = z.array(HouseholdJoinRowSchema).parse(data ?? []);
     return rows.filter((r) => r.households).map((r) => mapHousehold(r.households!));
   }
 
@@ -102,6 +110,17 @@ export class SupabaseStore implements DataStore {
     const { data, error } = await supabase.from("members").select("*").eq("household_id", householdId);
     if (error) throw new Error(error.message);
     return ((data ?? []) as MemberRow[]).map(mapMember);
+  }
+
+  async updateMember(memberId: string, patch: { displayName: string }): Promise<Member> {
+    const { data, error } = await supabase
+      .from("members")
+      .update({ display_name: patch.displayName })
+      .eq("id", memberId)
+      .select()
+      .single();
+    if (error || !data) throw new Error(error?.message ?? `Member not found: ${memberId}`);
+    return mapMember(data as MemberRow);
   }
 
   async createHousehold(name: string): Promise<Household> {
