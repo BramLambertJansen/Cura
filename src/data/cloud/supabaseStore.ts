@@ -330,4 +330,29 @@ export class SupabaseStore implements DataStore {
     const { error } = await supabase.from("bundles").delete().eq("id", bundleId);
     if (error) throw new Error(error.message);
   }
+
+  // ── Realtime (Phase 3+) ──────────────────────────────────────────────────
+  // One channel per household, subscribed to every table the household view
+  // depends on. tasks/rooms/bundles/members carry household_id and are
+  // filtered server-side; task_completions has no household_id of its own
+  // (only via a join to tasks), so it's subscribed unfiltered and relies on
+  // the same RLS policy (task_completions_select) that gates normal reads —
+  // Supabase's Realtime "postgres_changes" feed is RLS-aware for the
+  // authenticated session. `onChange` is a single coalescing callback; the
+  // caller (useCuraStore) debounces its own refetch, so a burst of remote
+  // writes (e.g. someone completing several tasks) triggers one refresh, not
+  // one per row.
+  subscribeToChanges(householdId: string, onChange: () => void): () => void {
+    const channel = supabase
+      .channel(`household-${householdId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter: `household_id=eq.${householdId}` }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `household_id=eq.${householdId}` }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "bundles", filter: `household_id=eq.${householdId}` }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `household_id=eq.${householdId}` }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_completions" }, onChange)
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }
 }

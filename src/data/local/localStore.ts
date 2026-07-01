@@ -209,4 +209,9 @@ export class LocalStore implements DataStore {
     this.db.tasks = this.db.tasks.filter((t) => t.bundleId !== bundleId);
     this.persist();
   }
+
+  /** Single device, solo — there's nothing else writing to localStorage to listen for. */
+  subscribeToChanges(): () => void {
+    return () => {};
+  }
 }
