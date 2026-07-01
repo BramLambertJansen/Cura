@@ -104,6 +104,12 @@ export class SupabaseStore implements DataStore {
     return ((data ?? []) as MemberRow[]).map(mapMember);
   }
 
+  async updateMember(memberId: string, patch: { displayName: string }): Promise<Member> {
+    const { data, error } = await supabase.from("members").update({ display_name: patch.displayName }).eq("id", memberId).select().single();
+    if (error || !data) throw new Error(error?.message ?? `Member not found: ${memberId}`);
+    return mapMember(data as MemberRow);
+  }
+
   async createHousehold(name: string): Promise<Household> {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData.user) throw new Error("Niet ingelogd.");
