@@ -54,8 +54,8 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
               onKeyDown={(e) => e.key === "Enter" && saveName()}
               autoFocus
               aria-label="Naam"
-              className="w-full rounded-2xl px-3.5 py-2.5 text-foreground outline-none text-base border border-border/60 transition-all"
-              style={{ background: "var(--input-background)", boxShadow: `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` }} />
+              className="w-full rounded-2xl px-3.5 py-2.5 text-foreground outline-none text-base border border-border transition-all"
+              style={{ background: "var(--input-background)", boxShadow: `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` }} />
           ) : (
             <h3 className="text-xl font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{weergaveNaam}</h3>
           )}

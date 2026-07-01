@@ -65,6 +65,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
             animate={{
               backgroundColor: trigger === opt.id ? SAGE : "var(--input-background)",
               color: trigger === opt.id ? "#ffffff" : "var(--muted-foreground)",
+              boxShadow: trigger === opt.id ? "none" : "var(--shadow-input)",
             }}
             transition={{ duration: 0.14 }}
             className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
@@ -93,8 +94,8 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
           onKeyDown={(e) => e.key === "Enter" && addTask()}
           placeholder="Taak toevoegen…"
           aria-label="Nieuwe taak omschrijving"
-          className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border border-border/60 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
-          style={{ background: "var(--input-background)", boxShadow: input ? `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "none" }} />
+          className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border border-border focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
+          style={{ background: "var(--input-background)", boxShadow: input ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "var(--shadow-input)" }} />
         <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
           aria-label="Taak toevoegen"
           className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"

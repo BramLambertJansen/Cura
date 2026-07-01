@@ -80,12 +80,13 @@ export function TaskFormFields({
               whileTap={{ scale: 0.94 }}
               aria-pressed={active}
               aria-label={active ? `${r.name} deselecteren` : `${r.name} selecteren`}
-              initial={{ backgroundColor: "var(--input-background)", borderColor: "rgba(0,0,0,0)" }}
+              initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border)" }}
               animate={{
                 backgroundColor: active ? color + "18" : "var(--input-background)",
-                borderColor: active ? color + "60" : "rgba(0,0,0,0)",
+                borderColor: active ? color + "60" : "var(--border)",
               }}
               transition={{ duration: 0.15 }}
+              style={{ boxShadow: "var(--shadow-input)" }}
               className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl border-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
             >
               <motion.span
@@ -115,7 +116,7 @@ export function TaskFormFields({
 
       {/* Herhalen */}
       <div className="mb-4">
-        <div className="flex items-center justify-between py-3.5 px-4 rounded-2xl border border-border/60" style={{ background: "var(--input-background)" }}>
+        <div className="flex items-center justify-between py-3.5 px-4 rounded-2xl border border-border" style={{ background: "var(--input-background)", boxShadow: "var(--shadow-input)" }}>
           <div className="flex items-center gap-2.5">
             <RefreshCw size={16} style={{ color: herhalenAan ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
             <span className="text-sm font-medium text-foreground">Herhalen</span>
@@ -147,7 +148,7 @@ export function TaskFormFields({
 
       {/* Wekker */}
       <div className="mb-4">
-        <div className="flex items-center justify-between py-3.5 px-4 rounded-2xl border border-border/60" style={{ background: "var(--input-background)" }}>
+        <div className="flex items-center justify-between py-3.5 px-4 rounded-2xl border border-border" style={{ background: "var(--input-background)", boxShadow: "var(--shadow-input)" }}>
           <div className="flex items-center gap-2.5">
             <Bell size={16} style={{ color: wekkerAan ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
             <span className="text-sm font-medium text-foreground">Wekker</span>
@@ -182,8 +183,8 @@ export function TaskFormFields({
                         <motion.button
                           whileTap={{ scale: 0.98 }}
                           aria-label="Deadline-datum kiezen"
-                          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border/60 text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
-                          style={{ background: "var(--input-background)" }}
+                          className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+                          style={{ background: "var(--input-background)", boxShadow: "var(--shadow-input)" }}
                         >
                           <CalendarDays size={16} style={{ color: wekkerDatum ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
                           <span style={{ color: wekkerDatum ? "var(--foreground)" : "var(--muted-foreground)" }}>
@@ -211,7 +212,7 @@ export function TaskFormFields({
                   <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide mb-2 ml-1">
                     {herhalenAan ? "Herinner me elke dag om" : "Tijdstip"}
                   </p>
-                  <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border/60" style={{ background: "var(--input-background)" }}>
+                  <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border" style={{ background: "var(--input-background)", boxShadow: "var(--shadow-input)" }}>
                     <Clock size={16} style={{ color: SAGE }} aria-hidden="true" />
                     <input
                       type="time"
@@ -235,7 +236,7 @@ export function TaskFormFields({
       {/* Duur */}
       <div className="mb-6">
         <Kop>Duur <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
-        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border/60" style={{ background: "var(--input-background)" }}>
+        <div className="flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border" style={{ background: "var(--input-background)", boxShadow: "var(--shadow-input)" }}>
           <input
             type="number"
             min={1}

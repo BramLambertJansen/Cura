@@ -59,7 +59,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
             <div className="flex flex-wrap gap-2 mb-8">
               {TRIGGER_OPTIONS.map((opt) => (
                 <motion.button key={opt.id} whileTap={{ scale: 0.93 }} onClick={() => setTrigger(opt.id)}
-                  animate={{ backgroundColor: trigger === opt.id ? SAGE : "var(--input-background)", color: trigger === opt.id ? "#fff" : "var(--muted-foreground)" }}
+                  animate={{ backgroundColor: trigger === opt.id ? SAGE : "var(--input-background)", color: trigger === opt.id ? "#fff" : "var(--muted-foreground)", boxShadow: trigger === opt.id ? "none" : "var(--shadow-input)" }}
                   transition={{ duration: 0.14 }} className="px-4 py-2 rounded-full text-sm font-medium">{opt.label}</motion.button>
               ))}
             </div>
@@ -86,8 +86,8 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
             <div className="flex gap-2 mb-7">
               <input ref={ref} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()}
                 placeholder="Taak omschrijving…"
-                className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm border border-border/60"
-                style={{ background: "var(--input-background)", boxShadow: input ? `0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "none" }} />
+                className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm border border-border"
+                style={{ background: "var(--input-background)", boxShadow: input ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "var(--shadow-input)" }} />
               <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
                 className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40" style={{ background: SAGE }}>
                 <Plus size={17} className="text-white" />

@@ -217,10 +217,10 @@ export function VeldInput({
       onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
       placeholder={placeholder}
       aria-label={ariaLabel ?? placeholder}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border border-border/60 transition-all focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border border-border transition-all focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
       style={{
         background: "var(--input-background)",
-        boxShadow: value ? `0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),0 2px 12px color-mix(in srgb, var(--primary) 6%, transparent)` : "none",
+        boxShadow: value ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),0 2px 12px color-mix(in srgb, var(--primary) 6%, transparent)` : "var(--shadow-input)",
         transition: "box-shadow 0.18s ease",
       }} />
   );
@@ -236,10 +236,10 @@ export function VeldTextarea({
       placeholder={placeholder}
       aria-label={ariaLabel ?? placeholder}
       rows={rows}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none border border-border/60 transition-all focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none border border-border transition-all focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
       style={{
         background: "var(--input-background)",
-        boxShadow: value ? `0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),0 2px 12px color-mix(in srgb, var(--primary) 6%, transparent)` : "none",
+        boxShadow: value ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),0 2px 12px color-mix(in srgb, var(--primary) 6%, transparent)` : "var(--shadow-input)",
         transition: "box-shadow 0.18s ease",
       }} />
   );
