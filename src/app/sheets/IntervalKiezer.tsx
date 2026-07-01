@@ -53,10 +53,10 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
               onClick={() => onChange(p.days)}
               whileTap={{ scale: 0.94 }}
               aria-pressed={active}
-              initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border)" }}
+              initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
               animate={{
                 backgroundColor: active ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "var(--input-background)",
-                borderColor: active ? "color-mix(in srgb, var(--primary) 45%, transparent)" : "var(--border)",
+                borderColor: active ? "color-mix(in srgb, var(--primary) 45%, transparent)" : "var(--border-input)",
               }}
               transition={{ duration: 0.14 }}
               style={{ boxShadow: "var(--shadow-input)" }}

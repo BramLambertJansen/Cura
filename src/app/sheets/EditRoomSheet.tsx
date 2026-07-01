@@ -39,10 +39,10 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
         {ICONS.map((opt) => (
           <motion.button key={opt.key} whileTap={{ scale: 0.9 }} onClick={() => setIconKey(opt.key)}
             aria-pressed={iconKey === opt.key}
-            initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border)" }}
+            initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
             animate={{
               backgroundColor: iconKey === opt.key ? opt.color + "22" : "var(--input-background)",
-              borderColor: iconKey === opt.key ? opt.color + "70" : "var(--border)",
+              borderColor: iconKey === opt.key ? opt.color + "70" : "var(--border-input)",
               scale: iconKey === opt.key ? 1.04 : 1,
             }}
             transition={{ duration: 0.14 }}

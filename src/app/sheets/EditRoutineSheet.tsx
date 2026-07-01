@@ -4,7 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
 import { cadenceAndLabel } from "../lib/format";
-import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop } from "../components/shared";
+import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onClose: () => void }) {
@@ -24,6 +24,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
       .map((t) => ({ key: t.id, title: t.title, durationMin: t.durationMin, description: t.description })),
   );
   const [input, setInput] = useState("");
+  const [inputActive, setInputActive] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -92,10 +93,16 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
         <input ref={inputRef} type="text" value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addTask()}
+          onFocus={() => setInputActive(true)}
+          onBlur={() => setInputActive(false)}
           placeholder="Taak toevoegen…"
           aria-label="Nieuwe taak omschrijving"
-          className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border border-border focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
-          style={{ background: "var(--input-background)", boxShadow: input ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "var(--shadow-input)" }} />
+          className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
+          style={{
+            background: "var(--input-background)",
+            borderColor: fieldBorderColor({ active: inputActive, hasValue: !!input }),
+            boxShadow: fieldBoxShadow({ active: inputActive }),
+          }} />
         <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
           aria-label="Taak toevoegen"
           className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"

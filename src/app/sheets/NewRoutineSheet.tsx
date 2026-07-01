@@ -5,7 +5,7 @@ import { useCuraStore } from "../../stores/useCuraStore";
 import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
 import { spring } from "../lib/motion";
 import { cadenceAndLabel } from "../lib/format";
-import { Sheet, SheetHeader, VeldInput, DubbelKnop } from "../components/shared";
+import { Sheet, SheetHeader, VeldInput, DubbelKnop, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
@@ -14,6 +14,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [trigger, setTrigger] = useState("");
   const [input, setInput] = useState("");
+  const [inputActive, setInputActive] = useState(false);
   const [tasks, setTasks] = useState<TaakDraftItem[]>([]);
   const [saved, setSaved] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
@@ -85,9 +86,14 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
             </div>
             <div className="flex gap-2 mb-7">
               <input ref={ref} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()}
+                onFocus={() => setInputActive(true)} onBlur={() => setInputActive(false)}
                 placeholder="Taak omschrijving…"
-                className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm border border-border"
-                style={{ background: "var(--input-background)", boxShadow: input ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` : "var(--shadow-input)" }} />
+                className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm border transition-all"
+                style={{
+                  background: "var(--input-background)",
+                  borderColor: fieldBorderColor({ active: inputActive, hasValue: !!input }),
+                  boxShadow: fieldBoxShadow({ active: inputActive }),
+                }} />
               <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
                 className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40" style={{ background: SAGE }}>
                 <Plus size={17} className="text-white" />

@@ -205,9 +205,40 @@ export function Kop({ children }: { children: ReactNode }) {
   return <p className="text-[0.8125rem] text-muted-foreground mb-3.5 ml-1" style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", letterSpacing: "0.01em" }}>{children}</p>;
 }
 
+/** Shared visual state for every "field" surface (VeldInput, VeldTextarea, FieldShell) — active means real DOM focus, never just "has a value". */
+interface FieldState {
+  active?: boolean;
+  hasValue?: boolean;
+  invalid?: boolean;
+  disabled?: boolean;
+}
+
+export function fieldBorderColor({ invalid, active, hasValue }: FieldState): string {
+  if (invalid) return "var(--border-input-invalid)";
+  if (active) return "var(--border-input-focus)";
+  if (hasValue) return "var(--border-input-filled)";
+  return "var(--border-input)";
+}
+
+/** Resting shadow is an inset highlight, focus/invalid are outer glows — stack them so the card-like sheen stays visible even while focused. */
+export function fieldBoxShadow({ invalid, active }: FieldState): string {
+  if (invalid) return "var(--shadow-input), var(--shadow-input-invalid)";
+  if (active) return "var(--shadow-input), var(--shadow-input-focus)";
+  return "var(--shadow-input)";
+}
+
+function fieldBackground({ disabled }: FieldState): string {
+  return disabled ? "var(--input-background-disabled)" : "var(--input-background)";
+}
+
 export function VeldInput({
-  value, onChange, placeholder, autoFocus, onEnter, ariaLabel, type = "text",
-}: { value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean; onEnter?: () => void; ariaLabel?: string; type?: "text" | "email" | "password" }) {
+  value, onChange, placeholder, autoFocus, onEnter, ariaLabel, type = "text", disabled, invalid,
+}: {
+  value: string; onChange: (v: string) => void; placeholder: string; autoFocus?: boolean; onEnter?: () => void;
+  ariaLabel?: string; type?: "text" | "email" | "password"; disabled?: boolean; invalid?: boolean;
+}) {
+  const [active, setActive] = useState(false);
+  const state: FieldState = { active, hasValue: value.length > 0, invalid, disabled };
   return (
     <input
       autoFocus={autoFocus}
@@ -215,33 +246,64 @@ export function VeldInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
+      onFocus={() => setActive(true)}
+      onBlur={() => setActive(false)}
       placeholder={placeholder}
       aria-label={ariaLabel ?? placeholder}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border border-border transition-all focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
+      aria-invalid={invalid || undefined}
+      disabled={disabled}
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-all disabled:cursor-not-allowed disabled:opacity-60"
       style={{
-        background: "var(--input-background)",
-        boxShadow: value ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),0 2px 12px color-mix(in srgb, var(--primary) 6%, transparent)` : "var(--shadow-input)",
-        transition: "box-shadow 0.18s ease",
+        background: fieldBackground(state),
+        borderColor: fieldBorderColor(state),
+        boxShadow: fieldBoxShadow(state),
+        transition: "box-shadow 0.18s ease, border-color 0.18s ease",
       }} />
   );
 }
 
 export function VeldTextarea({
-  value, onChange, placeholder, ariaLabel, rows = 3,
-}: { value: string; onChange: (v: string) => void; placeholder: string; ariaLabel?: string; rows?: number }) {
+  value, onChange, placeholder, ariaLabel, rows = 3, disabled, invalid,
+}: { value: string; onChange: (v: string) => void; placeholder: string; ariaLabel?: string; rows?: number; disabled?: boolean; invalid?: boolean }) {
+  const [active, setActive] = useState(false);
+  const state: FieldState = { active, hasValue: value.length > 0, invalid, disabled };
   return (
     <textarea
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setActive(true)}
+      onBlur={() => setActive(false)}
       placeholder={placeholder}
       aria-label={ariaLabel ?? placeholder}
+      aria-invalid={invalid || undefined}
+      disabled={disabled}
       rows={rows}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none border border-border transition-all focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_28%,transparent)]"
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none border transition-all disabled:cursor-not-allowed disabled:opacity-60"
       style={{
-        background: "var(--input-background)",
-        boxShadow: value ? `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),0 2px 12px color-mix(in srgb, var(--primary) 6%, transparent)` : "var(--shadow-input)",
-        transition: "box-shadow 0.18s ease",
+        background: fieldBackground(state),
+        borderColor: fieldBorderColor(state),
+        boxShadow: fieldBoxShadow(state),
+        transition: "box-shadow 0.18s ease, border-color 0.18s ease",
       }} />
+  );
+}
+
+/** Plain-div field chrome for non-<input> "field-like" rows (date-picker trigger, time/duur wrappers, Herhalen/Wekker rows) that need the same background/border/shadow state machine as VeldInput, without Framer Motion. */
+export function FieldShell({
+  children, active, hasValue, invalid, disabled, className = "",
+}: { children: ReactNode; active?: boolean; hasValue?: boolean; invalid?: boolean; disabled?: boolean; className?: string }) {
+  const state: FieldState = { active, hasValue, invalid, disabled };
+  return (
+    <div
+      className={`rounded-2xl border ${className}`}
+      style={{
+        background: fieldBackground(state),
+        borderColor: fieldBorderColor(state),
+        boxShadow: fieldBoxShadow(state),
+        transition: "box-shadow 0.18s ease, border-color 0.18s ease",
+      }}>
+      {children}
+    </div>
   );
 }
 
