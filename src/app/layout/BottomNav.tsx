@@ -28,15 +28,22 @@ function NavTab({ tab }: { tab: typeof LEFT[number] }) {
     >
       {active && (
         <motion.div layoutId="nav-hill"
-          className="absolute bottom-1 left-0 right-0 mx-auto w-12 h-3.5 pointer-events-none"
+          className="absolute bottom-1 left-0 right-0 mx-auto w-14 h-3.5 pointer-events-none"
           transition={{ type: "spring", stiffness: 420, damping: 36 }}
           aria-hidden="true"
         >
           <div className="absolute inset-x-2 bottom-0 h-2 rounded-full blur-[6px] opacity-50"
             style={{ background: "color-mix(in srgb, var(--primary) 60%, transparent)" }} />
-          <svg viewBox="0 0 48 14" width="100%" height="100%" className="relative block">
-            <path d="M0 14 C0 5 13 0 24 0 C35 0 48 5 48 14 Z" fill="url(#nav-hill-gradient)" />
-          </svg>
+          <motion.svg
+            viewBox="0 0 56 14" width="100%" height="100%" className="relative block"
+            animate={{ y: [0, -1, 0] }}
+            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <path
+              d="M0 14 C1 7 9 1 19 0.5 C27 0.1 26 8 34 8.5 C41 9 45 5 48 3 C51 1 54 3 56 14 Z"
+              fill="url(#nav-hill-gradient)"
+            />
+          </motion.svg>
         </motion.div>
       )}
       <motion.div
