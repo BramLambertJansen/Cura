@@ -98,7 +98,15 @@ export const RoutineKaart = memo(function RoutineKaart({
                       </div>
                     )}
                   </div>
-                  <span className={`text-sm text-left flex-1 ${t.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{t.title}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className={`flex items-baseline gap-1.5 text-sm text-left ${t.done ? "line-through text-muted-foreground" : "text-foreground"}`}>
+                      {t.title}
+                      {t.duration && <span className="text-xs text-muted-foreground opacity-50 flex-shrink-0">· {t.duration}</span>}
+                    </span>
+                    {t.description && (
+                      <span className="block text-xs text-muted-foreground mt-0.5 truncate">{t.description}</span>
+                    )}
+                  </span>
                 </motion.button>
               ))}
               <div className="pt-1 border-t border-border/30">

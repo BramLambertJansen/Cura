@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { Kop, Toggle } from "../components/shared";
+import { Kop, Toggle, VeldTextarea } from "../components/shared";
 import { IntervalKiezer } from "./IntervalKiezer";
 import { Calendar } from "../components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
@@ -19,6 +19,7 @@ export interface TaskFormState {
   wekkerDatum: Date | undefined;
   wekkerTijd: string; // "HH:mm"
   duurMin: number | undefined;
+  beschrijving: string;
 }
 
 export interface TaskFormFieldsProps extends TaskFormState {
@@ -30,6 +31,7 @@ export interface TaskFormFieldsProps extends TaskFormState {
   onWekkerDatumChange: (d: Date | undefined) => void;
   onWekkerTijdChange: (v: string) => void;
   onDuurMinChange: (v: number | undefined) => void;
+  onBeschrijvingChange: (v: string) => void;
 }
 
 /** Combines a selected date and HH:mm string into a full ISO timestamp. */
@@ -60,6 +62,7 @@ export function TaskFormFields({
   wekkerDatum, onWekkerDatumChange,
   wekkerTijd, onWekkerTijdChange,
   duurMin, onDuurMinChange,
+  beschrijving, onBeschrijvingChange,
 }: TaskFormFieldsProps) {
   const [calOpen, setCalOpen] = useState(false);
 
@@ -248,6 +251,17 @@ export function TaskFormFields({
           />
           <span className="text-xs text-muted-foreground flex-shrink-0">min</span>
         </div>
+      </div>
+
+      {/* Beschrijving */}
+      <div className="mb-6">
+        <Kop>Beschrijving <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
+        <VeldTextarea
+          value={beschrijving}
+          onChange={onBeschrijvingChange}
+          placeholder="Bijv. vergeet het groentevak niet"
+          ariaLabel="Beschrijving"
+        />
       </div>
     </>
   );

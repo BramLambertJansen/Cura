@@ -48,6 +48,7 @@ export type Database = z.infer<typeof DatabaseSchema>;
 export interface TaskView {
   id: string;
   title: string;
+  description?: string; // free-form note, shown as a subtitle
   room?: string; // resolved room name
   roomId?: string;
   duration?: string; // formatted, e.g. "10 min"

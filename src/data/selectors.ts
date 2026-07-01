@@ -107,6 +107,7 @@ export function toTaskView(
   return {
     id: task.id,
     title: task.title,
+    description: task.description,
     roomId: task.roomId,
     room: rooms.find((r) => r.id === task.roomId)?.name,
     duration: formatDuration(task.durationMin),

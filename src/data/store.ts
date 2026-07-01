@@ -28,6 +28,7 @@ export type DataMode = "local" | "cloud";
 
 export interface CreateTaskInput {
   title: string;
+  description?: string;
   roomId?: string;
   durationMin?: number;
   intervalDays?: number;
