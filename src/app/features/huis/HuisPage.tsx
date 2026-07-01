@@ -8,6 +8,8 @@ import { spring, stagger, fadeUp } from "../../lib/motion";
 import { PageHeader, HintBanner, Card } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
+import { RoomHero } from "../../components/RoomThumb";
+import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
 
 export function HuisPage() {
@@ -41,6 +43,7 @@ export function HuisPage() {
               <Pencil size={14} className="text-foreground" aria-hidden="true" />
             </motion.button>
           </div>
+          <RoomHero ic={ic} />
           <div className="flex items-center gap-2.5 mt-5">
             <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: c + "28", color: c }}>{ic.icon}</div>
             <div>
@@ -88,6 +91,12 @@ export function HuisPage() {
   return (
     <div className="px-5 pt-14 pb-8">
       <PageHeader title="Huis" subtitle="Wat staat er te doen?" />
+      {rooms.length === 0 && (
+        <div className="text-center pt-4 pb-6">
+          <EmptyIllustration />
+          <p className="text-sm text-muted-foreground mt-1">Nog geen kamers. Voeg er hieronder een toe.</p>
+        </div>
+      )}
       <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
         {rooms.map((r) => (
           <motion.div key={r.id} variants={fadeUp}>

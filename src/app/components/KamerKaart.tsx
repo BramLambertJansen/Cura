@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Check, ChevronRight } from "lucide-react";
 import type { RoomView } from "../../data/types";
 import { SHADOW, roomIcon } from "../lib/constants";
+import { RoomThumb } from "./RoomThumb";
 
 export const KamerKaart = memo(function KamerKaart({
   room, onClick,
@@ -23,12 +24,7 @@ export const KamerKaart = memo(function KamerKaart({
       <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
         style={{ background: `linear-gradient(to bottom,${c},${c}55)` }} />
 
-      <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 relative overflow-hidden"
-        style={{ background: `linear-gradient(145deg,${c}1A,${c}2E)` }}>
-        <div className="absolute inset-0 rounded-2xl"
-          style={{ background: `radial-gradient(circle at 35% 30%,${c}30 0%,transparent 68%)` }} />
-        <div className="relative" style={{ color: c, transform: "scale(1.1)" }}>{ic.icon}</div>
-      </div>
+      <RoomThumb ic={ic} color={c} className="w-14 h-14" />
 
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-foreground leading-snug"

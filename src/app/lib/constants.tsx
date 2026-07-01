@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   UtensilsCrossed, Droplets, Sofa, BedDouble, Monitor, Leaf, Home, Tv,
   BookOpen, Shirt, Coffee, Wind, ShoppingBasket, Dumbbell, Baby, Sparkles,
+  Toilet,
 } from "lucide-react";
 
 /** Reads a CSS custom property from :root so JS-side color constants stay tied to theme.css instead of duplicating its values. */
@@ -25,19 +26,22 @@ export interface IconOption {
   color: string;
   label: string;
   defaultName: string;
+  /** Optional watercolor room illustration (public/rooms/*). When present, cards/detail render it instead of the line icon; falls back to `icon` when the file is missing so partial art degrades gracefully. */
+  image?: string;
 }
 
 export const ICONS: IconOption[] = [
-  { key: "utensils", icon: <UtensilsCrossed size={18} />, iconLg: <UtensilsCrossed size={40} />, color: "#B8924A", label: "Keuken", defaultName: "Keuken" },
-  { key: "droplets", icon: <Droplets size={18} />, iconLg: <Droplets size={40} />, color: "#5A8FA8", label: "Badkamer", defaultName: "Badkamer" },
-  { key: "sofa", icon: <Sofa size={18} />, iconLg: <Sofa size={40} />, color: "#8B6EA8", label: "Woonkamer", defaultName: "Woonkamer" },
-  { key: "bed", icon: <BedDouble size={18} />, iconLg: <BedDouble size={40} />, color: "#496E46", label: "Slaapkamer", defaultName: "Slaapkamer" },
+  { key: "utensils", icon: <UtensilsCrossed size={18} />, iconLg: <UtensilsCrossed size={40} />, color: "#B8924A", label: "Keuken", defaultName: "Keuken", image: "/rooms/keuken.png" },
+  { key: "droplets", icon: <Droplets size={18} />, iconLg: <Droplets size={40} />, color: "#5A8FA8", label: "Badkamer", defaultName: "Badkamer", image: "/rooms/badkamer.png" },
+  { key: "toilet", icon: <Toilet size={18} />, iconLg: <Toilet size={40} />, color: "#6E8A72", label: "Toilet", defaultName: "Toilet", image: "/rooms/toilet.png" },
+  { key: "sofa", icon: <Sofa size={18} />, iconLg: <Sofa size={40} />, color: "#8B6EA8", label: "Woonkamer", defaultName: "Woonkamer", image: "/rooms/woonkamer.png" },
+  { key: "bed", icon: <BedDouble size={18} />, iconLg: <BedDouble size={40} />, color: "#496E46", label: "Slaapkamer", defaultName: "Slaapkamer", image: "/rooms/slaapkamer.png" },
   { key: "monitor", icon: <Monitor size={18} />, iconLg: <Monitor size={40} />, color: "#7A6448", label: "Kantoor", defaultName: "Kantoor" },
-  { key: "leaf", icon: <Leaf size={18} />, iconLg: <Leaf size={40} />, color: "#4E7A40", label: "Tuin", defaultName: "Tuin" },
+  { key: "leaf", icon: <Leaf size={18} />, iconLg: <Leaf size={40} />, color: "#4E7A40", label: "Tuin", defaultName: "Tuin", image: "/rooms/tuin.png" },
   { key: "home", icon: <Home size={18} />, iconLg: <Home size={40} />, color: "#7A7068", label: "Hal", defaultName: "Hal" },
   { key: "tv", icon: <Tv size={18} />, iconLg: <Tv size={40} />, color: "#5A6A7A", label: "TV-kamer", defaultName: "TV-kamer" },
   { key: "book", icon: <BookOpen size={18} />, iconLg: <BookOpen size={40} />, color: "#7A5A48", label: "Studeerkamer", defaultName: "Studeerkamer" },
-  { key: "shirt", icon: <Shirt size={18} />, iconLg: <Shirt size={40} />, color: "#8A6878", label: "Wasruimte", defaultName: "Wasruimte" },
+  { key: "shirt", icon: <Shirt size={18} />, iconLg: <Shirt size={40} />, color: "#8A6878", label: "Wasruimte", defaultName: "Wasruimte", image: "/rooms/wasruimte.png" },
   { key: "coffee", icon: <Coffee size={18} />, iconLg: <Coffee size={40} />, color: "#9A7A5A", label: "Eetkamer", defaultName: "Eetkamer" },
   { key: "wind", icon: <Wind size={18} />, iconLg: <Wind size={40} />, color: "#6A8A88", label: "Balkon", defaultName: "Balkon" },
   { key: "basket", icon: <ShoppingBasket size={18} />, iconLg: <ShoppingBasket size={40} />, color: "#8A7A4A", label: "Berging", defaultName: "Berging" },

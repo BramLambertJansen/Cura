@@ -77,6 +77,7 @@ export function categoryForIconKey(iconKey: string): TemplateCategory {
   switch (iconKey) {
     case "utensils": return "keuken";
     case "droplets": return "badkamer";
+    case "toilet": return "toilet";
     case "sofa": return "woonkamer";
     case "bed": return "slaapkamer";
     default: return "algemeen";

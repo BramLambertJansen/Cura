@@ -1,0 +1,66 @@
+import { useState } from "react";
+import type { IconOption } from "../lib/constants";
+
+/**
+ * Wide, calm room illustration for the room-detail header. Square watercolor
+ * art (with cream margins that match --background) is shown `object-contain`
+ * so nothing gets cropped. Renders nothing when the room has no image or the
+ * file fails to load, so the detail header simply keeps its icon+name row.
+ */
+export function RoomHero({ ic }: { ic: IconOption }) {
+  const [failed, setFailed] = useState(false);
+  if (!ic.image || failed) return null;
+  return (
+    <div className="w-full flex justify-center overflow-hidden" aria-hidden="true">
+      <img
+        src={ic.image}
+        alt=""
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className="h-36 w-auto object-contain"
+      />
+    </div>
+  );
+}
+
+/**
+ * The square room avatar used on room cards and the room-detail header.
+ * Renders the watercolor illustration (`ic.image`) when it exists and loads;
+ * otherwise — or when the file is still missing — falls back to the tinted
+ * gradient tile with the line icon, so partial art degrades gracefully
+ * (CLAUDE.md §3, "degrade gracefully with partial data").
+ */
+export function RoomThumb({
+  ic, color, className = "", rounded = "rounded-2xl",
+}: {
+  ic: IconOption;
+  color: string;
+  /** Tailwind sizing utilities for the square, e.g. "w-14 h-14". */
+  className?: string;
+  rounded?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const showImage = Boolean(ic.image) && !failed;
+
+  return (
+    <div className={`${className} ${rounded} flex items-center justify-center flex-shrink-0 relative overflow-hidden`}
+      style={showImage ? undefined : { background: `linear-gradient(145deg,${color}1A,${color}2E)` }}>
+      {showImage ? (
+        <img
+          src={ic.image}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <>
+          <div className={`absolute inset-0 ${rounded}`}
+            style={{ background: `radial-gradient(circle at 35% 30%,${color}30 0%,transparent 68%)` }} />
+          <div className="relative" style={{ color, transform: "scale(1.1)" }}>{ic.icon}</div>
+        </>
+      )}
+    </div>
+  );
+}

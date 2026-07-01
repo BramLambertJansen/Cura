@@ -2,8 +2,8 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useAuth } from "../../auth/AuthProvider";
-import { Logo } from "../../components/Logo";
 import { AppBackground } from "../../components/AppBackground";
+import { LandingHeader } from "../../components/LandingHeader";
 import { AuthForm, type AuthMode } from "./AuthForm";
 
 export function AuthPage() {
@@ -30,23 +30,22 @@ export function AuthPage() {
 
   return (
     <div
-      className="min-h-dvh flex flex-col items-center justify-center bg-background"
+      className="min-h-dvh flex flex-col items-center bg-background"
       style={{
-        paddingTop: "var(--safe-top)",
-        paddingBottom: "var(--safe-bottom)",
-        paddingLeft: "calc(1.5rem + var(--safe-left))",
-        paddingRight: "calc(1.5rem + var(--safe-right))",
+        paddingBottom: "calc(2rem + var(--safe-bottom))",
+        paddingLeft: "var(--safe-left)",
+        paddingRight: "var(--safe-right)",
       }}
     >
       <AppBackground />
-      <div className="w-full max-w-sm relative z-10">
-        <div className="text-center mb-10">
-          <Logo size={56} className="mx-auto mb-4 rounded-xl" />
-          <h1 className="text-[2rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>Cura</h1>
-          <p className="text-sm text-muted-foreground">
-            {mode === "signin" ? "Welkom terug." : "Maak een account aan om te beginnen."}
-          </p>
-        </div>
+      <LandingHeader subtitle={mode === "signin" ? "Welkom terug." : "Maak een account aan om te beginnen."} />
+      <div
+        className="w-full max-w-sm relative z-10 flex-1 flex flex-col justify-center"
+        style={{
+          paddingLeft: "1.5rem",
+          paddingRight: "1.5rem",
+        }}
+      >
         {pendingConfirmation ? (
           <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground leading-relaxed">
             Check je e-mail om je account te bevestigen, log daarna hier in.
