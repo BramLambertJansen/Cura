@@ -20,6 +20,7 @@ import { NewRoutineSheet } from "./sheets/NewRoutineSheet";
 import { EditRoutineSheet } from "./sheets/EditRoutineSheet";
 import { HouseholdSheet } from "./sheets/HouseholdSheet";
 import { ProfielSheet } from "./sheets/ProfielSheet";
+import { TemplatesSheet } from "./sheets/TemplatesSheet";
 
 // Route-level code splitting — each tab/screen becomes its own chunk instead
 // of shipping in the single main bundle (CLAUDE.md §9 build verification).
@@ -70,6 +71,7 @@ function MainShell() {
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [showHousehold, setShowHousehold] = useState(false);
   const [showProfiel, setShowProfiel] = useState(false);
+  const [templatesFor, setTemplatesFor] = useState<{ roomId: string; roomIconKey: string } | null>(null);
 
   const sheetActions: SheetActions = useMemo(
     () => ({
@@ -81,6 +83,7 @@ function MainShell() {
       openEditRoutine: (bundleId) => setEditingRoutineId(bundleId),
       openHousehold: () => setShowHousehold(true),
       openProfiel: () => setShowProfiel(true),
+      openTemplates: (roomId, roomIconKey) => setTemplatesFor({ roomId, roomIconKey }),
     }),
     [],
   );
@@ -118,6 +121,14 @@ function MainShell() {
           {editingRoutineId && <EditRoutineSheet key="er" bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} />}
           {showNewRoom && <NewRoomSheet key="room" onClose={() => setShowNewRoom(false)} />}
           {editingRoomId && <EditRoomSheet key="edit" roomId={editingRoomId} onClose={() => setEditingRoomId(null)} />}
+          {templatesFor && (
+            <TemplatesSheet
+              key="templates"
+              roomId={templatesFor.roomId}
+              roomIconKey={templatesFor.roomIconKey}
+              onClose={() => setTemplatesFor(null)}
+            />
+          )}
           {showHousehold && <HouseholdSheet key="hs" onClose={() => setShowHousehold(false)} />}
           {showProfiel && (
             <ProfielSheet

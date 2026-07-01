@@ -43,6 +43,7 @@ interface CuraState {
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   claimTask: (taskId: string, claimed: boolean) => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<void>;
+  createTasksFromTemplates: (roomId: string, templates: Omit<CreateTaskInput, "roomId">[]) => Promise<void>;
   updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 
@@ -240,6 +241,21 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         description: input.roomId ? undefined : "Gedeelde pool",
       });
       set({ tasks: [...get().tasks, created] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+    }
+  },
+
+  async createTasksFromTemplates(roomId, templates) {
+    try {
+      const store = await getDataStore();
+      const { householdId } = get();
+      if (!householdId) return;
+      const created = await Promise.all(
+        templates.map((t) => store.createTask(householdId, { ...t, roomId })),
+      );
+      toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
+      set({ tasks: [...get().tasks, ...created] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
     }

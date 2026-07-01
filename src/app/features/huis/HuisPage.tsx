@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { ArrowLeft, Pencil, Plus, Sparkles } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
-import { roomIcon } from "../../lib/constants";
+import { roomIcon, SAGE } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { Leeg, PageHeader, HintBanner } from "../../components/shared";
+import { PageHeader, HintBanner, Card } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { useSheets } from "../../sheetContext";
 
 export function HuisPage() {
-  const { openNewRoom, openEditRoom, openEditTask } = useSheets();
+  const { openNewRoom, openEditRoom, openEditTask, openTemplates } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const claimTask = useCuraStore((s) => s.claimTask);
   const rooms = useRoomViews();
@@ -55,8 +55,18 @@ export function HuisPage() {
         </div>
 
         <div className="px-5 pt-4 pb-8 space-y-2.5">
-          {open.length === 0 && done.length === 0
-            ? <Leeg icon="✓" text="Hier is alles bij. Niks te doen." />
+          {roomTasks.length === 0
+            ? (
+              <Card onClick={() => openTemplates(room.id, room.iconKey)} className="flex flex-col items-center gap-3 py-10 px-6 text-center" ariaLabel="Snelle taken toevoegen aan deze kamer">
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
+                  <Sparkles size={20} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Voeg snelle taken toe</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[220px]">Kies uit een paar veelvoorkomende taken voor deze ruimte.</p>
+                </div>
+              </Card>
+            )
             : <>
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                   {open.map((t) => (
