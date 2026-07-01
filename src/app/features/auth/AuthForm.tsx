@@ -38,8 +38,8 @@ export function AuthForm({
         whileTap={{ scale: 0.97 }} onClick={submit} disabled={!canSubmit || busy}
         className="w-full py-4 rounded-2xl text-white text-sm font-semibold disabled:opacity-40 transition-opacity"
         style={{
-          background: "var(--gradient-primary)",
-          boxShadow: canSubmit && !busy ? `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` : "none",
+          background: "var(--gradient-action)",
+          boxShadow: canSubmit && !busy ? `0 5px 18px color-mix(in srgb, var(--terracotta) 30%, transparent)` : "none",
         }}>
         {busy ? "Even geduld…" : submitLabel}
       </motion.button>

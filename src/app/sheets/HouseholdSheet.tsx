@@ -115,7 +115,7 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
           {!link
             ? <motion.button whileTap={{ scale: 0.97 }} onClick={genLink} disabled={busy}
                 className="w-full py-4 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-                style={{ background: "var(--gradient-primary)", boxShadow: `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` }}>
+                style={{ background: "var(--gradient-action)", boxShadow: `0 5px 18px color-mix(in srgb, var(--terracotta) 30%, transparent)` }}>
                 <Sparkles size={15} /> {busy ? "Even geduld…" : "Uitnodigingslink genereren"}
               </motion.button>
             : <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}

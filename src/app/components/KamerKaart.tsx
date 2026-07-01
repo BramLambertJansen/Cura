@@ -17,7 +17,7 @@ export const KamerKaart = memo(function KamerKaart({
       whileTap={{ scale: 0.983 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       aria-label={openCount > 0 ? `${room.name}, ${openCount} ${openCount === 1 ? "taak" : "taken"} open` : `${room.name}, alles gedaan`}
-      className="w-full flex items-center gap-4 bg-card text-left rounded-2xl px-4 py-3.5 border border-border/50 overflow-hidden relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+      className="w-full flex items-center gap-4 cura-surface text-left rounded-2xl px-4 py-3.5 border border-border/50 overflow-hidden relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
       style={{ boxShadow: SHADOW }}>
 
       <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"

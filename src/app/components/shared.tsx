@@ -70,7 +70,7 @@ export function Sheet({
         transition={dragging ? { duration: 0 } : SHEET_SPRING}
         className="absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] pt-5 overflow-y-auto scrollbar-hide"
         style={{
-          background: "var(--card)",
+          background: "linear-gradient(180deg, var(--card) 0%, color-mix(in srgb, var(--background) 42%, var(--card)) 100%)",
           boxShadow: `0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent),0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent)`,
           // Always capped + scrollable, not just for `tall` sheets: when the
           // keyboard opens (often instantly, since most sheets autoFocus
@@ -172,7 +172,7 @@ export function RingProgress({ value, size = 44, stroke = 3 }: { value: number; 
 export function Card({
   children, onClick, className = "px-4 py-3.5", ariaLabel,
 }: { children: ReactNode; onClick?: () => void; className?: string; ariaLabel?: string }) {
-  const chrome = "bg-card rounded-2xl border border-border/60";
+  const chrome = "cura-surface rounded-2xl border border-border/60";
   if (onClick) {
     return (
       // A `ring-*` utility renders via `box-shadow`, which the inline `boxShadow`
@@ -315,7 +315,7 @@ export function DubbelKnop({
       <motion.button whileTap={{ scale: 0.96 }} onClick={onCancel} className="flex-1 py-3.5 rounded-2xl border border-border text-foreground text-sm font-medium">Annuleren</motion.button>
       <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm} disabled={disabled}
         className="flex-1 py-3.5 rounded-2xl text-white text-sm font-semibold disabled:opacity-35 transition-opacity"
-        style={{ background: "var(--gradient-primary)", boxShadow: disabled ? "none" : `0 4px 16px color-mix(in srgb, var(--primary) 28%, transparent)` }}>{label}</motion.button>
+        style={{ background: "var(--gradient-action)", boxShadow: disabled ? "none" : `0 4px 16px color-mix(in srgb, var(--terracotta) 30%, transparent)` }}>{label}</motion.button>
     </div>
   );
 }

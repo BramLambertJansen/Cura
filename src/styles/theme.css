@@ -2,43 +2,57 @@
 
 :root {
   --font-size: 16px;
-  --background: #E9E2D5;
-  --foreground: #1A1814;
-  --card: #FEFCF7;
-  --card-foreground: #1A1814;
-  --popover: #FEFCF7;
-  --popover-foreground: #1A1814;
-  --primary: #496E46;
+  --background: #F6EFE3;
+  --foreground: #3F2E22;
+  --card: #FFF9EF;
+  --card-foreground: #3F2E22;
+  --popover: #FFF9EF;
+  --popover-foreground: #3F2E22;
+  --primary: #7E8A63;
   --primary-foreground: #ffffff;
-  --secondary: #E3DCD1;
-  --secondary-foreground: #1A1814;
-  --muted: #D6CFBF;
-  --muted-foreground: #5C5248;
-  --accent: #B8CFAF;
-  --accent-foreground: #1A1814;
-  --destructive: #B04535;
+  --secondary: #EFE8D8;
+  --secondary-foreground: #3F2E22;
+  --muted: #E8D9C4;
+  --muted-foreground: #6F5D4A;
+  --accent: #E4E9D8;
+  --accent-foreground: #3F2E22;
+  --destructive: #C76555;
   --destructive-foreground: #ffffff;
-  --border: color-mix(in srgb, var(--border-color) 9%, transparent);
+  --border: color-mix(in srgb, var(--border-color) 11%, transparent);
   --input: transparent;
   --input-background: color-mix(in srgb, var(--card) 72%, var(--secondary));
-  --switch-background: #B8CFAF;
+  --switch-background: #E8D9C4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #496E46;
-  --chart-1: #496E46;
-  --chart-2: #82A47F;
-  --chart-3: #B8CFAF;
-  --chart-4: #C4A45A;
-  --chart-5: #D9BC86;
-  --radius: 1.25rem;
-  --sidebar: #FEFCF7;
-  --sidebar-foreground: #1A1814;
-  --sidebar-primary: #496E46;
+  --ring: #7E8A63;
+  --chart-1: #7E8A63;
+  --chart-2: #9FA784;
+  --chart-3: #E4E9D8;
+  --chart-4: #EFB75A;
+  --chart-5: #D97857;
+  --radius: 1.375rem;
+  --sidebar: #FFF9EF;
+  --sidebar-foreground: #3F2E22;
+  --sidebar-primary: #7E8A63;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #E3DCD1;
-  --sidebar-accent-foreground: #1A1814;
-  --sidebar-border: color-mix(in srgb, var(--border-color) 9%, transparent);
-  --sidebar-ring: #496E46;
+  --sidebar-accent: #EFE8D8;
+  --sidebar-accent-foreground: #3F2E22;
+  --sidebar-border: color-mix(in srgb, var(--border-color) 11%, transparent);
+  --sidebar-ring: #7E8A63;
+
+  /*
+   * Warm minimal household companion palette (Cura Design Development Kit).
+   * Terracotta is the single "primary action" accent — reserved for the FAB
+   * and the one main CTA in a sheet/onboarding screen — while --primary
+   * (sage/olive) stays the calm, structural color used everywhere else
+   * (nav, chips, checkboxes). Keeping them distinct tokens is what lets a
+   * screen have exactly one loud color instead of the app reading as orange.
+   */
+  --terracotta: #D97857;
+  --terracotta-soft: #F6D7C8;
+  --sage: #9FA784;
+  --olive: #6F765F;
+  --sun: #EFB75A;
 
   /*
    * Derived tokens below. Everything here reads from the base palette above
@@ -47,24 +61,31 @@
    * updates automatically. This is what makes a theme swap a CSS edit, not a
    * component hunt (CLAUDE.md §7).
    */
-  --border-color: #5A4B37;
-  --outline-color: #6B625A;
-  --shadow-color: #50412D;
+  --border-color: #6B5540;
+  --outline-color: #6B5540;
+  --shadow-color: #483118;
   --overlay-color: #16120C;
   --gradient-primary: linear-gradient(135deg, color-mix(in srgb, var(--primary) 75%, white) 0%, var(--primary) 100%);
+  --gradient-action: linear-gradient(135deg, color-mix(in srgb, var(--terracotta) 78%, white) 0%, var(--terracotta) 100%);
   --shadow-card: 0 2px 20px color-mix(in srgb, var(--shadow-color) 7%, transparent), 0 1px 4px color-mix(in srgb, var(--shadow-color) 5%, transparent);
   --shadow-card-lg: 0 6px 32px color-mix(in srgb, var(--shadow-color) 10%, transparent), 0 2px 8px color-mix(in srgb, var(--shadow-color) 7%, transparent);
   --shadow-sheet: 0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent), 0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent);
-  --shadow-fab: 0 6px 28px color-mix(in srgb, var(--primary) 42%, transparent), 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 3.5px color-mix(in srgb, var(--card) 96%, transparent);
+  --shadow-fab: 0 6px 28px color-mix(in srgb, var(--terracotta) 42%, transparent), 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 3.5px color-mix(in srgb, var(--card) 96%, transparent);
   --shadow-input: inset 0 1px 0 color-mix(in srgb, white 42%, transparent), 0 1px 2px color-mix(in srgb, var(--shadow-color) 4%, transparent);
   --shadow-input-focus: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent), 0 4px 14px color-mix(in srgb, var(--primary) 7%, transparent);
   --shadow-input-invalid: 0 0 0 3px color-mix(in srgb, var(--destructive) 10%, transparent), 0 4px 14px color-mix(in srgb, var(--destructive) 6%, transparent);
   --input-background-disabled: color-mix(in srgb, var(--muted) 55%, var(--card));
-  --border-input: color-mix(in srgb, var(--outline-color) 12%, transparent);
-  --border-input-filled: color-mix(in srgb, var(--outline-color) 20%, transparent);
+  --border-input: color-mix(in srgb, var(--outline-color) 14%, transparent);
+  --border-input-filled: color-mix(in srgb, var(--outline-color) 24%, transparent);
   --border-input-focus: color-mix(in srgb, var(--primary) 42%, transparent);
   --border-input-invalid: color-mix(in srgb, var(--destructive) 62%, transparent);
-  --progress-near: #7DA87A;
+  --progress-near: #93A375;
+
+  /* Warm paper surface for card-like chrome (`.cura-surface`) — a soft
+   * highlight top-left plus a faint pour toward the page background, instead
+   * of a flat fill, so cards read as layered paper (Cura Design Development
+   * Kit, cards spec) rather than flat panels. */
+  --surface-gradient: radial-gradient(circle at 0% 0%, color-mix(in srgb, white 70%, transparent) 0%, transparent 38%), linear-gradient(180deg, var(--card) 0%, color-mix(in srgb, var(--background) 55%, var(--card)) 100%);
 
   /*
    * Device safe-area insets (notch, status bar, home indicator). Fall back to
@@ -135,6 +156,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-soft: var(--terracotta-soft);
+  --color-sage: var(--sage);
+  --color-sun: var(--sun);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
@@ -185,6 +210,11 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /** Warm paper card chrome — background only, pair with rounded-*/border/shadow utilities. See --surface-gradient above. */
+  .cura-surface {
+    background: var(--surface-gradient);
   }
 
   /**

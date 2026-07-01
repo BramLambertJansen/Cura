@@ -12,9 +12,10 @@ function cssVar(name: string, fallback: string): string {
 }
 
 /** Resolved theme colors. Framer Motion needs concrete colors (not var() strings) to animate between states, so these are read once from theme.css rather than hardcoded. */
-export const SAGE = cssVar("--primary", "#496E46");
-export const MUTED_FG = cssVar("--muted-foreground", "#85786C");
-export const DESTRUCTIVE = cssVar("--destructive", "#B04535");
+export const SAGE = cssVar("--primary", "#7E8A63");
+export const TERRACOTTA = cssVar("--terracotta", "#D97857");
+export const MUTED_FG = cssVar("--muted-foreground", "#6F5D4A");
+export const DESTRUCTIVE = cssVar("--destructive", "#C76555");
 export const SHADOW = "var(--shadow-card)";
 export const SHADOW_LG = "var(--shadow-card-lg)";
 

@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { hasError
           <button
             onClick={() => window.location.reload()}
             className="px-5 py-2.5 rounded-full text-sm font-semibold text-white"
-            style={{ background: "var(--gradient-primary)" }}>
+            style={{ background: "var(--gradient-action)" }}>
             Opnieuw laden
           </button>
         </div>

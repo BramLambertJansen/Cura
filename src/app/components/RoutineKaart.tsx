@@ -49,7 +49,7 @@ export const RoutineKaart = memo(function RoutineKaart({
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
   return (
-    <div className="bg-card rounded-3xl border border-border/60 overflow-hidden" style={{ boxShadow: SHADOW }}>
+    <div className="cura-surface rounded-3xl border border-border/60 overflow-hidden" style={{ boxShadow: SHADOW }}>
       <motion.button
         whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }}
         onClick={() => setOpen(!open)}

@@ -87,7 +87,8 @@ export function DesignSystemPage() {
 
       <Section title="Kleuren">
         <p className="text-sm text-muted-foreground -mt-1">Alles hieronder wijst naar <code>src/styles/theme.css</code> — pas daar een token aan en elk component dat ernaar verwijst volgt automatisch.</p>
-        <Swatch label="Primair (Sage)" value="var(--primary)" />
+        <Swatch label="Primair (Sage) — kalme structuur" value="var(--primary)" />
+        <Swatch label="Terracotta — enige primaire actie" value="var(--terracotta)" />
         <Swatch label="Achtergrond" value="var(--background)" />
         <Swatch label="Kaart" value="var(--card)" />
         <Swatch label="Secundair" value="var(--secondary)" />
@@ -95,9 +96,19 @@ export function DesignSystemPage() {
         <Swatch label="Rand" value="var(--border)" />
         <Swatch label="Destructief" value="var(--destructive)" />
         <div>
-          <p className="text-sm font-medium text-foreground mb-1.5">Gradient (primair)</p>
+          <p className="text-sm font-medium text-foreground mb-1.5">Gradient (sage) — identiteit, niet actie</p>
           <div className="w-full h-10 rounded-xl border border-border/50" style={{ background: "var(--gradient-primary)" }} />
           <p className="text-xs text-muted-foreground font-mono mt-1">var(--gradient-primary)</p>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-1.5">Gradient (actie) — FAB &amp; primaire knop in sheets/onboarding</p>
+          <div className="w-full h-10 rounded-xl border border-border/50" style={{ background: "var(--gradient-action)" }} />
+          <p className="text-xs text-muted-foreground font-mono mt-1">var(--gradient-action)</p>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground mb-1.5">Warme kaart-ondergrond (cura-surface)</p>
+          <div className="cura-surface w-full h-10 rounded-xl border border-border/50" />
+          <p className="text-xs text-muted-foreground font-mono mt-1">.cura-surface — var(--surface-gradient)</p>
         </div>
         <div className="flex gap-4">
           <div className="flex-1 rounded-2xl bg-card border border-border/50 h-12" style={{ boxShadow: "var(--shadow-card)" }} />

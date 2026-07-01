@@ -25,7 +25,7 @@ export const TaakRij = memo(function TaakRij({
       tabIndex={onEdit ? 0 : undefined}
       onKeyDown={onEdit ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEdit(); } } : undefined}
       aria-label={onEdit ? `${task.title} bewerken` : undefined}
-      className={`flex items-center gap-3.5 bg-card rounded-2xl px-4 py-[0.9rem] border border-border/50 ${onEdit ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]" : ""}`}
+      className={`flex items-center gap-3.5 cura-surface rounded-2xl px-4 py-[0.9rem] border border-border/50 ${onEdit ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]" : ""}`}
       style={{
         boxShadow: SHADOW,
         borderLeft: !task.done && !claimed ? `2.5px solid color-mix(in srgb, var(--primary) 18%, transparent)` : "2.5px solid transparent",
