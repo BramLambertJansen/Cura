@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Bell, Check, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, UserRound } from "lucide-react";
+import { Bell, Check, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, Sun, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
@@ -11,7 +11,7 @@ import { preferredTheme, setThemePreference } from "../lib/theme";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
-  const { signOut, userId } = useAuth();
+  const { signOut, status, userId, email } = useAuth();
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
@@ -32,6 +32,9 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
 
   const weergaveNaam = me?.displayName ?? "Jij";
   const dataMode = resolveDataMode();
+  const accountLabel = dataMode === "local"
+    ? "Lokaal profiel"
+    : email ?? (status === "signedIn" ? "Ingelogd" : "Niet ingelogd");
 
   function toggleDarkMode() {
     const next = !darkMode;
@@ -41,10 +44,13 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
   }
 
   function showAccountInfo() {
-    toast("Accountgegevens", {
+    toast("Account", {
       description: dataMode === "local"
         ? "Je werkt lokaal op dit apparaat. Er is geen online account gekoppeld."
-        : `Ingelogd als ${userId ?? "onbekende gebruiker"}.`,
+        : `${accountLabel} · ${household?.name ?? "Thuis"}`,
+      action: dataMode !== "local" && userId
+        ? { label: "Kopieer ID", onClick: () => { navigator.clipboard?.writeText(userId); toast("Account-ID gekopieerd"); } }
+        : undefined,
     });
   }
 
@@ -114,8 +120,17 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
       <div className="mb-7">
         <GroupCard>
           <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={() => toggleNotif()} />} />
-          <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<Toggle checked={darkMode} label="Donkere modus" onChange={toggleDarkMode} />} />
-          <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={showAccountInfo} />
+          <InstRij
+            icon={darkMode ? <Sun size={15} /> : <Moon size={15} />}
+            label="Donkere modus"
+            right={<Toggle checked={darkMode} label="Donkere modus" onChange={toggleDarkMode} />}
+          />
+          <InstRij
+            icon={<UserRound size={15} />}
+            label={<span className="flex flex-col"><span>Account</span><span className="text-xs font-normal text-muted-foreground truncate max-w-[12rem]">{accountLabel}</span></span>}
+            right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />}
+            onClick={showAccountInfo}
+          />
         </GroupCard>
       </div>
 
