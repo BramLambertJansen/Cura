@@ -31,9 +31,9 @@ function NavTab({ tab }: { tab: typeof LEFT[number] }) {
     >
       {active && (
         <motion.div
-          layoutId="nav-active-pill"
-          className="absolute inset-y-1.5 inset-x-2 rounded-full pointer-events-none"
-          style={{ background: "color-mix(in srgb, var(--primary) 14%, transparent)" }}
+          layoutId="nav-active-bar"
+          className="absolute bottom-1 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-full pointer-events-none"
+          style={{ background: SAGE }}
           transition={{ type: "spring", stiffness: 420, damping: 36 }}
           aria-hidden="true"
         />
