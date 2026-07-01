@@ -175,8 +175,11 @@ export function Card({
   const chrome = "bg-card rounded-2xl border border-border/60";
   if (onClick) {
     return (
+      // A `ring-*` utility renders via `box-shadow`, which the inline `boxShadow`
+      // below (the card's resting shadow) would silently clobber — `outline-*`
+      // is a separate CSS property, so it layers on top instead of losing the fight.
       <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }} onClick={onClick} aria-label={ariaLabel}
-        className={`w-full text-left transition-colors ${chrome} ${className}`}
+        className={`w-full text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${chrome} ${className}`}
         style={{ boxShadow: SHADOW }}>
         {children}
       </motion.button>
