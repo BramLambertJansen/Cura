@@ -1,15 +1,13 @@
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import { Check, ChevronRight, Link2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Leeg, PageHeader, IconBadge, Card } from "../../components/shared";
-import { useSheets } from "../../sheetContext";
+import { Leeg, PageHeader, Card } from "../../components/shared";
 
 export function SamenPage() {
-  const { openHousehold } = useSheets();
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const me = members.find((m) => m.userId === currentUserId);
@@ -52,12 +50,6 @@ export function SamenPage() {
             ))}
           </motion.div>
       }
-
-      <Card onClick={openHousehold} className="flex items-center gap-3.5 px-4 py-4">
-        <IconBadge icon={<Link2 size={16} />} size={36} />
-        <span className="flex-1 text-sm font-semibold text-foreground text-left">Huishouden beheren</span>
-        <ChevronRight size={15} className="text-muted-foreground" aria-hidden="true" />
-      </Card>
     </div>
   );
 }

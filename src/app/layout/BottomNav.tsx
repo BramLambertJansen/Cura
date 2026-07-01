@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { NavLink, useLocation } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { CalendarDays, Home, RefreshCw, Heart, Plus } from "lucide-react";
+import { CalendarDays, Home, RefreshCw, MoreHorizontal, Plus } from "lucide-react";
 import { SAGE, MUTED_FG, DESTRUCTIVE } from "../lib/constants";
 
 const LEFT = [
@@ -10,7 +10,7 @@ const LEFT = [
 ];
 const RIGHT = [
   { to: "/routines", label: "Routines", icon: (a: boolean) => <RefreshCw size={19} strokeWidth={a ? 2.4 : 1.7} /> },
-  { to: "/samen", label: "Samen", icon: (a: boolean) => <Heart size={19} strokeWidth={a ? 2.4 : 1.7} fill={a ? "currentColor" : "none"} /> },
+  { to: "/meer", label: "Meer", icon: (a: boolean) => <MoreHorizontal size={20} strokeWidth={a ? 2.4 : 1.7} /> },
 ];
 
 function NavTab({ tab }: { tab: typeof LEFT[number] }) {
