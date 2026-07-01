@@ -5,11 +5,13 @@ import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useNotificationPreference } from "../lib/useTaskReminders";
+import { resolveDataMode } from "../../data/store";
 import { SAGE } from "../lib/constants";
+import { preferredTheme, setThemePreference } from "../lib/theme";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
-  const { signOut } = useAuth();
+  const { signOut, userId } = useAuth();
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
@@ -26,8 +28,31 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
   }, [me?.displayName]);
   const [editing, setEditing] = useState(false);
   const [savingName, setSavingName] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => preferredTheme() === "dark");
 
   const weergaveNaam = me?.displayName ?? "Jij";
+  const dataMode = resolveDataMode();
+
+  function toggleDarkMode() {
+    const next = !darkMode;
+    setThemePreference(next ? "dark" : "light");
+    setDarkMode(next);
+    toast(next ? "Donkere modus aan" : "Lichte modus aan");
+  }
+
+  function showAccountInfo() {
+    toast("Accountgegevens", {
+      description: dataMode === "local"
+        ? "Je werkt lokaal op dit apparaat. Er is geen online account gekoppeld."
+        : `Ingelogd als ${userId ?? "onbekende gebruiker"}.`,
+    });
+  }
+
+  function openHelp() {
+    const subject = encodeURIComponent("Feedback over Cura");
+    const body = encodeURIComponent(`Hoi Cura,\n\nIk wil feedback delen over:\n\n- `);
+    window.location.href = `mailto:feedback@cura.app?subject=${subject}&body=${body}`;
+  }
 
   async function saveName() {
     const trimmed = naam.trim();
@@ -89,14 +114,14 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
       <div className="mb-7">
         <GroupCard>
           <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={() => toggleNotif()} />} />
-          <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Donkere modus — binnenkort")} />
-          <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Account — binnenkort")} />
+          <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<Toggle checked={darkMode} label="Donkere modus" onChange={toggleDarkMode} />} />
+          <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={showAccountInfo} />
         </GroupCard>
       </div>
 
       <Kop>Meer</Kop>
       <GroupCard>
-        <InstRij icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Help — binnenkort")} />
+        <InstRij icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={openHelp} />
         <InstRij icon={<LogOut size={15} style={{ color: "var(--destructive)" }} />}
           label={<span style={{ color: "var(--destructive)" }}>Uitloggen</span>} right={null}
           onClick={() => toast("Uitloggen?", { description: "Je kunt altijd terugkomen.", action: { label: "Uitloggen", onClick: () => { signOut(); toast("Tot de volgende keer."); } } })} />
