@@ -95,12 +95,6 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
                 <p className="text-sm font-semibold text-foreground">{m.displayName}</p>
                 <p className="text-xs text-muted-foreground">{m.userId === currentUserId ? "Jij" : "Huisgenoot"}</p>
               </div>
-              {m.userId !== currentUserId && (
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => toast(`${m.displayName} verwijderen — binnenkort`)}
-                  className="text-xs text-muted-foreground/70 px-2.5 py-1 rounded-full border border-border">
-                  Verwijder
-                </motion.button>
-              )}
             </div>
           ))}
         </GroupCard>
