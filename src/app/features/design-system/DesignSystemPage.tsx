@@ -8,6 +8,7 @@ import {
   PillButton, RingProgress, Sheet, SheetHeader, Toggle, VeldInput, VeldTextarea,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
+import { SuggestieRij } from "../../components/SuggestieRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { Logo } from "../../components/Logo";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
@@ -190,6 +191,10 @@ export function DesignSystemPage() {
           <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onClaim={() => {}} />
           <TaakRij task={demoTaskDone} onToggle={() => {}} />
         </div>
+      </Section>
+
+      <Section title="Suggestie (Vandaag)">
+        <SuggestieRij task={{ ...demoTaskOpen, dueHint: "Waarschijnlijk weer toe" }} onPlan={() => {}} onNietVandaag={() => {}} />
       </Section>
 
       <Section title="Kaarten">

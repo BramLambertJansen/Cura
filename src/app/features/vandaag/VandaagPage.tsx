@@ -1,25 +1,31 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoutineViews, useTaskViews } from "../../../stores/useViews";
+import { toSuggestions } from "../../../data/selectors";
 import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
+import { useNietVandaag } from "../../lib/useNietVandaag";
 import { Avatar, Kop, Leeg } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
+import { SuggestieRij } from "../../components/SuggestieRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
 import { useSheets } from "../../sheetContext";
 
 export function VandaagPage() {
   const { openProfiel, openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
+  const updateTask = useCuraStore((s) => s.updateTask);
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const tasks = useTaskViews();
   const routines = useRoutineViews();
+  const { isDismissed, dismiss } = useNietVandaag();
 
   const greeting = getGreeting();
   const plannedOpen = tasks.filter((t) => t.planned && !t.done);
   const plannedDone = tasks.filter((t) => t.planned && t.done);
   const allPlanned = [...plannedDone, ...plannedOpen];
+  const suggestions = toSuggestions(tasks).filter((t) => !isDismissed(t.id));
 
   const me = members.find((m) => m.userId === currentUserId);
   const huisgenootActivity = tasks.filter(
@@ -89,6 +95,25 @@ export function VandaagPage() {
               </motion.div>
           }
         </section>
+
+        {suggestions.length > 0 && (
+          <section>
+            <Kop>Misschien handig vandaag</Kop>
+            <motion.div layout variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
+              <AnimatePresence>
+                {suggestions.map((task) => (
+                  <motion.div key={task.id} layout variants={fadeUp}>
+                    <SuggestieRij
+                      task={task}
+                      onPlan={() => updateTask(task.id, { planned: true })}
+                      onNietVandaag={() => dismiss(task.id)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </section>
+        )}
 
         <section>
           <Kop>Routines van vandaag</Kop>

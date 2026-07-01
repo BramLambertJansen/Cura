@@ -7,6 +7,7 @@ import {
   toRoutineView,
   toActivityFeed,
   getDueReminders,
+  toSuggestions,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -236,6 +237,57 @@ describe("reminder trigger logic", () => {
     const t = task({ intervalDays: 1, dueDate: dueDate.toISOString() });
     const reminders = getDueReminders([t], buildLatestCompletionMap([]), now.getTime());
     expect(reminders).toHaveLength(0);
+  });
+});
+
+describe("Vandaag suggestions — manual, no AI", () => {
+  const now = Date.now();
+
+  it("excludes tasks already planned or already done", () => {
+    const tasks = [
+      task({ id: "t1", intervalDays: 5, dueDate: iso(0, now) }),
+    ];
+    const completions: TaskCompletion[] = [];
+    const view = toTaskView({ ...tasks[0], planned: true }, buildLatestCompletionMap(completions), [], [member()], now);
+    expect(toSuggestions([view])).toHaveLength(0);
+  });
+
+  it("suggests an open, unplanned task that is softly overdue", () => {
+    const t = task({ id: "t1", intervalDays: 5 });
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(6 * DAY_MS, now) },
+    ];
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    const suggestions = toSuggestions([view]);
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0].id).toBe("t1");
+  });
+
+  it("suggests an open task carrying a wekker, even without a due hint", () => {
+    const t = task({ id: "t1", dueDate: iso(0, now) });
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()], now);
+    expect(toSuggestions([view])).toHaveLength(1);
+  });
+
+  it("sorts shortest duration first, unknown duration last", () => {
+    const longTask = task({ id: "t1", durationMin: 30, dueDate: iso(0, now) });
+    const shortTask = task({ id: "t2", durationMin: 5, dueDate: iso(0, now) });
+    const unknownTask = task({ id: "t3", dueDate: iso(0, now) });
+    const views = [longTask, shortTask, unknownTask].map((t) =>
+      toTaskView(t, buildLatestCompletionMap([]), [], [member()], now),
+    );
+    const suggestions = toSuggestions(views);
+    expect(suggestions.map((s) => s.id)).toEqual(["t2", "t1", "t3"]);
+  });
+
+  it("never phrases a suggestion as an exact day count", () => {
+    const t = task({ id: "t1", intervalDays: 3 });
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(10 * DAY_MS, now) },
+    ];
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    const [suggestion] = toSuggestions([view]);
+    expect(suggestion.dueHint).not.toMatch(/\d/);
   });
 });
 
