@@ -29,6 +29,19 @@ interface TaskRow {
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
 
+// Email/password signup stores the chosen name under `displayName`; Google
+// OAuth instead populates `full_name`/`name` from the Google profile — no
+// `displayName` field is ever set for those users.
+function metadataDisplayName(user: { user_metadata?: Record<string, unknown> }): string {
+  const meta = user.user_metadata ?? {};
+  return (
+    (meta.displayName as string | undefined) ??
+    (meta.full_name as string | undefined) ??
+    (meta.name as string | undefined) ??
+    "Ik"
+  );
+}
+
 function mapHousehold(r: HouseholdRow): Household {
   return HouseholdSchema.parse({ id: r.id, name: r.name });
 }
@@ -115,7 +128,7 @@ export class SupabaseStore implements DataStore {
   async createHousehold(name: string): Promise<Household> {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData.user) throw new Error("Niet ingelogd.");
-    const displayName = (userData.user.user_metadata?.displayName as string | undefined) ?? "Ik";
+    const displayName = metadataDisplayName(userData.user);
     const householdId = uid();
     const memberId = uid();
     const { error } = await supabase.rpc("create_household", {
@@ -162,7 +175,7 @@ export class SupabaseStore implements DataStore {
   async acceptInvite(token: string): Promise<{ ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" }> {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData.user) throw new Error("Niet ingelogd.");
-    const displayName = (userData.user.user_metadata?.displayName as string | undefined) ?? "Ik";
+    const displayName = metadataDisplayName(userData.user);
     const memberId = uid();
     const { data, error } = await supabase.rpc("accept_invite", {
       p_token: token,

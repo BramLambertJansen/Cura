@@ -13,6 +13,10 @@ interface AuthContextValue {
    *  email confirmation — signUp then succeeds without starting a session. */
   signUp: (email: string, password: string, displayName: string) => Promise<{ needsConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
+  /** Sends a passwordless sign-in link to the given address (creates the
+   *  account on first use). Clicking it lands back on the current URL, so
+   *  an invite token in the path survives the round trip. */
+  signInWithMagicLink: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -61,6 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async signIn(email, password) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    async signInWithMagicLink(email) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.href },
+      });
       if (error) throw error;
     },
     async signOut() {

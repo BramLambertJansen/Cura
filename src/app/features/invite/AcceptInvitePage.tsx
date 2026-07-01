@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { AppBackground } from "../../components/AppBackground";
 import { AuthForm, type AuthMode } from "../auth/AuthForm";
+import { MagicLinkForm } from "../auth/MagicLinkForm";
 
 type Reason = "already_member" | "invalid" | "expired";
 type Result = { ok: true } | { ok: false; reason: Reason };
@@ -19,13 +20,15 @@ const REASON_COPY: Record<Reason, string> = {
 export function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { status, signIn, signUp } = useAuth();
+  const { status, signIn, signUp, signInWithMagicLink } = useAuth();
   const acceptInvite = useCuraStore((s) => s.acceptInvite);
 
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [busy, setBusy] = useState(false);
+  const [magicBusy, setMagicBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const attempted = useRef(false);
 
   useEffect(() => {
@@ -58,6 +61,18 @@ export function AcceptInvitePage() {
     }
   }
 
+  async function handleMagicLink(email: string) {
+    setMagicBusy(true);
+    try {
+      await signInWithMagicLink(email);
+      setMagicLinkSent(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Inloglink versturen lukte niet");
+    } finally {
+      setMagicBusy(false);
+    }
+  }
+
   if (!token) return null;
 
   return (
@@ -83,12 +98,26 @@ export function AcceptInvitePage() {
           </p>
         )}
 
-        {status === "signedOut" && !pendingConfirmation && (
+        {status === "signedOut" && magicLinkSent && (
+          <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground leading-relaxed">
+            Check je e-mail voor een inloglink, dan word je vanzelf toegevoegd.
+          </p>
+        )}
+
+        {status === "signedOut" && !pendingConfirmation && !magicLinkSent && (
           <>
-            <AuthForm
-              mode={authMode} busy={busy} onSubmit={handleAuth}
-              submitLabel={authMode === "signup" ? "Account aanmaken & accepteren" : "Inloggen & accepteren"}
-            />
+            <div className="space-y-4">
+              <MagicLinkForm onSubmit={handleMagicLink} busy={magicBusy} submitLabel="Stuur inloglink & accepteer" />
+              <div className="flex items-center gap-3 text-xs text-muted-foreground" role="presentation">
+                <div className="h-px flex-1 bg-border" aria-hidden="true" />
+                of, met wachtwoord
+                <div className="h-px flex-1 bg-border" aria-hidden="true" />
+              </div>
+              <AuthForm
+                mode={authMode} busy={busy} onSubmit={handleAuth}
+                submitLabel={authMode === "signup" ? "Account aanmaken & accepteren" : "Inloggen & accepteren"}
+              />
+            </div>
             <button
               onClick={() => setAuthMode(authMode === "signup" ? "signin" : "signup")}
               className="w-full text-center text-sm text-muted-foreground mt-6">
