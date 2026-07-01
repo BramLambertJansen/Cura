@@ -2,11 +2,12 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { useRoomView } from "../../stores/useViews";
 import { ICONS, ICON_BY_KEY, SAGE } from "../lib/constants";
 import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop } from "../components/shared";
 
 export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: () => void }) {
-  const room = useCuraStore((s) => s.rooms.find((r) => r.id === roomId));
+  const room = useRoomView(roomId);
   const members = useCuraStore((s) => s.members);
   const updateRoom = useCuraStore((s) => s.updateRoom);
   const deleteRoom = useCuraStore((s) => s.deleteRoom);

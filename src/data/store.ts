@@ -74,7 +74,7 @@ export interface DataStore {
    * result rather than silently adding a second. Removing the cap later is one
    * line, not a migration.
    */
-  acceptInvite(token: string, userId: string): Promise<{ ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" }>;
+  acceptInvite(token: string): Promise<{ ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" }>;
   /** Revokes a not-yet-accepted invite so its link stops working. Disabled in local mode. */
   revokeInvite(token: string): Promise<void>;
 

@@ -3,9 +3,9 @@ import { motion } from "motion/react";
 import { ArrowLeft, Pencil, Plus, Sparkles } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
-import { roomIcon, SAGE } from "../../lib/constants";
+import { roomIcon } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { PageHeader, HintBanner, Card } from "../../components/shared";
+import { PageHeader, HintBanner, Card, IconBadge } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { RoomHero } from "../../components/RoomThumb";
@@ -45,7 +45,7 @@ export function HuisPage() {
           </div>
           <RoomHero ic={ic} />
           <div className="flex items-center gap-2.5 mt-5">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: c + "28", color: c }}>{ic.icon}</div>
+            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: `color-mix(in srgb, ${c} 16%, transparent)`, color: c }}>{ic.icon}</div>
             <div>
               <h2 className="text-[1.65rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{room.name}</h2>
               {room.owner && <p className="text-muted-foreground text-xs mt-0.5">Meestal {room.owner}</p>}
@@ -61,9 +61,7 @@ export function HuisPage() {
           {roomTasks.length === 0
             ? (
               <Card onClick={() => openTemplates(room.id, room.iconKey)} className="flex flex-col items-center gap-3 py-10 px-6 text-center" ariaLabel="Snelle taken toevoegen aan deze kamer">
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
-                  <Sparkles size={20} aria-hidden="true" />
-                </div>
+                <IconBadge icon={<Sparkles size={20} />} size={44} />
                 <div>
                   <p className="text-sm font-semibold text-foreground">Voeg snelle taken toe</p>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[220px]">Kies uit een paar veelvoorkomende taken voor deze ruimte.</p>

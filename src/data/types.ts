@@ -52,6 +52,7 @@ export interface TaskView {
   room?: string; // resolved room name
   roomId?: string;
   duration?: string; // formatted, e.g. "10 min"
+  durationMin?: number; // raw minutes, for the edit form — not for display
   intervalDays?: number; // for the interval-hint badge, e.g. "Wekelijks"
   planned: boolean;
   done: boolean; // derived: completed within the current cycle
@@ -70,6 +71,7 @@ export interface RoomView {
   iconKey: string;
   color: string;
   owner?: string; // resolved soft owner name
+  ownerId?: string; // raw member id, for the edit form — not for display
   tasks: TaskView[];
   openCount: number;
   hint: string; // soft: "Waarschijnlijk weer toe aan een beurt" / "Nog even goed"

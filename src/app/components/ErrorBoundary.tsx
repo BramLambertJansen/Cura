@@ -12,7 +12,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { hasError
     if (this.state.hasError) {
       return (
         <div
-          className="min-h-dvh flex flex-col items-center justify-center bg-background text-center"
+          className="fixed inset-0 flex flex-col items-center justify-center bg-background text-center"
           style={{
             paddingTop: "var(--safe-top)",
             paddingBottom: "var(--safe-bottom)",

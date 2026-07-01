@@ -4,6 +4,7 @@ import { Check, ChevronRight } from "lucide-react";
 import type { RoomView } from "../../data/types";
 import { SHADOW, roomIcon } from "../lib/constants";
 import { RoomThumb } from "./RoomThumb";
+import { CARD_CHROME } from "./shared";
 
 export const KamerKaart = memo(function KamerKaart({
   room, onClick,
@@ -18,11 +19,11 @@ export const KamerKaart = memo(function KamerKaart({
       whileTap={{ scale: 0.983 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       aria-label={openCount > 0 ? `${room.name}, ${openCount} ${openCount === 1 ? "taak" : "taken"} open` : `${room.name}, alles gedaan`}
-      className="w-full flex items-center gap-4 bg-card text-left rounded-2xl px-4 py-3.5 border border-border/50 overflow-hidden relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+      className={`w-full flex items-center gap-4 text-left rounded-2xl px-4 py-3.5 overflow-hidden relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${CARD_CHROME}`}
       style={{ boxShadow: SHADOW }}>
 
       <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
-        style={{ background: `linear-gradient(to bottom,${c},${c}55)` }} />
+        style={{ background: `linear-gradient(to bottom,${c},color-mix(in srgb, ${c} 33%, transparent))` }} />
 
       <RoomThumb ic={ic} color={c} className="w-14 h-14" />
 
@@ -48,7 +49,7 @@ export const KamerKaart = memo(function KamerKaart({
           </div>
         ) : (
           <div className="w-6 h-6 rounded-full flex items-center justify-center" aria-hidden="true"
-            style={{ background: `${c}14` }}>
+            style={{ background: `color-mix(in srgb, ${c} 8%, transparent)` }}>
             <Check size={11} strokeWidth={2.5} style={{ color: c, opacity: 0.65 }} />
           </div>
         )}

@@ -44,7 +44,7 @@ export function RoomThumb({
 
   return (
     <div className={`${className} ${rounded} flex items-center justify-center flex-shrink-0 relative overflow-hidden`}
-      style={showImage ? undefined : { background: `linear-gradient(145deg,${color}1A,${color}2E)` }}>
+      style={showImage ? undefined : { background: `linear-gradient(145deg,color-mix(in srgb, ${color} 10%, transparent),color-mix(in srgb, ${color} 18%, transparent))` }}>
       {showImage ? (
         <img
           src={ic.image}
@@ -57,7 +57,7 @@ export function RoomThumb({
       ) : (
         <>
           <div className={`absolute inset-0 ${rounded}`}
-            style={{ background: `radial-gradient(circle at 35% 30%,${color}30 0%,transparent 68%)` }} />
+            style={{ background: `radial-gradient(circle at 35% 30%,color-mix(in srgb, ${color} 19%, transparent) 0%,transparent 68%)` }} />
           <div className="relative" style={{ color, transform: "scale(1.1)" }}>{ic.icon}</div>
         </>
       )}

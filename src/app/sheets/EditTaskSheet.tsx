@@ -2,13 +2,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { useRoomViews } from "../../stores/useViews";
+import { useRoomViews, useTaskView } from "../../stores/useViews";
 import { Sheet, SheetHeader, VeldInput, DubbelKnop } from "../components/shared";
 import { TaskFormFields, buildDueDate, extractTijd, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
 
 export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
-  const task = useCuraStore((s) => s.tasks.find((t) => t.id === taskId));
+  const task = useTaskView(taskId);
   const updateTask = useCuraStore((s) => s.updateTask);
   const deleteTask = useCuraStore((s) => s.deleteTask);
   const rooms = useRoomViews();
