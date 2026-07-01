@@ -8,9 +8,13 @@ import {
   PillButton, RingProgress, Sheet, SheetHeader, Toggle, VeldInput, VeldTextarea,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
+import { SuggestieRij } from "../../components/SuggestieRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { Logo } from "../../components/Logo";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
+import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
+import { ActiviteitReacties } from "../../components/ActiviteitReacties";
+import type { ReactieKind } from "../../lib/useReacties";
 
 /**
  * Living style guide — not a tab, no route in BottomNav. Visit /dev/design-system
@@ -63,6 +67,7 @@ export function DesignSystemPage() {
   const [veld, setVeld] = useState("");
   const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
+  const [reactie, setReactie] = useState<ReactieKind | undefined>(undefined);
 
   return (
     <div className="px-5 pt-14 pb-16 space-y-10">
@@ -177,11 +182,34 @@ export function DesignSystemPage() {
         <Leeg icon="🌿" text="Niets op de planning. Geniet ervan." />
       </Section>
 
+      <Section title="Laden">
+        <p className="text-sm text-muted-foreground -mt-1 mb-1">Rustige placeholders tijdens auth/init/route-laden — geen spinners, geen layout shift.</p>
+        <CardSkeleton />
+        <ListSkeleton count={2} />
+      </Section>
+
       <Section title="Taakrij">
         <div className="space-y-2.5">
           <TaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onClaim={() => {}} />
           <TaakRij task={demoTaskDone} onToggle={() => {}} />
+        </div>
+      </Section>
+
+      <Section title="Suggestie (Vandaag)">
+        <SuggestieRij task={{ ...demoTaskOpen, dueHint: "Waarschijnlijk weer toe" }} onPlan={() => {}} onNietVandaag={() => {}} />
+      </Section>
+
+      <Section title="Activiteit-reacties (Samen)">
+        <div className="space-y-2.5">
+          <Card>
+            <p className="text-sm font-semibold text-foreground">Onbeantwoord</p>
+            <ActiviteitReacties reacted={reactie} onReact={setReactie} />
+          </Card>
+          <Card>
+            <p className="text-sm font-semibold text-foreground">Beantwoord</p>
+            <ActiviteitReacties reacted="bedankt" onReact={() => {}} />
+          </Card>
         </div>
       </Section>
 

@@ -10,6 +10,9 @@ import { pageIn, pageTx } from "./lib/motion";
 import { BottomNav } from "./layout/BottomNav";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppBackground } from "./components/AppBackground";
+import { FullScreenSkeleton, PageSkeleton } from "./components/Skeletons";
+import { ConnectivityBanner } from "./components/ConnectivityBanner";
+import { UpdatePrompt } from "./components/UpdatePrompt";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { EditTaskSheet } from "./sheets/EditTaskSheet";
@@ -19,6 +22,7 @@ import { NewRoutineSheet } from "./sheets/NewRoutineSheet";
 import { EditRoutineSheet } from "./sheets/EditRoutineSheet";
 import { HouseholdSheet } from "./sheets/HouseholdSheet";
 import { ProfielSheet } from "./sheets/ProfielSheet";
+import { TemplatesSheet } from "./sheets/TemplatesSheet";
 
 // Route-level code splitting — each tab/screen becomes its own chunk instead
 // of shipping in the single main bundle (CLAUDE.md §9 build verification).
@@ -69,6 +73,7 @@ function MainShell() {
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [showHousehold, setShowHousehold] = useState(false);
   const [showProfiel, setShowProfiel] = useState(false);
+  const [templatesFor, setTemplatesFor] = useState<{ roomId: string; roomIconKey: string } | null>(null);
 
   const sheetActions: SheetActions = useMemo(
     () => ({
@@ -80,6 +85,7 @@ function MainShell() {
       openEditRoutine: (bundleId) => setEditingRoutineId(bundleId),
       openHousehold: () => setShowHousehold(true),
       openProfiel: () => setShowProfiel(true),
+      openTemplates: (roomId, roomIconKey) => setTemplatesFor({ roomId, roomIconKey }),
     }),
     [],
   );
@@ -103,7 +109,7 @@ function MainShell() {
             paddingBottom: "calc(6rem + var(--safe-bottom))",
           }}
         >
-          <Suspense fallback={null}>
+          <Suspense fallback={<PageSkeleton />}>
             <AnimatedRoutes />
           </Suspense>
         </div>
@@ -117,6 +123,14 @@ function MainShell() {
           {editingRoutineId && <EditRoutineSheet key="er" bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} />}
           {showNewRoom && <NewRoomSheet key="room" onClose={() => setShowNewRoom(false)} />}
           {editingRoomId && <EditRoomSheet key="edit" roomId={editingRoomId} onClose={() => setEditingRoomId(null)} />}
+          {templatesFor && (
+            <TemplatesSheet
+              key="templates"
+              roomId={templatesFor.roomId}
+              roomIconKey={templatesFor.roomIconKey}
+              onClose={() => setTemplatesFor(null)}
+            />
+          )}
           {showHousehold && <HouseholdSheet key="hs" onClose={() => setShowHousehold(false)} />}
           {showProfiel && (
             <ProfielSheet
@@ -151,10 +165,10 @@ function Gate() {
     prevStatusRef.current = status;
   }, [status, reset]);
 
-  if (status === "loading") return null;
-  if (status === "signedOut") return <Suspense fallback={null}><AuthPage /></Suspense>;
-  if (!ready) return null;
-  if (households.length === 0) return <Suspense fallback={null}><CreateHouseholdPage /></Suspense>;
+  if (status === "loading") return <FullScreenSkeleton />;
+  if (status === "signedOut") return <Suspense fallback={<FullScreenSkeleton />}><AuthPage /></Suspense>;
+  if (!ready) return <FullScreenSkeleton />;
+  if (households.length === 0) return <Suspense fallback={<FullScreenSkeleton />}><CreateHouseholdPage /></Suspense>;
   return <MainShell />;
 }
 
@@ -170,9 +184,11 @@ export default function App() {
             boxShadow: SHADOW_LG,
           },
         }} />
+        <ConnectivityBanner />
+        <UpdatePrompt />
         <ErrorBoundary>
           <Routes>
-            <Route path="/uitnodiging/:token" element={<Suspense fallback={null}><AcceptInvitePage /></Suspense>} />
+            <Route path="/uitnodiging/:token" element={<Suspense fallback={<FullScreenSkeleton />}><AcceptInvitePage /></Suspense>} />
             <Route path="/*" element={<Gate />} />
           </Routes>
         </ErrorBoundary>

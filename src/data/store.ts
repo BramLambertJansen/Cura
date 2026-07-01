@@ -105,6 +105,15 @@ export interface DataStore {
   createBundle(householdId: string, bundle: Omit<Bundle, "id" | "householdId">): Promise<Bundle>;
   updateBundle(bundleId: string, patch: Partial<Omit<Bundle, "id" | "householdId">>): Promise<Bundle>;
   deleteBundle(bundleId: string): Promise<void>;
+
+  /**
+   * Live updates for this household (tasks, task_completions, rooms, bundles,
+   * members) — cloud-only (Phase 3+ Realtime). `onChange` fires once per burst
+   * of remote change events; the caller decides what to refetch. Returns an
+   * unsubscribe function. A no-op in local mode (single device, nothing to
+   * subscribe to) so callers never need to branch on `store.mode` themselves.
+   */
+  subscribeToChanges(householdId: string, onChange: () => void): () => void;
 }
 
 /**

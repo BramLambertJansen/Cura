@@ -282,6 +282,29 @@ function densityHint(done: number, total: number): string {
   return "Glipt er de laatste tijd een beetje uit";
 }
 
+// ─── Vandaag suggestions — manual, no AI ─────────────────────────────────────
+
+/**
+ * Candidate tasks that could be handy to plan today: not already on today's
+ * plan, still open, and either softly due (`dueHint` says so) or carrying a
+ * wekker/dueDate. Sorted shortest-duration-first (a gentle, optional nudge —
+ * never a priority ranking) with unknown-duration tasks trailing. No AI, no
+ * external calls — pure derivation from data already in the domain.
+ */
+export function toSuggestions(tasks: TaskView[], limit = 5): TaskView[] {
+  const candidates = tasks.filter(
+    (t) => !t.planned && !t.done && (t.dueHint === "Waarschijnlijk weer toe" || t.dueDate !== undefined),
+  );
+  return [...candidates]
+    .sort((a, b) => suggestionDurationMin(a) - suggestionDurationMin(b))
+    .slice(0, limit);
+}
+
+function suggestionDurationMin(task: TaskView): number {
+  const match = task.duration?.match(/(\d+)/);
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+}
+
 // ─── Visibility feed (Samen) ─────────────────────────────────────────────────
 
 /** Recent completions as a calm chronological feed — a message, not a score. */

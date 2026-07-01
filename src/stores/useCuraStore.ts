@@ -43,6 +43,7 @@ interface CuraState {
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   claimTask: (taskId: string, claimed: boolean) => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<void>;
+  createTasksFromTemplates: (roomId: string, templates: Omit<CreateTaskInput, "roomId">[]) => Promise<void>;
   updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 
@@ -70,6 +71,13 @@ const getDataStore = (): Promise<DataStore> => {
 
 // Tasks currently mid-toggle — prevents a rapid double-tap from writing two completions.
 const toggling = new Set<string>();
+
+// Realtime (Phase 3+, cloud mode only — a no-op subscription in local mode).
+// A burst of remote postgres_changes events collapses into one refetch instead
+// of one per row (someone completing several tasks shouldn't fire N refetches).
+const REALTIME_DEBOUNCE_MS = 400;
+let unsubscribeRealtime: (() => void) | null = null;
+let realtimeRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useCuraStore = create<CuraState>((set, get) => ({
   ready: false,
@@ -111,6 +119,30 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         tasks,
         completions,
         bundles,
+      });
+
+      // Re-init (e.g. after accepting an invite) replaces any earlier subscription.
+      unsubscribeRealtime?.();
+      unsubscribeRealtime = store.subscribeToChanges(household.id, () => {
+        if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
+        realtimeRefreshTimer = setTimeout(() => {
+          void (async () => {
+            try {
+              const [freshMembers, freshRooms, freshTasks, freshCompletions, freshBundles] = await Promise.all([
+                store.listMembers(household.id),
+                store.listRooms(household.id),
+                store.listTasks(household.id),
+                store.listCompletions(household.id),
+                store.listBundles(household.id),
+              ]);
+              // Guard against a change from a household we've since left (reset()/re-init raced this timer).
+              if (get().householdId !== household.id) return;
+              set({ members: freshMembers, rooms: freshRooms, tasks: freshTasks, completions: freshCompletions, bundles: freshBundles });
+            } catch {
+              // Silent — a transient refresh failure isn't worth interrupting the session over; the next realtime event retries.
+            }
+          })();
+        }, REALTIME_DEBOUNCE_MS);
       });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Laden is niet gelukt");
@@ -180,6 +212,12 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   reset() {
+    unsubscribeRealtime?.();
+    unsubscribeRealtime = null;
+    if (realtimeRefreshTimer) {
+      clearTimeout(realtimeRefreshTimer);
+      realtimeRefreshTimer = null;
+    }
     set({ ready: false, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [] });
     dataStorePromise = null;
   },
@@ -240,6 +278,21 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         description: input.roomId ? undefined : "Gedeelde pool",
       });
       set({ tasks: [...get().tasks, created] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+    }
+  },
+
+  async createTasksFromTemplates(roomId, templates) {
+    try {
+      const store = await getDataStore();
+      const { householdId } = get();
+      if (!householdId) return;
+      const created = await Promise.all(
+        templates.map((t) => store.createTask(householdId, { ...t, roomId })),
+      );
+      toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
+      set({ tasks: [...get().tasks, ...created] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
     }
