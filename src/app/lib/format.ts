@@ -23,6 +23,11 @@ export function intervalLabel(days: number): string {
   return `Elke ${days} dagen`;
 }
 
+/** Soft household-status line for Samen — never a count, streak or comparison, just a warm read of the day so far. */
+export function householdStatusLine(completedTodayCount: number): string {
+  return completedTodayCount > 0 ? "Er is vandaag al wat lucht gemaakt" : "Rustige dag tot nu toe";
+}
+
 /** Derives a routine's completion-window cadence + label from its trigger id (used by Nieuw/Bewerk routine sheets). */
 export function cadenceAndLabel(triggerId: string): { cadence: "daily" | "weekly"; windowLabel: string } {
   if (["ochtend", "middag", "avond", "dagelijks"].includes(triggerId)) {
