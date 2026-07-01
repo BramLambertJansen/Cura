@@ -12,6 +12,8 @@ De UI/UX is gedesigned in Figma (via Make), op basis van het wireframe-brief in 
 
 Plus **Huis**: de gedeelde pool van taken, georganiseerd per kamer.
 
+**Navigatie:** de onderbalk (`BottomNav`) toont 4 tabs — Vandaag, Huis, Routines, **Meer**. Samen heeft geen eigen tab meer; het is, samen met Huishouden beheren en Account beheren, bereikbaar via de Meer-pagina (§5). Nieuwe schermen die geen eigen tab verdienen, horen als item op Meer, niet als 5e tab.
+
 **Toon:** kalm, warm, vergevingsgezind. Eerlijkheid boven precisie — liever "badkamer is waarschijnlijk weer toe" dan een hard getal of tijdstip. UI-taal is Nederlands.
 
 Volledige ontwerpprincipes, schermen en microcopy-richtlijnen staan in `src/imports/pasted_text/cura-design-brief.md` — lees dat bij twijfel over toon of gedrag, niet alleen deze file.
