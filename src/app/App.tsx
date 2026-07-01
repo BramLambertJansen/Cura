@@ -10,6 +10,7 @@ import { pageIn, pageTx } from "./lib/motion";
 import { BottomNav } from "./layout/BottomNav";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppBackground } from "./components/AppBackground";
+import { FullScreenSkeleton, PageSkeleton } from "./components/Skeletons";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { EditTaskSheet } from "./sheets/EditTaskSheet";
@@ -103,7 +104,7 @@ function MainShell() {
             paddingBottom: "calc(6rem + var(--safe-bottom))",
           }}
         >
-          <Suspense fallback={null}>
+          <Suspense fallback={<PageSkeleton />}>
             <AnimatedRoutes />
           </Suspense>
         </div>
@@ -151,10 +152,10 @@ function Gate() {
     prevStatusRef.current = status;
   }, [status, reset]);
 
-  if (status === "loading") return null;
-  if (status === "signedOut") return <Suspense fallback={null}><AuthPage /></Suspense>;
-  if (!ready) return null;
-  if (households.length === 0) return <Suspense fallback={null}><CreateHouseholdPage /></Suspense>;
+  if (status === "loading") return <FullScreenSkeleton />;
+  if (status === "signedOut") return <Suspense fallback={<FullScreenSkeleton />}><AuthPage /></Suspense>;
+  if (!ready) return <FullScreenSkeleton />;
+  if (households.length === 0) return <Suspense fallback={<FullScreenSkeleton />}><CreateHouseholdPage /></Suspense>;
   return <MainShell />;
 }
 
@@ -172,7 +173,7 @@ export default function App() {
         }} />
         <ErrorBoundary>
           <Routes>
-            <Route path="/uitnodiging/:token" element={<Suspense fallback={null}><AcceptInvitePage /></Suspense>} />
+            <Route path="/uitnodiging/:token" element={<Suspense fallback={<FullScreenSkeleton />}><AcceptInvitePage /></Suspense>} />
             <Route path="/*" element={<Gate />} />
           </Routes>
         </ErrorBoundary>

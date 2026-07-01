@@ -11,6 +11,7 @@ import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { Logo } from "../../components/Logo";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
+import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
 
 /**
  * Living style guide — not a tab, no route in BottomNav. Visit /dev/design-system
@@ -175,6 +176,12 @@ export function DesignSystemPage() {
 
       <Section title="Lege staat">
         <Leeg icon="🌿" text="Niets op de planning. Geniet ervan." />
+      </Section>
+
+      <Section title="Laden">
+        <p className="text-sm text-muted-foreground -mt-1 mb-1">Rustige placeholders tijdens auth/init/route-laden — geen spinners, geen layout shift.</p>
+        <CardSkeleton />
+        <ListSkeleton count={2} />
       </Section>
 
       <Section title="Taakrij">
