@@ -57,7 +57,8 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
         onDuurMinChange={(v) => setFormState((s) => ({ ...s, duurMin: v }))}
       />
 
-      <DubbelKnop onCancel={onClose} onConfirm={handleAdd} label="Toevoegen" disabled={!title.trim()} />
+      <DubbelKnop onCancel={onClose} onConfirm={handleAdd} label="Toevoegen"
+        disabled={!title.trim() || (formState.wekkerAan && !formState.herhalenAan && !formState.wekkerDatum)} />
     </Sheet>
   );
 }

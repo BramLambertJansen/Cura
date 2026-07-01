@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTaskReminders } from "./lib/useTaskReminders";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
@@ -133,12 +133,21 @@ function MainShell() {
 function Gate() {
   const { status } = useAuth();
   const init = useCuraStore((s) => s.init);
+  const reset = useCuraStore((s) => s.reset);
   const ready = useCuraStore((s) => s.ready);
   const households = useCuraStore((s) => s.households);
 
   useEffect(() => {
     if (status === "signedIn") init();
   }, [status, init]);
+
+  // Clear stale data from the previous session so a second sign-in never
+  // briefly flashes another user's households/tasks while init() is in flight.
+  const prevStatusRef = useRef<string>("loading");
+  useEffect(() => {
+    if (prevStatusRef.current === "signedIn" && status === "signedOut") reset();
+    prevStatusRef.current = status;
+  }, [status, reset]);
 
   if (status === "loading") return null;
   if (status === "signedOut") return <Suspense fallback={null}><AuthPage /></Suspense>;

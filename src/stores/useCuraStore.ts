@@ -31,6 +31,7 @@ interface CuraState {
   acceptInvite: (token: string) => Promise<AcceptInviteResult>;
   revokeInvite: (token: string) => Promise<void>;
 
+  reset: () => void;
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   claimTask: (taskId: string, claimed: boolean) => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<void>;
@@ -58,6 +59,9 @@ const getDataStore = (): Promise<DataStore> => {
   if (!dataStorePromise) dataStorePromise = createDataStore();
   return dataStorePromise;
 };
+
+// Tasks currently mid-toggle — prevents a rapid double-tap from writing two completions.
+const toggling = new Set<string>();
 
 export const useCuraStore = create<CuraState>((set, get) => ({
   ready: false,
@@ -154,7 +158,14 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     }
   },
 
+  reset() {
+    set({ ready: false, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [] });
+    dataStorePromise = null;
+  },
+
   async toggleTask(taskId, done) {
+    if (toggling.has(taskId)) return;
+    toggling.add(taskId);
     try {
       const store = await getDataStore();
       const { currentUserId, tasks, completions } = get();
@@ -177,6 +188,8 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Afvinken lukte niet");
+    } finally {
+      toggling.delete(taskId);
     }
   },
 
@@ -300,21 +313,44 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       if (!householdId) return;
       const updated = await store.updateBundle(bundleId, patch);
       let { tasks } = get();
-      if (taskTitles) {
+      if (taskTitles !== undefined) {
+        const newIntervalDays = updated.cadence === "daily" ? 1 : 7;
+        // Diff the task list to preserve completions for unchanged tasks.
+        // Greedy title-match: for each new title consume one existing task with
+        // that exact title. Unmatched existing tasks are deleted (losing their
+        // completions, which is correct — the user removed them). Unmatched new
+        // titles are created fresh.
         const existing = tasks.filter((t) => t.bundleId === bundleId);
-        await Promise.all(existing.map((t) => store.deleteTask(t.id)));
+        const pool = [...existing];
+        const toKeep: Task[] = [];
+        const toCreate: string[] = [];
+        for (const rawTitle of taskTitles) {
+          const title = rawTitle.trim();
+          if (!title) continue;
+          const idx = pool.findIndex((t) => t.title === title);
+          if (idx !== -1) {
+            toKeep.push(pool[idx]);
+            pool.splice(idx, 1);
+          } else {
+            toCreate.push(title);
+          }
+        }
+        // pool = tasks no longer in the list — delete (cascades their completions).
+        await Promise.all(pool.map((t) => store.deleteTask(t.id)));
         const created = await Promise.all(
-          taskTitles
-            .filter((title) => title.trim())
-            .map((title) =>
-              store.createTask(householdId, {
-                title: title.trim(),
-                bundleId,
-                intervalDays: updated.cadence === "daily" ? 1 : 7,
-              }),
-            ),
+          toCreate.map((title) =>
+            store.createTask(householdId, { title, bundleId, intervalDays: newIntervalDays }),
+          ),
         );
-        tasks = [...tasks.filter((t) => t.bundleId !== bundleId), ...created];
+        // Update intervalDays for kept tasks whose cadence changed.
+        const kept = await Promise.all(
+          toKeep.map((t) =>
+            t.intervalDays !== newIntervalDays
+              ? store.updateTask(t.id, { intervalDays: newIntervalDays })
+              : Promise.resolve(t),
+          ),
+        );
+        tasks = [...tasks.filter((t) => t.bundleId !== bundleId), ...kept, ...created];
       }
       toast("Routine bijgewerkt");
       set({ bundles: get().bundles.map((b) => (b.id === bundleId ? updated : b)), tasks });

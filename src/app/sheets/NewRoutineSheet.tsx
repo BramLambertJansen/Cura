@@ -67,7 +67,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
         ) : (
           <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18 }}>
             <div className="flex items-center gap-2 mb-7">
-              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setStep(0)} className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center"><ChevronLeft size={16} className="text-muted-foreground" /></motion.button>
+              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setStep(0)} aria-label="Terug naar naam en moment" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"><ChevronLeft size={16} className="text-muted-foreground" aria-hidden="true" /></motion.button>
               <h3 className="text-xl font-medium text-foreground" style={{ fontFamily: "Lora,Georgia,serif" }}>Taken toevoegen</h3>
             </div>
             <div className="space-y-2 mb-4 max-h-40 overflow-y-auto scrollbar-hide">
@@ -77,7 +77,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
                     className="flex items-center gap-3 rounded-2xl px-4 py-3" style={{ background: "var(--secondary)" }}>
                     <Check size={12} strokeWidth={3} style={{ color: SAGE, flexShrink: 0 }} />
                     <span className="flex-1 text-sm text-foreground">{t}</span>
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setTasks((p) => p.filter((_, j) => j !== i))} className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0"><X size={9} className="text-muted-foreground" /></motion.button>
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setTasks((p) => p.filter((_, j) => j !== i))} aria-label={`${t} verwijderen`} className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"><X size={9} className="text-muted-foreground" aria-hidden="true" /></motion.button>
                   </motion.div>
                 ))}
               </AnimatePresence>

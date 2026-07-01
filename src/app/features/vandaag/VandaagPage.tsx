@@ -48,19 +48,29 @@ export function VandaagPage() {
       <div className="px-5 pt-7 pb-8 space-y-8">
         <AnimatePresence>
           {huisgenootActivity.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring}>
-              <div className="flex items-start gap-3 rounded-2xl px-4 py-3.5" style={{ background: "color-mix(in srgb, var(--accent) 22%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 40%, transparent)" }}>
-                <div className="mt-0.5">
-                  <Avatar name={huisgenootActivity[0].doneBy!} size={32} tone="soft" />
-                </div>
-                <div className="space-y-0.5">
-                  {huisgenootActivity.map((t) => (
-                    <p key={t.id} className="text-sm text-foreground leading-snug">
-                      <span className="font-semibold">{t.doneBy}</span> heeft {t.title.toLowerCase()} gedaan
-                      {t.doneAt && <span className="text-muted-foreground"> · {t.doneAt}</span>}
-                    </p>
-                  ))}
-                </div>
+            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring} aria-live="polite">
+              <div className="rounded-2xl px-4 py-3.5 space-y-2.5" style={{ background: "color-mix(in srgb, var(--accent) 22%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 40%, transparent)" }}>
+                {Object.entries(
+                  huisgenootActivity.reduce<Record<string, typeof huisgenootActivity>>((acc, t) => {
+                    const name = t.doneBy!;
+                    (acc[name] ??= []).push(t);
+                    return acc;
+                  }, {}),
+                ).map(([name, activities]) => (
+                  <div key={name} className="flex items-start gap-3">
+                    <div className="mt-0.5 flex-shrink-0">
+                      <Avatar name={name} size={32} tone="soft" />
+                    </div>
+                    <div className="space-y-0.5">
+                      {activities.map((t) => (
+                        <p key={t.id} className="text-sm text-foreground leading-snug">
+                          <span className="font-semibold">{t.doneBy}</span> heeft {t.title.toLowerCase()} gedaan
+                          {t.doneAt && <span className="text-muted-foreground"> · {t.doneAt}</span>}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
