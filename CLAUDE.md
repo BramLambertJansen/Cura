@@ -12,6 +12,8 @@ De UI/UX is gedesigned in Figma (via Make), op basis van het wireframe-brief in 
 
 Plus **Huis**: de gedeelde pool van taken, georganiseerd per kamer.
 
+**Navigatie:** de onderbalk (`BottomNav`) toont 4 tabs — Vandaag, Huis, Routines, **Meer**. Samen heeft geen eigen tab meer; het is, samen met Huishouden beheren en Account beheren, bereikbaar via de Meer-pagina (§5). Nieuwe schermen die geen eigen tab verdienen, horen als item op Meer, niet als 5e tab.
+
 **Toon:** kalm, warm, vergevingsgezind. Eerlijkheid boven precisie — liever "badkamer is waarschijnlijk weer toe" dan een hard getal of tijdstip. UI-taal is Nederlands.
 
 Volledige ontwerpprincipes, schermen en microcopy-richtlijnen staan in `src/imports/pasted_text/cura-design-brief.md` — lees dat bij twijfel over toon of gedrag, niet alleen deze file.
@@ -66,7 +68,8 @@ Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase ver
 - **Vandaag** (`src/app/features/vandaag/VandaagPage.tsx`) — geplande taken van vandaag, afvinken, routines-van-vandaag, zacht zichtbaarheidsstrookje.
 - **Huis** (`src/app/features/huis/HuisPage.tsx`) — kamer-kaarten met interval-hint, kamer-detail als pool-lijst, claim-actie ("ik pak dit"), kamer toevoegen/bewerken (`NewRoomSheet`, `EditRoomSheet`).
 - **Routines** (`src/app/features/routines/RoutinesPage.tsx`) — bundels van taken, dichtheid-feedback (ratio-over-venster), routine toevoegen/bewerken (`NewRoutineSheet`, `EditRoutineSheet`, `IntervalKiezer`).
-- **Samen** (`src/app/features/samen/SamenPage.tsx`) — chronologische "vandaag in huis"-feed, huishouden-instellingen-ingang (`HouseholdSheet`).
+- **Samen** (`src/app/features/samen/SamenPage.tsx`) — chronologische "vandaag in huis"-feed. Geen eigen navigatietab meer; bereikbaar via de **Meer**-pagina.
+- **Meer** (`src/app/features/meer/MeerPage.tsx`, route `/meer`) — vervangt de oude Samen-navigatietab (icoon: `MoreHorizontal`, drie puntjes). Lijstpagina met links naar dingen die niet standaard in `BottomNav` staan: Samen (navigeert naar `/samen`), Huishouden beheren (opent `HouseholdSheet` via `useSheets().openHousehold`), Account beheren (opent `ProfielSheet` via `useSheets().openProfiel`). Nieuwe niet-genavigeerde functionaliteit hoort hier, niet als losse tab.
 - **Taak toevoegen** (`AddTaskSheet`) — FAB-flow, één invoerveld + inklapbare opties (kamer, herhalen, wekker, duur), belandt standaard in de pool.
 - **Taak bewerken** (`EditTaskSheet`) — opent via tik op een taakrij (niet op de checkbox of claim-knop); laadt de taak op id, gedeeld formulier via `TaskFormFields`, verwijderen-met-bevestiging.
 - **Wekker & duur op taken** — `dueDate` (ISO) op het `Task`-schema. Eenmalig = exacte deadline (datum+tijd); terugkerend = dagelijks tijdstip-deel. Badge (`wekkerLabel`) in `TaakRij`. Meldingen via de browser Notification API terwijl de app open is (`useTaskReminders` in `MainShell`, polling elke 30s via `getDueReminders` in `selectors.ts`); Sonner-toast als fallback. Echte push-notificaties (VAPID/service worker/edge function/pg_cron) zijn bewust uitgesteld.
