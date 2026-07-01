@@ -25,7 +25,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' (not 'autoUpdate') so a new version waits for the user to
+      // confirm via the in-app update prompt (useAppUpdate) instead of
+      // silently taking over — mid-task auto-reloads are the opposite of calm.
+      registerType: 'prompt',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
         id: '/',

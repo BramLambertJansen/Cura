@@ -11,6 +11,8 @@ import { BottomNav } from "./layout/BottomNav";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppBackground } from "./components/AppBackground";
 import { FullScreenSkeleton, PageSkeleton } from "./components/Skeletons";
+import { ConnectivityBanner } from "./components/ConnectivityBanner";
+import { UpdatePrompt } from "./components/UpdatePrompt";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { EditTaskSheet } from "./sheets/EditTaskSheet";
@@ -182,6 +184,8 @@ export default function App() {
             boxShadow: SHADOW_LG,
           },
         }} />
+        <ConnectivityBanner />
+        <UpdatePrompt />
         <ErrorBoundary>
           <Routes>
             <Route path="/uitnodiging/:token" element={<Suspense fallback={<FullScreenSkeleton />}><AcceptInvitePage /></Suspense>} />
