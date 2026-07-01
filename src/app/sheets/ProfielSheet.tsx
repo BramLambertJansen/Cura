@@ -49,7 +49,7 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
         ? "Je werkt lokaal op dit apparaat. Er is geen online account gekoppeld."
         : `${accountLabel} · ${household?.name ?? "Thuis"}`,
       action: dataMode !== "local" && userId
-        ? { label: "Kopieer ID", onClick: () => { navigator.clipboard?.writeText(userId); toast("Account-ID gekopieerd"); } }
+        ? { label: "Kopieer ID", onClick: () => { navigator.clipboard?.writeText(userId).catch(() => {}); toast("Account-ID gekopieerd"); } }
         : undefined,
     });
   }
