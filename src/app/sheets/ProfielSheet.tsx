@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Bell, Check, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, UserRound } from "lucide-react";
+import { Bell, Check, ChevronRight, HelpCircle, Home, LogOut, Moon, Pencil, Sun, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
@@ -26,6 +26,17 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
   }, [me?.displayName]);
   const [editing, setEditing] = useState(false);
   const [savingName, setSavingName] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const saved = window.localStorage.getItem("cura-theme");
+    return saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  });
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", darkMode ? "#171717" : "#EBE6D5");
+    window.localStorage.setItem("cura-theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
   const weergaveNaam = me?.displayName ?? "Jij";
 
@@ -89,7 +100,11 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
       <div className="mb-7">
         <GroupCard>
           <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={() => toggleNotif()} />} />
-          <InstRij icon={<Moon size={15} />} label="Donkere modus" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Donkere modus — binnenkort")} />
+          <InstRij
+            icon={darkMode ? <Sun size={15} /> : <Moon size={15} />}
+            label="Donkere modus"
+            right={<Toggle checked={darkMode} label="Donkere modus" onChange={() => setDarkMode((enabled) => !enabled)} />}
+          />
           <InstRij icon={<UserRound size={15} />} label="Account" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={() => toast("Account — binnenkort")} />
         </GroupCard>
       </div>
