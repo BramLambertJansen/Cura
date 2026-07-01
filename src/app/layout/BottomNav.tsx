@@ -30,24 +30,13 @@ function NavTab({ tab }: { tab: typeof LEFT[number] }) {
       style={{ "--tw-ring-color": "color-mix(in srgb, var(--primary) 50%, transparent)" } as CSSProperties}
     >
       {active && (
-        <motion.div layoutId="nav-hill"
-          className="absolute bottom-1 left-0 right-0 mx-auto w-14 h-3.5 pointer-events-none"
+        <motion.div
+          layoutId="nav-active-pill"
+          className="absolute inset-y-1.5 inset-x-2 rounded-full pointer-events-none"
+          style={{ background: "color-mix(in srgb, var(--primary) 14%, transparent)" }}
           transition={{ type: "spring", stiffness: 420, damping: 36 }}
           aria-hidden="true"
-        >
-          <div className="absolute inset-x-2 bottom-0 h-2 rounded-full blur-[6px] opacity-50"
-            style={{ background: "color-mix(in srgb, var(--primary) 60%, transparent)" }} />
-          <motion.svg
-            viewBox="0 0 56 14" width="100%" height="100%" className="relative block"
-            animate={{ y: [0, -1, 0] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <path
-              d="M0 14 C1 7 9 1 19 0.5 C27 0.1 26 8 34 8.5 C41 9 45 5 48 3 C51 1 54 3 56 14 Z"
-              fill="url(#nav-hill-gradient)"
-            />
-          </motion.svg>
-        </motion.div>
+        />
       )}
       <motion.div
         animate={{ color: active ? SAGE : MUTED_FG, y: active ? -1 : 0 }}
@@ -70,23 +59,16 @@ export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => v
   return (
     <nav
       aria-label="Hoofdnavigatie"
-      className="fixed bottom-0 left-0 right-0 z-40"
+      className="fixed left-0 right-0 z-40 rounded-full"
       style={{
+        bottom: "calc(var(--safe-bottom) + 0.75rem)",
+        marginLeft: "calc(var(--safe-left) + 1rem)",
+        marginRight: "calc(var(--safe-right) + 1rem)",
         background: "color-mix(in srgb, var(--card) 94%, transparent)",
         backdropFilter: "blur(24px) saturate(200%)",
-        borderTop: "1px solid color-mix(in srgb, var(--border-color) 9%, transparent)",
-        paddingBottom: "max(var(--safe-bottom), 0.5rem)",
-        paddingLeft: "var(--safe-left)",
-        paddingRight: "var(--safe-right)",
+        border: "1px solid color-mix(in srgb, var(--border-color) 9%, transparent)",
+        boxShadow: "var(--shadow-card-lg)",
       }}>
-      <svg width="0" height="0" aria-hidden="true" focusable="false">
-        <defs>
-          <linearGradient id="nav-hill-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="color-mix(in srgb, var(--primary) 78%, white)" />
-            <stop offset="100%" stopColor="var(--primary)" />
-          </linearGradient>
-        </defs>
-      </svg>
       <div className="flex items-center h-[4.25rem]" role="tablist">
         {LEFT.map((t) => <NavTab key={t.to} tab={t} />)}
         <div className="relative flex items-center justify-center w-20 flex-shrink-0" style={{ marginTop: "-1.75rem" }}>
