@@ -6,13 +6,21 @@ import { buildLatestCompletionMap, getDueReminders } from "../../data/selectors"
 const POLL_MS = 30_000;
 const NOTIF_PREF_KEY = "cura:notif-pref";
 
+export function resolveReminderChannel(
+  userDisabled: boolean,
+  permission: NotificationPermission | "unsupported",
+): "none" | "notification" | "toast" {
+  if (userDisabled) return "none";
+  return permission === "granted" ? "notification" : "toast";
+}
+
 function dispatchReminder(title: string) {
   const userDisabled = localStorage.getItem(NOTIF_PREF_KEY) === "disabled";
-  if (
-    !userDisabled &&
-    typeof Notification !== "undefined" &&
-    Notification.permission === "granted"
-  ) {
+  const permission = typeof Notification === "undefined" ? "unsupported" : Notification.permission;
+  const channel = resolveReminderChannel(userDisabled, permission);
+
+  if (channel === "none") return;
+  if (channel === "notification") {
     new Notification(`Tijd voor: ${title}`, { body: "Je hebt dit op de planning staan." });
   } else {
     toast(`Wekker: ${title}`, { description: "Tijd voor deze taak." });
