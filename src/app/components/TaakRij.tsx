@@ -1,6 +1,6 @@
 import { memo, useRef } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion, type PanInfo } from "motion/react";
-import { Bell, Check, RefreshCw, RotateCcw } from "lucide-react";
+import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
@@ -12,9 +12,10 @@ import { CARD_CHROME, Checkbox } from "./shared";
 const SWIPE_COMMIT_DISTANCE = 96;
 const SWIPE_FLICK_DISTANCE = 48;
 const SWIPE_FLICK_VELOCITY = 650;
+const SWIPE_LEFT_COMMIT_DISTANCE = 96;
 
 export const TaakRij = memo(function TaakRij({
-  task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit,
+  task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss,
 }: {
   task: TaskView;
   onToggle: () => void;
@@ -22,6 +23,7 @@ export const TaakRij = memo(function TaakRij({
   onClaim?: () => void;
   onUnclaim?: () => void;
   onEdit?: () => void;
+  onDismiss?: () => void;
 }) {
   const claimed = !!task.claimedBy;
   const reduceMotion = useReducedMotion();
@@ -35,10 +37,14 @@ export const TaakRij = memo(function TaakRij({
   const wasDragged = useRef(false);
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
-    const commit =
+    const commitRight =
       info.offset.x > SWIPE_COMMIT_DISTANCE ||
       (info.offset.x > SWIPE_FLICK_DISTANCE && info.velocity.x > SWIPE_FLICK_VELOCITY);
-    if (commit) onToggle();
+    const commitLeft = info.offset.x < -SWIPE_LEFT_COMMIT_DISTANCE;
+
+    if (commitRight) onToggle();
+    if (commitLeft && onDismiss) onDismiss();
+
     // The synthetic click dispatches right after pointerup; clear the flag a tick later.
     setTimeout(() => { wasDragged.current = false; }, 0);
   }
@@ -88,13 +94,29 @@ export const TaakRij = memo(function TaakRij({
           </span>
         </motion.div>
       </div>
+      {onDismiss && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 rounded-2xl flex items-center justify-end pr-5 pointer-events-none"
+          style={{ background: "color-mix(in srgb, var(--destructive) 12%, transparent)" }}
+        >
+          <motion.div
+            style={{ opacity: useTransform(x, [-48, -10], [1, 0]), scale: useTransform(x, [-60, -10], [1, 0.6]) }}
+            className="w-7 h-7 rounded-full flex items-center justify-center"
+          >
+            <span className="w-full h-full rounded-full flex items-center justify-center" style={{ background: "var(--destructive)" }}>
+              <X size={13} strokeWidth={3} className="text-white" />
+            </span>
+          </motion.div>
+        </div>
+      )}
       <motion.div
         // Swipe right to toggle — an enhancement on top of the checkbox, never a replacement
         // (§6: the checkbox stays the keyboard/screenreader path). touchAction pan-y leaves
         // vertical scrolling native; the drag only owns horizontal movement.
         drag={reduceMotion ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={{ left: 0, right: 0.7 }}
+        dragElastic={{ left: 0.7, right: 0.7 }}
         dragMomentum={false}
         onDragStart={() => { wasDragged.current = true; }}
         onDragEnd={handleDragEnd}

@@ -8,6 +8,7 @@ import { toSuggestions } from "../../../data/selectors";
 import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
+import { useTaskDismissals } from "../../lib/useTaskDismissals";
 import { Avatar, Card, Kop, Leeg } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
 import { TaakRij } from "../../components/TaakRij";
@@ -42,11 +43,12 @@ export function VandaagPage() {
   const tasks = useTaskViews();
   const routines = useRoutineViews();
   const { isDismissed, dismiss } = useNietVandaag();
+  const { isDismissed: isTaskDismissed, dismiss: dismissTask } = useTaskDismissals();
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("alles");
 
   const greeting = getGreeting();
-  const plannedOpen = tasks.filter((t) => t.planned && !t.done);
-  const plannedDone = tasks.filter((t) => t.planned && t.done);
+  const plannedOpen = tasks.filter((t) => t.planned && !t.done && !isTaskDismissed(t.id));
+  const plannedDone = tasks.filter((t) => t.planned && t.done && !isTaskDismissed(t.id));
   const allPlanned = [...plannedOpen, ...plannedDone];
   const suggestions = toSuggestions(tasks).filter((t) => !isDismissed(t.id));
   const showSuggestionFilters = suggestions.length > SUGGESTION_FILTER_THRESHOLD;
@@ -126,7 +128,7 @@ export function VandaagPage() {
             : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                 {allPlanned.map((task) => (
                   <motion.div key={task.id} variants={fadeUp}>
-                    <TaakRij task={task} onToggle={() => { const nextDone = !task.done; toggleTask(task.id, nextDone); if (nextDone) warmDoneToast(task.title); }} onEdit={() => openEditTask(task.id)} />
+                    <TaakRij task={task} onToggle={() => { const nextDone = !task.done; toggleTask(task.id, nextDone); if (nextDone) warmDoneToast(task.title); }} onEdit={() => openEditTask(task.id)} onDismiss={() => { dismissTask(task.id); toast("Even niet vandaag", { description: `${task.title} staat even uit je dag.` }); }} />
                   </motion.div>
                 ))}
               </motion.div>

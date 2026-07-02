@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { ArrowLeft, Pencil, Plus, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { Plus, Sparkles } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { roomIcon } from "../../lib/constants";
@@ -11,6 +12,7 @@ import { KamerKaart } from "../../components/KamerKaart";
 import { RoomHero } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
+import { useTaskDismissals } from "../../lib/useTaskDismissals";
 
 export function HuisPage() {
   const { openNewRoom, openEditRoom, openEditTask, openTemplates } = useSheets();
@@ -18,6 +20,7 @@ export function HuisPage() {
   const claimTask = useCuraStore((s) => s.claimTask);
   const rooms = useRoomViews();
   const tasks = useTaskViews();
+  const { isDismissed: isTaskDismissed, dismiss: dismissTask } = useTaskDismissals();
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 
   const room = rooms.find((r) => r.id === selectedRoomId);
@@ -25,31 +28,19 @@ export function HuisPage() {
   if (room) {
     const ic = roomIcon(room.iconKey);
     const c = room.color || ic.color;
-    const roomTasks = tasks.filter((t) => t.roomId === room.id);
+    const roomTasks = tasks.filter((t) => t.roomId === room.id && !isTaskDismissed(t.id));
     const open = roomTasks.filter((t) => !t.done);
     const done = roomTasks.filter((t) => t.done);
     return (
       <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={spring}>
+        <RoomHero
+          ic={ic}
+          onBack={() => setSelectedRoomId(null)}
+          onEdit={() => openEditRoom(room.id)}
+          editLabel={`${room.name} bewerken`}
+        />
+
         <div className="px-5 pt-4 pb-6">
-          <div className="flex items-center justify-between">
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSelectedRoomId(null)}
-              aria-label="Terug naar kamers"
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-              <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => openEditRoom(room.id)}
-              aria-label={`${room.name} bewerken`}
-              className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-              <Pencil size={14} className="text-foreground" aria-hidden="true" />
-            </motion.button>
-          </div>
-        </div>
-
-        <div className="px-5 py-4">
-          <RoomHero ic={ic} />
-        </div>
-
-        <div className="px-5 pt-2 pb-6">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style={{ background: `color-mix(in srgb, ${c} 16%, transparent)`, color: c }}>{ic.icon}</div>
             <div className="flex-1">
@@ -78,12 +69,12 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
                   {open.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} />
+                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => { dismissTask(t.id); toast("Even niet vandaag", { description: `${t.title} staat even uit deze lijst.` }); }} />
                     </motion.div>
                   ))}
                 </motion.div>
                 {done.map((t) => (
-                  <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} />
+                  <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => { dismissTask(t.id); toast("Even niet vandaag", { description: `${t.title} staat even uit deze lijst.` }); }} />
                 ))}
               </>
           }
