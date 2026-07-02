@@ -14,7 +14,11 @@ import { SuggestieRij } from "../../components/SuggestieRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
 import { useSheets } from "../../sheetContext";
 
-type QuickFilter = "alles" | "kort" | "rustig" | "samen";
+type QuickFilter = "alles" | "kort" | "rustig";
+
+// Below this many suggestions, filter chips add more chrome than they save —
+// the list itself is already scannable at a glance.
+const SUGGESTION_FILTER_THRESHOLD = 6;
 
 function warmDoneToast(title: string) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(8);
@@ -26,31 +30,6 @@ function warmDoneToast(title: string) {
 function durationMinutes(duration?: string): number | null {
   const match = duration?.match(/\d+/);
   return match ? Number(match[0]) : null;
-}
-
-function dayStatusLine(openCount: number, doneCount: number, suggestionCount: number) {
-  if (doneCount > 0 && openCount === 0) return "Alles wat op je dag stond is rond. Fijn voor het huis.";
-  if (doneCount > 0) return `${doneCount} klaar · ${openCount} rustig open`;
-  if (openCount > 0) return `${openCount} ${openCount === 1 ? "ding" : "dingen"} op je dag — stap voor stap.`;
-  if (suggestionCount > 0) return "Geen vaste planning. Kies iets kleins als je ruimte hebt.";
-  return "Rustige dag. Geniet ervan.";
-}
-
-function DayStatusCard({ openCount, doneCount, suggestionCount }: { openCount: number; doneCount: number; suggestionCount: number }) {
-  return (
-    <Card className="px-4 py-4">
-      <div className="flex items-center gap-4">
-        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }}>
-          <Leaf size={18} aria-hidden="true" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Vandaag voelt</p>
-          <p className="mt-1 text-sm font-semibold text-foreground leading-snug">{dayStatusLine(openCount, doneCount, suggestionCount)}</p>
-          <p className="mt-1 text-xs text-muted-foreground leading-relaxed">Geen haast — pak wat past bij je energie.</p>
-        </div>
-      </div>
-    </Card>
-  );
 }
 
 export function VandaagPage() {
@@ -67,19 +46,19 @@ export function VandaagPage() {
   const greeting = getGreeting();
   const plannedOpen = tasks.filter((t) => t.planned && !t.done);
   const plannedDone = tasks.filter((t) => t.planned && t.done);
-  const allPlanned = [...plannedDone, ...plannedOpen];
+  const allPlanned = [...plannedOpen, ...plannedDone];
   const suggestions = toSuggestions(tasks).filter((t) => !isDismissed(t.id));
+  const showSuggestionFilters = suggestions.length > SUGGESTION_FILTER_THRESHOLD;
   const filteredSuggestions = useMemo(() => suggestions.filter((task) => {
+    if (!showSuggestionFilters) return true;
     if (quickFilter === "kort") return (durationMinutes(task.duration) ?? 99) <= 10;
     if (quickFilter === "rustig") return !task.wekkerLabel && (durationMinutes(task.duration) ?? 20) <= 20;
-    if (quickFilter === "samen") return Boolean(task.room) || Boolean(task.claimedBy);
     return true;
-  }), [quickFilter, suggestions]);
+  }), [quickFilter, suggestions, showSuggestionFilters]);
   const quickFilters: { id: QuickFilter; label: string; icon: ReactNode }[] = [
     { id: "alles", label: "Alles", icon: <Sparkles size={12} /> },
     { id: "kort", label: "≤ 10 min", icon: <Clock size={12} /> },
     { id: "rustig", label: "Rustig", icon: <Leaf size={12} /> },
-    { id: "samen", label: "Samen", icon: <Sparkles size={12} /> },
   ];
 
   const me = members.find((m) => m.userId === currentUserId);
@@ -107,7 +86,6 @@ export function VandaagPage() {
       </div>
 
       <div className="px-5 pt-7 pb-8 space-y-8">
-        <DayStatusCard openCount={plannedOpen.length} doneCount={plannedDone.length} suggestionCount={suggestions.length} />
         <AnimatePresence>
           {huisgenootActivity.length > 0 && (
             <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring} aria-live="polite">
@@ -156,32 +134,34 @@ export function VandaagPage() {
           <section>
             <div className="flex items-center justify-between gap-3 mb-2">
               <Kop>Misschien handig vandaag</Kop>
-              <span className="text-[11px] text-muted-foreground">{filteredSuggestions.length} past</span>
+              {showSuggestionFilters && <span className="text-[11px] text-muted-foreground">{filteredSuggestions.length} past</span>}
             </div>
-            <div className="-mx-5 mb-3 overflow-x-auto scrollbar-hide px-5">
-              <div className="flex gap-2">
-                {quickFilters.map((filter) => {
-                  const active = quickFilter === filter.id;
-                  return (
-                    <motion.button
-                      key={filter.id}
-                      whileTap={{ scale: 0.94 }}
-                      onClick={() => setQuickFilter(filter.id)}
-                      aria-pressed={active}
-                      className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
-                      style={{
-                        background: active ? "var(--gradient-primary)" : "color-mix(in srgb, var(--card) 78%, transparent)",
-                        color: active ? "white" : "var(--muted-foreground)",
-                        boxShadow: active ? "0 4px 14px color-mix(in srgb, var(--primary) 22%, transparent)" : "var(--shadow-input)",
-                      }}
-                    >
-                      {filter.icon}
-                      {filter.label}
-                    </motion.button>
-                  );
-                })}
+            {showSuggestionFilters && (
+              <div className="-mx-5 mb-3 overflow-x-auto scrollbar-hide px-5">
+                <div className="flex gap-2">
+                  {quickFilters.map((filter) => {
+                    const active = quickFilter === filter.id;
+                    return (
+                      <motion.button
+                        key={filter.id}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => setQuickFilter(filter.id)}
+                        aria-pressed={active}
+                        className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+                        style={{
+                          background: active ? "var(--gradient-primary)" : "color-mix(in srgb, var(--card) 78%, transparent)",
+                          color: active ? "white" : "var(--muted-foreground)",
+                          boxShadow: active ? "0 4px 14px color-mix(in srgb, var(--primary) 22%, transparent)" : "var(--shadow-input)",
+                        }}
+                      >
+                        {filter.icon}
+                        {filter.label}
+                      </motion.button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
             <motion.div layout variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
               <AnimatePresence mode="popLayout">
                 {filteredSuggestions.length === 0 ? (

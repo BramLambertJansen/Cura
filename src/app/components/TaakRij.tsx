@@ -7,12 +7,13 @@ import { intervalLabel } from "../lib/format";
 import { CARD_CHROME, Checkbox } from "./shared";
 
 export const TaakRij = memo(function TaakRij({
-  task, onToggle, showClaim = false, onClaim, onEdit,
+  task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit,
 }: {
   task: TaskView;
   onToggle: () => void;
   showClaim?: boolean;
   onClaim?: () => void;
+  onUnclaim?: () => void;
   onEdit?: () => void;
 }) {
   const claimed = !!task.claimedBy;
@@ -67,6 +68,13 @@ export const TaakRij = memo(function TaakRij({
           onClick={onClaim}
           className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none"
           style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)", color: SAGE }}>Ik pak dit</motion.button>
+      )}
+      {showClaim && !task.done && claimed && onUnclaim && (
+        <motion.button whileTap={{ scale: 0.9 }}
+          onClick={onUnclaim}
+          aria-label={`Claim van ${task.title} loslaten`}
+          className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border"
+          style={{ borderColor: "color-mix(in srgb, var(--outline-color) 24%, transparent)", color: "var(--muted-foreground)" }}>Laat los</motion.button>
       )}
     </motion.div>
   );

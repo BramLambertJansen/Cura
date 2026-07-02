@@ -5,6 +5,7 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
 import { useCuraStore } from "../stores/useCuraStore";
+import { useOnboardingSeen } from "./lib/useOnboardingSeen";
 import { SHADOW_LG } from "./lib/constants";
 import { pageIn, pageTx } from "./lib/motion";
 import { BottomNav } from "./layout/BottomNav";
@@ -33,6 +34,7 @@ const SamenPage = lazy(() => import("./features/samen/SamenPage").then((m) => ({
 const MeerPage = lazy(() => import("./features/meer/MeerPage").then((m) => ({ default: m.MeerPage })));
 const DesignSystemPage = lazy(() => import("./features/design-system/DesignSystemPage").then((m) => ({ default: m.DesignSystemPage })));
 const AuthPage = lazy(() => import("./features/auth/AuthPage").then((m) => ({ default: m.AuthPage })));
+const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPage").then((m) => ({ default: m.OnboardingIntroPage })));
 const CreateHouseholdPage = lazy(() => import("./features/auth/CreateHouseholdPage").then((m) => ({ default: m.CreateHouseholdPage })));
 const AcceptInvitePage = lazy(() => import("./features/invite/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
 
@@ -152,6 +154,7 @@ function Gate() {
   const reset = useCuraStore((s) => s.reset);
   const ready = useCuraStore((s) => s.ready);
   const households = useCuraStore((s) => s.households);
+  const { seen: onboardingSeen, markSeen: markOnboardingSeen } = useOnboardingSeen();
 
   useEffect(() => {
     if (status === "signedIn") init();
@@ -168,7 +171,10 @@ function Gate() {
   if (status === "loading") return <FullScreenSkeleton />;
   if (status === "signedOut") return <Suspense fallback={<FullScreenSkeleton />}><AuthPage /></Suspense>;
   if (!ready) return <FullScreenSkeleton />;
-  if (households.length === 0) return <Suspense fallback={<FullScreenSkeleton />}><CreateHouseholdPage /></Suspense>;
+  if (households.length === 0) {
+    if (!onboardingSeen) return <Suspense fallback={<FullScreenSkeleton />}><OnboardingIntroPage onDone={markOnboardingSeen} /></Suspense>;
+    return <Suspense fallback={<FullScreenSkeleton />}><CreateHouseholdPage /></Suspense>;
+  }
   return <MainShell />;
 }
 

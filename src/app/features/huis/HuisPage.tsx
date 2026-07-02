@@ -72,7 +72,7 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                   {open.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onEdit={() => openEditTask(t.id)} />
+                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} />
                     </motion.div>
                   ))}
                 </motion.div>

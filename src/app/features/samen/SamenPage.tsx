@@ -1,6 +1,7 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { Check } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed } from "../../../stores/useViews";
@@ -18,6 +19,7 @@ const REACTIE_TOAST: Record<ReactieKind, string> = {
 };
 
 export function SamenPage() {
+  const navigate = useNavigate();
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const me = members.find((m) => m.userId === currentUserId);
@@ -32,6 +34,11 @@ export function SamenPage() {
 
   return (
     <div className="px-5 pt-14 pb-8">
+      <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate("/meer")}
+        aria-label="Terug naar Meer"
+        className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+        <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
+      </motion.button>
       <PageHeader title="Samen" subtitle="Wat is er vandaag gedaan?" />
 
       <div className="mb-6">
