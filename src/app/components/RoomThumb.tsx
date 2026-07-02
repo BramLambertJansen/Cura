@@ -87,20 +87,24 @@ export function RoomHero({
 }
 
 /**
- * The square room avatar used on room cards and the room-detail header.
- * Renders the watercolor illustration (`ic.image`) when it exists and loads;
- * otherwise — or when the file is still missing — falls back to the tinted
- * gradient tile with the line icon, so partial art degrades gracefully
- * (CLAUDE.md §3, "degrade gracefully with partial data").
+ * The square room avatar used on room cards, the room-detail header and the
+ * artwork picker. Renders the watercolor illustration (`ic.image`) when it
+ * exists and loads; otherwise — or when the file is still missing — falls back
+ * to the tinted gradient tile with the line icon, so partial art degrades
+ * gracefully (CLAUDE.md §3, "degrade gracefully with partial data"). Pass
+ * `large` on bigger tiles (the picker) so the fallback uses the 40px `iconLg`
+ * instead of the 18px avatar icon.
  */
 export function RoomThumb({
-  ic, color, className = "", rounded = "rounded-2xl",
+  ic, color, className = "", rounded = "rounded-2xl", large = false,
 }: {
   ic: IconOption;
   color: string;
   /** Tailwind sizing utilities for the square, e.g. "w-14 h-14". */
   className?: string;
   rounded?: string;
+  /** Use the larger line icon in the fallback — for picker-sized tiles. */
+  large?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(ic.image) && !failed;
@@ -122,9 +126,59 @@ export function RoomThumb({
         <>
           <div className={`absolute inset-0 ${rounded}`}
             style={{ background: `radial-gradient(circle at 35% 30%,color-mix(in srgb, ${color} 19%, transparent) 0%,transparent 68%)` }} />
-          <div className="relative" style={{ color, transform: "scale(1.1)" }}>{ic.icon}</div>
+          <div className="relative" style={{ color, transform: large ? "scale(1)" : "scale(1.1)" }} aria-hidden="true">{large ? ic.iconLg : ic.icon}</div>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Wide watercolor banner for the top of a room card. The square room art is
+ * shown `object-cover` in a short, full-width strip so the painted vignette
+ * fills it, and a bottom linear mask melts the strip into the card body below
+ * (same "melt into the background" language as RoomHero) — so the card reads as
+ * one warm object, not a photo pasted above text. When the room has no art (or
+ * it fails to load) it degrades to a calm tinted wash with the large line icon,
+ * so every card keeps the same banner shape whether or not artwork exists.
+ */
+export function RoomBanner({
+  ic, color, className = "h-28",
+}: {
+  ic: IconOption;
+  color: string;
+  /** Tailwind height utility for the strip, e.g. "h-28". */
+  className?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const showImage = Boolean(ic.image) && !failed;
+  const fade = "linear-gradient(to bottom, black 60%, transparent 100%)";
+
+  if (showImage) {
+    return (
+      <div className={`relative w-full ${className} overflow-hidden`}>
+        <div className="absolute inset-0" style={{ WebkitMaskImage: fade, maskImage: fade }}>
+          <img
+            src={ic.image}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            onError={() => setFailed(true)}
+            // A light zoom trims the art's cream side-margins; object-position keeps
+            // the painted subject (counter, sofa, bed…) centred in the short strip.
+            className="absolute inset-0 w-full h-full object-cover scale-[1.06]"
+            style={{ objectPosition: "center 50%" }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative w-full ${className} overflow-hidden`} style={{ WebkitMaskImage: fade, maskImage: fade }} aria-hidden="true">
+      <div className="absolute inset-0" style={{ background: `linear-gradient(150deg, color-mix(in srgb, ${color} 15%, var(--card)) 0%, color-mix(in srgb, ${color} 5%, var(--card)) 100%)` }} />
+      <div className="absolute inset-0" style={{ background: `radial-gradient(120% 90% at 28% 22%, color-mix(in srgb, ${color} 22%, transparent) 0%, transparent 62%)` }} />
+      <div className="absolute inset-0 flex items-center justify-center" style={{ color, opacity: 0.5 }}>{ic.iconLg}</div>
     </div>
   );
 }

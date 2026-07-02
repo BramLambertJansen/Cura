@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { ICONS, ICON_BY_KEY, SAGE } from "../lib/constants";
+import { ICON_BY_KEY, SAGE } from "../lib/constants";
 import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip } from "../components/shared";
+import { RoomThumb } from "../components/RoomThumb";
+import { KamerKunstKiezer } from "../components/KamerKunstKiezer";
 
 export function NewRoomSheet({ onClose }: { onClose: () => void }) {
   const createRoom = useCuraStore((s) => s.createRoom);
@@ -33,12 +35,9 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
           <motion.div
             initial={{ opacity: 0, scale: 0.92, y: -6 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92 }}
-            className="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 mb-6"
+            className="flex items-center gap-3.5 rounded-2xl px-4 py-3 mb-6"
             style={{ background: `color-mix(in srgb, ${selectedIcon!.color} 8%, transparent)`, border: `1.5px solid color-mix(in srgb, ${selectedIcon!.color} 19%, transparent)` }}>
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: `color-mix(in srgb, ${selectedIcon!.color} 13%, transparent)`, color: selectedIcon!.color }}>
-              {selectedIcon!.icon}
-            </div>
+            <RoomThumb ic={selectedIcon!} color={selectedIcon!.color} className="w-12 h-12" rounded="rounded-xl" />
             <div>
               <p className="font-semibold text-foreground text-sm">{name || selectedIcon!.defaultName}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{selectedIcon!.label}</p>
@@ -47,24 +46,9 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
         )}
       </AnimatePresence>
 
-      <Kop>Kies een icoon</Kop>
-      <div className="grid grid-cols-4 gap-2 mb-6">
-        {ICONS.map((ic) => (
-          <motion.button key={ic.key} whileTap={{ scale: 0.9 }} onClick={() => setIconKey(ic.key)}
-            aria-pressed={iconKey === ic.key}
-            initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)", scale: 1 }}
-            animate={{
-              backgroundColor: iconKey === ic.key ? ic.color + "22" : "var(--input-background)",
-              borderColor: iconKey === ic.key ? ic.color + "70" : "var(--border-input)",
-              scale: iconKey === ic.key ? 1.04 : 1,
-            }}
-            transition={{ duration: 0.14 }}
-            style={{ boxShadow: "var(--shadow-input)" }}
-            className="flex flex-col items-center gap-1.5 py-3 rounded-2xl border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-            <div style={{ color: iconKey === ic.key ? ic.color : "var(--muted-foreground)" }} aria-hidden="true">{ic.icon}</div>
-            <span className="text-[9px] font-medium text-muted-foreground text-center leading-tight">{ic.label}</span>
-          </motion.button>
-        ))}
+      <Kop>Kies een kamer</Kop>
+      <div className="mb-6">
+        <KamerKunstKiezer value={iconKey} onChange={setIconKey} />
       </div>
 
       <Kop>Naam</Kop>

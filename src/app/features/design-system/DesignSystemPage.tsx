@@ -10,6 +10,7 @@ import {
 import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { KamerKaart } from "../../components/KamerKaart";
+import { KamerKunstKiezer } from "../../components/KamerKunstKiezer";
 import { RoomHero, RoomThumb } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { roomIcon } from "../../lib/constants";
@@ -57,6 +58,12 @@ const demoRoom: RoomView = {
   tasks: [demoTaskOpen], openCount: 2, hint: "Waarschijnlijk weer toe aan een beurt",
 };
 
+// A room type without watercolor art — shows the tinted-icon fallback banner.
+const demoRoomNoArt: RoomView = {
+  id: "r2", name: "Kantoor", iconKey: "monitor", color: "#7A6448",
+  tasks: [], openCount: 0, hint: "Nog even goed",
+};
+
 const demoRoutine: RoutineView = {
   id: "ro1", name: "Ochtendroutine", trigger: "'s Ochtends",
   tasks: [
@@ -70,6 +77,7 @@ export function DesignSystemPage() {
   const [checked, setChecked] = useState(true);
   const [toggled, setToggled] = useState(false);
   const [chip, setChip] = useState("a");
+  const [kamerKey, setKamerKey] = useState("utensils");
   const [veld, setVeld] = useState("");
   const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
@@ -262,8 +270,15 @@ export function DesignSystemPage() {
           </div>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Kamerkaart</p>
-          <KamerKaart room={demoRoom} onClick={() => {}} />
+          <p className="text-xs text-muted-foreground mb-2">Kamerkaart — aquarel-banner die naar de kaart vervaagt; valt terug op een getinte wash met lijn-icoon als er geen kunst is</p>
+          <div className="space-y-3">
+            <KamerKaart room={demoRoom} onClick={() => {}} />
+            <KamerKaart room={demoRoomNoArt} onClick={() => {}} />
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-2">Kamer-kiezer — selecteerbare aquarel-tegels (kunst waar die bestaat, anders het getinte lijn-icoon), gedeeld door de nieuwe/bewerk-kamer-sheets</p>
+          <KamerKunstKiezer value={kamerKey} onChange={setKamerKey} />
         </div>
         <div>
           <p className="text-xs text-muted-foreground mb-2">RoomThumb — illustratie met fallback naar het lijn-icoon als het beeld ontbreekt</p>

@@ -5,6 +5,7 @@ import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomView } from "../../stores/useViews";
 import { ICONS, ICON_BY_KEY } from "../lib/constants";
 import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip } from "../components/shared";
+import { KamerKunstKiezer } from "../components/KamerKunstKiezer";
 
 export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: () => void }) {
   const room = useRoomView(roomId);
@@ -35,24 +36,9 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
     <Sheet onClose={onClose} tall>
       <SheetHeader title={`${room.name} bewerken`} onClose={onClose} />
 
-      <Kop>Icoon</Kop>
-      <div className="grid grid-cols-4 gap-2 mb-6">
-        {ICONS.map((opt) => (
-          <motion.button key={opt.key} whileTap={{ scale: 0.9 }} onClick={() => setIconKey(opt.key)}
-            aria-pressed={iconKey === opt.key}
-            initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
-            animate={{
-              backgroundColor: iconKey === opt.key ? opt.color + "22" : "var(--input-background)",
-              borderColor: iconKey === opt.key ? opt.color + "70" : "var(--border-input)",
-              scale: iconKey === opt.key ? 1.04 : 1,
-            }}
-            transition={{ duration: 0.14 }}
-            style={{ boxShadow: "var(--shadow-input)" }}
-            className="flex flex-col items-center gap-1.5 py-3 rounded-2xl border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-            <div style={{ color: iconKey === opt.key ? opt.color : "var(--muted-foreground)" }} aria-hidden="true">{opt.icon}</div>
-            <span className="text-[9px] font-medium text-muted-foreground text-center leading-tight">{opt.label}</span>
-          </motion.button>
-        ))}
+      <Kop>Kies een kamer</Kop>
+      <div className="mb-6">
+        <KamerKunstKiezer value={iconKey} onChange={setIconKey} />
       </div>
 
       <Kop>Naam</Kop>
