@@ -26,7 +26,7 @@ export function RoomHero({ ic }: { ic: IconOption }) {
         alt=""
         loading="lazy"
         onError={() => setFailed(true)}
-        className="h-40 w-auto object-contain"
+        className="h-48 w-auto object-contain"
         style={{
           WebkitMaskImage: "radial-gradient(ellipse 72% 72% at 50% 50%, black 58%, transparent 100%)",
           maskImage: "radial-gradient(ellipse 72% 72% at 50% 50%, black 58%, transparent 100%)",
