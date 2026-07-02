@@ -215,6 +215,7 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Taakrij">
+        <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten) — de checkbox blijft de toetsenbord/screenreader-route.</p>
         <div className="space-y-2.5">
           <TaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onClaim={() => {}} />

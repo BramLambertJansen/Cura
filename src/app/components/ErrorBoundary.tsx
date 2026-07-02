@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import { EmptyIllustration } from "./EmptyIllustration";
 
 /** Catches render-time errors anywhere below it so a crash shows a calm recovery message instead of a blank white screen (CLAUDE.md §1-2 tone: forgiving, never alarming). */
 export class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -21,7 +22,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { hasError
           }}
           role="alert"
         >
-          <span className="text-4xl mb-4 select-none" aria-hidden="true">🌿</span>
+          {/* The sprout-in-clouds watercolor; renders nothing if the file is missing, so the text carries the screen on its own. */}
+          <EmptyIllustration className="mb-2" />
           <h1 className="text-xl font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>
             Er ging iets mis
           </h1>

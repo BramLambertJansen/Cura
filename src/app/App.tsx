@@ -14,6 +14,8 @@ import { AppBackground } from "./components/AppBackground";
 import { FullScreenSkeleton, PageSkeleton } from "./components/Skeletons";
 import { ConnectivityBanner } from "./components/ConnectivityBanner";
 import { UpdatePrompt } from "./components/UpdatePrompt";
+import { PullToRefreshIndicator } from "./components/PullToRefreshIndicator";
+import { usePullToRefresh } from "./lib/usePullToRefresh";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
 import { EditTaskSheet } from "./sheets/EditTaskSheet";
@@ -70,6 +72,10 @@ function PageTx({ children }: { children: ReactNode }) {
 function MainShell() {
   useTaskReminders();
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const refresh = useCuraStore((s) => s.refresh);
+  const { pull, state: pullState } = usePullToRefresh(scrollRef, refresh);
+
   const [showAdd, setShowAdd] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [showNewRoom, setShowNewRoom] = useState(false);
@@ -106,18 +112,30 @@ function MainShell() {
         }} />
 
         <div
+          ref={scrollRef}
           className="flex-1 overflow-y-auto scrollbar-hide relative z-10"
           style={{
             paddingTop: "var(--safe-top)",
             paddingLeft: "var(--safe-left)",
             paddingRight: "var(--safe-right)",
             paddingBottom: "calc(6rem + var(--safe-bottom))",
+            // We own the pull gesture at the top — keep native overscroll/PTR out of it.
+            overscrollBehaviorY: "contain",
           }}
         >
-          <Suspense fallback={<PageSkeleton />}>
-            <AnimatedRoutes />
-          </Suspense>
+          {/* Content follows the finger during a pull, springs back on release. */}
+          <div
+            style={{
+              transform: pull ? `translateY(${pull}px)` : undefined,
+              transition: pullState === "pulling" ? "none" : "transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            }}
+          >
+            <Suspense fallback={<PageSkeleton />}>
+              <AnimatedRoutes />
+            </Suspense>
+          </div>
         </div>
+        <PullToRefreshIndicator pull={pull} state={pullState} />
 
         <BottomNav showAdd={showAdd} onAdd={() => setShowAdd((s) => !s)} />
 
