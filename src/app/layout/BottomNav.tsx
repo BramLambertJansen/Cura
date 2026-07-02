@@ -69,9 +69,10 @@ function NavTab({ tab, active }: { tab: Tab; active: boolean }) {
 
 export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => void }) {
   const { pathname } = useLocation();
-  // Samen heeft geen eigen tab (CLAUDE.md §1) — bereikbaar via Meer, dus die tab blijft actief.
+  // Samen en Takenoverzicht hebben geen eigen tab (CLAUDE.md §1) — bereikbaar via Meer, dus die tab blijft actief.
   const isActive = (to: string) =>
-    pathname.startsWith(to) || (to === "/meer" && pathname.startsWith("/samen"));
+    pathname.startsWith(to) ||
+    (to === "/meer" && (pathname.startsWith("/samen") || pathname.startsWith("/taken")));
 
   return (
     <nav

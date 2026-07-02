@@ -8,6 +8,7 @@ import {
   toActivityFeed,
   getDueReminders,
   toSuggestions,
+  toTaskOverview,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -288,6 +289,48 @@ describe("Vandaag suggestions — manual, no AI", () => {
     const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
     const [suggestion] = toSuggestions([view]);
     expect(suggestion.dueHint).not.toMatch(/\d/);
+  });
+});
+
+describe("task overview buckets", () => {
+  const now = Date.now();
+  const view = (t: Task, completions: TaskCompletion[] = []) =>
+    toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+
+  it("puts a one-off with a passed deadline in overdue", () => {
+    const v = view(task({ id: "t1", dueDate: iso(DAY_MS, now) }));
+    const { overdue, upcoming, recurring, undated } = toTaskOverview([v], now);
+    expect(overdue.map((t) => t.id)).toEqual(["t1"]);
+    expect([upcoming, recurring, undated].every((g) => g.length === 0)).toBe(true);
+  });
+
+  it("puts a one-off due now or later in upcoming", () => {
+    const future = view(task({ id: "t1", dueDate: iso(-DAY_MS, now) })); // now + 1 day
+    const exactlyNow = view(task({ id: "t2", dueDate: iso(0, now) }));
+    const { upcoming, overdue } = toTaskOverview([future, exactlyNow], now);
+    expect(upcoming.map((t) => t.id).sort()).toEqual(["t1", "t2"]);
+    expect(overdue).toHaveLength(0);
+  });
+
+  it("gives a recurring task with a wekker its own bucket, not overdue/upcoming", () => {
+    const v = view(task({ id: "t1", intervalDays: 7, dueDate: iso(DAY_MS, now) }));
+    const { recurring, overdue, upcoming } = toTaskOverview([v], now);
+    expect(recurring.map((t) => t.id)).toEqual(["t1"]);
+    expect([overdue, upcoming].every((g) => g.length === 0)).toBe(true);
+  });
+
+  it("puts tasks without a wekker in undated (recurring or one-off)", () => {
+    const oneOff = view(task({ id: "t1" }));
+    const recurringNoWekker = view(task({ id: "t2", intervalDays: 7 }));
+    const { undated } = toTaskOverview([oneOff, recurringNoWekker], now);
+    expect(undated.map((t) => t.id).sort()).toEqual(["t1", "t2"]);
+  });
+
+  it("excludes done tasks from every bucket", () => {
+    const t = task({ id: "t1", dueDate: iso(DAY_MS, now) });
+    const done = view(t, [{ id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(0, now) }]);
+    const buckets = toTaskOverview([done], now);
+    expect(Object.values(buckets).every((g) => g.length === 0)).toBe(true);
   });
 });
 
