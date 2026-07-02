@@ -52,7 +52,7 @@ export function RoomHero({
       // Pull up behind the shell's safe-top padding and out to both edges so the
       // art reaches the physical top/side edges instead of the content inset.
       style={{
-        height: "calc(17rem + var(--safe-top))",
+        height: "calc(14.5rem + var(--safe-top))",
         marginTop: "calc(-1 * var(--safe-top))",
         marginLeft: "calc(-1 * var(--safe-left))",
         marginRight: "calc(-1 * var(--safe-right))",
