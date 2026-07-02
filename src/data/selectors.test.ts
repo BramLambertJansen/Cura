@@ -312,18 +312,33 @@ describe("task overview buckets", () => {
     expect(overdue).toHaveLength(0);
   });
 
-  it("gives a recurring task with a wekker its own bucket, not overdue/upcoming", () => {
-    const v = view(task({ id: "t1", intervalDays: 7, dueDate: iso(DAY_MS, now) }));
-    const { recurring, overdue, upcoming } = toTaskOverview([v], now);
-    expect(recurring.map((t) => t.id)).toEqual(["t1"]);
-    expect([overdue, upcoming].every((g) => g.length === 0)).toBe(true);
+  it("groups every open recurring task under recurring (open ⟹ due again)", () => {
+    // Whatever a recurring task's completion history or wekker, if it's open it
+    // is due again — so it always lands in the one recurring bucket.
+    const neverDone = view(task({ id: "t1", intervalDays: 5 }));
+    const withWekker = view(task({ id: "t2", intervalDays: 7, dueDate: iso(DAY_MS, now) }));
+    const overdueInterval = view(
+      task({ id: "t3", intervalDays: 3 }),
+      [{ id: "c1", taskId: "t3", completedById: "m1", completedAt: iso(10 * DAY_MS, now) }],
+    );
+    const { recurring, overdue, upcoming, undated } = toTaskOverview(
+      [neverDone, withWekker, overdueInterval], now,
+    );
+    expect(recurring.map((t) => t.id).sort()).toEqual(["t1", "t2", "t3"]);
+    expect([overdue, upcoming, undated].every((g) => g.length === 0)).toBe(true);
   });
 
-  it("puts tasks without a wekker in undated (recurring or one-off)", () => {
-    const oneOff = view(task({ id: "t1" }));
-    const recurringNoWekker = view(task({ id: "t2", intervalDays: 7 }));
-    const { undated } = toTaskOverview([oneOff, recurringNoWekker], now);
-    expect(undated.map((t) => t.id).sort()).toEqual(["t1", "t2"]);
+  it("excludes a recurring task completed within its interval (done, not open)", () => {
+    const t = task({ id: "t1", intervalDays: 7 });
+    const done = view(t, [{ id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(DAY_MS, now) }]);
+    const buckets = toTaskOverview([done], now);
+    expect(Object.values(buckets).every((g) => g.length === 0)).toBe(true);
+  });
+
+  it("puts a one-off without a wekker in undated", () => {
+    const v = view(task({ id: "t1" }));
+    const { undated } = toTaskOverview([v], now);
+    expect(undated.map((t) => t.id)).toEqual(["t1"]);
   });
 
   it("excludes done tasks from every bucket", () => {

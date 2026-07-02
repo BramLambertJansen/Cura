@@ -71,10 +71,10 @@ export interface TaskView {
  * no alarming "achterstallig" framing (CLAUDE.md §2).
  */
 export interface TaskOverview {
-  overdue: TaskView[]; // one-off, dueDate in the past — shown calmly as "Al even blijven liggen"
+  overdue: TaskView[]; // one-off, dueDate in the past — "Al even blijven liggen"
+  recurring: TaskView[]; // every open recurring task (open ⟹ due again) — "Waarschijnlijk weer toe"
   upcoming: TaskView[]; // one-off, dueDate now or later — "In de toekomst"
-  recurring: TaskView[]; // recurring with a wekker time (date is only HH:mm) — its own group
-  undated: TaskView[]; // no wekker at all — the dateless pool
+  undated: TaskView[]; // one-off without a wekker — the dateless pool
 }
 
 /** A room with its pooled tasks and a soft, honest hint. */
