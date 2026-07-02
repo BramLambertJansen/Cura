@@ -235,11 +235,33 @@ export function Card({
   return <div className={`${chrome} ${className}`} style={{ boxShadow: SHADOW }}>{children}</div>;
 }
 
-export function Leeg({ icon, text }: { icon: string; text: string }) {
+/**
+ * Gentle empty state. Pass `image` (a public/ watercolor illustration) to show
+ * art instead of the emoji; the emoji stays the fallback when the file is
+ * missing or fails to load, so partial art degrades gracefully (CLAUDE.md §3).
+ * The art renders as a framed, rounded picture: `imageAspect` picks the frame
+ * ("square" for the 1:1 scenes, "wide" for the 3:1 banners), and a slight zoom
+ * crops the art's own cream margins away.
+ */
+export function Leeg({
+  icon, text, image, imageAspect = "square",
+}: { icon: string; text: string; image?: string; imageAspect?: "square" | "wide" }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(image) && !imageFailed;
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, ease: [0.25, 0.46, 0.45, 0.94] }}>
-      <Card className="flex flex-col items-center gap-4 py-14 px-8 text-center">
-        <span className="text-4xl select-none">{icon}</span>
+      <Card className={`flex flex-col items-center gap-4 px-8 text-center ${showImage ? "py-8" : "py-14"}`}>
+        {showImage
+          ? (
+            <div className={`rounded-2xl overflow-hidden ${imageAspect === "wide" ? "w-full max-w-[280px] aspect-[2/1]" : "w-36 h-36"}`}>
+              <img
+                src={image} alt="" aria-hidden="true" loading="lazy"
+                onError={() => setImageFailed(true)}
+                className={`w-full h-full object-cover ${imageAspect === "wide" ? "object-bottom" : "scale-[1.22]"}`}
+              />
+            </div>
+          )
+          : <span className="text-4xl select-none">{icon}</span>}
         <p className="text-[0.875rem] text-muted-foreground leading-relaxed max-w-[200px]"
           style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", lineHeight: 1.65 }}>{text}</p>
       </Card>

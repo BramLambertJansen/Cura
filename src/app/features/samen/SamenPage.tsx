@@ -46,7 +46,7 @@ export function SamenPage() {
       </div>
 
       {completedToday.length === 0
-        ? <Leeg icon="🤍" text="Nog niks gedaan vandaag. De dag is jong." />
+        ? <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag. De dag is jong." />
         : <motion.div variants={stagger} initial="initial" animate="animate" aria-live="polite" className="space-y-1.5 mb-8">
             {completedToday.map((activity, i) => {
               const activityKey = `${activity.taskId}-${activity.doneAt}`;
