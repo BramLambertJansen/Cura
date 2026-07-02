@@ -130,6 +130,7 @@ export const TaakRij = memo(function TaakRij({
         style={{
           x,
           touchAction: "pan-y",
+          background: task.done ? "var(--card)" : "#fff",
           boxShadow: SHADOW,
           borderLeft: !task.done && !claimed ? `2.5px solid color-mix(in srgb, var(--primary) 18%, transparent)` : "2.5px solid transparent",
         }}>
