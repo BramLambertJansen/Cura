@@ -275,8 +275,10 @@ export function DesignSystemPage() {
           </div>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-2">RoomHero — brede kamer-illustratie voor de kamer-detailheader, verdwijnt stil als het beeld ontbreekt</p>
-          <RoomHero ic={roomIcon("utensils")} />
+          <p className="text-xs text-muted-foreground mb-2">RoomHero — full-bleed kamer-header met zwevende terug/bewerk-knoppen; valt terug op een kale knoppenbalk als het beeld ontbreekt</p>
+          <div className="relative overflow-hidden rounded-2xl">
+            <RoomHero ic={roomIcon("utensils")} onBack={() => {}} onEdit={() => {}} editLabel="Kamer bewerken" />
+          </div>
         </div>
         <div>
           <p className="text-xs text-muted-foreground mb-2">EmptyIllustration — rustige lege staat</p>
