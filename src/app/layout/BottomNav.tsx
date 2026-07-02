@@ -42,7 +42,8 @@ function NavTab({ tab, active }: { tab: Tab; active: boolean }) {
           // Shared layoutId makes the pill glide from the previous tab to this one instead of blinking in.
           layoutId="nav-active-pill"
           className="absolute inset-x-3 inset-y-2 rounded-full pointer-events-none"
-          style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)" }}
+          // Blurred like a watercolor smudge — the tint is a touch stronger to compensate for what the blur spreads out.
+          style={{ background: "color-mix(in srgb, var(--primary) 13%, transparent)", filter: "blur(6px)" }}
           transition={{ type: "spring", stiffness: 420, damping: 36 }}
           aria-hidden="true"
         />
