@@ -1,7 +1,7 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { Clock, Leaf, Sparkles } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions } from "../../../data/selectors";
@@ -9,29 +9,18 @@ import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
-import { Avatar, Card, Kop, Leeg } from "../../components/shared";
+import { Avatar, Kop, Leeg } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
 import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
 import { useSheets } from "../../sheetContext";
 
-type QuickFilter = "alles" | "kort" | "rustig";
-
-// Below this many suggestions, filter chips add more chrome than they save —
-// the list itself is already scannable at a glance.
-const SUGGESTION_FILTER_THRESHOLD = 6;
-
 function warmDoneToast(title: string) {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(8);
   toast.success("Lekker bezig", {
     description: `${title} is gedaan. Dat scheelt weer.`,
   });
-}
-
-function durationMinutes(duration?: string): number | null {
-  const match = duration?.match(/\d+/);
-  return match ? Number(match[0]) : null;
 }
 
 export function VandaagPage() {
@@ -44,25 +33,18 @@ export function VandaagPage() {
   const routines = useRoutineViews();
   const { isDismissed, dismiss } = useNietVandaag();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask } = useTaskDismissals();
-  const [quickFilter, setQuickFilter] = useState<QuickFilter>("alles");
+  // The suggestions live behind a "peek": the shortest one stays visible as a
+  // gentle nudge, the rest wait quietly behind a soft toggle so the section
+  // never overshadows the actual day-planning above it.
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
   const greeting = getGreeting();
   const plannedOpen = tasks.filter((t) => t.planned && !t.done && !isTaskDismissed(t.id));
   const plannedDone = tasks.filter((t) => t.planned && t.done && !isTaskDismissed(t.id));
   const allPlanned = [...plannedOpen, ...plannedDone];
   const suggestions = toSuggestions(tasks).filter((t) => !isDismissed(t.id));
-  const showSuggestionFilters = suggestions.length > SUGGESTION_FILTER_THRESHOLD;
-  const filteredSuggestions = useMemo(() => suggestions.filter((task) => {
-    if (!showSuggestionFilters) return true;
-    if (quickFilter === "kort") return (durationMinutes(task.duration) ?? 99) <= 10;
-    if (quickFilter === "rustig") return !task.wekkerLabel && (durationMinutes(task.duration) ?? 20) <= 20;
-    return true;
-  }), [quickFilter, suggestions, showSuggestionFilters]);
-  const quickFilters: { id: QuickFilter; label: string; icon: ReactNode }[] = [
-    { id: "alles", label: "Alles", icon: <Sparkles size={12} /> },
-    { id: "kort", label: "≤ 10 min", icon: <Clock size={12} /> },
-    { id: "rustig", label: "Rustig", icon: <Leaf size={12} /> },
-  ];
+  const visibleSuggestions = suggestionsOpen ? suggestions : suggestions.slice(0, 1);
+  const hiddenSuggestionCount = suggestions.length - 1;
 
   const me = members.find((m) => m.userId === currentUserId);
   const huisgenootActivity = tasks.filter(
@@ -137,55 +119,32 @@ export function VandaagPage() {
 
         {suggestions.length > 0 && (
           <section>
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <Kop>Misschien handig vandaag</Kop>
-              {showSuggestionFilters && <span className="text-[11px] text-muted-foreground">{filteredSuggestions.length} past</span>}
-            </div>
-            {showSuggestionFilters && (
-              <div className="-mx-5 mb-3 overflow-x-auto scrollbar-hide px-5">
-                <div className="flex gap-2">
-                  {quickFilters.map((filter) => {
-                    const active = quickFilter === filter.id;
-                    return (
-                      <motion.button
-                        key={filter.id}
-                        whileTap={{ scale: 0.94 }}
-                        onClick={() => setQuickFilter(filter.id)}
-                        aria-pressed={active}
-                        className="flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
-                        style={{
-                          background: active ? "var(--gradient-primary)" : "color-mix(in srgb, var(--card) 78%, transparent)",
-                          color: active ? "white" : "var(--muted-foreground)",
-                          boxShadow: active ? "0 4px 14px color-mix(in srgb, var(--primary) 22%, transparent)" : "var(--shadow-input)",
-                        }}
-                      >
-                        {filter.icon}
-                        {filter.label}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            <motion.div layout variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
-              <AnimatePresence mode="popLayout">
-                {filteredSuggestions.length === 0 ? (
-                  <motion.div key="no-filtered-suggestions" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
-                    <Card className="px-4 py-4 text-center">
-                      <p className="text-sm font-medium text-foreground">Niets dat precies past.</p>
-                      <p className="mt-1 text-xs text-muted-foreground">Kies een andere filter of laat Cura rustig meedenken.</p>
-                    </Card>
-                  </motion.div>
-                ) : filteredSuggestions.map((task) => (
-                  <motion.div key={task.id} layout variants={fadeUp}>
-                    <SuggestieRij
-                      task={task}
-                      onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat klaar wanneer jij wilt.` }); }}
-                      onNietVandaag={() => dismiss(task.id)}
-                    />
-                  </motion.div>
+            <Kop>Misschien handig vandaag</Kop>
+            <motion.div layout className="space-y-2.5">
+              <AnimatePresence mode="popLayout" initial={false}>
+                {visibleSuggestions.map((task) => (
+                  <SuggestieRij
+                    key={task.id}
+                    task={task}
+                    onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat klaar wanneer jij wilt.` }); }}
+                    onNietVandaag={() => dismiss(task.id)}
+                  />
                 ))}
               </AnimatePresence>
+              {hiddenSuggestionCount > 0 && (
+                <motion.button
+                  layout
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSuggestionsOpen((v) => !v)}
+                  aria-expanded={suggestionsOpen}
+                  className="flex items-center justify-center gap-1.5 mx-auto px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+                >
+                  {suggestionsOpen ? "Minder tonen" : `Nog ${hiddenSuggestionCount} suggestie${hiddenSuggestionCount === 1 ? "" : "s"}`}
+                  <motion.span animate={{ rotate: suggestionsOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex">
+                    <ChevronDown size={14} aria-hidden="true" />
+                  </motion.span>
+                </motion.button>
+              )}
             </motion.div>
           </section>
         )}
