@@ -39,7 +39,10 @@ export function HuisPage() {
           editLabel={`${room.name} bewerken`}
         />
 
-        <div className="px-5 pt-4 pb-6">
+        {/* When there's a hero image, pull the title up so it sits within the
+            header's bottom fade (overlapping the art); without art the header is
+            just a control bar, so keep the normal spacing. */}
+        <div className={`px-5 pb-6 relative z-10 ${ic.image ? "-mt-12" : "pt-4"}`}>
           <h2 className="text-3xl font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{room.name}</h2>
           {room.owner && <p className="text-muted-foreground text-xs mt-1">Meestal {room.owner}</p>}
         </div>

@@ -4,6 +4,10 @@
   --foreground: #1A1814;
   --card: #FEFCF7;
   --card-foreground: #1A1814;
+  /* Warm cream matching the watercolor room illustrations' own background
+     (sampled from public/rooms/*), so a room card can share the art's cream and
+     the illustration melts into the card with no visible image edge. */
+  --card-art: #FCF1E8;
   --popover: #FEFCF7;
   --popover-foreground: #1A1814;
   --primary: #496E46;

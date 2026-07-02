@@ -58,12 +58,15 @@ export function RoomHero({
         marginRight: "calc(-1 * var(--safe-right))",
       }}
     >
-      {/* Masked image layer: the bottom fade lives in this layer's (unscaled)
-          coords so it always resolves to full transparent at the bottom edge,
-          independent of the image zoom — and the controls stay unmasked. */}
+      {/* Masked layer: a cream band (--card-art, the transparent art's own
+          cream) sits behind the illustration so the header reads as one warm
+          object; the bottom fade lives in this layer's (unscaled) coords so
+          cream + art always melt into the painted app background at the bottom
+          edge, independent of the image zoom — and the controls stay unmasked. */}
       <div
         className="absolute inset-0"
         style={{
+          background: "var(--card-art)",
           WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
           maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
         }}
@@ -74,10 +77,10 @@ export function RoomHero({
           aria-hidden="true"
           loading="lazy"
           onError={() => setFailed(true)}
-          // scale-[1.28] zooms past the art's cream side-margins so the painted
-          // subject fills the full width and touches both edges (same crop trick
-          // as RoomThumb); overflow-hidden on the parent clips the overscan.
-          className="absolute inset-0 w-full h-full object-cover scale-[1.28]"
+          // The art is background-free, so there are no cream margins to zoom
+          // past — object-cover alone frames it; object-position keeps the
+          // painted subject centred in the short header strip.
+          className="absolute inset-0 w-full h-full object-cover"
           style={{ objectPosition: "center 42%" }}
         />
       </div>
@@ -110,8 +113,12 @@ export function RoomThumb({
   const showImage = Boolean(ic.image) && !failed;
 
   return (
+    // The room art is a transparent PNG, so the tile carries its own cream base
+    // (--card-art) — the illustration then floats on the same cream everywhere.
     <div className={`${className} ${rounded} flex items-center justify-center flex-shrink-0 relative overflow-hidden`}
-      style={showImage ? undefined : { background: `linear-gradient(145deg,color-mix(in srgb, ${color} 10%, transparent),color-mix(in srgb, ${color} 18%, transparent))` }}>
+      style={{ background: showImage
+        ? "var(--card-art)"
+        : `linear-gradient(145deg,color-mix(in srgb, ${color} 10%, var(--card-art)),color-mix(in srgb, ${color} 18%, var(--card-art)))` }}>
       {showImage ? (
         <img
           src={ic.image}
@@ -134,40 +141,47 @@ export function RoomThumb({
 }
 
 /**
- * Wide watercolor banner for the top of a room card. The square room art is
- * shown `object-cover` in a short, full-width strip so the painted vignette
- * fills it, and a bottom linear mask melts the strip into the card body below
- * (same "melt into the background" language as RoomHero) — so the card reads as
- * one warm object, not a photo pasted above text. When the room has no art (or
- * it fails to load) it degrades to a calm tinted wash with the large line icon,
- * so every card keeps the same banner shape whether or not artwork exists.
+ * Watercolor art panel that fills its container and softly fades toward one
+ * edge, melting into whatever sits beside it (same "melt into the background"
+ * language as RoomHero). Used as the full-bleed left panel of a room card
+ * (`fade="right"`), but the fade direction is configurable. When the room has
+ * no art (or it fails to load) it degrades to a calm tinted wash with the large
+ * line icon, so the panel keeps the same shape whether or not artwork exists.
+ * Sizing/corners come from `className` so the parent controls the frame.
  */
-export function RoomBanner({
-  ic, color, className = "h-28",
+export function RoomArt({
+  ic, color, className = "", fade, objectPosition = "center 50%",
 }: {
   ic: IconOption;
   color: string;
-  /** Tailwind height utility for the strip, e.g. "h-28". */
+  /** Sizing utilities for the panel, e.g. "w-24" (height comes from the flex row). */
   className?: string;
+  /** Edge the art dissolves toward, so it melts into the adjacent surface. */
+  fade?: "right" | "bottom";
+  /** object-position for the crop — keeps the painted subject in frame. */
+  objectPosition?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(ic.image) && !failed;
-  const fade = "linear-gradient(to bottom, black 60%, transparent 100%)";
+  const dir = fade === "right" ? "to right" : "to bottom";
+  const maskStyle = fade
+    ? { WebkitMaskImage: `linear-gradient(${dir}, black 62%, transparent 100%)`, maskImage: `linear-gradient(${dir}, black 62%, transparent 100%)` }
+    : undefined;
 
   if (showImage) {
     return (
-      <div className={`relative w-full ${className} overflow-hidden`}>
-        <div className="absolute inset-0" style={{ WebkitMaskImage: fade, maskImage: fade }}>
+      <div className={`relative overflow-hidden ${className}`}>
+        <div className="absolute inset-0" style={maskStyle}>
           <img
             src={ic.image}
             alt=""
             aria-hidden="true"
             loading="lazy"
             onError={() => setFailed(true)}
-            // A light zoom trims the art's cream side-margins; object-position keeps
-            // the painted subject (counter, sofa, bed…) centred in the short strip.
+            // A light zoom trims the art's cream margins so the painted subject
+            // (counter, sofa, bed…) fills the panel instead of floating in cream.
             className="absolute inset-0 w-full h-full object-cover scale-[1.06]"
-            style={{ objectPosition: "center 50%" }}
+            style={{ objectPosition }}
           />
         </div>
       </div>
@@ -175,9 +189,9 @@ export function RoomBanner({
   }
 
   return (
-    <div className={`relative w-full ${className} overflow-hidden`} style={{ WebkitMaskImage: fade, maskImage: fade }} aria-hidden="true">
-      <div className="absolute inset-0" style={{ background: `linear-gradient(150deg, color-mix(in srgb, ${color} 15%, var(--card)) 0%, color-mix(in srgb, ${color} 5%, var(--card)) 100%)` }} />
-      <div className="absolute inset-0" style={{ background: `radial-gradient(120% 90% at 28% 22%, color-mix(in srgb, ${color} 22%, transparent) 0%, transparent 62%)` }} />
+    <div className={`relative overflow-hidden ${className}`} style={maskStyle} aria-hidden="true">
+      <div className="absolute inset-0" style={{ background: `linear-gradient(150deg, color-mix(in srgb, ${color} 15%, var(--card-art)) 0%, color-mix(in srgb, ${color} 5%, var(--card-art)) 100%)` }} />
+      <div className="absolute inset-0" style={{ background: `radial-gradient(120% 90% at 30% 25%, color-mix(in srgb, ${color} 22%, transparent) 0%, transparent 62%)` }} />
       <div className="absolute inset-0 flex items-center justify-center" style={{ color, opacity: 0.5 }}>{ic.iconLg}</div>
     </div>
   );
