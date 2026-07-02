@@ -1,0 +1,117 @@
+import { useState } from "react";
+import { motion } from "motion/react";
+import { Copy } from "lucide-react";
+import { useCuraStore } from "../../../stores/useCuraStore";
+import { useTaskViews } from "../../../stores/useViews";
+import { toTaskOverview } from "../../../data/selectors";
+import type { TaskView } from "../../../data/types";
+import { stagger, fadeUp } from "../../lib/motion";
+import { Kop, Leeg, PageHeader, KeuzeChip } from "../../components/shared";
+import { TaakRij } from "../../components/TaakRij";
+import { useSheets } from "../../sheetContext";
+
+const ALL = "all";
+const NONE = "none";
+
+/**
+ * Takenoverzicht — every open task on one page, grouped by date status and
+ * filterable by room. The split is derived (see `toTaskOverview`); this screen
+ * just renders the calm buckets. Empty groups are skipped so it never shows
+ * empty cards. Overdue one-off tasks get a "maak nieuwe hiervan" action that
+ * drops a fresh copy in the pool (without the stale deadline).
+ */
+export function TakenPage() {
+  const { openEditTask } = useSheets();
+  const toggleTask = useCuraStore((s) => s.toggleTask);
+  const createTask = useCuraStore((s) => s.createTask);
+  const tasks = useTaskViews();
+  const [roomFilter, setRoomFilter] = useState<string>(ALL);
+
+  // Room chips are built from the rooms present among open tasks, plus a
+  // "Zonder kamer" option when some open task has no room.
+  const openTasks = tasks.filter((t) => !t.done);
+  const roomsPresent = new Map<string, string>();
+  let hasRoomless = false;
+  for (const t of openTasks) {
+    if (t.roomId) roomsPresent.set(t.roomId, t.room ?? "Kamer");
+    else hasRoomless = true;
+  }
+  const roomOptions = [
+    { id: ALL, label: "Alle" },
+    ...[...roomsPresent].map(([id, label]) => ({ id, label })),
+    ...(hasRoomless ? [{ id: NONE, label: "Zonder kamer" }] : []),
+  ];
+  const showFilters = roomOptions.length > 2;
+
+  const matchesRoom = (t: TaskView) =>
+    roomFilter === ALL || (roomFilter === NONE ? !t.roomId : t.roomId === roomFilter);
+
+  const { overdue, recurring, upcoming, undated } = toTaskOverview(tasks.filter(matchesRoom));
+
+  const groups: { label: string; tasks: TaskView[]; renew?: boolean }[] = [
+    { label: "Al even blijven liggen", tasks: overdue, renew: true },
+    { label: "Waarschijnlijk weer toe", tasks: recurring },
+    { label: "In de toekomst", tasks: upcoming },
+    { label: "Geen datum", tasks: undated },
+  ];
+  const nonEmpty = groups.filter((g) => g.tasks.length > 0);
+
+  function makeCopy(task: TaskView) {
+    // A fresh instance in the pool — same essentials, no stale (verlopen) wekker.
+    createTask({
+      title: task.title,
+      roomId: task.roomId,
+      durationMin: task.durationMin,
+      description: task.description,
+    });
+  }
+
+  return (
+    <div className="px-5 pt-14 pb-8">
+      <PageHeader title="Takenoverzicht" subtitle="Alles op een rij, geordend op datum." />
+
+      {showFilters && (
+        <div role="group" aria-label="Filter op kamer" className="flex flex-wrap gap-2 mb-6">
+          {roomOptions.map((opt) => (
+            <KeuzeChip key={opt.id} selected={roomFilter === opt.id} onClick={() => setRoomFilter(opt.id)}>
+              {opt.label}
+            </KeuzeChip>
+          ))}
+        </div>
+      )}
+
+      {nonEmpty.length === 0
+        ? <Leeg icon="🗂️" text="Nog geen taken om te tonen." />
+        : <div className="space-y-8">
+            {nonEmpty.map((group) => (
+              <section key={group.label}>
+                <Kop>{group.label}</Kop>
+                <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
+                  {group.tasks.map((task) => (
+                    <motion.div key={task.id} variants={fadeUp} className="space-y-1.5">
+                      <TaakRij
+                        task={task}
+                        onToggle={() => toggleTask(task.id, !task.done)}
+                        onEdit={() => openEditTask(task.id)}
+                      />
+                      {group.renew && !task.intervalDays && (
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => makeCopy(task)}
+                            aria-label={`Maak een nieuwe taak op basis van ${task.title}`}
+                            className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+                            style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)" }}>
+                            <Copy size={12} aria-hidden="true" /> Maak nieuwe hiervan
+                          </button>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </section>
+            ))}
+          </div>
+      }
+    </div>
+  );
+}

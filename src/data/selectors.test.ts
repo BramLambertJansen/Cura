@@ -8,6 +8,7 @@ import {
   toActivityFeed,
   getDueReminders,
   toSuggestions,
+  toTaskOverview,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -288,6 +289,63 @@ describe("Vandaag suggestions — manual, no AI", () => {
     const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
     const [suggestion] = toSuggestions([view]);
     expect(suggestion.dueHint).not.toMatch(/\d/);
+  });
+});
+
+describe("task overview buckets", () => {
+  const now = Date.now();
+  const view = (t: Task, completions: TaskCompletion[] = []) =>
+    toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+
+  it("puts a one-off with a passed deadline in overdue", () => {
+    const v = view(task({ id: "t1", dueDate: iso(DAY_MS, now) }));
+    const { overdue, upcoming, recurring, undated } = toTaskOverview([v], now);
+    expect(overdue.map((t) => t.id)).toEqual(["t1"]);
+    expect([upcoming, recurring, undated].every((g) => g.length === 0)).toBe(true);
+  });
+
+  it("puts a one-off due now or later in upcoming", () => {
+    const future = view(task({ id: "t1", dueDate: iso(-DAY_MS, now) })); // now + 1 day
+    const exactlyNow = view(task({ id: "t2", dueDate: iso(0, now) }));
+    const { upcoming, overdue } = toTaskOverview([future, exactlyNow], now);
+    expect(upcoming.map((t) => t.id).sort()).toEqual(["t1", "t2"]);
+    expect(overdue).toHaveLength(0);
+  });
+
+  it("groups every open recurring task under recurring (open ⟹ due again)", () => {
+    // Whatever a recurring task's completion history or wekker, if it's open it
+    // is due again — so it always lands in the one recurring bucket.
+    const neverDone = view(task({ id: "t1", intervalDays: 5 }));
+    const withWekker = view(task({ id: "t2", intervalDays: 7, dueDate: iso(DAY_MS, now) }));
+    const overdueInterval = view(
+      task({ id: "t3", intervalDays: 3 }),
+      [{ id: "c1", taskId: "t3", completedById: "m1", completedAt: iso(10 * DAY_MS, now) }],
+    );
+    const { recurring, overdue, upcoming, undated } = toTaskOverview(
+      [neverDone, withWekker, overdueInterval], now,
+    );
+    expect(recurring.map((t) => t.id).sort()).toEqual(["t1", "t2", "t3"]);
+    expect([overdue, upcoming, undated].every((g) => g.length === 0)).toBe(true);
+  });
+
+  it("excludes a recurring task completed within its interval (done, not open)", () => {
+    const t = task({ id: "t1", intervalDays: 7 });
+    const done = view(t, [{ id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(DAY_MS, now) }]);
+    const buckets = toTaskOverview([done], now);
+    expect(Object.values(buckets).every((g) => g.length === 0)).toBe(true);
+  });
+
+  it("puts a one-off without a wekker in undated", () => {
+    const v = view(task({ id: "t1" }));
+    const { undated } = toTaskOverview([v], now);
+    expect(undated.map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("excludes done tasks from every bucket", () => {
+    const t = task({ id: "t1", dueDate: iso(DAY_MS, now) });
+    const done = view(t, [{ id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(0, now) }]);
+    const buckets = toTaskOverview([done], now);
+    expect(Object.values(buckets).every((g) => g.length === 0)).toBe(true);
   });
 });
 
