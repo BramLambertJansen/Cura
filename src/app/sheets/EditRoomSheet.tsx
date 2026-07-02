@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomView } from "../../stores/useViews";
-import { ICONS, ICON_BY_KEY, SAGE } from "../lib/constants";
-import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop } from "../components/shared";
+import { ICONS, ICON_BY_KEY } from "../lib/constants";
+import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip } from "../components/shared";
 
 export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: () => void }) {
   const room = useRoomView(roomId);
@@ -63,15 +63,9 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
       <Kop><span className="normal-case">Voorkeur eigenaar <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></span></Kop>
       <div className="flex flex-wrap gap-2 mt-3 mb-6">
         {members.map((m) => (
-          <motion.button key={m.id} whileTap={{ scale: 0.93 }} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}
-            aria-pressed={ownerId === m.id}
-            animate={{
-              backgroundColor: ownerId === m.id ? SAGE : "var(--input-background)",
-              color: ownerId === m.id ? "#ffffff" : "var(--muted-foreground)",
-              boxShadow: ownerId === m.id ? "none" : "var(--shadow-input)",
-            }}
-            transition={{ duration: 0.14 }}
-            className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">{m.displayName}</motion.button>
+          <KeuzeChip key={m.id} selected={ownerId === m.id} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}>
+            {m.displayName}
+          </KeuzeChip>
         ))}
       </div>
 
@@ -82,8 +76,8 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
         {!confirm
           ? <motion.button key="del" whileTap={{ scale: 0.96 }} onClick={() => setConfirm(true)} className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50" style={{ color: "var(--destructive)" }}><Trash2 size={14} aria-hidden="true" /> Kamer verwijderen</motion.button>
           : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-              <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)} className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium">Toch niet</motion.button>
-              <motion.button whileTap={{ scale: 0.96 }} onClick={remove} className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold" style={{ background: "var(--destructive)" }}>Ja, verwijder</motion.button>
+              <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)} className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">Toch niet</motion.button>
+              <motion.button whileTap={{ scale: 0.96 }} onClick={remove} className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2" style={{ background: "var(--destructive)" }}>Ja, verwijder</motion.button>
             </motion.div>
         }
       </AnimatePresence>

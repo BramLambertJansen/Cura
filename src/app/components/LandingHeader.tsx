@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 
 /**
  * Full-bleed header illustration for the landing / auth screen. The watercolor
- * sunrise (public/landing-header.png) sits at the top edge and fades out at its
+ * sunrise (public/landing-header.webp) sits at the top edge and fades out at its
  * bottom into the app background via a mask gradient — no hard background
  * knockout needed, since the illustration's cream sky already matches
  * --background (CLAUDE.md §7: derive from tokens, don't hardcode). The title
@@ -15,7 +15,7 @@ export function LandingHeader({ subtitle }: { subtitle: string }) {
     <header className="relative z-10 w-full h-[38vh] min-h-[13rem] max-h-72 overflow-hidden">
       {!failed && (
         <img
-          src="/landing-header.png"
+          src="/landing-header.webp"
           alt=""
           aria-hidden="true"
           onError={() => setFailed(true)}

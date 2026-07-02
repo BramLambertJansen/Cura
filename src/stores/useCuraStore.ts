@@ -32,6 +32,8 @@ interface CuraState {
   bundles: Bundle[];
 
   init: () => Promise<void>;
+  /** Re-fetch all lists for the current household (pull-to-refresh, realtime). Resolves silently on failure — a missed refresh isn't worth an alarm. */
+  refresh: () => Promise<void>;
   createHousehold: (name: string) => Promise<void>;
   updateHousehold: (name: string) => Promise<void>;
   updateMember: (displayName: string) => Promise<void>;
@@ -126,26 +128,33 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       unsubscribeRealtime = store.subscribeToChanges(household.id, () => {
         if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
         realtimeRefreshTimer = setTimeout(() => {
-          void (async () => {
-            try {
-              const [freshMembers, freshRooms, freshTasks, freshCompletions, freshBundles] = await Promise.all([
-                store.listMembers(household.id),
-                store.listRooms(household.id),
-                store.listTasks(household.id),
-                store.listCompletions(household.id),
-                store.listBundles(household.id),
-              ]);
-              // Guard against a change from a household we've since left (reset()/re-init raced this timer).
-              if (get().householdId !== household.id) return;
-              set({ members: freshMembers, rooms: freshRooms, tasks: freshTasks, completions: freshCompletions, bundles: freshBundles });
-            } catch {
-              // Silent — a transient refresh failure isn't worth interrupting the session over; the next realtime event retries.
-            }
-          })();
+          // Guard against a change from a household we've since left (reset()/re-init raced this timer).
+          if (get().householdId !== household.id) return;
+          void get().refresh();
         }, REALTIME_DEBOUNCE_MS);
       });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Laden is niet gelukt");
+    }
+  },
+
+  async refresh() {
+    try {
+      const store = await getDataStore();
+      const { householdId } = get();
+      if (!householdId) return;
+      const [members, rooms, tasks, completions, bundles] = await Promise.all([
+        store.listMembers(householdId),
+        store.listRooms(householdId),
+        store.listTasks(householdId),
+        store.listCompletions(householdId),
+        store.listBundles(householdId),
+      ]);
+      // Household changed while the fetch was in flight (sign-out/re-init) — discard.
+      if (get().householdId !== householdId) return;
+      set({ members, rooms, tasks, completions, bundles });
+    } catch {
+      // Silent — a transient refresh failure isn't worth interrupting the session over; the next refresh retries.
     }
   },
 

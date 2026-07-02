@@ -2,7 +2,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
 import { Check, X } from "lucide-react";
-import { SAGE, SHADOW } from "../lib/constants";
+import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
 
 // How far (as a fraction of the sheet's own height) or how fast (px/s) a
@@ -165,6 +165,14 @@ export function Checkbox({
   checked, onToggle, size = "lg", label,
 }: { checked: boolean; onToggle: () => void; size?: "md" | "lg"; label?: string }) {
   const dim = size === "lg" ? "w-7 h-7" : "w-6 h-6";
+  // A soft sage ring ripples out on each unchecked→checked transition — a small
+  // celebration, never on mount (a page of already-done tasks shouldn't ripple).
+  const prevChecked = useRef(checked);
+  const [rippleKey, setRippleKey] = useState(0);
+  useEffect(() => {
+    if (checked && !prevChecked.current) setRippleKey((n) => n + 1);
+    prevChecked.current = checked;
+  }, [checked]);
   return (
     <motion.button
       onClick={onToggle}
@@ -174,6 +182,19 @@ export function Checkbox({
       whileTap={{ scale: 0.7 }}
       transition={{ type: "spring", stiffness: 500, damping: 25 }}
       className={`${dim} relative flex-shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1`}>
+      {/* Invisible hit-area extension: the visible circle is 24–28px, well under the ~44px touch guideline. */}
+      <span className="absolute -inset-2 rounded-full" aria-hidden="true" />
+      {rippleKey > 0 && (
+        <motion.span
+          key={rippleKey}
+          aria-hidden="true"
+          initial={{ scale: 0.9, opacity: 0.5 }}
+          animate={{ scale: 2.1, opacity: 0 }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
+          className="absolute inset-0 rounded-full border-2 pointer-events-none"
+          style={{ borderColor: SAGE }}
+        />
+      )}
       <motion.div
         initial={{ backgroundColor: "rgba(0,0,0,0)", borderColor: "color-mix(in srgb, var(--outline-color) 28%, transparent)" }}
         animate={{ backgroundColor: checked ? SAGE : "rgba(0,0,0,0)", borderColor: checked ? SAGE : "color-mix(in srgb, var(--outline-color) 28%, transparent)" }}
@@ -186,6 +207,32 @@ export function Checkbox({
           </motion.div>
         )}
       </AnimatePresence>
+    </motion.button>
+  );
+}
+
+/**
+ * Selectable pill for pick-one/pick-optional rows (trigger, eigenaar, soort
+ * ruimte) — the single source for the "sage when selected" chip that used to
+ * be copy-pasted per sheet. Announces state via aria-pressed and keeps the
+ * standard focus ring.
+ */
+export function KeuzeChip({
+  selected, onClick, children,
+}: { selected: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.93 }}
+      onClick={onClick}
+      aria-pressed={selected}
+      animate={{
+        backgroundColor: selected ? SAGE : "var(--input-background)",
+        color: selected ? PRIMARY_FG : "var(--muted-foreground)",
+        boxShadow: selected ? "none" : "var(--shadow-input)",
+      }}
+      transition={{ duration: 0.14 }}
+      className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+      {children}
     </motion.button>
   );
 }
@@ -225,7 +272,7 @@ export function Card({
       // A `ring-*` utility renders via `box-shadow`, which the inline `boxShadow`
       // below (the card's resting shadow) would silently clobber — `outline-*`
       // is a separate CSS property, so it layers on top instead of losing the fight.
-      <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }} onClick={onClick} aria-label={ariaLabel}
+      <motion.button whileTap={{ backgroundColor: PRESS_TINT }} onClick={onClick} aria-label={ariaLabel}
         className={`w-full text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${chrome} ${className}`}
         style={{ boxShadow: SHADOW }}>
         {children}
@@ -235,11 +282,33 @@ export function Card({
   return <div className={`${chrome} ${className}`} style={{ boxShadow: SHADOW }}>{children}</div>;
 }
 
-export function Leeg({ icon, text }: { icon: string; text: string }) {
+/**
+ * Gentle empty state. Pass `image` (a public/ watercolor illustration) to show
+ * art instead of the emoji; the emoji stays the fallback when the file is
+ * missing or fails to load, so partial art degrades gracefully (CLAUDE.md §3).
+ * The art renders as a framed, rounded picture: `imageAspect` picks the frame
+ * ("square" for the 1:1 scenes, "wide" for the 3:1 banners), and a slight zoom
+ * crops the art's own cream margins away.
+ */
+export function Leeg({
+  icon, text, image, imageAspect = "square",
+}: { icon: string; text: string; image?: string; imageAspect?: "square" | "wide" }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showImage = Boolean(image) && !imageFailed;
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, ease: [0.25, 0.46, 0.45, 0.94] }}>
-      <Card className="flex flex-col items-center gap-4 py-14 px-8 text-center">
-        <span className="text-4xl select-none">{icon}</span>
+      <Card className={`flex flex-col items-center gap-4 px-8 text-center ${showImage ? "py-8" : "py-14"}`}>
+        {showImage
+          ? (
+            <div className={`rounded-2xl overflow-hidden ${imageAspect === "wide" ? "w-full max-w-[280px] aspect-[2/1]" : "w-36 h-36"}`}>
+              <img
+                src={image} alt="" aria-hidden="true" loading="lazy"
+                onError={() => setImageFailed(true)}
+                className={`w-full h-full object-cover ${imageAspect === "wide" ? "object-bottom" : "scale-[1.22]"}`}
+              />
+            </div>
+          )
+          : <span className="text-4xl select-none">{icon}</span>}
         <p className="text-[0.875rem] text-muted-foreground leading-relaxed max-w-[200px]"
           style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", lineHeight: 1.65 }}>{text}</p>
       </Card>
@@ -508,6 +577,6 @@ export function InstRij({
     </div>
   );
   return onClick
-    ? <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.03)" }} onClick={onClick} className="w-full text-left">{inner}</motion.button>
+    ? <motion.button whileTap={{ backgroundColor: PRESS_TINT }} onClick={onClick} className="w-full text-left">{inner}</motion.button>
     : <div>{inner}</div>;
 }

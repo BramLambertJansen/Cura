@@ -14,10 +14,13 @@ function cssVar(name: string, fallback: string): string {
 
 /** Resolved theme colors. Framer Motion needs concrete colors (not var() strings) to animate between states, so these are read once from theme.css rather than hardcoded. */
 export const SAGE = cssVar("--primary", "#496E46");
+export const PRIMARY_FG = cssVar("--primary-foreground", "#ffffff");
 export const MUTED_FG = cssVar("--muted-foreground", "#85786C");
 export const DESTRUCTIVE = cssVar("--destructive", "#B04535");
 export const SHADOW = "var(--shadow-card)";
 export const SHADOW_LG = "var(--shadow-card-lg)";
+/** The soft press-wash for whileTap on card-like rows — one constant instead of scattered rgba literals. */
+export const PRESS_TINT = "rgba(0, 0, 0, 0.03)";
 
 export interface IconOption {
   key: string;
@@ -31,17 +34,17 @@ export interface IconOption {
 }
 
 export const ICONS: IconOption[] = [
-  { key: "utensils", icon: <UtensilsCrossed size={18} />, iconLg: <UtensilsCrossed size={40} />, color: "#B8924A", label: "Keuken", defaultName: "Keuken", image: "/rooms/keuken.png" },
-  { key: "droplets", icon: <Droplets size={18} />, iconLg: <Droplets size={40} />, color: "#5A8FA8", label: "Badkamer", defaultName: "Badkamer", image: "/rooms/badkamer.png" },
-  { key: "toilet", icon: <Toilet size={18} />, iconLg: <Toilet size={40} />, color: "#6E8A72", label: "Toilet", defaultName: "Toilet", image: "/rooms/toilet.png" },
-  { key: "sofa", icon: <Sofa size={18} />, iconLg: <Sofa size={40} />, color: "#8B6EA8", label: "Woonkamer", defaultName: "Woonkamer", image: "/rooms/woonkamer.png" },
-  { key: "bed", icon: <BedDouble size={18} />, iconLg: <BedDouble size={40} />, color: "#496E46", label: "Slaapkamer", defaultName: "Slaapkamer", image: "/rooms/slaapkamer.png" },
+  { key: "utensils", icon: <UtensilsCrossed size={18} />, iconLg: <UtensilsCrossed size={40} />, color: "#B8924A", label: "Keuken", defaultName: "Keuken", image: "/rooms/keuken.webp" },
+  { key: "droplets", icon: <Droplets size={18} />, iconLg: <Droplets size={40} />, color: "#5A8FA8", label: "Badkamer", defaultName: "Badkamer", image: "/rooms/badkamer.webp" },
+  { key: "toilet", icon: <Toilet size={18} />, iconLg: <Toilet size={40} />, color: "#6E8A72", label: "Toilet", defaultName: "Toilet", image: "/rooms/toilet.webp" },
+  { key: "sofa", icon: <Sofa size={18} />, iconLg: <Sofa size={40} />, color: "#8B6EA8", label: "Woonkamer", defaultName: "Woonkamer", image: "/rooms/woonkamer.webp" },
+  { key: "bed", icon: <BedDouble size={18} />, iconLg: <BedDouble size={40} />, color: "#496E46", label: "Slaapkamer", defaultName: "Slaapkamer", image: "/rooms/slaapkamer.webp" },
   { key: "monitor", icon: <Monitor size={18} />, iconLg: <Monitor size={40} />, color: "#7A6448", label: "Kantoor", defaultName: "Kantoor" },
-  { key: "leaf", icon: <Leaf size={18} />, iconLg: <Leaf size={40} />, color: "#4E7A40", label: "Tuin", defaultName: "Tuin", image: "/rooms/tuin.png" },
+  { key: "leaf", icon: <Leaf size={18} />, iconLg: <Leaf size={40} />, color: "#4E7A40", label: "Tuin", defaultName: "Tuin" },
   { key: "home", icon: <Home size={18} />, iconLg: <Home size={40} />, color: "#7A7068", label: "Hal", defaultName: "Hal" },
   { key: "tv", icon: <Tv size={18} />, iconLg: <Tv size={40} />, color: "#5A6A7A", label: "TV-kamer", defaultName: "TV-kamer" },
   { key: "book", icon: <BookOpen size={18} />, iconLg: <BookOpen size={40} />, color: "#7A5A48", label: "Studeerkamer", defaultName: "Studeerkamer" },
-  { key: "shirt", icon: <Shirt size={18} />, iconLg: <Shirt size={40} />, color: "#8A6878", label: "Wasruimte", defaultName: "Wasruimte", image: "/rooms/wasruimte.png" },
+  { key: "shirt", icon: <Shirt size={18} />, iconLg: <Shirt size={40} />, color: "#8A6878", label: "Wasruimte", defaultName: "Wasruimte", image: "/rooms/wasruimte.webp" },
   { key: "coffee", icon: <Coffee size={18} />, iconLg: <Coffee size={40} />, color: "#9A7A5A", label: "Eetkamer", defaultName: "Eetkamer" },
   { key: "wind", icon: <Wind size={18} />, iconLg: <Wind size={40} />, color: "#6A8A88", label: "Balkon", defaultName: "Balkon" },
   { key: "basket", icon: <ShoppingBasket size={18} />, iconLg: <ShoppingBasket size={40} />, color: "#8A7A4A", label: "Berging", defaultName: "Berging" },

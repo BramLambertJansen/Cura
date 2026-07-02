@@ -46,7 +46,11 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,ico}'],
+        // iOS fetches the splash screens itself via <link rel="apple-touch-startup-image">
+        // at Add-to-Home-Screen time, and background.png only lives on as that artwork's
+        // source — precaching them would push ~18 MB into every visitor's cache.
+        globIgnores: ['splash/**', 'background.png'],
       },
     }),
   ],

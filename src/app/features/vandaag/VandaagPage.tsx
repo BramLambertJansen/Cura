@@ -9,6 +9,7 @@ import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { Avatar, Card, Kop, Leeg } from "../../components/shared";
+import { PageBanner } from "../../components/PageBanner";
 import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
@@ -67,8 +68,10 @@ export function VandaagPage() {
   );
 
   return (
-    <div>
-      <div className="px-5 pt-14 pb-8">
+    <div className="relative">
+      {/* Same sunrise art as the auth screen, so opening the app and starting the day feel like one moment. */}
+      <PageBanner src="/landing-header.webp" className="h-48" position="72% 35%" />
+      <div className="relative px-5 pt-14 pb-8">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">{greeting.date}</p>
@@ -85,7 +88,7 @@ export function VandaagPage() {
         </div>
       </div>
 
-      <div className="px-5 pt-7 pb-8 space-y-8">
+      <div className="relative px-5 pt-7 pb-8 space-y-8">
         <AnimatePresence>
           {huisgenootActivity.length > 0 && (
             <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={spring} aria-live="polite">
@@ -119,7 +122,7 @@ export function VandaagPage() {
         <section>
           <Kop>Mijn dag</Kop>
           {allPlanned.length === 0
-            ? <Leeg icon="🌿" text="Niets op de planning. Geniet ervan." />
+            ? <Leeg icon="🌿" image="/empty-plants.webp" text="Niets op de planning. Geniet ervan." />
             : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                 {allPlanned.map((task) => (
                   <motion.div key={task.id} variants={fadeUp}>

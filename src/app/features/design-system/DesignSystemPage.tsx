@@ -4,7 +4,7 @@ import { AnimatePresence } from "motion/react";
 import { Plus, Link2, Home, Bell, ChevronRight } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, Leeg,
+  Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, KeuzeChip, Leeg,
   PillButton, RingProgress, Sheet, SheetHeader, Toggle, VeldInput, VeldTextarea,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
@@ -15,6 +15,7 @@ import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { roomIcon } from "../../lib/constants";
 import { Logo } from "../../components/Logo";
 import { LandingHeader } from "../../components/LandingHeader";
+import { PageBanner } from "../../components/PageBanner";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
 import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
 import { ActiviteitReacties } from "../../components/ActiviteitReacties";
@@ -68,6 +69,7 @@ const demoRoutine: RoutineView = {
 export function DesignSystemPage() {
   const [checked, setChecked] = useState(true);
   const [toggled, setToggled] = useState(false);
+  const [chip, setChip] = useState("a");
   const [veld, setVeld] = useState("");
   const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
@@ -90,9 +92,20 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Landingsheader">
-        <p className="text-sm text-muted-foreground -mt-1">Volledig-breed illustratie-blok boven auth/onboarding-schermen — valt terug op alleen logo + titel als <code>public/landing-header.png</code> ontbreekt.</p>
+        <p className="text-sm text-muted-foreground -mt-1">Volledig-breed illustratie-blok boven auth/onboarding-schermen — valt terug op alleen logo + titel als <code>public/landing-header.webp</code> ontbreekt.</p>
         <div className="rounded-2xl overflow-hidden border border-border/50">
           <LandingHeader subtitle="Rustig plannen, samen." />
+        </div>
+      </Section>
+
+      <Section title="Page banner">
+        <p className="text-sm text-muted-foreground -mt-1">Decoratieve aquarel-backdrop achter een paginakop (<code>PageBanner</code>) — absoluut gepositioneerd, vervaagt onderaan naar de achtergrond. Rendert niets als het beeld ontbreekt.</p>
+        <div className="relative rounded-2xl overflow-hidden border border-border/50 h-40">
+          <PageBanner src="/landing-header.webp" className="h-40" position="72% 35%" />
+          <div className="relative px-5 pt-10">
+            <h1 className="text-[1.6rem] font-medium text-foreground" style={{ fontFamily: "Lora,Georgia,serif" }}>Goedemorgen</h1>
+            <p className="text-sm text-muted-foreground mt-1">De kop blijft leesbaar zonder scrim.</p>
+          </div>
         </div>
       </Section>
 
@@ -149,6 +162,15 @@ export function DesignSystemPage() {
         <HintBanner tone="muted">"Rustig en gestaag — dat is het ritme dat telt."</HintBanner>
       </Section>
 
+      <Section title="Keuzechip">
+        <p className="text-sm text-muted-foreground -mt-1">Selecteerbare pill voor kies-één-rijen (moment, eigenaar, soort ruimte) — sage wanneer geselecteerd, <code>aria-pressed</code> ingebouwd.</p>
+        <div className="flex flex-wrap gap-2">
+          <KeuzeChip selected={chip === "a"} onClick={() => setChip("a")}>'s Ochtends</KeuzeChip>
+          <KeuzeChip selected={chip === "b"} onClick={() => setChip("b")}>'s Middags</KeuzeChip>
+          <KeuzeChip selected={chip === "c"} onClick={() => setChip("c")}>'s Avonds</KeuzeChip>
+        </div>
+      </Section>
+
       <Section title="Checkbox & toggle">
         <div className="flex items-center gap-6">
           <Checkbox checked={checked} onToggle={() => setChecked((v) => !v)} label="Voorbeeldtaak" />
@@ -190,7 +212,10 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Lege staat">
-        <Leeg icon="🌿" text="Niets op de planning. Geniet ervan." />
+        <p className="text-sm text-muted-foreground -mt-1">Met illustratie (<code>image</code>-prop) waar er kunst voor bestaat; het emoji blijft de stille fallback als het bestand ontbreekt.</p>
+        <Leeg icon="🌿" image="/empty-plants.webp" text="Niets op de planning. Geniet ervan." />
+        <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag. De dag is jong." />
+        <Leeg icon="🌿" text="Zonder illustratie — emoji-fallback." />
       </Section>
 
       <Section title="Laden">
@@ -200,6 +225,7 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Taakrij">
+        <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten) — de checkbox blijft de toetsenbord/screenreader-route.</p>
         <div className="space-y-2.5">
           <TaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onClaim={() => {}} />

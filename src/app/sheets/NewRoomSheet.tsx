@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { ICONS, ICON_BY_KEY, SAGE } from "../lib/constants";
-import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop } from "../components/shared";
+import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip } from "../components/shared";
 
 export function NewRoomSheet({ onClose }: { onClose: () => void }) {
   const createRoom = useCuraStore((s) => s.createRoom);
@@ -73,15 +73,9 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
       <Kop><span className="normal-case">Voorkeur eigenaar <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></span></Kop>
       <div className="flex flex-wrap gap-2 mt-3">
         {members.map((m) => (
-          <motion.button key={m.id} whileTap={{ scale: 0.93 }} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}
-            aria-pressed={ownerId === m.id}
-            animate={{
-              backgroundColor: ownerId === m.id ? SAGE : "var(--input-background)",
-              color: ownerId === m.id ? "#ffffff" : "var(--muted-foreground)",
-              boxShadow: ownerId === m.id ? "none" : "var(--shadow-input)",
-            }}
-            transition={{ duration: 0.14 }}
-            className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">{m.displayName}</motion.button>
+          <KeuzeChip key={m.id} selected={ownerId === m.id} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}>
+            {m.displayName}
+          </KeuzeChip>
         ))}
       </div>
 
