@@ -27,7 +27,6 @@ export function HuisPage() {
 
   if (room) {
     const ic = roomIcon(room.iconKey);
-    const c = room.color || ic.color;
     const roomTasks = tasks.filter((t) => t.roomId === room.id && !isTaskDismissed(t.id));
     const open = roomTasks.filter((t) => !t.done);
     const done = roomTasks.filter((t) => t.done);
@@ -41,13 +40,8 @@ export function HuisPage() {
         />
 
         <div className="px-5 pt-4 pb-6">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 mt-1" style={{ background: `color-mix(in srgb, ${c} 16%, transparent)`, color: c }}>{ic.icon}</div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{room.name}</h2>
-              {room.owner && <p className="text-muted-foreground text-xs mt-1">Meestal {room.owner}</p>}
-            </div>
-          </div>
+          <h2 className="text-3xl font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{room.name}</h2>
+          {room.owner && <p className="text-muted-foreground text-xs mt-1">Meestal {room.owner}</p>}
         </div>
 
         <div className="px-5 pb-6">
