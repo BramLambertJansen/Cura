@@ -200,3 +200,21 @@
     line-height: 1.5;
   }
 }
+
+/* Calm skeleton loading — a slow, low-amplitude "breathing" fade instead of
+   Tailwind's animate-pulse (fast 100%→50% blink, too alarming for Cura's tone).
+   The opacity range is overridable per use via the two custom properties
+   (the full-screen logo breathes brighter than placeholder bars). */
+@keyframes skeleton-breathe {
+  0%, 100% { opacity: var(--skeleton-breathe-min, 0.4); }
+  50% { opacity: var(--skeleton-breathe-max, 0.7); }
+}
+.skeleton-breathe {
+  animation: skeleton-breathe 2.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-breathe {
+    animation: none;
+    opacity: var(--skeleton-breathe-max, 0.7);
+  }
+}

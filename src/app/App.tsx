@@ -57,7 +57,10 @@ function AnimatedRoutes() {
 
 function PageTx({ children }: { children: ReactNode }) {
   return (
-    <motion.div initial={pageIn} animate={{ opacity: 1, y: 0, transition: pageTx }} exit={{ opacity: 0, y: -6 }}>
+    // With AnimatePresence mode="wait" the exit plays before the next page may enter,
+    // so the exit gets an explicit short duration — the default would roughly double
+    // how long a tab switch feels.
+    <motion.div initial={pageIn} animate={{ opacity: 1, y: 0, transition: pageTx }} exit={{ opacity: 0, y: -6, transition: { duration: 0.12 } }}>
       {children}
     </motion.div>
   );

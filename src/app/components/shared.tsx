@@ -174,6 +174,8 @@ export function Checkbox({
       whileTap={{ scale: 0.7 }}
       transition={{ type: "spring", stiffness: 500, damping: 25 }}
       className={`${dim} relative flex-shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1`}>
+      {/* Invisible hit-area extension: the visible circle is 24–28px, well under the ~44px touch guideline. */}
+      <span className="absolute -inset-2 rounded-full" aria-hidden="true" />
       <motion.div
         initial={{ backgroundColor: "rgba(0,0,0,0)", borderColor: "color-mix(in srgb, var(--outline-color) 28%, transparent)" }}
         animate={{ backgroundColor: checked ? SAGE : "rgba(0,0,0,0)", borderColor: checked ? SAGE : "color-mix(in srgb, var(--outline-color) 28%, transparent)" }}
