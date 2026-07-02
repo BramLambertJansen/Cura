@@ -5,7 +5,7 @@ import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoutineView } from "../../stores/useViews";
 import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
 import { cadenceAndLabel } from "../lib/format";
-import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onClose: () => void }) {
@@ -60,18 +60,9 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
       <Kop><span className="mt-5 block">Wanneer</span></Kop>
       <div className="flex flex-wrap gap-2 mb-6">
         {TRIGGER_OPTIONS.map((opt) => (
-          <motion.button key={opt.id} whileTap={{ scale: 0.93 }} onClick={() => setTrigger(opt.id)}
-            aria-pressed={trigger === opt.id}
-            initial={{ backgroundColor: "var(--input-background)", color: "var(--muted-foreground)" }}
-            animate={{
-              backgroundColor: trigger === opt.id ? SAGE : "var(--input-background)",
-              color: trigger === opt.id ? "#ffffff" : "var(--muted-foreground)",
-              boxShadow: trigger === opt.id ? "none" : "var(--shadow-input)",
-            }}
-            transition={{ duration: 0.14 }}
-            className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+          <KeuzeChip key={opt.id} selected={trigger === opt.id} onClick={() => setTrigger(opt.id)}>
             {opt.label}
-          </motion.button>
+          </KeuzeChip>
         ))}
       </div>
 

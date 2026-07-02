@@ -5,7 +5,7 @@ import { SAGE } from "../lib/constants";
 import {
   ROOM_TEMPLATES, TEMPLATE_CATEGORIES, TEMPLATE_CATEGORY_LABEL, categoryForIconKey, type TemplateCategory,
 } from "../lib/templates";
-import { Sheet, SheetHeader, Kop, DubbelKnop } from "../components/shared";
+import { Sheet, SheetHeader, Kop, DubbelKnop, KeuzeChip } from "../components/shared";
 
 /** Quick-add from the static template library — for a new or empty room (CLAUDE.md §5). */
 export function TemplatesSheet({
@@ -41,17 +41,9 @@ export function TemplatesSheet({
       <Kop>Soort ruimte</Kop>
       <div className="flex flex-wrap gap-2 mb-6">
         {TEMPLATE_CATEGORIES.map((c) => (
-          <motion.button key={c} whileTap={{ scale: 0.94 }} onClick={() => { setCategory(c); setSelected(new Set()); }}
-            aria-pressed={category === c}
-            animate={{
-              backgroundColor: category === c ? SAGE : "var(--input-background)",
-              color: category === c ? "#ffffff" : "var(--muted-foreground)",
-              boxShadow: category === c ? "none" : "var(--shadow-input)",
-            }}
-            transition={{ duration: 0.14 }}
-            className="px-3.5 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+          <KeuzeChip key={c} selected={category === c} onClick={() => { setCategory(c); setSelected(new Set()); }}>
             {TEMPLATE_CATEGORY_LABEL[c]}
-          </motion.button>
+          </KeuzeChip>
         ))}
       </div>
 

@@ -2,7 +2,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
 import { Check, X } from "lucide-react";
-import { SAGE, SHADOW } from "../lib/constants";
+import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
 
 // How far (as a fraction of the sheet's own height) or how fast (px/s) a
@@ -165,6 +165,14 @@ export function Checkbox({
   checked, onToggle, size = "lg", label,
 }: { checked: boolean; onToggle: () => void; size?: "md" | "lg"; label?: string }) {
   const dim = size === "lg" ? "w-7 h-7" : "w-6 h-6";
+  // A soft sage ring ripples out on each unchecked→checked transition — a small
+  // celebration, never on mount (a page of already-done tasks shouldn't ripple).
+  const prevChecked = useRef(checked);
+  const [rippleKey, setRippleKey] = useState(0);
+  useEffect(() => {
+    if (checked && !prevChecked.current) setRippleKey((n) => n + 1);
+    prevChecked.current = checked;
+  }, [checked]);
   return (
     <motion.button
       onClick={onToggle}
@@ -176,6 +184,17 @@ export function Checkbox({
       className={`${dim} relative flex-shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1`}>
       {/* Invisible hit-area extension: the visible circle is 24–28px, well under the ~44px touch guideline. */}
       <span className="absolute -inset-2 rounded-full" aria-hidden="true" />
+      {rippleKey > 0 && (
+        <motion.span
+          key={rippleKey}
+          aria-hidden="true"
+          initial={{ scale: 0.9, opacity: 0.5 }}
+          animate={{ scale: 2.1, opacity: 0 }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
+          className="absolute inset-0 rounded-full border-2 pointer-events-none"
+          style={{ borderColor: SAGE }}
+        />
+      )}
       <motion.div
         initial={{ backgroundColor: "rgba(0,0,0,0)", borderColor: "color-mix(in srgb, var(--outline-color) 28%, transparent)" }}
         animate={{ backgroundColor: checked ? SAGE : "rgba(0,0,0,0)", borderColor: checked ? SAGE : "color-mix(in srgb, var(--outline-color) 28%, transparent)" }}
@@ -188,6 +207,32 @@ export function Checkbox({
           </motion.div>
         )}
       </AnimatePresence>
+    </motion.button>
+  );
+}
+
+/**
+ * Selectable pill for pick-one/pick-optional rows (trigger, eigenaar, soort
+ * ruimte) — the single source for the "sage when selected" chip that used to
+ * be copy-pasted per sheet. Announces state via aria-pressed and keeps the
+ * standard focus ring.
+ */
+export function KeuzeChip({
+  selected, onClick, children,
+}: { selected: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.93 }}
+      onClick={onClick}
+      aria-pressed={selected}
+      animate={{
+        backgroundColor: selected ? SAGE : "var(--input-background)",
+        color: selected ? PRIMARY_FG : "var(--muted-foreground)",
+        boxShadow: selected ? "none" : "var(--shadow-input)",
+      }}
+      transition={{ duration: 0.14 }}
+      className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+      {children}
     </motion.button>
   );
 }
@@ -227,7 +272,7 @@ export function Card({
       // A `ring-*` utility renders via `box-shadow`, which the inline `boxShadow`
       // below (the card's resting shadow) would silently clobber — `outline-*`
       // is a separate CSS property, so it layers on top instead of losing the fight.
-      <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }} onClick={onClick} aria-label={ariaLabel}
+      <motion.button whileTap={{ backgroundColor: PRESS_TINT }} onClick={onClick} aria-label={ariaLabel}
         className={`w-full text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${chrome} ${className}`}
         style={{ boxShadow: SHADOW }}>
         {children}
@@ -532,6 +577,6 @@ export function InstRij({
     </div>
   );
   return onClick
-    ? <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.03)" }} onClick={onClick} className="w-full text-left">{inner}</motion.button>
+    ? <motion.button whileTap={{ backgroundColor: PRESS_TINT }} onClick={onClick} className="w-full text-left">{inner}</motion.button>
     : <div>{inner}</div>;
 }

@@ -4,7 +4,7 @@ import { AnimatePresence } from "motion/react";
 import { Plus, Link2, Home, Bell, ChevronRight } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, Leeg,
+  Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, KeuzeChip, Leeg,
   PillButton, RingProgress, Sheet, SheetHeader, Toggle, VeldInput, VeldTextarea,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
@@ -69,6 +69,7 @@ const demoRoutine: RoutineView = {
 export function DesignSystemPage() {
   const [checked, setChecked] = useState(true);
   const [toggled, setToggled] = useState(false);
+  const [chip, setChip] = useState("a");
   const [veld, setVeld] = useState("");
   const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
@@ -159,6 +160,15 @@ export function DesignSystemPage() {
       <Section title="Hint banner">
         <HintBanner>Badkamer is waarschijnlijk weer toe.</HintBanner>
         <HintBanner tone="muted">"Rustig en gestaag — dat is het ritme dat telt."</HintBanner>
+      </Section>
+
+      <Section title="Keuzechip">
+        <p className="text-sm text-muted-foreground -mt-1">Selecteerbare pill voor kies-één-rijen (moment, eigenaar, soort ruimte) — sage wanneer geselecteerd, <code>aria-pressed</code> ingebouwd.</p>
+        <div className="flex flex-wrap gap-2">
+          <KeuzeChip selected={chip === "a"} onClick={() => setChip("a")}>'s Ochtends</KeuzeChip>
+          <KeuzeChip selected={chip === "b"} onClick={() => setChip("b")}>'s Middags</KeuzeChip>
+          <KeuzeChip selected={chip === "c"} onClick={() => setChip("c")}>'s Avonds</KeuzeChip>
+        </div>
       </Section>
 
       <Section title="Checkbox & toggle">

@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, ChevronRight, Pencil } from "lucide-react";
 import type { RoutineView } from "../../data/types";
-import { SAGE, SHADOW } from "../lib/constants";
+import { PRESS_TINT, SAGE, SHADOW } from "../lib/constants";
 import { CARD_CHROME, RingProgress, Card } from "./shared";
 
 export const RoutineKaartCompact = memo(function RoutineKaartCompact({
@@ -51,7 +51,7 @@ export const RoutineKaart = memo(function RoutineKaart({
   return (
     <div className={`rounded-3xl overflow-hidden ${CARD_CHROME}`} style={{ boxShadow: SHADOW }}>
       <motion.button
-        whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }}
+        whileTap={{ backgroundColor: PRESS_TINT }}
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-label={`${routine.name} ${open ? "inklappen" : "uitklappen"}`}

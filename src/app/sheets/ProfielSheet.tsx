@@ -6,7 +6,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useNotificationPreference } from "../lib/useTaskReminders";
 import { resolveDataMode } from "../../data/store";
-import { SAGE } from "../lib/constants";
+import { PRESS_TINT, SAGE } from "../lib/constants";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
@@ -96,7 +96,7 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
       </div>
 
       <Kop>Huishouden</Kop>
-      <motion.button whileTap={{ backgroundColor: "rgba(0,0,0,0.02)" }} onClick={onOpenHousehold}
+      <motion.button whileTap={{ backgroundColor: PRESS_TINT }} onClick={onOpenHousehold}
         className="w-full flex items-center gap-3.5 bg-secondary rounded-2xl px-4 py-3.5 mb-7 transition-colors">
         <IconBadge icon={<Home size={16} />} />
         <div className="flex-1 text-left">
