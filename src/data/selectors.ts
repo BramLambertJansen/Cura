@@ -252,15 +252,27 @@ export function toRoutineView(
   const periodMs = (bundle.cadence === "daily" ? 1 : 7) * DAY_MS;
   const cutoff = now - windowSize * periodMs;
 
-  // Count bundle-task completions per period within the window.
+  // Count bundle-task completions per period within the window, and track the
+  // routine's earliest activity so a young routine isn't judged against a full
+  // window it never had the chance to fill.
   const perPeriod = new Map<string, number>();
+  let earliestMs = Infinity;
   for (const c of completions) {
     if (!bundleTaskIds.has(c.taskId)) continue;
-    if (new Date(c.completedAt).getTime() < cutoff) continue;
+    const ms = new Date(c.completedAt).getTime();
+    if (ms < earliestMs) earliestMs = ms;
+    if (ms < cutoff) continue;
     const key = periodKey(c.completedAt, bundle.cadence);
     perPeriod.set(key, (perPeriod.get(key) ?? 0) + 1);
   }
   const doneInWindow = [...perPeriod.values()].filter((n) => n >= PARTIAL_THRESHOLD).length;
+
+  // Denominator = the periods the routine has actually existed for, capped at
+  // the window. A brand-new routine (no completions yet) has age 0, so the hint
+  // reads "Pas begonnen" rather than "0 van 14 — glipt eruit"; a perfectly kept
+  // 3-week-old routine reads "3 van 3", not a discouraging "3 van 8" (CLAUDE.md §2).
+  const agePeriods = earliestMs === Infinity ? 0 : Math.floor((now - earliestMs) / periodMs) + 1;
+  const effectiveWindow = Math.min(windowSize, Math.max(agePeriods, doneInWindow));
 
   return {
     id: bundle.id,
@@ -270,9 +282,9 @@ export function toRoutineView(
       .filter((t) => t.bundleId === bundle.id)
       .map((t) => toTaskView(t, latestByTask, [], members, now)),
     doneInWindow,
-    windowSize,
+    windowSize: effectiveWindow,
     windowLabel: bundle.windowLabel,
-    hint: densityHint(doneInWindow, windowSize),
+    hint: densityHint(doneInWindow, effectiveWindow),
   };
 }
 

@@ -151,7 +151,9 @@ describe("routine density — rolling ratio, not a streak", () => {
     ];
     const view = toRoutineView(b, [t], completions, buildLatestCompletionMap(completions), [member()], now);
     expect(view.doneInWindow).toBe(2);
-    expect(view.windowSize).toBe(14);
+    // The window clamps to the ~5 days the routine has existed (earliest completion
+    // 4 days ago), so 2 of 5 reads as "gaat goed" — never a punishing message.
+    expect(view.windowSize).toBe(5);
     expect(view.hint).not.toMatch(/streak|verbroken|0 dagen/i);
   });
 
@@ -160,7 +162,27 @@ describe("routine density — rolling ratio, not a streak", () => {
     const b = bundle();
     const view = toRoutineView(b, [], [], buildLatestCompletionMap([]), [member()], now);
     expect(view.doneInWindow).toBe(0);
+    // A never-touched routine has age 0 → "Pas begonnen", not "0 van 14 — glipt eruit".
+    expect(view.windowSize).toBe(0);
+    expect(view.hint).toBe("Pas begonnen");
     expect(view.hint).not.toMatch(/streak|verbroken|achterstallig/i);
+  });
+
+  it("judges a young, well-kept routine against its age, not the full window", () => {
+    const now = Date.now();
+    const b = bundle({ cadence: "weekly", windowLabel: "weken" });
+    const t = task({ id: "t1", bundleId: b.id, intervalDays: undefined });
+    // Done every week for the ~3 weeks it has existed — should read as "in ritme",
+    // not the old, discouraging "3 van 8 weken — glipt eruit".
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(0, now) },
+      { id: "c2", taskId: "t1", completedById: "m1", completedAt: iso(7 * DAY_MS, now) },
+      { id: "c3", taskId: "t1", completedById: "m1", completedAt: iso(14 * DAY_MS, now) },
+    ];
+    const view = toRoutineView(b, [t], completions, buildLatestCompletionMap(completions), [member()], now);
+    expect(view.windowSize).toBe(3);
+    expect(view.doneInWindow).toBe(3);
+    expect(view.hint).toBe("Zit lekker in je ritme");
   });
 });
 

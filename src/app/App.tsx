@@ -12,6 +12,7 @@ import { BottomNav } from "./layout/BottomNav";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppBackground } from "./components/AppBackground";
 import { FullScreenSkeleton, PageSkeleton } from "./components/Skeletons";
+import { FullScreenError } from "./components/FullScreenError";
 import { ConnectivityBanner } from "./components/ConnectivityBanner";
 import { UpdatePrompt } from "./components/UpdatePrompt";
 import { PullToRefreshIndicator } from "./components/PullToRefreshIndicator";
@@ -176,6 +177,7 @@ function Gate() {
   const init = useCuraStore((s) => s.init);
   const reset = useCuraStore((s) => s.reset);
   const ready = useCuraStore((s) => s.ready);
+  const initError = useCuraStore((s) => s.initError);
   const households = useCuraStore((s) => s.households);
   const { seen: onboardingSeen, markSeen: markOnboardingSeen } = useOnboardingSeen();
 
@@ -193,6 +195,7 @@ function Gate() {
 
   if (status === "loading") return <FullScreenSkeleton />;
   if (status === "signedOut") return <Suspense fallback={<FullScreenSkeleton />}><AuthPage /></Suspense>;
+  if (initError) return <FullScreenError onRetry={() => void init()} />;
   if (!ready) return <FullScreenSkeleton />;
   if (households.length === 0) {
     if (!onboardingSeen) return <Suspense fallback={<FullScreenSkeleton />}><OnboardingIntroPage onDone={markOnboardingSeen} /></Suspense>;

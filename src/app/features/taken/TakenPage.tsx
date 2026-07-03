@@ -43,8 +43,13 @@ export function TakenPage() {
   ];
   const showFilters = roomOptions.length > 2;
 
+  // If the filtered room's last open task was just completed, it drops out of
+  // roomOptions — fall back to "Alle" so we never strand the user on a false-empty
+  // screen (worse still once the chips hide at ≤2 options, with no way to reset).
+  const effectiveFilter = roomOptions.some((o) => o.id === roomFilter) ? roomFilter : ALL;
+
   const matchesRoom = (t: TaskView) =>
-    roomFilter === ALL || (roomFilter === NONE ? !t.roomId : t.roomId === roomFilter);
+    effectiveFilter === ALL || (effectiveFilter === NONE ? !t.roomId : t.roomId === effectiveFilter);
 
   const { overdue, recurring, upcoming, undated } = toTaskOverview(tasks.filter(matchesRoom));
 
@@ -73,7 +78,7 @@ export function TakenPage() {
       {showFilters && (
         <div role="group" aria-label="Filter op kamer" className="flex flex-wrap gap-2 mb-6">
           {roomOptions.map((opt) => (
-            <KeuzeChip key={opt.id} selected={roomFilter === opt.id} onClick={() => setRoomFilter(opt.id)}>
+            <KeuzeChip key={opt.id} selected={effectiveFilter === opt.id} onClick={() => setRoomFilter(opt.id)}>
               {opt.label}
             </KeuzeChip>
           ))}

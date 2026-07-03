@@ -11,6 +11,7 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [formState, setFormState] = useState<TaskFormState>({
     selectedRoomId: null,
+    opMijnDag: false,
     herhalenAan: false,
     intervalDagen: 7,
     wekkerAan: false,
@@ -36,7 +37,7 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
       intervalDays: formState.herhalenAan ? formState.intervalDagen : undefined,
       dueDate,
       durationMin: formState.duurMin,
-      planned: false,
+      planned: formState.opMijnDag,
     });
     onClose();
   }
@@ -45,12 +46,15 @@ export function AddTaskSheet({ onClose }: { onClose: () => void }) {
     <Sheet onClose={onClose}>
       <SheetHeader title="Taak toevoegen" onClose={onClose} />
       <VeldInput value={title} onChange={setTitle} onEnter={handleAdd} placeholder="Wat moet er gebeuren?" />
-      <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">De taak komt in de gedeelde pool. Kies optioneel een kamer.</p>
+      <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">
+        {formState.opMijnDag ? "De taak komt op je dag én in de gedeelde pool." : "De taak komt in de gedeelde pool. Kies optioneel een kamer."}
+      </p>
 
       <TaskFormFields
         rooms={rooms}
         {...formState}
         onRoomChange={(id) => setFormState((s) => ({ ...s, selectedRoomId: id }))}
+        onOpMijnDagChange={(v) => setFormState((s) => ({ ...s, opMijnDag: v }))}
         onHerhalenChange={(v) => setFormState((s) => ({ ...s, herhalenAan: v }))}
         onIntervalChange={(v) => setFormState((s) => ({ ...s, intervalDagen: v }))}
         onWekkerChange={(v) => setFormState((s) => ({ ...s, wekkerAan: v }))}
