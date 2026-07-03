@@ -44,6 +44,11 @@ export function CreateHouseholdPage() {
             {busy ? "Even geduld…" : "Huishouden aanmaken"}
           </PrimaryButton>
           <p role="status" aria-live="polite" className="sr-only">{busy ? "Huishouden wordt aangemaakt…" : ""}</p>
+          {/* An invited user shouldn't create a household here — that would strand
+              their invite (one huishouden per account). Point them at their link. */}
+          <p className="text-xs text-muted-foreground leading-relaxed pt-2 text-center">
+            Ben je uitgenodigd door iemand? Open dan de uitnodigingslink die je hebt gekregen — zo sluit je je bij hún huishouden aan.
+          </p>
         </div>
       </div>
     </div>

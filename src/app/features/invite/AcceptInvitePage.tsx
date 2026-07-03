@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { useAuth } from "../../auth/AuthProvider";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { AppBackground } from "../../components/AppBackground";
+import { PrimaryButton } from "../../components/shared";
 import { AuthForm, type AuthMode } from "../auth/AuthForm";
 import { MagicLinkForm } from "../auth/MagicLinkForm";
 
@@ -31,9 +32,9 @@ export function AcceptInvitePage() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const attempted = useRef(false);
 
-  useEffect(() => {
-    if (status !== "signedIn" || !token || attempted.current) return;
-    attempted.current = true;
+  const runAccept = useCallback(() => {
+    if (status !== "signedIn" || !token) return;
+    setResult(null);
     acceptInvite(token)
       .then((res) => {
         setResult(res);
@@ -41,9 +42,16 @@ export function AcceptInvitePage() {
       })
       .catch((e) => {
         toast.error(e instanceof Error ? e.message : "Uitnodiging accepteren lukte niet");
+        // A network hiccup surfaces as "invalid" — the retry button below makes it recoverable.
         setResult({ ok: false, reason: "invalid" });
       });
   }, [status, token, acceptInvite, navigate]);
+
+  useEffect(() => {
+    if (status !== "signedIn" || !token || attempted.current) return;
+    attempted.current = true;
+    runAccept();
+  }, [status, token, runAccept]);
 
   async function handleAuth(fields: { email: string; password: string; displayName: string }) {
     setBusy(true);
@@ -104,6 +112,14 @@ export function AcceptInvitePage() {
           </p>
         )}
 
+        {status === "signedOut" && (pendingConfirmation || magicLinkSent) && (
+          <button
+            onClick={() => { setPendingConfirmation(false); setMagicLinkSent(false); }}
+            className="w-full text-center text-sm text-muted-foreground mt-6 focus-ring rounded-lg py-1">
+            Ander e-mailadres gebruiken
+          </button>
+        )}
+
         {status === "signedOut" && !pendingConfirmation && !magicLinkSent && (
           <>
             <div className="space-y-4">
@@ -131,7 +147,21 @@ export function AcceptInvitePage() {
         )}
 
         {result && !result.ok && (
-          <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground leading-relaxed">{REASON_COPY[result.reason]}</p>
+          <div className="text-center space-y-4">
+            <p role="status" aria-live="polite" className="text-sm text-muted-foreground leading-relaxed">{REASON_COPY[result.reason]}</p>
+            <div className="space-y-3">
+              {/* "invalid" is the only retryable state (it's also where a transient
+                  network failure lands); already_member/expired are deterministic. */}
+              {result.reason === "invalid" && (
+                <PrimaryButton onClick={runAccept}>Opnieuw proberen</PrimaryButton>
+              )}
+              <button
+                onClick={() => navigate("/vandaag", { replace: true })}
+                className="w-full text-center text-sm text-muted-foreground focus-ring rounded-lg py-1">
+                Naar Cura
+              </button>
+            </div>
+          </div>
         )}
         {result?.ok && <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground">Welkom! Je wordt doorgestuurd…</p>}
       </div>

@@ -83,11 +83,18 @@ export function AuthPage() {
             />
           </div>
         )}
-        {!magicLinkSent && (
+        {magicLinkSent || pendingConfirmation ? (
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { setMagicLinkSent(false); setPendingConfirmation(false); }}
+            className="w-full text-center text-sm text-muted-foreground mt-6 focus-ring rounded-lg py-1">
+            Ander e-mailadres gebruiken
+          </motion.button>
+        ) : (
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setPendingConfirmation(false); }}
-            className="w-full text-center text-sm text-muted-foreground mt-6">
+            className="w-full text-center text-sm text-muted-foreground mt-6 focus-ring rounded-lg py-1">
             {mode === "signin" ? "Nog geen account? Registreren" : "Al een account? Inloggen"}
           </motion.button>
         )}
