@@ -24,6 +24,7 @@ export function TakenPage() {
   const { openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const createTask = useCuraStore((s) => s.createTask);
+  const deleteTask = useCuraStore((s) => s.deleteTask);
   const tasks = useTaskViews();
   const [roomFilter, setRoomFilter] = useState<string>(ALL);
 
@@ -61,14 +62,17 @@ export function TakenPage() {
   ];
   const nonEmpty = groups.filter((g) => g.tasks.length > 0);
 
-  function makeCopy(task: TaskView) {
-    // A fresh instance in the pool — same essentials, no stale (verlopen) wekker.
-    createTask({
+  async function renew(task: TaskView) {
+    // A fresh instance in the pool — same essentials, no stale (verlopen) wekker —
+    // and retire the old one so "Al even blijven liggen" actually clears instead of
+    // accumulating endless duplicates on repeated taps.
+    await createTask({
       title: task.title,
       roomId: task.roomId,
       durationMin: task.durationMin,
       description: task.description,
     });
+    await deleteTask(task.id);
   }
 
   return (
@@ -102,8 +106,8 @@ export function TakenPage() {
                       {group.renew && !task.intervalDays && (
                         <div className="flex justify-end">
                           <button
-                            onClick={() => makeCopy(task)}
-                            aria-label={`Maak een nieuwe taak op basis van ${task.title}`}
+                            onClick={() => renew(task)}
+                            aria-label={`Vervang ${task.title} door een verse taak`}
                             className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-muted-foreground focus-ring"
                             style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)" }}>
                             <Copy size={12} aria-hidden="true" /> Maak nieuwe hiervan

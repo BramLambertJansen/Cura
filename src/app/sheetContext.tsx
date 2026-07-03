@@ -1,7 +1,8 @@
 import { createContext, useContext } from "react";
 
 export interface SheetActions {
-  openAddTask: () => void;
+  /** Opens the add-task sheet; pass a roomId to preselect that room. */
+  openAddTask: (roomId?: string) => void;
   openEditTask: (taskId: string) => void;
   openNewRoom: () => void;
   openEditRoom: (roomId: string) => void;

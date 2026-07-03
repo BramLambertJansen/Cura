@@ -20,7 +20,7 @@ function readDismissed(): Set<string> {
   }
 }
 
-export function useNietVandaag(): { isDismissed: (taskId: string) => boolean; dismiss: (taskId: string) => void } {
+export function useNietVandaag(): { isDismissed: (taskId: string) => boolean; dismiss: (taskId: string) => void; restore: (taskId: string) => void } {
   const [dismissed, setDismissed] = useState<Set<string>>(readDismissed);
 
   const dismiss = useCallback((taskId: string) => {
@@ -32,5 +32,16 @@ export function useNietVandaag(): { isDismissed: (taskId: string) => boolean; di
     });
   }, []);
 
-  return { isDismissed: (taskId: string) => dismissed.has(taskId), dismiss };
+  // Undo — the "Ongedaan maken" toast action brings a suggestion straight back.
+  const restore = useCallback((taskId: string) => {
+    setDismissed((prev) => {
+      if (!prev.has(taskId)) return prev;
+      const next = new Set(prev);
+      next.delete(taskId);
+      localStorage.setItem(storageKey(), JSON.stringify([...next]));
+      return next;
+    });
+  }, []);
+
+  return { isDismissed: (taskId: string) => dismissed.has(taskId), dismiss, restore };
 }

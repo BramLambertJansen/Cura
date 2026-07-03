@@ -5,12 +5,12 @@ import { Sheet, SheetHeader, VeldInput, DubbelKnop } from "../components/shared"
 import { TaskFormFields, buildDueDate, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
 
-export function AddTaskSheet({ onClose }: { onClose: () => void }) {
+export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onClose: () => void }) {
   const createTask = useCuraStore((s) => s.createTask);
   const rooms = useRoomViews();
   const [title, setTitle] = useState("");
   const [formState, setFormState] = useState<TaskFormState>({
-    selectedRoomId: null,
+    selectedRoomId: roomId ?? null,
     opMijnDag: false,
     herhalenAan: false,
     intervalDagen: 7,

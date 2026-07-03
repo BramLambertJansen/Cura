@@ -31,8 +31,8 @@ export function VandaagPage() {
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const tasks = useTaskViews();
   const routines = useRoutineViews();
-  const { isDismissed, dismiss } = useNietVandaag();
-  const { isDismissed: isTaskDismissed, dismiss: dismissTask } = useTaskDismissals();
+  const { isDismissed, dismiss, restore } = useNietVandaag();
+  const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
   // The suggestions live behind a "peek": the shortest one stays visible as a
   // gentle nudge, the rest wait quietly behind a soft toggle so the section
   // never overshadows the actual day-planning above it.
@@ -110,7 +110,7 @@ export function VandaagPage() {
             : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                 {allPlanned.map((task) => (
                   <motion.div key={task.id} variants={fadeUp}>
-                    <TaakRij task={task} onToggle={() => { const nextDone = !task.done; toggleTask(task.id, nextDone); if (nextDone) warmDoneToast(task.title); }} onEdit={() => openEditTask(task.id)} onDismiss={() => { dismissTask(task.id); toast("Even niet vandaag", { description: `${task.title} staat even uit je dag.` }); }} />
+                    <TaakRij task={task} onToggle={() => { const nextDone = !task.done; toggleTask(task.id, nextDone); if (nextDone) warmDoneToast(task.title); }} onEdit={() => openEditTask(task.id)} onDismiss={() => { dismissTask(task.id); toast("Even niet vandaag", { description: `${task.title} staat even uit je dag.`, action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) } }); }} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -127,7 +127,7 @@ export function VandaagPage() {
                     key={task.id}
                     task={task}
                     onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat klaar wanneer jij wilt.` }); }}
-                    onNietVandaag={() => dismiss(task.id)}
+                    onNietVandaag={() => { dismiss(task.id); toast("Even niet vandaag", { description: `${task.title} komt morgen weer langs.`, action: { label: "Ongedaan maken", onClick: () => restore(task.id) } }); }}
                   />
                 ))}
               </AnimatePresence>
