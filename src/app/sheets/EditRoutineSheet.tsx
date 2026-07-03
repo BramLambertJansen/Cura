@@ -1,11 +1,10 @@
-import { useRef, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { AnimatePresence } from "motion/react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoutineView } from "../../stores/useViews";
-import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
+import { TRIGGER_OPTIONS } from "../lib/constants";
 import { cadenceAndLabel } from "../lib/format";
-import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip, VerwijderKnop, TaakToevoegRij } from "../components/shared";
 import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onClose: () => void }) {
@@ -24,9 +23,6 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
       .map((t) => ({ key: t.id, title: t.title, durationMin: t.durationMin, description: t.description })),
   );
   const [input, setInput] = useState("");
-  const [inputActive, setInputActive] = useState(false);
-  const [confirm, setConfirm] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   if (!bundle) return null;
 
@@ -34,7 +30,6 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
     if (!input.trim()) return;
     setTasks((p) => [...p, { key: crypto.randomUUID(), title: input.trim() }]);
     setInput("");
-    inputRef.current?.focus();
   }
 
   function save() {
@@ -80,53 +75,13 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
         </AnimatePresence>
       </div>
 
-      <div className="flex gap-2 mb-7">
-        <input ref={inputRef} type="text" value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addTask()}
-          onFocus={() => setInputActive(true)}
-          onBlur={() => setInputActive(false)}
-          placeholder="Taak toevoegen…"
-          aria-label="Nieuwe taak omschrijving"
-          className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
-          style={{
-            background: "var(--input-background)",
-            borderColor: fieldBorderColor({ active: inputActive, hasValue: !!input }),
-            boxShadow: fieldBoxShadow({ active: inputActive }),
-          }} />
-        <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
-          aria-label="Taak toevoegen"
-          className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
-          style={{ background: SAGE }}>
-          <Plus size={17} className="text-white" aria-hidden="true" />
-        </motion.button>
-      </div>
+      <TaakToevoegRij value={input} onChange={setInput} onAdd={addTask} placeholder="Taak toevoegen…" ariaLabel="Nieuwe taak omschrijving" />
 
       <div className="mb-4">
         <DubbelKnop onCancel={onClose} onConfirm={save} label="Opslaan" disabled={!name.trim() || tasks.length === 0} />
       </div>
 
-      <AnimatePresence>
-        {!confirm
-          ? <motion.button key="del" whileTap={{ scale: 0.96 }} onClick={() => setConfirm(true)}
-              aria-label={`${bundle.name} verwijderen`}
-              className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
-              style={{ color: "var(--destructive)" }}>
-              <Trash2 size={14} aria-hidden="true" /> Routine verwijderen
-            </motion.button>
-          : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-              <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}
-                className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium">
-                Toch niet
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.96 }} onClick={remove}
-                className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold"
-                style={{ background: "var(--destructive)" }}>
-                Ja, verwijder
-              </motion.button>
-            </motion.div>
-        }
-      </AnimatePresence>
+      <VerwijderKnop label="Routine verwijderen" ariaLabel={`${bundle.name} verwijderen`} onConfirm={remove} />
     </Sheet>
   );
 }

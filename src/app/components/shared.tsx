@@ -1,7 +1,7 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
-import { Check, X } from "lucide-react";
+import { Check, X, Trash2, Plus } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
 
@@ -150,13 +150,8 @@ export function SheetHeader({
 }: { title: string; onClose: () => void; id?: string }) {
   return (
     <div className="flex items-center justify-between mb-7">
-      <h3 id={id} className="text-xl font-medium text-foreground" style={{ fontFamily: "Lora,Georgia,serif" }}>{title}</h3>
-      <motion.button
-        whileTap={{ scale: 0.88 }} onClick={onClose}
-        aria-label="Sluiten"
-        className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-        <X size={15} className="text-muted-foreground" aria-hidden="true" />
-      </motion.button>
+      <h3 id={id} className="text-xl font-medium text-foreground font-display">{title}</h3>
+      <IconButton onClick={onClose} label="Sluiten" icon={<X size={15} className="text-muted-foreground" aria-hidden="true" />} />
     </div>
   );
 }
@@ -181,7 +176,7 @@ export function Checkbox({
       aria-label={label ?? (checked ? "Taak afgevinkt" : "Taak afvinken")}
       whileTap={{ scale: 0.7 }}
       transition={{ type: "spring", stiffness: 500, damping: 25 }}
-      className={`${dim} relative flex-shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1`}>
+      className={`${dim} relative flex-shrink-0 rounded-full focus-ring focus-visible:ring-offset-1`}>
       {/* Invisible hit-area extension: the visible circle is 24–28px, well under the ~44px touch guideline. */}
       <span className="absolute -inset-2 rounded-full" aria-hidden="true" />
       {rippleKey > 0 && (
@@ -231,7 +226,41 @@ export function KeuzeChip({
         boxShadow: selected ? "none" : "var(--shadow-input)",
       }}
       transition={{ duration: 0.14 }}
-      className="px-4 py-2 rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+      className="px-4 py-2 rounded-full text-sm font-medium focus-ring">
+      {children}
+    </motion.button>
+  );
+}
+
+/**
+ * Larger selectable card-tile — the `border-2` + animated tint chip that the
+ * room-picker grid and the interval presets each re-implemented inline (the
+ * "geen eigen chip-varianten per sheet" concern, CLAUDE.md §7). `tint` colours
+ * the selected fill/border (a room's own colour, or sage by default); the mix
+ * percentages default to the interval look and can be nudged per use. Compose
+ * the tile's content (label, check badge) as children; pass padding/alignment
+ * via `className`.
+ */
+export function OptieKaart({
+  selected, onClick, tint = "var(--primary)", selectedBg = 12, selectedBorder = 45, ariaLabel, className = "", children,
+}: {
+  selected: boolean; onClick: () => void; tint?: string; selectedBg?: number; selectedBorder?: number;
+  ariaLabel?: string; className?: string; children: ReactNode;
+}) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileTap={{ scale: 0.94 }}
+      aria-pressed={selected}
+      aria-label={ariaLabel}
+      initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
+      animate={{
+        backgroundColor: selected ? `color-mix(in srgb, ${tint} ${selectedBg}%, transparent)` : "var(--input-background)",
+        borderColor: selected ? `color-mix(in srgb, ${tint} ${selectedBorder}%, transparent)` : "var(--border-input)",
+      }}
+      transition={{ duration: 0.15 }}
+      style={{ boxShadow: "var(--shadow-input)" }}
+      className={`rounded-2xl border-2 focus-ring ${className}`}>
       {children}
     </motion.button>
   );
@@ -318,8 +347,8 @@ export function Leeg({
             </div>
           )
           : <span className="text-4xl select-none">{icon}</span>}
-        <p className="text-[0.875rem] text-muted-foreground leading-relaxed max-w-[200px]"
-          style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", lineHeight: 1.65 }}>{text}</p>
+        <p className="text-[0.875rem] text-muted-foreground leading-relaxed max-w-[200px] font-display italic"
+          style={{ lineHeight: 1.65 }}>{text}</p>
       </Card>
     </motion.div>
   );
@@ -327,7 +356,7 @@ export function Leeg({
 
 /** Section heading — Lora italic, warm muted, sentence case */
 export function Kop({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-muted-foreground mb-2 ml-1" style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic", letterSpacing: "0.01em" }}>{children}</p>;
+  return <p className="text-sm text-muted-foreground mb-2 ml-1 font-display italic" style={{ letterSpacing: "0.01em" }}>{children}</p>;
 }
 
 /** Shared visual state for every "field" surface (VeldInput, VeldTextarea, FieldShell) — active means real DOM focus, never just "has a value". */
@@ -441,10 +470,105 @@ export function DubbelKnop({
 }: { onCancel: () => void; onConfirm: () => void; label: string; disabled?: boolean }) {
   return (
     <div className="flex gap-3">
-      <motion.button whileTap={{ scale: 0.96 }} onClick={onCancel} className="flex-1 py-3.5 rounded-2xl border border-border text-foreground text-sm font-medium transition-[background-color,transform] hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">Annuleren</motion.button>
+      <motion.button whileTap={{ scale: 0.96 }} onClick={onCancel} className="flex-1 py-3.5 rounded-2xl border border-border text-foreground text-sm font-medium transition-[background-color,transform] hover:bg-secondary/70 focus-ring">Annuleren</motion.button>
       <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm} disabled={disabled}
-        className="flex-1 py-3.5 rounded-2xl text-white text-sm font-semibold disabled:opacity-35 transition-[opacity,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2"
+        className="flex-1 py-3.5 rounded-2xl text-white text-sm font-semibold disabled:opacity-35 transition-[opacity,transform] focus-ring focus-visible:ring-offset-2"
         style={{ background: "var(--gradient-primary)", boxShadow: disabled ? "none" : `0 4px 16px color-mix(in srgb, var(--primary) 28%, transparent)` }}>{label}</motion.button>
+    </div>
+  );
+}
+
+/**
+ * Full-width primary call-to-action — the gradient button every auth/onboarding
+ * screen and the invite sheet used to re-author inline. The sage glow is the
+ * shared --shadow-cta token and hides itself while disabled/busy. Pass `icon`
+ * for a leading glyph; the busy *label* stays at the call site (each screen
+ * phrases its own "Even geduld…").
+ */
+export function PrimaryButton({
+  children, onClick, disabled = false, busy = false, icon, type = "button", ariaLabel,
+}: {
+  children: ReactNode; onClick?: () => void; disabled?: boolean; busy?: boolean;
+  icon?: ReactNode; type?: "button" | "submit"; ariaLabel?: string;
+}) {
+  const isDisabled = disabled || busy;
+  return (
+    <motion.button
+      type={type}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      disabled={isDisabled}
+      aria-busy={busy || undefined}
+      aria-label={ariaLabel}
+      className="w-full py-4 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-[opacity,transform] focus-ring focus-visible:ring-offset-2"
+      style={{ background: "var(--gradient-primary)", boxShadow: isDisabled ? "none" : "var(--shadow-cta)" }}>
+      {icon}{children}
+    </motion.button>
+  );
+}
+
+/**
+ * Destructive "X verwijderen" button that flips to an inline "Toch niet / Ja,
+ * verwijder" confirm row — the delete affordance shared by every edit sheet.
+ * Owns its own confirm toggle so the sheets don't each carry the state. Pass a
+ * distinct `ariaLabel` (e.g. "Keuken verwijderen") when the visible label is
+ * generic.
+ */
+export function VerwijderKnop({
+  label, ariaLabel, confirmLabel = "Ja, verwijder", onConfirm,
+}: { label: string; ariaLabel?: string; confirmLabel?: string; onConfirm: () => void }) {
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <AnimatePresence>
+      {!confirm
+        ? <motion.button key="del" whileTap={{ scale: 0.96 }} onClick={() => setConfirm(true)}
+            aria-label={ariaLabel ?? label}
+            className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
+            style={{ color: "var(--destructive)" }}>
+            <Trash2 size={14} aria-hidden="true" /> {label}
+          </motion.button>
+        : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
+            <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}
+              className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium focus-ring">Toch niet</motion.button>
+            <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm}
+              className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2"
+              style={{ background: "var(--destructive)" }}>{confirmLabel}</motion.button>
+          </motion.div>
+      }
+    </AnimatePresence>
+  );
+}
+
+/**
+ * Text field + sage "+" button for building a routine's task list, shared by the
+ * new/edit routine sheets. Owns its own focus state and refocuses the input
+ * after each add so you can keep typing the next task. Uses the bespoke py-3
+ * field (smaller than VeldInput) the routine sheets have always used.
+ */
+export function TaakToevoegRij({
+  value, onChange, onAdd, placeholder, ariaLabel,
+}: { value: string; onChange: (v: string) => void; onAdd: () => void; placeholder: string; ariaLabel?: string }) {
+  const [active, setActive] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+  function add() { onAdd(); ref.current?.focus(); }
+  return (
+    <div className="flex gap-2 mb-7">
+      <input ref={ref} type="text" value={value} onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") add(); }}
+        onFocus={() => setActive(true)} onBlur={() => setActive(false)}
+        placeholder={placeholder} aria-label={ariaLabel ?? placeholder}
+        className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
+        style={{
+          background: "var(--input-background)",
+          borderColor: fieldBorderColor({ active, hasValue: !!value }),
+          boxShadow: fieldBoxShadow({ active }),
+        }} />
+      <motion.button whileTap={{ scale: 0.88 }} onClick={add} disabled={!value.trim()}
+        aria-label="Taak toevoegen"
+        className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-ring focus-visible:ring-offset-2"
+        style={{ background: SAGE }}>
+        <Plus size={17} className="text-white" aria-hidden="true" />
+      </motion.button>
     </div>
   );
 }
@@ -459,7 +583,7 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       whileTap={{ scale: 0.9 }}
       animate={{ backgroundColor: checked ? SAGE : "var(--muted)" }}
       transition={{ duration: 0.18 }}
-      className="relative w-11 h-6 rounded-full flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1">
+      className="relative w-11 h-6 rounded-full flex-shrink-0 focus-ring focus-visible:ring-offset-1">
       <motion.div animate={{ x: checked ? 22 : 3 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} className="absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm" aria-hidden="true" />
     </motion.button>
   );
@@ -473,7 +597,7 @@ export function PageHeader({
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="mb-8">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-[2rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{title}</h1>
+          <h1 className="text-[2rem] font-medium text-foreground leading-tight font-display">{title}</h1>
           <p className="text-sm text-muted-foreground mt-1.5">{subtitle}</p>
         </div>
         {action && <div className="mb-0.5 flex-shrink-0">{action}</div>}
@@ -501,13 +625,11 @@ export function Avatar({
   return (
     <div
       aria-hidden="true"
-      className="flex items-center justify-center flex-shrink-0 font-bold"
+      className={`flex items-center justify-center flex-shrink-0 ${serif ? "font-display font-medium" : "font-bold"}`}
       style={{
         width: size, height: size,
         borderRadius: shape === "circle" ? "9999px" : "1.1rem",
         fontSize: size * 0.4,
-        fontFamily: serif ? "Lora,Georgia,serif" : undefined,
-        fontWeight: serif ? 500 : 700,
         ...toneStyle,
       }}>
       {name.charAt(0).toUpperCase()}
@@ -533,11 +655,33 @@ export function IconBadge({
   );
 }
 
+/**
+ * Round icon-only button — the sheet-close X and the back chevrons/arrows that
+ * every sheet and detail header used to hand-roll. Pass the (sized, coloured)
+ * icon as `icon`; `tone` picks the fill ("secondary" for on-sheet chrome,
+ * "card" for a floating button over the page background).
+ */
+export function IconButton({
+  icon, onClick, label, size = 9, tone = "secondary", className = "",
+}: {
+  icon: ReactNode; onClick: () => void; label: string;
+  size?: 8 | 9 | 10; tone?: "secondary" | "card"; className?: string;
+}) {
+  const dim = size === 8 ? "w-8 h-8" : size === 10 ? "w-10 h-10" : "w-9 h-9";
+  const toneCls = tone === "card" ? "bg-card shadow-sm" : "bg-secondary";
+  return (
+    <motion.button whileTap={{ scale: 0.9 }} onClick={onClick} aria-label={label}
+      className={`${dim} rounded-full flex items-center justify-center flex-shrink-0 ${toneCls} focus-ring ${className}`}>
+      {icon}
+    </motion.button>
+  );
+}
+
 /** Soft, italic hint line in a tinted card — the "waarschijnlijk weer toe" / quote pattern. Never a hard claim. */
 export function HintBanner({ children, tone = "sage" }: { children: ReactNode; tone?: "sage" | "muted" }) {
   return (
     <div className="rounded-2xl px-4 py-3.5" style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 36%, transparent)" }}>
-      <p className="text-sm leading-snug" style={{ color: tone === "sage" ? SAGE : "var(--foreground)", opacity: tone === "muted" ? 0.7 : 1, fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+      <p className="text-sm leading-snug font-display italic" style={{ color: tone === "sage" ? SAGE : "var(--foreground)", opacity: tone === "muted" ? 0.7 : 1 }}>
         {children}
       </p>
     </div>
@@ -546,17 +690,38 @@ export function HintBanner({ children, tone = "sage" }: { children: ReactNode; t
 
 /** Sage pill button — secondary actions like "Nieuw" or "Ik pak dit". */
 export function PillButton({
-  children, icon, onClick, ariaLabel, size = "md",
-}: { children: ReactNode; icon?: ReactNode; onClick: () => void; ariaLabel?: string; size?: "sm" | "md" }) {
+  children, icon, onClick, ariaLabel, size = "md", className = "",
+}: { children: ReactNode; icon?: ReactNode; onClick: () => void; ariaLabel?: string; size?: "sm" | "md"; className?: string }) {
   return (
     <motion.button
       onClick={onClick}
       whileTap={{ scale: 0.9 }}
       aria-label={ariaLabel}
-      className={`flex items-center gap-1.5 rounded-full font-semibold transition-[background-color,box-shadow,transform] hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${size === "md" ? "px-3.5 py-2 text-sm" : "px-3 py-1.5 text-xs"}`}
+      className={`flex items-center gap-1.5 rounded-full font-semibold transition-[background-color,box-shadow,transform] hover:shadow-sm focus-ring ${size === "md" ? "px-3.5 py-2 text-sm" : "px-3 py-1.5 text-xs"} ${className}`}
       style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
       {icon}{children}
     </motion.button>
+  );
+}
+
+/**
+ * Small sage status pill — "Klaar" on a finished routine, or the interval/wekker
+ * label on a field row. The role the removed shadcn ui/badge used to fill. The
+ * `enter` animation matches where it's used: "pop" celebrates a completion,
+ * "slide" eases a label in beside a toggle.
+ */
+export function StatusBadge({
+  children, enter = "pop",
+}: { children: ReactNode; enter?: "pop" | "slide" }) {
+  const anim = enter === "pop"
+    ? { initial: { scale: 0 }, animate: { scale: 1 }, transition: { type: "spring" as const, stiffness: 500, damping: 26 } }
+    : { initial: { opacity: 0, x: -4 }, animate: { opacity: 1, x: 0 } };
+  return (
+    <motion.span {...anim}
+      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+      style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
+      {children}
+    </motion.span>
   );
 }
 

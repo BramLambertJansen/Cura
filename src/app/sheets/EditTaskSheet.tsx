@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomViews, useTaskView } from "../../stores/useViews";
-import { Sheet, SheetHeader, VeldInput, DubbelKnop } from "../components/shared";
+import { Sheet, SheetHeader, VeldInput, DubbelKnop, VerwijderKnop } from "../components/shared";
 import { TaskFormFields, buildDueDate, extractTijd, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
 
@@ -14,7 +12,6 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
   const rooms = useRoomViews();
 
   const [title, setTitle] = useState(task?.title ?? "");
-  const [confirm, setConfirm] = useState(false);
   const [formState, setFormState] = useState<TaskFormState>(() => {
     const hasWekker = !!task?.dueDate;
     return {
@@ -79,22 +76,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
         <DubbelKnop onCancel={onClose} onConfirm={save} label="Opslaan"
           disabled={!title.trim() || (formState.wekkerAan && !formState.herhalenAan && !formState.wekkerDatum)} />
       </div>
-      <AnimatePresence>
-        {!confirm
-          ? <motion.button key="del" whileTap={{ scale: 0.96 }} onClick={() => setConfirm(true)}
-              className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
-              style={{ color: "var(--destructive)" }}>
-              <Trash2 size={14} aria-hidden="true" /> Taak verwijderen
-            </motion.button>
-          : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-              <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}
-                className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium">Toch niet</motion.button>
-              <motion.button whileTap={{ scale: 0.96 }} onClick={remove}
-                className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold"
-                style={{ background: "var(--destructive)" }}>Ja, verwijder</motion.button>
-            </motion.div>
-        }
-      </AnimatePresence>
+      <VerwijderKnop label="Taak verwijderen" onConfirm={remove} />
     </Sheet>
   );
 }

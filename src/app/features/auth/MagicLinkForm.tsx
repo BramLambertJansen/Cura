@@ -28,7 +28,7 @@ export function MagicLinkForm({
       <motion.button
         whileTap={{ scale: 0.97 }} onClick={submit} disabled={!canSubmit || busy}
         aria-busy={busy}
-        className="w-full py-4 rounded-2xl border border-border bg-card text-sm font-semibold text-foreground disabled:opacity-40 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2">
+        className="w-full py-4 rounded-2xl border border-border bg-card text-sm font-semibold text-foreground disabled:opacity-40 transition-opacity focus-ring focus-visible:ring-offset-2">
         {busy ? "Even geduld…" : submitLabel}
       </motion.button>
     </div>

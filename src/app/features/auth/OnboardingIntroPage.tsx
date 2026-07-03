@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { CalendarDays, Heart, RefreshCw } from "lucide-react";
 import { AppBackground } from "../../components/AppBackground";
+import { PrimaryButton } from "../../components/shared";
 
 interface Slide {
   icon: ReactNode;
@@ -60,7 +61,7 @@ export function OnboardingIntroPage({ onDone }: { onDone: () => void }) {
             >
               {slide.icon}
             </div>
-            <h1 className="text-[1.75rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>
+            <h1 className="text-[1.75rem] font-medium text-foreground mb-2 font-display">
               {slide.title}
             </h1>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">{slide.text}</p>
@@ -81,14 +82,9 @@ export function OnboardingIntroPage({ onDone }: { onDone: () => void }) {
         </div>
 
         <div className="space-y-3">
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => (last ? onDone() : setIndex((i) => i + 1))}
-            className="w-full py-4 rounded-2xl text-white text-sm font-semibold transition-opacity"
-            style={{ background: "var(--gradient-primary)", boxShadow: `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` }}
-          >
+          <PrimaryButton onClick={() => (last ? onDone() : setIndex((i) => i + 1))}>
             {last ? "Aan de slag" : "Volgende"}
-          </motion.button>
+          </PrimaryButton>
           {!last && (
             <motion.button
               whileTap={{ scale: 0.97 }}

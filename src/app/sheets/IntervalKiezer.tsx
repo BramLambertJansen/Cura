@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { SAGE, INTERVAL_PRESETS } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { Card } from "../components/shared";
+import { Card, OptieKaart } from "../components/shared";
 
 export function IntervalKiezer({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const clamp = (n: number) => Math.min(365, Math.max(1, n));
@@ -11,7 +11,7 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
       <Card className="flex items-center justify-between gap-4 px-5 py-4">
         <div className="text-left">
           <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Interval</p>
-          <p className="text-sm text-foreground font-semibold mt-0.5" style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+          <p className="text-sm text-foreground font-semibold mt-0.5 font-display italic">
             {intervalLabel(value)}
           </p>
         </div>
@@ -20,7 +20,7 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
             onClick={() => onChange(clamp(value - 1))}
             disabled={value <= 1}
             aria-label="Minder dagen"
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-ring"
             style={{ background: "var(--input-background)", color: "var(--foreground)", boxShadow: "var(--shadow-input)" }}>
             −
           </motion.button>
@@ -38,7 +38,7 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
             onClick={() => onChange(clamp(value + 1))}
             disabled={value >= 365}
             aria-label="Meer dagen"
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-light disabled:opacity-30 focus-ring"
             style={{ background: "var(--input-background)", color: "var(--foreground)", boxShadow: "var(--shadow-input)" }}>
             +
           </motion.button>
@@ -49,22 +49,11 @@ export function IntervalKiezer({ value, onChange }: { value: number; onChange: (
         {INTERVAL_PRESETS.map((p) => {
           const active = value === p.days;
           return (
-            <motion.button key={p.days}
-              onClick={() => onChange(p.days)}
-              whileTap={{ scale: 0.94 }}
-              aria-pressed={active}
-              initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
-              animate={{
-                backgroundColor: active ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "var(--input-background)",
-                borderColor: active ? "color-mix(in srgb, var(--primary) 45%, transparent)" : "var(--border-input)",
-              }}
-              transition={{ duration: 0.14 }}
-              style={{ boxShadow: "var(--shadow-input)" }}
-              className="py-2.5 rounded-2xl border-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+            <OptieKaart key={p.days} selected={active} onClick={() => onChange(p.days)} className="py-2.5 text-center">
               <span className="text-xs font-semibold block" style={{ color: active ? SAGE : "var(--foreground)" }}>
                 {p.label}
               </span>
-            </motion.button>
+            </OptieKaart>
           );
         })}
       </div>

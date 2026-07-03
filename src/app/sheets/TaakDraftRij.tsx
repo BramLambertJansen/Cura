@@ -33,7 +33,7 @@ export function TaakDraftRij({
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((v) => !v); } }}
         aria-expanded={open}
         aria-label={`${draft.title}, details ${open ? "inklappen" : "uitklappen"}`}
-        className="flex items-center gap-3 px-4 py-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+        className="flex items-center gap-3 px-4 py-3 cursor-pointer focus-ring focus-visible:ring-inset">
         <Check size={12} strokeWidth={3} style={{ color: SAGE, flexShrink: 0 }} aria-hidden="true" />
         <span className="flex-1 text-sm text-foreground truncate">{draft.title}</span>
         {draft.durationMin && (
@@ -46,7 +46,7 @@ export function TaakDraftRij({
           whileTap={{ scale: 0.85 }}
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           aria-label={`${draft.title} verwijderen`}
-          className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+          className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-ring">
           <X size={9} className="text-muted-foreground" aria-hidden="true" />
         </motion.button>
       </div>

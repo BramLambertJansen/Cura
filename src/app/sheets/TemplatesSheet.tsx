@@ -59,7 +59,7 @@ export function TemplatesSheet({
               role="checkbox"
               aria-checked={checked}
               aria-label={t.title}
-              className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+              className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left border focus-ring"
               style={{
                 background: checked ? "color-mix(in srgb, var(--primary) 8%, transparent)" : "var(--input-background)",
                 borderColor: checked ? "color-mix(in srgb, var(--primary) 42%, transparent)" : "var(--border-input)",

@@ -1,11 +1,11 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, ChevronLeft, Plus } from "lucide-react";
+import { Check, ChevronLeft } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
 import { spring } from "../lib/motion";
 import { cadenceAndLabel } from "../lib/format";
-import { Sheet, SheetHeader, VeldInput, DubbelKnop, KeuzeChip, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { Sheet, SheetHeader, VeldInput, DubbelKnop, KeuzeChip, IconButton, TaakToevoegRij } from "../components/shared";
 import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
@@ -14,16 +14,13 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [trigger, setTrigger] = useState("");
   const [input, setInput] = useState("");
-  const [inputActive, setInputActive] = useState(false);
   const [tasks, setTasks] = useState<TaakDraftItem[]>([]);
   const [saved, setSaved] = useState(false);
-  const ref = useRef<HTMLInputElement>(null);
 
   function addTask() {
     if (!input.trim()) return;
     setTasks((p) => [...p, { key: crypto.randomUUID(), title: input.trim() }]);
     setInput("");
-    ref.current?.focus();
   }
 
   function save() {
@@ -50,7 +47,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
               className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: SAGE, boxShadow: `0 6px 24px color-mix(in srgb, var(--primary) 38%, transparent)` }}>
               <Check size={28} strokeWidth={2.5} className="text-white" />
             </motion.div>
-            <p className="text-lg font-medium text-center" style={{ fontFamily: "Lora,Georgia,serif" }}>"{name}" aangemaakt</p>
+            <p className="text-lg font-medium text-center font-display">"{name}" aangemaakt</p>
             <p className="text-sm text-muted-foreground text-center">Je vindt de routine terug in het overzicht.</p>
           </motion.div>
         ) : step === 0 ? (
@@ -70,8 +67,8 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
         ) : (
           <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18 }}>
             <div className="flex items-center gap-2 mb-7">
-              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setStep(0)} aria-label="Terug naar naam en moment" className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"><ChevronLeft size={16} className="text-muted-foreground" aria-hidden="true" /></motion.button>
-              <h3 className="text-xl font-medium text-foreground" style={{ fontFamily: "Lora,Georgia,serif" }}>Taken toevoegen</h3>
+              <IconButton size={8} onClick={() => setStep(0)} label="Terug naar naam en moment" icon={<ChevronLeft size={16} className="text-muted-foreground" aria-hidden="true" />} />
+              <h3 className="text-xl font-medium text-foreground font-display">Taken toevoegen</h3>
             </div>
             <div className="space-y-2 mb-4 max-h-64 overflow-y-auto scrollbar-hide">
               <AnimatePresence>
@@ -85,22 +82,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
                 ))}
               </AnimatePresence>
             </div>
-            <div className="flex gap-2 mb-7">
-              <input ref={ref} type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()}
-                onFocus={() => setInputActive(true)} onBlur={() => setInputActive(false)}
-                placeholder="Taak omschrijving…"
-                className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm border transition-all"
-                style={{
-                  background: "var(--input-background)",
-                  borderColor: fieldBorderColor({ active: inputActive, hasValue: !!input }),
-                  boxShadow: fieldBoxShadow({ active: inputActive }),
-                }} />
-              <motion.button whileTap={{ scale: 0.88 }} onClick={addTask} disabled={!input.trim()}
-                aria-label="Taak toevoegen"
-                className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2" style={{ background: SAGE }}>
-                <Plus size={17} className="text-white" aria-hidden="true" />
-              </motion.button>
-            </div>
+            <TaakToevoegRij value={input} onChange={setInput} onAdd={addTask} placeholder="Taak omschrijving…" />
             <DubbelKnop onCancel={onClose} onConfirm={save} label="Opslaan" disabled={tasks.length === 0} />
           </motion.div>
         )}

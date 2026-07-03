@@ -9,7 +9,7 @@ import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
 import { householdStatusLine } from "../../lib/format";
 import { useReacties, type ReactieKind } from "../../lib/useReacties";
-import { Leeg, PageHeader, Card, HintBanner } from "../../components/shared";
+import { Leeg, PageHeader, Card, HintBanner, IconButton } from "../../components/shared";
 import { ActiviteitReacties } from "../../components/ActiviteitReacties";
 
 const REACTIE_TOAST: Record<ReactieKind, string> = {
@@ -34,11 +34,8 @@ export function SamenPage() {
 
   return (
     <div className="px-5 pt-14 pb-8">
-      <motion.button whileTap={{ scale: 0.9 }} onClick={() => navigate("/meer")}
-        aria-label="Terug naar Meer"
-        className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
-        <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
-      </motion.button>
+      <IconButton onClick={() => navigate("/meer")} label="Terug naar Meer" tone="card" className="mb-4"
+        icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
       <PageHeader title="Samen" subtitle="Wat is er vandaag gedaan?" />
 
       <div className="mb-6">

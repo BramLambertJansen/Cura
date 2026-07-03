@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { motion } from "motion/react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { Logo } from "../../components/Logo";
 import { AppBackground } from "../../components/AppBackground";
-import { VeldInput } from "../../components/shared";
+import { PrimaryButton, VeldInput } from "../../components/shared";
 
 /** "Create your first household" onboarding — for a signed-in user with zero households. */
 export function CreateHouseholdPage() {
@@ -37,19 +36,13 @@ export function CreateHouseholdPage() {
       <AppBackground />
       <div className="w-full max-w-sm text-center relative z-10">
         <Logo size={56} className="mx-auto mb-4 rounded-xl" />
-        <h1 className="text-[2rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>Welkom</h1>
+        <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Welkom</h1>
         <p className="text-sm text-muted-foreground mb-8">Geef je huishouden een naam om te beginnen.</p>
         <div className="space-y-3 text-left">
           <VeldInput value={naam} onChange={setNaam} placeholder="Bijv. Thuis" ariaLabel="Naam van je huishouden" autoFocus onEnter={submit} />
-          <motion.button
-            whileTap={{ scale: 0.97 }} onClick={submit} disabled={!naam.trim() || busy} aria-busy={busy}
-            className="w-full py-4 rounded-2xl text-white text-sm font-semibold disabled:opacity-40 transition-opacity"
-            style={{
-              background: "var(--gradient-primary)",
-              boxShadow: naam.trim() && !busy ? `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` : "none",
-            }}>
+          <PrimaryButton onClick={submit} disabled={!naam.trim()} busy={busy}>
             {busy ? "Even geduld…" : "Huishouden aanmaken"}
-          </motion.button>
+          </PrimaryButton>
           <p role="status" aria-live="polite" className="sr-only">{busy ? "Huishouden wordt aangemaakt…" : ""}</p>
         </div>
       </div>

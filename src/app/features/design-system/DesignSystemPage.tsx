@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence } from "motion/react";
-import { Plus, Link2, Home, Bell, ChevronRight } from "lucide-react";
+import { Plus, Link2, Home, Bell, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, InstRij, KeuzeChip, Leeg,
-  PillButton, RingProgress, Sheet, SheetHeader, Toggle, VeldInput, VeldTextarea,
+  Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton, InstRij, KeuzeChip, Leeg,
+  OptieKaart, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge, TaakToevoegRij,
+  Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
@@ -31,7 +32,7 @@ import type { ReactieKind } from "../../lib/useReacties";
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="space-y-3.5">
-      <h2 className="text-lg font-medium text-foreground" style={{ fontFamily: "Lora,Georgia,serif" }}>{title}</h2>
+      <h2 className="text-lg font-medium text-foreground font-display">{title}</h2>
       <div className="space-y-3">{children}</div>
     </section>
   );
@@ -82,11 +83,13 @@ export function DesignSystemPage() {
   const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
   const [reactie, setReactie] = useState<ReactieKind | undefined>(undefined);
+  const [optie, setOptie] = useState(true);
+  const [taak, setTaak] = useState("");
 
   return (
     <div className="px-5 pt-14 pb-16 space-y-10">
       <div>
-        <h1 className="text-[2rem] font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>Design system</h1>
+        <h1 className="text-[2rem] font-medium text-foreground leading-tight font-display">Design system</h1>
         <p className="text-sm text-muted-foreground mt-1.5">Alle uniforme bouwstenen op één plek — restylen of een nieuw thema beginnen hier.</p>
       </div>
 
@@ -111,7 +114,7 @@ export function DesignSystemPage() {
         <div className="relative rounded-2xl overflow-hidden border border-border/50 h-40">
           <PageBanner src="/landing-header.webp" className="h-40" position="72% 35%" />
           <div className="relative px-5 pt-10">
-            <h1 className="text-[1.6rem] font-medium text-foreground" style={{ fontFamily: "Lora,Georgia,serif" }}>Goedemorgen</h1>
+            <h1 className="text-[1.6rem] font-medium text-foreground font-display">Goedemorgen</h1>
             <p className="text-sm text-muted-foreground mt-1">De kop blijft leesbaar zonder scrim.</p>
           </div>
         </div>
@@ -147,7 +150,23 @@ export function DesignSystemPage() {
           <PillButton onClick={() => {}} icon={<Plus size={14} strokeWidth={2.5} />}>Nieuw</PillButton>
           <PillButton onClick={() => {}} size="sm">Ik pak dit</PillButton>
         </div>
+        <p className="text-xs text-muted-foreground">PrimaryButton — volledige-breedte gradient-CTA (auth, onboarding, uitnodigen); glow via <code>--shadow-cta</code></p>
+        <PrimaryButton onClick={() => {}}>Volgende</PrimaryButton>
+        <PrimaryButton onClick={() => {}} icon={<Plus size={15} />}>Met icoon</PrimaryButton>
+        <PrimaryButton onClick={() => {}} disabled>Uitgeschakeld</PrimaryButton>
         <DubbelKnop onCancel={() => {}} onConfirm={() => {}} label="Opslaan" />
+        <div>
+          <p className="text-xs text-muted-foreground mb-1.5">VerwijderKnop — klapt om naar een inline bevestigingsrij</p>
+          <VerwijderKnop label="Voorbeeld verwijderen" onConfirm={() => {}} />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-1.5">IconButton — ronde icoon-knop (sluiten, terug); <code>tone</code> secondary/card, <code>size</code> 8/9/10</p>
+          <div className="flex items-center gap-3">
+            <IconButton onClick={() => {}} label="Sluiten" icon={<X size={15} className="text-muted-foreground" aria-hidden="true" />} />
+            <IconButton onClick={() => {}} label="Terug" tone="card" icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
+            <IconButton size={8} onClick={() => {}} label="Terug (klein)" icon={<ChevronLeft size={16} className="text-muted-foreground" aria-hidden="true" />} />
+          </div>
+        </div>
       </Section>
 
       <Section title="Avatar">
@@ -165,6 +184,14 @@ export function DesignSystemPage() {
         </div>
       </Section>
 
+      <Section title="Statusbadge">
+        <p className="text-sm text-muted-foreground -mt-1">Kleine sage-pill — "Klaar" op een afgeronde routine, of een interval/wekker-label bij een veldrij. <code>enter</code> kiest de animatie (pop/slide).</p>
+        <div className="flex flex-wrap gap-2 items-center">
+          <StatusBadge>Klaar</StatusBadge>
+          <StatusBadge enter="slide">Wekelijks</StatusBadge>
+        </div>
+      </Section>
+
       <Section title="Hint banner">
         <HintBanner>Badkamer is waarschijnlijk weer toe.</HintBanner>
         <HintBanner tone="muted">"Rustig en gestaag — dat is het ritme dat telt."</HintBanner>
@@ -176,6 +203,18 @@ export function DesignSystemPage() {
           <KeuzeChip selected={chip === "a"} onClick={() => setChip("a")}>'s Ochtends</KeuzeChip>
           <KeuzeChip selected={chip === "b"} onClick={() => setChip("b")}>'s Middags</KeuzeChip>
           <KeuzeChip selected={chip === "c"} onClick={() => setChip("c")}>'s Avonds</KeuzeChip>
+        </div>
+      </Section>
+
+      <Section title="Optiekaart">
+        <p className="text-sm text-muted-foreground -mt-1">Grotere selecteerbare tegel (kamer-grid, interval-presets) — <code>border-2</code> + geanimeerde tint, kleurbaar via <code>tint</code>. De §7-vervanger voor eigen chip-varianten per sheet.</p>
+        <div className="grid grid-cols-3 gap-2">
+          <OptieKaart selected={optie} onClick={() => setOptie(true)} ariaLabel="Wekelijks" className="py-2.5 text-center">
+            <span className="text-xs font-semibold block text-foreground">Wekelijks</span>
+          </OptieKaart>
+          <OptieKaart selected={!optie} onClick={() => setOptie(false)} ariaLabel="Maandelijks" className="py-2.5 text-center">
+            <span className="text-xs font-semibold block text-foreground">Maandelijks</span>
+          </OptieKaart>
         </div>
       </Section>
 
@@ -197,6 +236,8 @@ export function DesignSystemPage() {
       <Section title="Veld">
         <VeldInput value={veld} onChange={setVeld} placeholder="Taaknaam" />
         <VeldTextarea value={veldTextarea} onChange={setVeldTextarea} placeholder="Beschrijving (optioneel)" />
+        <p className="text-xs text-muted-foreground">TaakToevoegRij — veld + sage "+"-knop voor het opbouwen van een routine-takenlijst</p>
+        <TaakToevoegRij value={taak} onChange={setTaak} onAdd={() => setTaak("")} placeholder="Taak omschrijving…" />
       </Section>
 
       <Section title="Sheet">

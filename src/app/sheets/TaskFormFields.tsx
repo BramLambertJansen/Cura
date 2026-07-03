@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { Kop, Toggle, VeldTextarea, FieldShell, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { Kop, Toggle, VeldTextarea, FieldShell, StatusBadge, OptieKaart, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { IntervalKiezer } from "./IntervalKiezer";
 import { Calendar } from "../components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
@@ -76,20 +76,15 @@ export function TaskFormFields({
           const active = selectedRoomId === r.id;
           const color = r.color;
           return (
-            <motion.button
+            <OptieKaart
               key={r.id}
+              selected={active}
               onClick={() => onRoomChange(active ? null : r.id)}
-              whileTap={{ scale: 0.94 }}
-              aria-pressed={active}
-              aria-label={active ? `${r.name} deselecteren` : `${r.name} selecteren`}
-              initial={{ backgroundColor: "var(--input-background)", borderColor: "var(--border-input)" }}
-              animate={{
-                backgroundColor: active ? color + "18" : "var(--input-background)",
-                borderColor: active ? color + "60" : "var(--border-input)",
-              }}
-              transition={{ duration: 0.15 }}
-              style={{ boxShadow: "var(--shadow-input)" }}
-              className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl border-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+              tint={color}
+              selectedBg={9}
+              selectedBorder={38}
+              ariaLabel={active ? `${r.name} deselecteren` : `${r.name} selecteren`}
+              className="flex items-center gap-2.5 px-4 py-3.5 text-left"
             >
               <motion.span
                 animate={{
@@ -111,7 +106,7 @@ export function TaskFormFields({
                   <Check size={9} strokeWidth={3} className="text-white" aria-hidden="true" />
                 </motion.div>
               )}
-            </motion.button>
+            </OptieKaart>
           );
         })}
       </div>
@@ -123,14 +118,7 @@ export function TaskFormFields({
             <RefreshCw size={16} style={{ color: herhalenAan ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
             <span className="text-sm font-medium text-foreground">Herhalen</span>
             {herhalenAan && (
-              <motion.span
-                initial={{ opacity: 0, x: -4 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: SAGE }}
-              >
-                {intervalLabel(intervalDagen)}
-              </motion.span>
+              <StatusBadge enter="slide">{intervalLabel(intervalDagen)}</StatusBadge>
             )}
           </div>
           <Toggle checked={herhalenAan} onChange={onHerhalenChange} label="Taak herhalen" />
@@ -155,14 +143,9 @@ export function TaskFormFields({
             <Bell size={16} style={{ color: wekkerAan ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
             <span className="text-sm font-medium text-foreground">Wekker</span>
             {wekkerAan && (
-              <motion.span
-                initial={{ opacity: 0, x: -4 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)", color: SAGE }}
-              >
+              <StatusBadge enter="slide">
                 {herhalenAan ? wekkerTijd : wekkerDatum ? format(wekkerDatum, "d MMM", { locale: nl }) : wekkerTijd}
-              </motion.span>
+              </StatusBadge>
             )}
           </div>
           <Toggle checked={wekkerAan} onChange={onWekkerChange} label="Wekker instellen" />

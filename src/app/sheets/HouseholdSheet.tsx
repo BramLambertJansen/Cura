@@ -6,7 +6,7 @@ import { useCuraStore } from "../../stores/useCuraStore";
 import { resolveDataMode } from "../../data/store";
 import { SAGE } from "../lib/constants";
 import { spring } from "../lib/motion";
-import { Sheet, SheetHeader, Kop, Avatar, GroupCard } from "../components/shared";
+import { Sheet, SheetHeader, Kop, Avatar, GroupCard, PrimaryButton } from "../components/shared";
 
 export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
@@ -83,7 +83,7 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
         <motion.button whileTap={{ scale: 0.9 }} disabled={savingName}
           onClick={() => { if (editing) saveName(); else setEditing(true); }}
           aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
-          className="w-11 rounded-2xl flex items-center justify-center flex-shrink-0 self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] disabled:opacity-60"
+          className="w-11 rounded-2xl flex items-center justify-center flex-shrink-0 self-stretch focus-ring disabled:opacity-60"
           style={{ background: editing ? SAGE : "var(--secondary)" }}>
           {editing ? <Check size={15} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
         </motion.button>
@@ -111,11 +111,9 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
         <>
           <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Genereer een link en deel hem via WhatsApp. De uitgenodigde tikt op accepteren.</p>
           {!link
-            ? <motion.button whileTap={{ scale: 0.97 }} onClick={genLink} disabled={busy}
-                className="w-full py-4 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-                style={{ background: "var(--gradient-primary)", boxShadow: `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` }}>
-                <Sparkles size={15} /> {busy ? "Even geduld…" : "Uitnodigingslink genereren"}
-              </motion.button>
+            ? <PrimaryButton onClick={genLink} busy={busy} icon={<Sparkles size={15} />}>
+                {busy ? "Even geduld…" : "Uitnodigingslink genereren"}
+              </PrimaryButton>
             : <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}
                 className="rounded-2xl p-5 space-y-4" style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)", border: `1px solid color-mix(in srgb, var(--primary) 17%, transparent)` }}>
                 <div className="flex items-center justify-between gap-3">
@@ -127,7 +125,7 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
                     aria-label={copied ? "Link gekopieerd" : "Link kopiëren"}
                     aria-live="polite"
                     animate={{ backgroundColor: copied ? SAGE : "color-mix(in srgb, var(--primary) 12%, transparent)" }}
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 focus-ring">
                     {copied ? <Check size={15} className="text-white" aria-hidden="true" /> : <Copy size={15} style={{ color: SAGE }} aria-hidden="true" />}
                   </motion.button>
                 </div>

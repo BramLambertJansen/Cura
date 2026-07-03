@@ -39,7 +39,7 @@ export function LandingHeader({ subtitle }: { subtitle: string }) {
         style={{ paddingTop: "var(--safe-top)" }}
       >
         <Logo size={48} className="mb-3 rounded-xl shadow-sm" />
-        <h1 className="text-[2rem] font-medium text-foreground leading-none" style={{ fontFamily: "Lora,Georgia,serif" }}>
+        <h1 className="text-[2rem] font-medium text-foreground leading-none font-display">
           Cura
         </h1>
         <p className="text-sm text-muted-foreground mt-2">{subtitle}</p>

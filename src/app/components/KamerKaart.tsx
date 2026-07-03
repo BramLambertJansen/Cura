@@ -27,8 +27,8 @@ export const KamerKaart = memo(function KamerKaart({
       <RoomArt ic={ic} color={c} className="w-20 h-20 rounded-2xl flex-shrink-0" objectPosition="center 48%" />
 
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-foreground leading-snug"
-          style={{ fontFamily: "Lora,Georgia,serif", fontSize: "0.9375rem" }}>{room.name}</p>
+        <p className="font-semibold text-foreground leading-snug font-display"
+          style={{ fontSize: "0.9375rem" }}>{room.name}</p>
         <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug truncate"
           style={{ fontStyle: "italic" }}>{room.hint}</p>
         {room.owner && (

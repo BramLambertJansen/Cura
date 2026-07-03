@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Check, ChevronRight, Pencil } from "lucide-react";
 import type { RoutineView } from "../../data/types";
 import { PRESS_TINT, SAGE, SHADOW } from "../lib/constants";
-import { CARD_CHROME, RingProgress, Card } from "./shared";
+import { CARD_CHROME, RingProgress, Card, StatusBadge } from "./shared";
 
 export const RoutineKaartCompact = memo(function RoutineKaartCompact({
   routine, onToggleTask,
@@ -16,7 +16,7 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({
         <RingProgress value={total > 0 ? done / total : 0} size={40} stroke={3} />
         <div className="flex-1">
           <p className="text-sm font-semibold text-foreground">{routine.name}</p>
-          <p className="text-xs text-muted-foreground mt-0.5" style={{ fontStyle: "italic", fontFamily: "Lora,Georgia,serif" }}>{routine.trigger}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 font-display italic">{routine.trigger}</p>
         </div>
         <span className="text-xs tabular-nums font-medium text-muted-foreground">{done}/{total}</span>
       </div>
@@ -29,7 +29,7 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({
             role="checkbox"
             aria-checked={t.done}
             aria-label={t.done ? `${t.title} als niet gedaan markeren` : `${t.title} afvinken`}
-            className="flex items-center gap-2.5 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] rounded-lg">
+            className="flex items-center gap-2.5 w-full focus-ring rounded-lg">
             <div className="w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-all duration-200" aria-hidden="true"
               style={{ background: t.done ? SAGE : "transparent", borderColor: t.done ? SAGE : "color-mix(in srgb, var(--outline-color) 32%, transparent)" }}>
               {t.done && <Check size={8} strokeWidth={3.5} className="text-white" />}
@@ -62,13 +62,11 @@ export const RoutineKaart = memo(function RoutineKaart({
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-foreground">{routine.name}</p>
             {done === total && done > 0 && (
-              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 26 }}
-                className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>Klaar</motion.span>
+              <StatusBadge>Klaar</StatusBadge>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{routine.trigger}</p>
-          <p className="text-xs mt-1 leading-snug" style={{ color: "var(--muted-foreground)", fontStyle: "italic", fontFamily: "Lora,Georgia,serif" }}>
+          <p className="text-xs mt-1 leading-snug font-display italic" style={{ color: "var(--muted-foreground)" }}>
             {routine.doneInWindow} van {routine.windowSize} {routine.windowLabel} — {routine.hint.toLowerCase()}
           </p>
         </div>
@@ -88,7 +86,7 @@ export const RoutineKaart = memo(function RoutineKaart({
                   role="checkbox"
                   aria-checked={t.done}
                   aria-label={t.done ? `${t.title} als niet gedaan markeren` : `${t.title} afvinken`}
-                  className="flex items-center gap-3 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-1 rounded-lg">
+                  className="flex items-center gap-3 w-full text-left focus-ring focus-visible:ring-offset-1 rounded-lg">
                   <div className="w-6 h-6 relative flex-shrink-0 rounded-full" aria-hidden="true">
                     <div className="absolute inset-0 rounded-full border-2 transition-colors duration-200"
                       style={{ background: t.done ? SAGE : "transparent", borderColor: t.done ? SAGE : "color-mix(in srgb, var(--outline-color) 28%, transparent)" }} />
@@ -114,7 +112,7 @@ export const RoutineKaart = memo(function RoutineKaart({
                   onClick={onEdit}
                   whileTap={{ scale: 0.96 }}
                   aria-label={`${routine.name} bewerken`}
-                  className="flex items-center gap-2 text-xs font-medium py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] rounded-lg px-1"
+                  className="flex items-center gap-2 text-xs font-medium py-1.5 focus-ring rounded-lg px-1"
                   style={{ color: "var(--muted-foreground)" }}>
                   <Pencil size={12} aria-hidden="true" />
                   Routine bewerken

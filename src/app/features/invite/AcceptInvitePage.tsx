@@ -88,7 +88,7 @@ export function AcceptInvitePage() {
       <AppBackground />
       <div className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-[2rem] font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>Uitnodiging</h1>
+          <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Uitnodiging</h1>
           <p className="text-sm text-muted-foreground">Je bent uitgenodigd voor een huishouden in Cura.</p>
         </div>
 

@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Trash2 } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomView } from "../../stores/useViews";
 import { ICONS, ICON_BY_KEY } from "../lib/constants";
-import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip } from "../components/shared";
+import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip, VerwijderKnop } from "../components/shared";
 import { KamerKunstKiezer } from "../components/KamerKunstKiezer";
 
 export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: () => void }) {
@@ -16,7 +14,6 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
   const [iconKey, setIconKey] = useState(room?.iconKey ?? "sparkles");
   const [name, setName] = useState(room?.name ?? "");
   const [ownerId, setOwnerId] = useState<string | null>(room?.ownerId ?? null);
-  const [confirm, setConfirm] = useState(false);
 
   if (!room) return null;
   const ic = ICON_BY_KEY[iconKey] ?? ICONS[ICONS.length - 1];
@@ -58,15 +55,7 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
       <div className="mt-6 mb-4">
         <DubbelKnop onCancel={onClose} onConfirm={save} label="Opslaan" disabled={!name.trim()} />
       </div>
-      <AnimatePresence>
-        {!confirm
-          ? <motion.button key="del" whileTap={{ scale: 0.96 }} onClick={() => setConfirm(true)} className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50" style={{ color: "var(--destructive)" }}><Trash2 size={14} aria-hidden="true" /> Kamer verwijderen</motion.button>
-          : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-              <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)} className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">Toch niet</motion.button>
-              <motion.button whileTap={{ scale: 0.96 }} onClick={remove} className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2" style={{ background: "var(--destructive)" }}>Ja, verwijder</motion.button>
-            </motion.div>
-        }
-      </AnimatePresence>
+      <VerwijderKnop label="Kamer verwijderen" ariaLabel={`${room.name} verwijderen`} onConfirm={remove} />
     </Sheet>
   );
 }

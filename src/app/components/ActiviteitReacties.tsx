@@ -31,7 +31,7 @@ export const ActiviteitReacties = memo(function ActiviteitReacties({
           whileTap={{ scale: 0.94 }}
           onClick={() => onReact(kind)}
           aria-label={label}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium text-muted-foreground transition-[background-color,color,transform] hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium text-muted-foreground transition-[background-color,color,transform] hover:bg-accent/40 focus-ring"
           style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)" }}
         >
           <Icon size={11} aria-hidden="true" />

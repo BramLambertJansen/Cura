@@ -4,7 +4,7 @@ import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { CARD_BORDER, Checkbox } from "./shared";
+import { CARD_BORDER, Checkbox, PillButton } from "./shared";
 
 // Swipe-right-to-toggle: pointer distance (px) that commits the gesture, or a
 // shorter-but-fast flick. The card itself follows at dragElastic's pace, so
@@ -142,17 +142,14 @@ export const TaakRij = memo(function TaakRij({
           <button
             onClick={onEdit}
             aria-label={`${task.title} bewerken`}
-            className="flex-1 min-w-0 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] rounded-lg">
+            className="flex-1 min-w-0 text-left cursor-pointer focus-ring rounded-lg">
             {content}
           </button>
         ) : (
           <div className="flex-1 min-w-0">{content}</div>
         )}
         {showClaim && !task.done && !claimed && onClaim && (
-          <motion.button whileTap={{ scale: 0.9 }}
-            onClick={onClaim}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none"
-            style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)", color: SAGE }}>Ik pak dit</motion.button>
+          <PillButton size="sm" onClick={onClaim} className="flex-shrink-0 leading-none">Ik pak dit</PillButton>
         )}
         {showClaim && !task.done && claimed && onUnclaim && (
           <motion.button whileTap={{ scale: 0.9 }}

@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { motion } from "motion/react";
-import { VeldInput } from "../../components/shared";
+import { PrimaryButton, VeldInput } from "../../components/shared";
 
 export type AuthMode = "signin" | "signup";
 
@@ -35,16 +34,9 @@ export function AuthForm({
         autoFocus={mode === "signin"}
       />
       <VeldInput value={password} onChange={setPassword} placeholder="Wachtwoord" type="password" ariaLabel="Wachtwoord" name="password" autoComplete={mode === "signin" ? "current-password" : "new-password"} onEnter={submit} />
-      <motion.button
-        whileTap={{ scale: 0.97 }} onClick={submit} disabled={!canSubmit || busy}
-        aria-busy={busy}
-        className="w-full py-4 rounded-2xl text-white text-sm font-semibold disabled:opacity-40 transition-[opacity,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2"
-        style={{
-          background: "var(--gradient-primary)",
-          boxShadow: canSubmit && !busy ? `0 5px 18px color-mix(in srgb, var(--primary) 30%, transparent)` : "none",
-        }}>
+      <PrimaryButton onClick={submit} disabled={!canSubmit} busy={busy}>
         {busy ? "Even geduld…" : submitLabel}
-      </motion.button>
+      </PrimaryButton>
     </div>
   );
 }

@@ -43,7 +43,7 @@ export function HuisPage() {
             header's bottom fade (overlapping the art); without art the header is
             just a control bar, so keep the normal spacing. */}
         <div className={`px-5 pb-6 relative z-10 ${ic.image ? "-mt-10" : "pt-4"}`}>
-          <h2 className="text-3xl font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{room.name}</h2>
+          <h2 className="text-3xl font-medium text-foreground leading-tight font-display">{room.name}</h2>
           {room.owner && <p className="text-muted-foreground text-xs mt-1">Meestal {room.owner}</p>}
         </div>
 
@@ -97,7 +97,7 @@ export function HuisPage() {
         ))}
         <motion.div variants={fadeUp}>
           <motion.button onClick={openNewRoom} whileTap={{ scale: 0.985 }}
-            className="w-full flex items-center gap-4 bg-card rounded-2xl px-4 py-3.5 border-2 border-dashed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+            className="w-full flex items-center gap-4 bg-card rounded-2xl px-4 py-3.5 border-2 border-dashed focus-ring"
             style={{ borderColor: "color-mix(in srgb, var(--border-color) 16%, transparent)", color: "var(--muted-foreground)" }}>
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-secondary">
               <Plus size={20} strokeWidth={1.75} />

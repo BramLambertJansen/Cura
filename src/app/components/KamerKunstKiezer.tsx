@@ -27,7 +27,7 @@ export function KamerKunstKiezer({
             role="radio"
             aria-checked={selected}
             aria-label={ic.label}
-            className="flex flex-col items-center gap-1.5 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+            className="flex flex-col items-center gap-1.5 rounded-2xl focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
             <div className="relative w-full aspect-square rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-input)" }}>
               <RoomThumb ic={ic} color={ic.color} className="w-full h-full" rounded="rounded-2xl" large scaleImage={false} />
               <motion.div

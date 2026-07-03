@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { hasError
         >
           {/* The sprout-in-clouds watercolor; renders nothing if the file is missing, so the text carries the screen on its own. */}
           <EmptyIllustration className="mb-2" />
-          <h1 className="text-xl font-medium text-foreground mb-2" style={{ fontFamily: "Lora,Georgia,serif" }}>
+          <h1 className="text-xl font-medium text-foreground mb-2 font-display">
             Er ging iets mis
           </h1>
           <p className="text-sm text-muted-foreground max-w-xs mb-6 leading-relaxed">

@@ -99,7 +99,7 @@ export function TakenPage() {
                           <button
                             onClick={() => makeCopy(task)}
                             aria-label={`Maak een nieuwe taak op basis van ${task.title}`}
-                            className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+                            className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full text-muted-foreground focus-ring"
                             style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)" }}>
                             <Copy size={12} aria-hidden="true" /> Maak nieuwe hiervan
                           </button>

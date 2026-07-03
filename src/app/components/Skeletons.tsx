@@ -82,7 +82,7 @@ export function FullScreenSkeleton() {
         role="status" aria-live="polite" aria-label="Cura wordt geladen…"
       >
         <Logo size={56} className="rounded-2xl shadow-sm" />
-        <p className="text-sm text-muted-foreground" style={{ fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+        <p className="text-sm text-muted-foreground font-display italic">
           Even rustig opstarten…
         </p>
       </div>

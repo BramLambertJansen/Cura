@@ -59,7 +59,7 @@ export function VandaagPage() {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">{greeting.date}</p>
-            <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium" style={{ fontFamily: "Lora,Georgia,serif" }}>
+            <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display">
               {greeting.text}
             </h1>
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
@@ -137,7 +137,7 @@ export function VandaagPage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSuggestionsOpen((v) => !v)}
                   aria-expanded={suggestionsOpen}
-                  className="flex items-center justify-center gap-1.5 mx-auto px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+                  className="flex items-center justify-center gap-1.5 mx-auto px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/60 focus-ring"
                 >
                   {suggestionsOpen ? "Minder tonen" : `Nog ${hiddenSuggestionCount} suggestie${hiddenSuggestionCount === 1 ? "" : "s"}`}
                   <motion.span animate={{ rotate: suggestionsOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex">

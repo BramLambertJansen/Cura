@@ -28,13 +28,13 @@ export const SuggestieRij = memo(function SuggestieRij({
             {task.room && <span className="text-xs text-muted-foreground">{task.room}</span>}
             {task.duration && <span className="text-xs text-muted-foreground opacity-50">· {task.duration}</span>}
           </div>
-          <p className="text-xs mt-1.5" style={{ color: SAGE, fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>{suggestionReason(task)}</p>
+          <p className="text-xs mt-1.5 font-display italic" style={{ color: SAGE }}>{suggestionReason(task)}</p>
         </div>
         <div className="flex items-center gap-2 mt-3">
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={onPlan}
-            className="flex-1 py-2 rounded-full text-xs font-semibold text-white transition-[box-shadow,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2"
+            className="flex-1 py-2 rounded-full text-xs font-semibold text-white transition-[box-shadow,transform] focus-ring focus-visible:ring-offset-2"
             style={{ background: "var(--gradient-primary)", boxShadow: `0 3px 12px color-mix(in srgb, var(--primary) 24%, transparent)` }}>
             Zet op mijn dag
           </motion.button>
@@ -42,7 +42,7 @@ export const SuggestieRij = memo(function SuggestieRij({
             whileTap={{ scale: 0.96 }}
             onClick={onNietVandaag}
             aria-label={`${task.title}: niet vandaag`}
-            className="px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground border border-border/70 transition-[background-color,transform] hover:bg-secondary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] focus-visible:ring-offset-2"
+            className="px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground border border-border/70 transition-[background-color,transform] hover:bg-secondary/70 focus-ring focus-visible:ring-offset-2"
             style={{ boxShadow: SHADOW }}>
             Niet vandaag
           </motion.button>

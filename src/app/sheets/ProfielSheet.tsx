@@ -78,14 +78,14 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
               className="w-full rounded-2xl px-3.5 py-2.5 text-foreground outline-none text-base border border-border transition-all"
               style={{ background: "var(--input-background)", boxShadow: `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` }} />
           ) : (
-            <h3 className="text-xl font-medium text-foreground leading-tight" style={{ fontFamily: "Lora,Georgia,serif" }}>{weergaveNaam}</h3>
+            <h3 className="text-xl font-medium text-foreground leading-tight font-display">{weergaveNaam}</h3>
           )}
           <p className="text-sm text-muted-foreground mt-0.5">{household?.name ?? "Thuis"}</p>
         </div>
         <motion.button whileTap={{ scale: 0.9 }} disabled={savingName}
           onClick={() => (editing ? saveName() : setEditing(true))}
           aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
-          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)] disabled:opacity-60"
+          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 focus-ring disabled:opacity-60"
           style={{ background: editing ? SAGE : "var(--secondary)" }}>
           {editing ? <Check size={14} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
         </motion.button>

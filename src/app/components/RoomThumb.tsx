@@ -30,12 +30,12 @@ export function RoomHero({
       style={over ? { paddingTop: "calc(var(--safe-top) + 1rem)" } : undefined}>
       <motion.button whileTap={{ scale: 0.9 }} onClick={onBack}
         aria-label="Terug naar kamers"
-        className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+        className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-ring">
         <ArrowLeft size={16} className="text-foreground" aria-hidden="true" />
       </motion.button>
       <motion.button whileTap={{ scale: 0.9 }} onClick={onEdit}
         aria-label={editLabel}
-        className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)]">
+        className="w-9 h-9 rounded-full flex items-center justify-center bg-card shadow-sm focus-ring">
         <Pencil size={14} className="text-foreground" aria-hidden="true" />
       </motion.button>
     </div>
