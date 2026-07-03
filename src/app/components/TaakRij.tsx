@@ -4,7 +4,7 @@ import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { CARD_CHROME, Checkbox } from "./shared";
+import { CARD_BORDER, Checkbox } from "./shared";
 
 // Swipe-right-to-toggle: pointer distance (px) that commits the gesture, or a
 // shorter-but-fast flick. The card itself follows at dragElastic's pace, so
@@ -126,12 +126,15 @@ export const TaakRij = memo(function TaakRij({
             e.stopPropagation();
           }
         }}
-        className={`flex items-center gap-3.5 rounded-2xl px-4 py-[0.9rem] ${CARD_CHROME}`}
+        // relative z-10 keeps the card ABOVE the absolute swipe-reveal layers — at
+        // rest (x=0) it has no transform, so without this it paints as an in-flow
+        // block *below* its absolute siblings and their tint bleeds over the card.
+        className={`relative z-10 flex items-center gap-3.5 rounded-2xl px-4 py-[0.9rem] ${task.done ? "bg-card" : "bg-card-active"} ${CARD_BORDER}`}
         style={{
           x,
           touchAction: "pan-y",
-          background: task.done ? "var(--card)" : "#fff",
           boxShadow: SHADOW,
+          // Dynamic per-state accent (open vs done/claimed) — genuinely data-driven, stays inline.
           borderLeft: !task.done && !claimed ? `2.5px solid color-mix(in srgb, var(--primary) 18%, transparent)` : "2.5px solid transparent",
         }}>
         <Checkbox checked={task.done} onToggle={onToggle} label={task.done ? `${task.title} als niet gedaan markeren` : `${task.title} afvinken`} />

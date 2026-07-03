@@ -8,6 +8,13 @@
      (sampled from public/rooms/*), so a room card can share the art's cream and
      the illustration melts into the card with no visible image edge. */
   --card-art: #FCF1E8;
+  /* The warm-white surface for the primary day-view cards (open tasks, today's
+     routines, suggestions). Clearly warmer than --card so the warmth actually
+     reads, but still a light warm white — not the cream of --card-art. Tune the
+     warmth here; every day-view card follows. */
+  --card-active: #FDF8EE;
+  /* Room-card surface: a hair of the illustrations' cream mixed into --card. */
+  --card-room: color-mix(in srgb, var(--card-art) 30%, var(--card));
   --popover: #FEFCF7;
   --popover-foreground: #1A1814;
   --primary: #496E46;
@@ -89,6 +96,11 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  /* Room-art creams exposed as utilities (bg-card-active / bg-card-art /
+     bg-card-room) so card fills are class-driven, never a competing inline style. */
+  --color-card-active: var(--card-active);
+  --color-card-art: var(--card-art);
+  --color-card-room: var(--card-room);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);

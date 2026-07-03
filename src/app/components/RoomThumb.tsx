@@ -64,9 +64,8 @@ export function RoomHero({
           cream + art always melt into the painted app background at the bottom
           edge, independent of the image zoom — and the controls stay unmasked. */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 bg-card-art"
         style={{
-          background: "var(--card-art)",
           WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
           maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
         }}
@@ -99,7 +98,7 @@ export function RoomHero({
  * instead of the 18px avatar icon.
  */
 export function RoomThumb({
-  ic, color, className = "", rounded = "rounded-2xl", large = false,
+  ic, color, className = "", rounded = "rounded-2xl", large = false, scaleImage = true,
 }: {
   ic: IconOption;
   color: string;
@@ -108,17 +107,18 @@ export function RoomThumb({
   rounded?: string;
   /** Use the larger line icon in the fallback — for picker-sized tiles. */
   large?: boolean;
+  /** Slightly zoom artwork to fill compact thumbnails. */
+  scaleImage?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(ic.image) && !failed;
 
   return (
     // The room art is a transparent PNG, so the tile carries its own cream base
-    // (--card-art) — the illustration then floats on the same cream everywhere.
-    <div className={`${className} ${rounded} flex items-center justify-center flex-shrink-0 relative overflow-hidden`}
-      style={{ background: showImage
-        ? "var(--card-art)"
-        : `linear-gradient(145deg,color-mix(in srgb, ${color} 10%, var(--card-art)),color-mix(in srgb, ${color} 18%, var(--card-art)))` }}>
+    // (bg-card-art class). The fallback wash mixes the room's own colour, so that
+    // branch is genuinely dynamic and stays inline.
+    <div className={`${className} ${rounded} flex items-center justify-center flex-shrink-0 relative overflow-hidden ${showImage ? "bg-card-art" : ""}`}
+      style={showImage ? undefined : { background: `linear-gradient(145deg,color-mix(in srgb, ${color} 10%, var(--card-art)),color-mix(in srgb, ${color} 18%, var(--card-art)))` }}>
       {showImage ? (
         <img
           src={ic.image}
@@ -127,7 +127,8 @@ export function RoomThumb({
           loading="lazy"
           onError={() => setFailed(true)}
           // Slight zoom crops the art's cream margins away so the subject fills the small tile.
-          className="absolute inset-0 w-full h-full object-cover scale-[1.18]"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ transform: scaleImage ? "scale(1.18)" : undefined }}
         />
       ) : (
         <>

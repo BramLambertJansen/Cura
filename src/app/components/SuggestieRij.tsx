@@ -21,7 +21,7 @@ export const SuggestieRij = memo(function SuggestieRij({
 }) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.22 }}>
-      <Card className="px-4 py-3.5">
+      <Card tone="active" className="px-4 py-3.5">
         <div>
           <p className="text-[0.9375rem] font-medium text-foreground leading-snug">{task.title}</p>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">

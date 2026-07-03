@@ -11,7 +11,7 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
   return (
-    <Card className="px-4 py-4">
+    <Card tone="active" className="px-4 py-4">
       <div className="flex items-center gap-3.5 mb-3.5">
         <RingProgress value={total > 0 ? done / total : 0} size={40} stroke={3} />
         <div className="flex-1">

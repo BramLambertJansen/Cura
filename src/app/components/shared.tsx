@@ -259,14 +259,23 @@ export function RingProgress({ value, size = 44, stroke = 3 }: { value: number; 
   );
 }
 
+/** Just the hairline border, no fill — pair it with a `bg-card*` utility so the
+ * fill is class-driven (one source), never a competing inline background. */
+export const CARD_BORDER = "border border-border/60";
 /** Canonical bg-card/hairline-border chrome, minus radius (callers with a non-default corner — RoutineKaart's rounded-3xl — append their own). Reference this instead of duplicating the border/background literal inline. */
-export const CARD_CHROME = "bg-card border border-border/60";
+export const CARD_CHROME = `bg-card ${CARD_BORDER}`;
 
-/** Standard card chrome — bg-card, hairline border, soft shadow. Compose content inside instead of redefining this style inline; pass onClick to render a tappable row. */
+/**
+ * Standard card chrome — hairline border, soft shadow, and a class-driven fill
+ * (the bg-card / bg-card-active utility, so nothing competes with the colour).
+ * Compose content inside instead of redefining this style inline; pass onClick
+ * to render a tappable row. `tone="active"` swaps the fill for the warmer
+ * --card-active (the warm-white used by the primary day-view cards, theme.css).
+ */
 export function Card({
-  children, onClick, className = "px-4 py-3.5", ariaLabel,
-}: { children: ReactNode; onClick?: () => void; className?: string; ariaLabel?: string }) {
-  const chrome = `${CARD_CHROME} rounded-2xl`;
+  children, onClick, className = "px-4 py-3.5", ariaLabel, tone = "default",
+}: { children: ReactNode; onClick?: () => void; className?: string; ariaLabel?: string; tone?: "default" | "active" }) {
+  const chrome = `${tone === "active" ? "bg-card-active" : "bg-card"} ${CARD_BORDER} rounded-2xl`;
   if (onClick) {
     return (
       // A `ring-*` utility renders via `box-shadow`, which the inline `boxShadow`

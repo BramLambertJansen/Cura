@@ -18,14 +18,12 @@ export const KamerKaart = memo(function KamerKaart({
       whileTap={{ scale: 0.985 }}
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
       aria-label={openCount > 0 ? `${room.name}, ${openCount} ${openCount === 1 ? "taak" : "taken"} open` : `${room.name}, alles gedaan`}
-      className="w-full flex items-center text-left gap-4 pl-3 pr-5 py-3 rounded-3xl overflow-hidden relative border border-border/60 focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
-      // A hair warmer than the standard card — a touch of the illustrations'
-      // cream (--card-art) mixed into --card, so the card reads faintly warm
-      // without going full cream.
-      style={{ backgroundColor: "color-mix(in srgb, var(--card-art) 30%, var(--card))", boxShadow: SHADOW }}>
+      // bg-card-room = a hair of the illustrations' cream mixed into --card (token in theme.css).
+      className="w-full flex items-center text-left gap-4 pl-3 pr-5 py-3 rounded-3xl overflow-hidden relative bg-card-room border border-border/60 focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)]"
+      style={{ boxShadow: SHADOW }}>
 
-      {/* The art is a transparent PNG, so it floats on the standard card colour;
-          its faint warm feather is invisible against the near-white card. */}
+      {/* The art is a transparent PNG, so it floats on the warm card colour;
+          its faint warm feather is invisible against it. */}
       <RoomArt ic={ic} color={c} className="w-20 h-20 rounded-2xl flex-shrink-0" objectPosition="center 48%" />
 
       <div className="flex-1 min-w-0">
