@@ -8,6 +8,7 @@ import type {
   RoomView,
   RoutineView,
   ActivityView,
+  TaskOverview,
 } from "./types";
 
 /**
@@ -305,6 +306,28 @@ export function toSuggestions(tasks: TaskView[], limit = 5): TaskView[] {
 function suggestionDurationMin(task: TaskView): number {
   const match = task.duration?.match(/(\d+)/);
   return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+}
+
+// ─── Task overview — open tasks bucketed by date status ──────────────────────
+
+/**
+ * Split open tasks into calm date-based buckets for the Takenoverzicht screen.
+ * The one-off tasks split by their `dueDate`: `overdue` (deadline passed),
+ * `upcoming` (now or later), `undated` (no wekker at all). Recurring tasks form
+ * one `recurring` group — an open recurring task is due again *by definition*
+ * (one completed within its interval counts as done and is filtered out here),
+ * so it needs no further date split. Pure derivation from `TaskView`, `now`
+ * injectable for tests.
+ */
+export function toTaskOverview(tasks: TaskView[], now = Date.now()): TaskOverview {
+  const open = tasks.filter((t) => !t.done);
+  const dueMs = (t: TaskView) => new Date(t.dueDate as string).getTime();
+  return {
+    overdue: open.filter((t) => !t.intervalDays && !!t.dueDate && dueMs(t) < now),
+    recurring: open.filter((t) => !!t.intervalDays),
+    upcoming: open.filter((t) => !t.intervalDays && !!t.dueDate && dueMs(t) >= now),
+    undated: open.filter((t) => !t.intervalDays && !t.dueDate),
+  };
 }
 
 // ─── Visibility feed (Samen) ─────────────────────────────────────────────────

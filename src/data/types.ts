@@ -64,6 +64,19 @@ export interface TaskView {
   wekkerLabel?: string; // soft, calm label: "wo 2 jul, 15:00" (one-off) or "Wekker om 09:00" (recurring)
 }
 
+/**
+ * Open tasks bucketed by their date status, for the Takenoverzicht screen.
+ * All four groups hold only open (`!done`) tasks; the split is a pure derivation
+ * from `dueDate` + `intervalDays` (see `toTaskOverview`) — no stored status,
+ * no alarming "achterstallig" framing (CLAUDE.md §2).
+ */
+export interface TaskOverview {
+  overdue: TaskView[]; // one-off, dueDate in the past — "Al even blijven liggen"
+  recurring: TaskView[]; // every open recurring task (open ⟹ due again) — "Waarschijnlijk weer toe"
+  upcoming: TaskView[]; // one-off, dueDate now or later — "In de toekomst"
+  undated: TaskView[]; // one-off without a wekker — the dateless pool
+}
+
 /** A room with its pooled tasks and a soft, honest hint. */
 export interface RoomView {
   id: string;

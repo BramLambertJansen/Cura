@@ -34,6 +34,7 @@ const HuisPage = lazy(() => import("./features/huis/HuisPage").then((m) => ({ de
 const RoutinesPage = lazy(() => import("./features/routines/RoutinesPage").then((m) => ({ default: m.RoutinesPage })));
 const SamenPage = lazy(() => import("./features/samen/SamenPage").then((m) => ({ default: m.SamenPage })));
 const MeerPage = lazy(() => import("./features/meer/MeerPage").then((m) => ({ default: m.MeerPage })));
+const TakenPage = lazy(() => import("./features/taken/TakenPage").then((m) => ({ default: m.TakenPage })));
 const DesignSystemPage = lazy(() => import("./features/design-system/DesignSystemPage").then((m) => ({ default: m.DesignSystemPage })));
 const AuthPage = lazy(() => import("./features/auth/AuthPage").then((m) => ({ default: m.AuthPage })));
 const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPage").then((m) => ({ default: m.OnboardingIntroPage })));
@@ -51,6 +52,7 @@ function AnimatedRoutes() {
         <Route path="/routines" element={<PageTx><RoutinesPage /></PageTx>} />
         <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
         <Route path="/meer" element={<PageTx><MeerPage /></PageTx>} />
+        <Route path="/taken" element={<PageTx><TakenPage /></PageTx>} />
         <Route path="/dev/design-system" element={<PageTx><DesignSystemPage /></PageTx>} />
       </Routes>
     </AnimatePresence>
