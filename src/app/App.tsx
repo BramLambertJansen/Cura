@@ -12,6 +12,7 @@ import { BottomNav } from "./layout/BottomNav";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppBackground } from "./components/AppBackground";
 import { FullScreenSkeleton, PageSkeleton } from "./components/Skeletons";
+import { FullScreenError } from "./components/FullScreenError";
 import { ConnectivityBanner } from "./components/ConnectivityBanner";
 import { UpdatePrompt } from "./components/UpdatePrompt";
 import { PullToRefreshIndicator } from "./components/PullToRefreshIndicator";
@@ -49,6 +50,7 @@ function AnimatedRoutes() {
         <Route path="/" element={<Navigate to="/vandaag" replace />} />
         <Route path="/vandaag" element={<PageTx><VandaagPage /></PageTx>} />
         <Route path="/huis" element={<PageTx><HuisPage /></PageTx>} />
+        <Route path="/huis/:roomId" element={<PageTx><HuisPage /></PageTx>} />
         <Route path="/routines" element={<PageTx><RoutinesPage /></PageTx>} />
         <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
         <Route path="/meer" element={<PageTx><MeerPage /></PageTx>} />
@@ -79,6 +81,7 @@ function MainShell() {
   const { pull, state: pullState } = usePullToRefresh(scrollRef, refresh);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [addRoomId, setAddRoomId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
@@ -90,7 +93,7 @@ function MainShell() {
 
   const sheetActions: SheetActions = useMemo(
     () => ({
-      openAddTask: () => setShowAdd(true),
+      openAddTask: (roomId?: string) => { setAddRoomId(roomId ?? null); setShowAdd(true); },
       openEditTask: (taskId) => setEditingTaskId(taskId),
       openNewRoom: () => setShowNewRoom(true),
       openEditRoom: (roomId) => setEditingRoomId(roomId),
@@ -139,10 +142,10 @@ function MainShell() {
         </div>
         <PullToRefreshIndicator pull={pull} state={pullState} />
 
-        <BottomNav showAdd={showAdd} onAdd={() => setShowAdd((s) => !s)} />
+        <BottomNav showAdd={showAdd} onAdd={() => { setAddRoomId(null); setShowAdd((s) => !s); }} />
 
         <AnimatePresence>
-          {showAdd && <AddTaskSheet key="add" onClose={() => setShowAdd(false)} />}
+          {showAdd && <AddTaskSheet key="add" roomId={addRoomId} onClose={() => setShowAdd(false)} />}
           {editingTaskId && <EditTaskSheet key="edit-task" taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />}
           {showNewRoutine && <NewRoutineSheet key="nr" onClose={() => setShowNewRoutine(false)} />}
           {editingRoutineId && <EditRoutineSheet key="er" bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} />}
@@ -176,6 +179,7 @@ function Gate() {
   const init = useCuraStore((s) => s.init);
   const reset = useCuraStore((s) => s.reset);
   const ready = useCuraStore((s) => s.ready);
+  const initError = useCuraStore((s) => s.initError);
   const households = useCuraStore((s) => s.households);
   const { seen: onboardingSeen, markSeen: markOnboardingSeen } = useOnboardingSeen();
 
@@ -193,6 +197,7 @@ function Gate() {
 
   if (status === "loading") return <FullScreenSkeleton />;
   if (status === "signedOut") return <Suspense fallback={<FullScreenSkeleton />}><AuthPage /></Suspense>;
+  if (initError) return <FullScreenError onRetry={() => void init()} />;
   if (!ready) return <FullScreenSkeleton />;
   if (households.length === 0) {
     if (!onboardingSeen) return <Suspense fallback={<FullScreenSkeleton />}><OnboardingIntroPage onDone={markOnboardingSeen} /></Suspense>;

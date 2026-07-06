@@ -42,14 +42,21 @@ export function useTaskReminders(): void {
   const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const id = setInterval(() => {
+    function check() {
       const latestByTask = buildLatestCompletionMap(completions);
       for (const reminder of getDueReminders(tasks, latestByTask, Date.now())) {
         if (firedRef.current.has(reminder.firedForKey)) continue;
         firedRef.current.add(reminder.firedForKey);
         dispatchReminder(reminder.title);
       }
-    }, POLL_MS);
+    }
+    // Check meteen, niet pas na de eerste 30s-tik: zo gaat een wekker die al toe
+    // is af zodra de app opent. En omdat dit effect opnieuw draait bij elke
+    // wijziging aan tasks/completions (afvinken, pull-to-refresh, realtime-writes
+    // van een huisgenoot), voorkomt de directe check dat een burst het interval
+    // telkens reset vóór het ooit tikt — de firedRef-dedup houdt het bij één melding.
+    check();
+    const id = setInterval(check, POLL_MS);
     return () => clearInterval(id);
   }, [tasks, completions]);
 }

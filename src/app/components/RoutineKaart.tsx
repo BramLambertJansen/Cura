@@ -67,7 +67,9 @@ export const RoutineKaart = memo(function RoutineKaart({
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{routine.trigger}</p>
           <p className="text-xs mt-1 leading-snug font-display italic" style={{ color: "var(--muted-foreground)" }}>
-            {routine.doneInWindow} van {routine.windowSize} {routine.windowLabel} — {routine.hint.toLowerCase()}
+            {routine.windowSize > 0
+              ? `${routine.doneInWindow} van ${routine.windowSize} ${routine.windowLabel} — ${routine.hint.toLowerCase()}`
+              : routine.hint}
           </p>
         </div>
         <motion.div animate={{ rotate: open ? 90 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }}>

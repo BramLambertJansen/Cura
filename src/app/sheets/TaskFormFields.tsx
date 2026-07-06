@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Bell, CalendarDays, Check, Clock, RefreshCw } from "lucide-react";
+import { Bell, CalendarDays, Check, Clock, RefreshCw, Sun } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { SAGE } from "../lib/constants";
@@ -13,6 +13,7 @@ import type { RoomView } from "../../data/types";
 
 export interface TaskFormState {
   selectedRoomId: string | null;
+  opMijnDag: boolean;
   herhalenAan: boolean;
   intervalDagen: number;
   wekkerAan: boolean;
@@ -25,6 +26,7 @@ export interface TaskFormState {
 export interface TaskFormFieldsProps extends TaskFormState {
   rooms: RoomView[];
   onRoomChange: (id: string | null) => void;
+  onOpMijnDagChange: (v: boolean) => void;
   onHerhalenChange: (v: boolean) => void;
   onIntervalChange: (v: number) => void;
   onWekkerChange: (v: boolean) => void;
@@ -56,6 +58,7 @@ export function extractTijd(iso: string): string {
 export function TaskFormFields({
   rooms,
   selectedRoomId, onRoomChange,
+  opMijnDag, onOpMijnDagChange,
   herhalenAan, onHerhalenChange,
   intervalDagen, onIntervalChange,
   wekkerAan, onWekkerChange,
@@ -70,6 +73,18 @@ export function TaskFormFields({
 
   return (
     <>
+      {/* Op mijn dag — makes the task show up in "Mijn dag" on Vandaag right away,
+          instead of quietly landing only in the shared pool. */}
+      <div className="mb-4">
+        <FieldShell hasValue={opMijnDag} className="flex items-center justify-between py-3.5 px-4">
+          <div className="flex items-center gap-2.5">
+            <Sun size={16} style={{ color: opMijnDag ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
+            <span className="text-sm font-medium text-foreground">Zet op mijn dag</span>
+          </div>
+          <Toggle checked={opMijnDag} onChange={onOpMijnDagChange} label="Zet op mijn dag" />
+        </FieldShell>
+      </div>
+
       {/* Room selection */}
       <div className="grid grid-cols-2 gap-2 mb-6">
         {rooms.map((r) => {

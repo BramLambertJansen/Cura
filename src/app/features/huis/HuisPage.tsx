@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { Plus, Sparkles } from "lucide-react";
@@ -15,15 +15,23 @@ import { useSheets } from "../../sheetContext";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
 
 export function HuisPage() {
-  const { openNewRoom, openEditRoom, openEditTask, openTemplates } = useSheets();
+  const { openNewRoom, openEditRoom, openEditTask, openTemplates, openAddTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const claimTask = useCuraStore((s) => s.claimTask);
   const rooms = useRoomViews();
   const tasks = useTaskViews();
-  const { isDismissed: isTaskDismissed, dismiss: dismissTask } = useTaskDismissals();
-  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
+  const navigate = useNavigate();
+  const { roomId } = useParams<{ roomId: string }>();
 
-  const room = rooms.find((r) => r.id === selectedRoomId);
+  // Room detail is a real route (/huis/:roomId) so the OS/browser back gesture
+  // returns to the list instead of leaving the tab, and switching tabs and back
+  // keeps you in the room you opened.
+  const room = rooms.find((r) => r.id === roomId);
+  const dismissWithUndo = (t: { id: string; title: string }, waar: string) => {
+    dismissTask(t.id);
+    toast("Even niet vandaag", { description: `${t.title} staat even uit ${waar}.`, action: { label: "Ongedaan maken", onClick: () => restoreTask(t.id) } });
+  };
 
   if (room) {
     const ic = roomIcon(room.iconKey);
@@ -34,7 +42,7 @@ export function HuisPage() {
       <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={spring}>
         <RoomHero
           ic={ic}
-          onBack={() => setSelectedRoomId(null)}
+          onBack={() => navigate("/huis")}
           onEdit={() => openEditRoom(room.id)}
           editLabel={`${room.name} bewerken`}
         />
@@ -66,15 +74,34 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
                   {open.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => { dismissTask(t.id); toast("Even niet vandaag", { description: `${t.title} staat even uit deze lijst.` }); }} />
+                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "deze lijst")} />
                     </motion.div>
                   ))}
                 </motion.div>
                 {done.map((t) => (
-                  <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => { dismissTask(t.id); toast("Even niet vandaag", { description: `${t.title} staat even uit deze lijst.` }); }} />
+                  <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "deze lijst")} />
                 ))}
               </>
           }
+
+          {/* A per-room add, always reachable — before this, a populated room had no
+              way to add a task without leaving to the global FAB and re-picking the room. */}
+          <button
+            onClick={() => openAddTask(room.id)}
+            className="w-full flex items-center gap-3 bg-card rounded-2xl px-4 py-3.5 border-2 border-dashed focus-ring"
+            style={{ borderColor: "color-mix(in srgb, var(--border-color) 16%, transparent)", color: "var(--muted-foreground)" }}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-secondary">
+              <Plus size={18} strokeWidth={1.75} aria-hidden="true" />
+            </div>
+            <span className="text-sm font-medium">Taak toevoegen aan {room.name}</span>
+          </button>
+          {roomTasks.length > 0 && (
+            <button
+              onClick={() => openTemplates(room.id, room.iconKey)}
+              className="w-full text-center text-xs font-medium text-muted-foreground py-1 focus-ring rounded-lg">
+              Of kies uit snelle taken
+            </button>
+          )}
         </div>
       </motion.div>
     );
@@ -92,7 +119,7 @@ export function HuisPage() {
       <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
         {rooms.map((r) => (
           <motion.div key={r.id} variants={fadeUp}>
-            <KamerKaart room={r} onClick={() => setSelectedRoomId(r.id)} />
+            <KamerKaart room={r} onClick={() => navigate(`/huis/${r.id}`)} />
           </motion.div>
         ))}
         <motion.div variants={fadeUp}>

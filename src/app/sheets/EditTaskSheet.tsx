@@ -16,6 +16,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
     const hasWekker = !!task?.dueDate;
     return {
       selectedRoomId: task?.roomId ?? null,
+      opMijnDag: !!task?.planned,
       herhalenAan: !!task?.intervalDays,
       intervalDagen: task?.intervalDays ?? 7,
       wekkerAan: hasWekker,
@@ -44,6 +45,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       intervalDays: formState.herhalenAan ? formState.intervalDagen : undefined,
       dueDate,
       durationMin: formState.duurMin,
+      planned: formState.opMijnDag,
     });
     onClose();
   }
@@ -63,6 +65,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
         rooms={rooms}
         {...formState}
         onRoomChange={(id) => setFormState((s) => ({ ...s, selectedRoomId: id }))}
+        onOpMijnDagChange={(v) => setFormState((s) => ({ ...s, opMijnDag: v }))}
         onHerhalenChange={(v) => setFormState((s) => ({ ...s, herhalenAan: v }))}
         onIntervalChange={(v) => setFormState((s) => ({ ...s, intervalDagen: v }))}
         onWekkerChange={(v) => setFormState((s) => ({ ...s, wekkerAan: v }))}

@@ -22,6 +22,8 @@ export interface TaakDraft {
 
 interface CuraState {
   ready: boolean;
+  /** Set when the initial load fails, so the Gate can offer a calm retry instead of an endless skeleton. */
+  initError: string | null;
   householdId: string | null;
   currentUserId: string | null;
   members: Member[];
@@ -83,6 +85,7 @@ let realtimeRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useCuraStore = create<CuraState>((set, get) => ({
   ready: false,
+  initError: null,
   householdId: null,
   currentUserId: null,
   members: [],
@@ -94,6 +97,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
 
   async init() {
     try {
+      set({ initError: null });
       const store = await getDataStore();
       const userId = await store.currentUserId();
       const households = await store.getHouseholdsForUser(userId);
@@ -134,7 +138,10 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         }, REALTIME_DEBOUNCE_MS);
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Laden is niet gelukt");
+      const message = e instanceof Error ? e.message : "Laden is niet gelukt";
+      toast.error(message);
+      // Surface a retryable error instead of leaving the Gate on an endless skeleton.
+      set({ initError: message });
     }
   },
 
@@ -226,7 +233,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       clearTimeout(realtimeRefreshTimer);
       realtimeRefreshTimer = null;
     }
-    set({ ready: false, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [] });
+    set({ ready: false, initError: null, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [] });
     dataStorePromise = null;
   },
 
@@ -240,8 +247,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
       if (done) {
+        // Soft haptic tick + a single warm confirmation — this is the one place a
+        // completion toasts, so screens don't fire their own on top of it.
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(8);
         const completion = await store.completeTask(taskId, currentUserId);
-        toast.success(`${task.title} gedaan`, { description: "Zichtbaar voor de rest van het huishouden." });
+        toast.success("Lekker bezig", { description: `${task.title} is gedaan — zichtbaar voor het huishouden.` });
         set({ completions: [...get().completions, completion] });
       } else {
         // Mirrors uncompleteTask's own "remove the most recent one" rule, so we
@@ -283,7 +293,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       if (!householdId) return;
       const created = await store.createTask(householdId, input);
       toast.success(`"${created.title}" toegevoegd`, {
-        description: input.roomId ? undefined : "Gedeelde pool",
+        description: input.planned ? "Op je dag gezet" : input.roomId ? undefined : "Gedeelde pool",
       });
       set({ tasks: [...get().tasks, created] });
     } catch (e) {
