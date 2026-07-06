@@ -123,14 +123,9 @@ Belangrijke conventies:
 
 ## Architectuur in het kort
 
-Cura scheidt UI, domeinlogica en opslag bewust van elkaar:
+Cura scheidt UI, domeinlogica en opslag bewust van elkaar: feature-code leest en schrijft via `useCuraStore`, die op basis van `VITE_DATA_MODE` de lokale of cloud store kiest. Persisted entities blijven vlak; afgeleide staat (`done`, hints, feed-items, routine-dichtheid) komt uit selectors en screens renderen view-models. Daardoor draait dezelfde UI op lokale seed-data of Supabase zonder backend-specifieke code in feature-componenten.
 
-1. Feature-code leest en schrijft via `useCuraStore`.
-2. `useCuraStore` kiest op basis van `VITE_DATA_MODE` de lokale of cloud store.
-3. Persisted entities blijven zo vlak mogelijk; afgeleide staat zoals `done`, hints, feed-items en routine-dichtheid komt uit selectors.
-4. Screens renderen view-models in plaats van ruwe databasevormen.
-
-Daardoor kan dezelfde UI draaien met lokale seed-data of Supabase zonder dat feature-componenten backend-specifieke code hoeven te kennen.
+Het volledige verhaal — data flow, one-household cap, completions als event-laag, de app-shell/PWA-laag — staat in [`CLAUDE.md` §3](./CLAUDE.md).
 
 ## Data modes
 
@@ -172,7 +167,7 @@ Een praktische volgorde voor wijzigingen:
 2. Kies `local` mode tenzij je expliciet auth, invites, RLS of realtime test.
 3. Houd nieuwe UI component-based: herbruikbare bouwstenen horen in `src/app/components/`; feature-specifieke schermen in `src/app/features/<naam>/`.
 4. Voeg nieuwe persisted velden eerst toe aan schema/types/store en leid UI-staat daarna af via selectors.
-5. Werk README/CLAUDE bij als je gedrag, scripts, setup of fase-status verandert.
+5. Werk README/CLAUDE bij als je gedrag, scripts, setup of fase-status verandert — zie [`CONTRIBUTING.md`](./CONTRIBUTING.md) voor de volledige workflow en pre-PR-validatie.
 
 ## Teststrategie
 
@@ -188,12 +183,6 @@ Er is op dit moment nog geen lint-script of CI-workflow in deze repo.
 
 ## Productprincipes
 
-Voeg geen patronen toe die de app competitief, straffend of onrustig maken:
+Cura blijft kalm en niet-competitief: geen scoreborden, harde streaks, totaalpercentages, rode achterstallig-statussen of verplichte taaktoewijzing. Kies bij twijfel voor zachte taal, herstelbare acties en rustige feedback.
 
-- geen persoon-tegen-persoon scorebord;
-- geen harde streaks of "streak verbroken";
-- geen vaag totaalpercentage zoals "home peace 78%";
-- geen rode achterstallig-statussen als basisinteractie;
-- geen verplichte taaktoewijzing.
-
-Kies bij twijfel voor zachte taal, herstelbare acties en rustige feedback.
+De volledige lijst anti-patronen (met het waarom en de zachte alternatieven) staat in [`CLAUDE.md` §2](./CLAUDE.md).
