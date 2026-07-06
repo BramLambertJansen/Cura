@@ -1,5 +1,6 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { useNotificationPreference } from "./useTaskReminders";
 
 /**
  * Client side of Web Push: turn the browser's PushSubscription into rows the
@@ -95,4 +96,27 @@ export function usePushSubscription() {
   }, [deletePushSubscription]);
 
   return { supported, standalone: isStandalone(), subscribe, unsubscribe };
+}
+
+/**
+ * Reconcile this device's push subscription on app open. If meldingen are on
+ * (permission granted + not locally opted out) and push is supported, refresh
+ * the subscription row via an idempotent upsert on the endpoint. It reuses the
+ * browser's existing subscription, so it needs no permission prompt / user
+ * gesture, and it heals a subscription that expired or rotated while the app was
+ * closed — plus it registers a brand-new device the first time it opens with
+ * meldingen already granted, without waiting for the user to open the profile.
+ *
+ * Mount this once in the app shell (MainShell), which renders only after the
+ * household has loaded, so savePushSubscription has the household/user it needs.
+ * Previously this reconcile happened only when the ProfielSheet was opened.
+ */
+export function usePushReconcile(): void {
+  const { supported, subscribe } = usePushSubscription();
+  const { enabled } = useNotificationPreference();
+  useEffect(() => {
+    // Run once on open — enabled/supported are known synchronously at mount.
+    if (enabled && supported) void subscribe().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }

@@ -6,19 +6,33 @@
 -- reminder_dispatches, and sends the Web Push. A second weekly job prunes old
 -- dedup rows.
 --
--- MANUAL STEP: this migration is applied by hand via the Supabase SQL editor
--- (like the others). Before running it, replace the two placeholders below:
---   __PROJECT_REF__  → your project ref (the xxxx in https://xxxx.supabase.co)
---   __CRON_SECRET__  → the same value you set via `supabase secrets set CRON_SECRET=...`
--- Keeping the secret in the cron command (server-side, not in the repo) is the
--- standard pattern; alternatively store both in Vault and read via
--- vault.decrypted_secrets if you prefer not to inline them.
+-- The shared CRON_SECRET is read from Supabase Vault at each tick instead of
+-- being inlined here — so no secret lives in the repo, and there is no
+-- placeholder left to forget (a stale placeholder makes the edge function
+-- return 401 forever and silently sends nothing).
+--
+-- MANUAL STEP: applied by hand via the Supabase SQL editor (like the others).
+-- Before/after running it, create the Vault secret ONCE with the SAME value you
+-- pass to `supabase secrets set CRON_SECRET=...` (the edge function compares the
+-- two), e.g. in the SQL editor:
+--
+--   select vault.create_secret('<your-random-cron-secret>', 'cura_cron_secret');
+--   -- rotate later with:
+--   -- select vault.update_secret(
+--   --   (select id from vault.secrets where name = 'cura_cron_secret'),
+--   --   '<new-secret>');
+--
+-- The project ref below is this project's (the xxxx in https://xxxx.supabase.co);
+-- change it only if you point this at a different project.
 -- ============================================================
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
+create extension if not exists supabase_vault;
 
--- Fire the scheduler every minute.
+-- Fire the scheduler every minute. The x-cron-secret header is resolved from
+-- Vault on every run, so rotating the secret needs no re-scheduling — just
+-- vault.update_secret plus the matching `supabase secrets set CRON_SECRET`.
 select cron.schedule(
   'cura-send-reminders',
   '* * * * *',
@@ -27,7 +41,10 @@ select cron.schedule(
     url := 'https://vhsohqmpforqshsvcwpb.supabase.co/functions/v1/send-reminders',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'x-cron-secret', '__CRON_SECRET__'
+      'x-cron-secret', (
+        select decrypted_secret from vault.decrypted_secrets
+        where name = 'cura_cron_secret'
+      )
     ),
     body := '{}'::jsonb,
     timeout_milliseconds := 20000
