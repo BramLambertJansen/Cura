@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import type { CreateTaskInput, DataStore } from "../store";
+import type { CreateTaskInput, DataStore, PushSubscriptionInput } from "../store";
 import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle } from "../types";
 import {
   HouseholdSchema,
@@ -16,7 +16,7 @@ const uid = (): string => crypto.randomUUID();
 // Hand-written row shapes, matching supabase/migrations/20260630000000_init.sql
 // column-for-column — no live DB access in this sandbox to generate types.
 
-interface HouseholdRow { id: string; name: string }
+interface HouseholdRow { id: string; name: string; time_zone: string }
 interface MemberRow { id: string; household_id: string; display_name: string; user_id: string | null }
 interface InviteRow { token: string; household_id: string; created_by_id: string; created_at: string; expires_at: string | null }
 interface RoomRow { id: string; household_id: string; name: string; icon_key: string; color: string; owner_id: string | null }
@@ -28,6 +28,10 @@ interface TaskRow {
   bundle_id: string | null; claimed_by_id: string | null; planned: boolean;
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
+interface PushSubscriptionRow {
+  id: string; household_id: string; member_id: string;
+  endpoint: string; p256dh: string; auth: string; created_at: string;
+}
 
 // Email/password signup stores the chosen name under `displayName`; Google
 // OAuth instead populates `full_name`/`name` from the Google profile — no
@@ -43,7 +47,7 @@ function metadataDisplayName(user: { user_metadata?: Record<string, unknown> }):
 }
 
 function mapHousehold(r: HouseholdRow): Household {
-  return HouseholdSchema.parse({ id: r.id, name: r.name });
+  return HouseholdSchema.parse({ id: r.id, name: r.name, timeZone: r.time_zone });
 }
 function mapMember(r: MemberRow): Member {
   return MemberSchema.parse({ id: r.id, householdId: r.household_id, displayName: r.display_name, userId: r.user_id ?? undefined });
@@ -106,7 +110,7 @@ export class SupabaseStore implements DataStore {
   async getHouseholdsForUser(userId: string): Promise<Household[]> {
     const { data, error } = await supabase
       .from("household_members")
-      .select("households(id, name)")
+      .select("households(id, name, time_zone)")
       .eq("user_id", userId);
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as unknown as { households: HouseholdRow | null }[];
@@ -138,7 +142,9 @@ export class SupabaseStore implements DataStore {
       p_display_name: displayName,
     });
     if (error) throw new Error(error.message);
-    return mapHousehold({ id: householdId, name });
+    // time_zone isn't returned by the RPC; mirror the DB column default so the
+    // freshly-created household carries the same value a re-fetch would.
+    return mapHousehold({ id: householdId, name, time_zone: "Europe/Amsterdam" });
   }
 
   async updateHousehold(householdId: string, name: string): Promise<Household> {
@@ -367,5 +373,31 @@ export class SupabaseStore implements DataStore {
     return () => {
       void supabase.removeChannel(channel);
     };
+  }
+
+  // ── Web Push subscriptions (Phase: push notifications) ────────────────────
+  // member_id references members.id (not auth.uid()) — resolved via memberIdFor,
+  // matching every other write in this store. Upsert on the unique `endpoint`
+  // so re-subscribing the same browser refreshes its keys/member instead of
+  // hitting the unique constraint. The server-side scheduler (edge function,
+  // service role) reads this table to deliver reminders when the app is closed.
+  async savePushSubscription(householdId: string, userId: string, sub: PushSubscriptionInput): Promise<void> {
+    const memberId = await this.memberIdFor(userId, householdId);
+    const row: PushSubscriptionRow = {
+      id: uid(),
+      household_id: householdId,
+      member_id: memberId,
+      endpoint: sub.endpoint,
+      p256dh: sub.p256dh,
+      auth: sub.auth,
+      created_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("push_subscriptions").upsert(row, { onConflict: "endpoint" });
+    if (error) throw new Error(error.message);
+  }
+
+  async deletePushSubscription(endpoint: string): Promise<void> {
+    const { error } = await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+    if (error) throw new Error(error.message);
   }
 }

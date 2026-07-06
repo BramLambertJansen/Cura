@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { buildLatestCompletionMap, getDueReminders } from "../../data/selectors";
+import { buildLatestCompletionMap, getDueReminders } from "../../data/reminders";
 
 const POLL_MS = 30_000;
 const NOTIF_PREF_KEY = "cura:notif-pref";
@@ -14,14 +14,17 @@ export function resolveReminderChannel(
   return permission === "granted" ? "notification" : "toast";
 }
 
-function dispatchReminder(title: string) {
+function dispatchReminder(title: string, tag: string) {
   const userDisabled = localStorage.getItem(NOTIF_PREF_KEY) === "disabled";
   const permission = typeof Notification === "undefined" ? "unsupported" : Notification.permission;
   const channel = resolveReminderChannel(userDisabled, permission);
 
   if (channel === "none") return;
   if (channel === "notification") {
-    new Notification(`Tijd voor: ${title}`, { body: "Je hebt dit op de planning staan." });
+    // tag = firedForKey: an identical wekker arriving via server push (same key,
+    // thanks to the shared timezone-aware engine) coalesces into one OS
+    // notification instead of buzzing twice.
+    new Notification(`Tijd voor: ${title}`, { body: "Je hebt dit op de planning staan.", tag });
   } else {
     toast(`Wekker: ${title}`, { description: "Tijd voor deze taak." });
   }
@@ -32,22 +35,33 @@ function dispatchReminder(title: string) {
  * a browser Notification (when permission is granted) or a Sonner toast fallback.
  *
  * Architecture note: the "which tasks are due" logic lives in getDueReminders
- * (selectors.ts) — pure, no DOM. This hook only owns the dispatch + dedup.
- * A future push-notification phase replaces just the dispatch with a Supabase
- * edge function + web-push; the selector stays unchanged.
+ * (data/reminders.ts) — pure, no DOM, and shared verbatim with the server-side
+ * push scheduler (Supabase edge function + pg_cron). This hook owns the in-app
+ * dispatch + dedup for when the app is open; the edge function owns delivery
+ * when the app is closed. It passes the household timezone so the recurring
+ * firedForKey matches the server's exactly (falls back to the runtime timezone
+ * before the household has loaded).
+ *
+ * When the app IS visible, the service worker forwards an incoming push to this
+ * hook (a `cura-reminder` message) instead of showing its own OS notification,
+ * so a push and a poll-tick for the same wekker route through one dedup set.
  */
 export function useTaskReminders(): void {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
+  const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
   const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
+    function fire(firedForKey: string, title: string) {
+      if (firedRef.current.has(firedForKey)) return;
+      firedRef.current.add(firedForKey);
+      dispatchReminder(title, firedForKey);
+    }
     function check() {
       const latestByTask = buildLatestCompletionMap(completions);
-      for (const reminder of getDueReminders(tasks, latestByTask, Date.now())) {
-        if (firedRef.current.has(reminder.firedForKey)) continue;
-        firedRef.current.add(reminder.firedForKey);
-        dispatchReminder(reminder.title);
+      for (const reminder of getDueReminders(tasks, latestByTask, Date.now(), timeZone)) {
+        fire(reminder.firedForKey, reminder.title);
       }
     }
     // Check meteen, niet pas na de eerste 30s-tik: zo gaat een wekker die al toe
@@ -57,8 +71,19 @@ export function useTaskReminders(): void {
     // telkens reset vóór het ooit tikt — de firedRef-dedup houdt het bij één melding.
     check();
     const id = setInterval(check, POLL_MS);
-    return () => clearInterval(id);
-  }, [tasks, completions]);
+
+    function onSwMessage(e: MessageEvent) {
+      const data = e.data as { type?: string; title?: string; firedForKey?: string } | null;
+      if (data?.type === "cura-reminder" && typeof data.firedForKey === "string") {
+        fire(data.firedForKey, typeof data.title === "string" ? data.title : "een taak");
+      }
+    }
+    navigator.serviceWorker?.addEventListener("message", onSwMessage);
+    return () => {
+      clearInterval(id);
+      navigator.serviceWorker?.removeEventListener("message", onSwMessage);
+    };
+  }, [tasks, completions, timeZone]);
 }
 
 // ─── Notification preference — shared between the hook and ProfielSheet ──────

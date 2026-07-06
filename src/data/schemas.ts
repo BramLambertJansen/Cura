@@ -25,6 +25,12 @@ const Iso = z.string().datetime(); // ISO 8601 timestamp
 export const HouseholdSchema = z.object({
   id: Id,
   name: z.string().min(1),
+  // IANA timezone (e.g. "Europe/Amsterdam"). Drives WHEN a recurring wekker
+  // fires: the in-app poller and the server-side push scheduler both compute
+  // "today at HH:mm" in this zone, so their firedForKey matches exactly. Has a
+  // default so pre-existing local snapshots keep loading (the field was added
+  // with push notifications, migration 20260706000000_household_timezone.sql).
+  timeZone: z.string().min(1).default("Europe/Amsterdam"),
 });
 
 export const MemberSchema = z.object({

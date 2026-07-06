@@ -1,0 +1,19 @@
+{
+  // Type-checks the service worker in isolation: WebWorker lib (ServiceWorker
+  // globals, its own `self`) instead of DOM, so it neither conflicts with nor
+  // is polluted by the app's DOM types. Compiled at build time by
+  // vite-plugin-pwa (esbuild), not tsc — this config is purely for `pnpm typecheck`.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "WebWorker"],
+    "types": [],
+    "skipLibCheck": true,
+    "strict": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true
+  },
+  "include": ["src/sw.ts"]
+}

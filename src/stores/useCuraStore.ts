@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { toast } from "sonner";
-import { createDataStore, type CreateTaskInput, type DataStore } from "../data/store";
+import { createDataStore, type CreateTaskInput, type DataStore, type PushSubscriptionInput } from "../data/store";
 import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion } from "../data/types";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
@@ -65,6 +65,15 @@ interface CuraState {
     taskDrafts?: TaakDraft[],
   ) => Promise<void>;
   deleteBundle: (bundleId: string) => Promise<void>;
+
+  /**
+   * Register/unregister this browser's Web Push subscription for the current
+   * household + user. Unlike the other actions these let errors propagate (no
+   * toast here) — the caller (ProfielSheet's meldingen-toggle) owns the
+   * interactive success/failure feedback. No-ops in local mode.
+   */
+  savePushSubscription: (sub: PushSubscriptionInput) => Promise<void>;
+  deletePushSubscription: (endpoint: string) => Promise<void>;
 }
 
 let dataStorePromise: Promise<DataStore> | null = null;
@@ -493,5 +502,17 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Verwijderen lukte niet");
     }
+  },
+
+  async savePushSubscription(sub) {
+    const store = await getDataStore();
+    const { householdId, currentUserId } = get();
+    if (!householdId || !currentUserId) return;
+    await store.savePushSubscription(householdId, currentUserId, sub);
+  },
+
+  async deletePushSubscription(endpoint) {
+    const store = await getDataStore();
+    await store.deletePushSubscription(endpoint);
   },
 }));

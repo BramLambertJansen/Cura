@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useNotificationPreference } from "../lib/useTaskReminders";
+import { usePushSubscription, isIOS } from "../lib/usePushSubscription";
 import { resolveDataMode } from "../../data/store";
 import { PRESS_TINT, SAGE } from "../lib/constants";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
@@ -18,6 +19,37 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
   const me = members.find((m) => m.userId === currentUserId);
 
   const { enabled: notif, toggle: toggleNotif } = useNotificationPreference();
+  const { supported: pushSupported, standalone, subscribe, unsubscribe } = usePushSubscription();
+  // iOS only delivers Web Push to a home-screen-installed PWA, never a Safari
+  // tab — surface calm guidance instead of a toggle that can't fully work.
+  const showIosInstallHint = isIOS() && !standalone;
+
+  // Reconcile on open: if meldingen are already on, refresh this browser's push
+  // subscription (idempotent upsert) so an expired/rotated one is healed. Reuses
+  // the existing subscription, so it needs no permission prompt / user gesture.
+  useEffect(() => {
+    if (notif && pushSupported) void subscribe().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleNotifToggle() {
+    const turningOff = notif;
+    await toggleNotif(); // owns the permission prompt + local pref + its own toasts
+    if (turningOff) {
+      await unsubscribe().catch(() => {});
+      return;
+    }
+    // Turning on: only subscribe once permission actually landed on "granted".
+    const granted = typeof Notification !== "undefined" && Notification.permission === "granted";
+    if (granted && pushSupported) {
+      const ok = await subscribe().catch(() => false);
+      if (!ok) {
+        toast("Meldingen aan in deze app", {
+          description: "Herinneringen als de app dicht is konden niet worden ingesteld — je krijgt ze wel terwijl Cura open is.",
+        });
+      }
+    }
+  }
 
   const [naam, setNaam] = useState(me?.displayName ?? "");
   // Guard: if the member hadn't resolved yet at mount, sync the name when it arrives.
@@ -109,7 +141,7 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
       <Kop>Instellingen</Kop>
       <div className="mb-7">
         <GroupCard>
-          <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={() => toggleNotif()} />} />
+          <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={() => { void handleNotifToggle(); }} />} />
           <InstRij
             icon={<UserRound size={15} />}
             label={<span className="flex flex-col"><span>Account</span><span className="text-xs font-normal text-muted-foreground truncate max-w-[12rem]">{accountLabel}</span></span>}
@@ -117,6 +149,11 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
             onClick={showAccountInfo}
           />
         </GroupCard>
+        {showIosInstallHint && (
+          <p className="text-xs text-muted-foreground mt-2.5 px-1 leading-relaxed">
+            Zet Cura op je beginscherm (Deel → "Zet op beginscherm") om ook meldingen te krijgen als de app dicht is.
+          </p>
+        )}
       </div>
 
       <Kop>Meer</Kop>

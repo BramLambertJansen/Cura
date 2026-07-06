@@ -23,5 +23,9 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  // The service worker runs in a WebWorker global scope (ServiceWorkerGlobalScope,
+  // its own `self`), which conflicts with this project's DOM lib. It is type-
+  // checked separately via tsconfig.worker.json (see the `typecheck` script).
+  "exclude": ["src/sw.ts"]
 }

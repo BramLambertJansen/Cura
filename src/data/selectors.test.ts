@@ -6,7 +6,6 @@ import {
   toRoomView,
   toRoutineView,
   toActivityFeed,
-  getDueReminders,
   toSuggestions,
   toTaskOverview,
 } from "./selectors";
@@ -212,54 +211,6 @@ describe("activity feed sorting", () => {
     const feed = toActivityFeed(completions, [t1], [], [member()], sinceIso);
     expect(feed).toHaveLength(2);
     expect(feed[0].doneAt >= feed[1].doneAt).toBe(true);
-  });
-});
-
-describe("reminder trigger logic", () => {
-  it("fires a one-off reminder once its deadline has passed", () => {
-    const now = Date.now();
-    const t = task({ dueDate: iso(60_000, now) }); // due 1 min ago
-    const reminders = getDueReminders([t], buildLatestCompletionMap([]), now);
-    expect(reminders).toHaveLength(1);
-    expect(reminders[0].firedForKey).toBe(t.id);
-  });
-
-  it("does not spam for an old one-off deadline outside the lookback window", () => {
-    const now = Date.now();
-    const t = task({ dueDate: iso(2 * DAY_MS, now) }); // due 2 days ago
-    const reminders = getDueReminders([t], buildLatestCompletionMap([]), now);
-    expect(reminders).toHaveLength(0);
-  });
-
-  it("does not remind for a one-off task that has already been completed", () => {
-    const now = Date.now();
-    const t = task({ id: "t1", dueDate: iso(60_000, now) });
-    const completions: TaskCompletion[] = [
-      { id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(30_000, now) },
-    ];
-    const reminders = getDueReminders([t], buildLatestCompletionMap(completions), now);
-    expect(reminders).toHaveLength(0);
-  });
-
-  it("fires a recurring reminder once per day, keyed by date, not by exact time", () => {
-    const now = new Date();
-    now.setHours(9, 30, 0, 0);
-    const dueDate = new Date(now);
-    dueDate.setHours(9, 0, 0, 0); // wekker set for 09:00, we're past it today
-    const t = task({ intervalDays: 1, dueDate: dueDate.toISOString() });
-    const reminders = getDueReminders([t], buildLatestCompletionMap([]), now.getTime());
-    expect(reminders).toHaveLength(1);
-    expect(reminders[0].firedForKey).toBe(`${t.id}:${now.toISOString().slice(0, 10)}`);
-  });
-
-  it("does not fire a recurring reminder before today's time-of-day arrives", () => {
-    const now = new Date();
-    now.setHours(8, 0, 0, 0);
-    const dueDate = new Date(now);
-    dueDate.setHours(9, 0, 0, 0);
-    const t = task({ intervalDays: 1, dueDate: dueDate.toISOString() });
-    const reminders = getDueReminders([t], buildLatestCompletionMap([]), now.getTime());
-    expect(reminders).toHaveLength(0);
   });
 });
 

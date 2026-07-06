@@ -29,6 +29,14 @@ export default defineConfig({
       // confirm via the in-app update prompt (useAppUpdate) instead of
       // silently taking over — mid-task auto-reloads are the opposite of calm.
       registerType: 'prompt',
+      // injectManifest (not the default generateSW) so we own the service worker
+      // source (src/sw.ts) and can add push / notificationclick handlers for
+      // real Web Push, while still precaching for offline. The SW must reference
+      // self.__WB_MANIFEST (it does) — that token is where the precache manifest
+      // is injected at build time.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
         id: '/',
@@ -45,7 +53,10 @@ export default defineConfig({
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
+      // In injectManifest mode the `workbox` block is ignored; these globs must
+      // live under `injectManifest` or the precache silently narrows to its
+      // default (js/css/html) and offline image loading regresses.
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,webp,ico}'],
         // iOS fetches the splash screens itself via <link rel="apple-touch-startup-image">
         // at Add-to-Home-Screen time, and background.png only lives on as that artwork's
