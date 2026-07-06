@@ -161,7 +161,7 @@ Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase ver
 - `pg_cron` (elke minuut) → `pg_net` → de `send-reminders` edge function (`supabase/functions/`), die `getDueReminders` draait met `household.time_zone`, dedupt via `reminder_dispatches` (`insert … on conflict do nothing`) en VAPID-signed pusht (`_shared/webpush.ts`, `@negrel/webpush`).
 - `supabase/functions/_shared/reminders.ts` is een **byte-identieke kopie** van `src/data/reminders.ts` (Deno kan niet over de `src/`-grens importeren) — bewaakt door een gelijkheids-test in `src/data/reminders.test.ts`.
 - Dubbele melding voorkomen: is de app zichtbaar, dan `postMessage`t de SW naar de tab i.p.v. `showNotification`; `tag: firedForKey` laat de UA overlap sowieso samenvoegen.
-- Migraties `20260706000000_household_timezone` / `…010000_push_subscriptions` / `…020000_reminder_dispatches` / `…030000_reminder_cron` (die laatste heeft handmatige placeholders voor project-ref + `CRON_SECRET`). Server-secrets (`VAPID_KEYS`, `CRON_SECRET`, evt. `VAPID_CONTACT`) via `supabase secrets set`, nooit `VITE_`-geprefixt.
+- Migraties `20260706000000_household_timezone` / `…010000_push_subscriptions` / `…020000_reminder_dispatches` / `…030000_reminder_cron` (die laatste leest het `CRON_SECRET` uit Supabase Vault — secret `cura_cron_secret`, eenmalig via `vault.create_secret` — i.p.v. een ingebakken placeholder; alleen de project-ref staat inline). Server-secrets (`VAPID_KEYS`, `CRON_SECRET`, evt. `VAPID_CONTACT`) via `supabase secrets set`, nooit `VITE_`-geprefixt.
 - iOS krijgt push alleen als geïnstalleerde PWA (16.4+); `ProfielSheet` toont anders kalme "zet op beginscherm"-uitleg.
 
 ### Profiel — `ProfielSheet`

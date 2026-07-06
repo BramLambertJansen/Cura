@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTaskReminders } from "./lib/useTaskReminders";
+import { usePushReconcile } from "./lib/usePushSubscription";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
@@ -75,6 +76,7 @@ function PageTx({ children }: { children: ReactNode }) {
 /** The existing app shell — tabs, sheets, FAB. Assumes useCuraStore is already ready. */
 function MainShell() {
   useTaskReminders();
+  usePushReconcile();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const refresh = useCuraStore((s) => s.refresh);
