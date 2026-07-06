@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { ChevronDown } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
-import { useRoutineViews, useTaskViews } from "../../../stores/useViews";
+import { useActivityFeed, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions } from "../../../data/selectors";
 import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
@@ -15,13 +15,6 @@ import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
 import { useSheets } from "../../sheetContext";
-
-function warmDoneToast(title: string) {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(8);
-  toast.success("Lekker bezig", {
-    description: `${title} is gedaan. Dat scheelt weer.`,
-  });
-}
 
 export function VandaagPage() {
   const { openProfiel, openEditTask } = useSheets();
@@ -47,9 +40,16 @@ export function VandaagPage() {
   const hiddenSuggestionCount = suggestions.length - 1;
 
   const me = members.find((m) => m.userId === currentUserId);
-  const huisgenootActivity = tasks.filter(
-    (t) => t.done && t.doneBy && t.doneBy !== (me?.displayName ?? ""),
-  );
+  // "Wat deed de ander" — only today's completions (so a task finished days ago
+  // within its interval doesn't read as if it happened this morning) and only by
+  // someone else, matched on member id rather than a display-name string.
+  const sinceIso = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }, []);
+  const feedToday = useActivityFeed(sinceIso);
+  const huisgenootActivity = feedToday.filter((a) => a.doneById && a.doneById !== me?.id);
 
   return (
     <div className="relative">
@@ -90,9 +90,9 @@ export function VandaagPage() {
                     </div>
                     <div className="space-y-0.5">
                       {activities.map((t) => (
-                        <p key={t.id} className="text-sm text-foreground leading-snug">
+                        <p key={`${t.taskId}-${t.doneAt}`} className="text-sm text-foreground leading-snug">
                           <span className="font-semibold">{t.doneBy}</span> heeft {t.title.toLowerCase()} gedaan
-                          {t.doneAt && <span className="text-muted-foreground"> · {t.doneAt}</span>}
+                          {t.doneAt && <span className="text-muted-foreground"> · {new Date(t.doneAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}</span>}
                         </p>
                       ))}
                     </div>
@@ -110,7 +110,7 @@ export function VandaagPage() {
             : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                 {allPlanned.map((task) => (
                   <motion.div key={task.id} variants={fadeUp}>
-                    <TaakRij task={task} onToggle={() => { const nextDone = !task.done; toggleTask(task.id, nextDone); if (nextDone) warmDoneToast(task.title); }} onEdit={() => openEditTask(task.id)} onDismiss={() => { dismissTask(task.id); toast("Even niet vandaag", { description: `${task.title} staat even uit je dag.`, action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) } }); }} />
+                    <TaakRij task={task} onToggle={() => toggleTask(task.id, !task.done)} onEdit={() => openEditTask(task.id)} onDismiss={() => { dismissTask(task.id); toast("Even niet vandaag", { description: `${task.title} staat even uit je dag.`, action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) } }); }} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -156,9 +156,8 @@ export function VandaagPage() {
               <motion.div key={r.id} variants={fadeUp}>
                 <RoutineKaartCompact routine={r} onToggleTask={(taskId) => {
                   const t = r.tasks.find((x) => x.id === taskId);
-                  const nextDone = !(t?.done ?? false);
-                  toggleTask(taskId, nextDone);
-                  if (nextDone) warmDoneToast(t?.title ?? "Taak");
+                  // De store toont de enige afvink-toast (zie useCuraStore.toggleTask) — hier geen tweede.
+                  toggleTask(taskId, !(t?.done ?? false));
                 }} />
               </motion.div>
             ))}

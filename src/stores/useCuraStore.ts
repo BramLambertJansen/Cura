@@ -247,8 +247,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
       if (done) {
+        // Soft haptic tick + a single warm confirmation — this is the one place a
+        // completion toasts, so screens don't fire their own on top of it.
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(8);
         const completion = await store.completeTask(taskId, currentUserId);
-        toast.success(`${task.title} gedaan`, { description: "Zichtbaar voor de rest van het huishouden." });
+        toast.success("Lekker bezig", { description: `${task.title} is gedaan — zichtbaar voor het huishouden.` });
         set({ completions: [...get().completions, completion] });
       } else {
         // Mirrors uncompleteTask's own "remove the most recent one" rule, so we

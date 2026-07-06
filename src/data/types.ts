@@ -112,5 +112,6 @@ export interface ActivityView {
   title: string;
   room?: string;
   doneBy: string; // resolved member display name
+  doneById?: string; // raw member id, for "is this mine?" checks — never displayed
   doneAt: string; // ISO; the view formats it
 }

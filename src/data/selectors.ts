@@ -362,6 +362,7 @@ export function toActivityFeed(
         title: task?.title ?? "Onbekende taak",
         room: rooms.find((r) => r.id === task?.roomId)?.name,
         doneBy: memberName(members, c.completedById) ?? "Iemand",
+        doneById: c.completedById,
         doneAt: c.completedAt,
       };
     });
