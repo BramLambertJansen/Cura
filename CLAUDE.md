@@ -151,7 +151,18 @@ Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase ver
 
 ### Wekker & duur op taken
 - `dueDate` (ISO) op het `Task`-schema. Eenmalig = exacte deadline (datum+tijd); terugkerend = dagelijks tijdstip-deel. Badge (`wekkerLabel`) in `TaakRij`.
-- Meldingen via de browser Notification API terwijl de app open is (`useTaskReminders` in `MainShell`, polling elke 30s via `getDueReminders` in `selectors.ts`); Sonner-toast als fallback. Echte push-notificaties (VAPID/service worker/edge function/pg_cron) zijn bewust uitgesteld.
+- De "welke taken zijn nu toe"-logica is puur en **tijdzone-bewust** in `src/data/reminders.ts` (`getDueReminders`/`isDone`/`buildLatestCompletionMap` + `DueReminder`); `selectors.ts` her-exporteert ze zodat call-sites niet wijzigen.
+- Terwijl de app open is dispatcht `useTaskReminders` (in `MainShell`, poll elke 30s) een browser-Notification (of Sonner-toast als fallback).
+
+### Push-notificaties — wekkers als de app dicht is
+- Echte Web Push, alleen in `cloud`-modus (`local` houdt de in-app fallback; de push-paden zijn daar no-ops).
+- Service worker `src/sw.ts` (vite-plugin-pwa **`injectManifest`**): precache + push/notificationclick/pushsubscriptionchange + een message-gated `SKIP_WAITING` die het `prompt`-update-flow intact houdt.
+- Client abonneert via `usePushSubscription` (`src/app/lib/`, VAPID-publieke sleutel uit `VITE_VAPID_PUBLIC_KEY`) en slaat op via `store.savePushSubscription` → `push_subscriptions`-tabel.
+- `pg_cron` (elke minuut) → `pg_net` → de `send-reminders` edge function (`supabase/functions/`), die `getDueReminders` draait met `household.time_zone`, dedupt via `reminder_dispatches` (`insert … on conflict do nothing`) en VAPID-signed pusht (`_shared/webpush.ts`, `@negrel/webpush`).
+- `supabase/functions/_shared/reminders.ts` is een **byte-identieke kopie** van `src/data/reminders.ts` (Deno kan niet over de `src/`-grens importeren) — bewaakt door een gelijkheids-test in `src/data/reminders.test.ts`.
+- Dubbele melding voorkomen: is de app zichtbaar, dan `postMessage`t de SW naar de tab i.p.v. `showNotification`; `tag: firedForKey` laat de UA overlap sowieso samenvoegen.
+- Migraties `20260706000000_household_timezone` / `…010000_push_subscriptions` / `…020000_reminder_dispatches` / `…030000_reminder_cron` (die laatste heeft handmatige placeholders voor project-ref + `CRON_SECRET`). Server-secrets (`VAPID_KEYS`, `CRON_SECRET`, evt. `VAPID_CONTACT`) via `supabase secrets set`, nooit `VITE_`-geprefixt.
+- iOS krijgt push alleen als geïnstalleerde PWA (16.4+); `ProfielSheet` toont anders kalme "zet op beginscherm"-uitleg.
 
 ### Profiel — `ProfielSheet`
 - Eigen weergavenaam/instellingen, meldingen-toggle (gekoppeld aan echte `Notification.permission` via `useNotificationPreference`), uitloggen.
@@ -170,6 +181,7 @@ Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase ver
 - Eigen `Logo`-component (`src/app/components/Logo.tsx`, bron `public/logo.svg`) als favicon/app-icon/op auth-schermen. iOS "Add to Home Screen" toont eigen splash screens (`public/splash/*`, gelinkt in `index.html`).
 - Offline/update-UX (`ConnectivityBanner`, `UpdatePrompt` in `src/app/components/`, altijd gemonteerd in `App.tsx`): een zachte toast bij het wisselen van online/offline (`useOnlineStatus`) — in `cloud`-modus blijft daarnaast een kleine, niet-alarmerende pil zichtbaar zolang je offline bent ("wijzigingen lukken pas als je weer verbinding hebt"; `local`-modus werkt sowieso gewoon offline, dus geen permanente chrome nodig).
 - Nieuwe service worker-versies wachten (`registerType: 'prompt'` in `vite.config.ts`, i.p.v. `autoUpdate`'s stille overname) tot de gebruiker zelf op "Vernieuwen" tikt in een oneindig-durende Sonner-toast (`useAppUpdate`, bouwt op `virtual:pwa-register/react` — vereist de `workbox-window`-dependency) — nooit een harde `confirm()`/reload zonder het te vragen.
+- Sinds push draait de SW op **`injectManifest`** met eigen bron `src/sw.ts` (precache via `precacheAndRoute(self.__WB_MANIFEST)` + push-handlers); die bron **moet** de message-gated `SKIP_WAITING`-handler bevatten, anders blijft dit update-prompt hangen. `src/sw.ts` wordt apart getypecheckt (`tsconfig.worker.json`, WebWorker-lib) en is uitgesloten van de app-`tsconfig`.
 
 ### Laden zonder "null" — `src/app/components/Skeletons.tsx`
 - `PageSkeleton`, `CardSkeleton`, `ListSkeleton` (zacht "ademende" kaarten via `.skeleton-breathe` in `src/styles/theme.css` — trage, lage-amplitude fade met een lichte golf per kaart i.p.v. Tailwinds fel knipperende `animate-pulse`; respecteert `prefers-reduced-motion`; geen spinner) en `FullScreenSkeleton` (ademend logo + "Even rustig opstarten…", voor auth/store-init-gates).
@@ -225,10 +237,10 @@ We bouwen component-based: nieuwe UI is samengesteld uit herbruikbare, uniforme 
 - `pnpm dev` — Vite dev server.
 - `pnpm build` — productie-build (ook PWA-manifest/service worker via `vite-plugin-pwa`).
 - `pnpm preview` — preview van de build.
-- `pnpm typecheck` — `tsc --noEmit`, verplicht vóór elke data-layer wijziging (zie §8).
-- `pnpm test` — `vitest run`, unit tests voor pure logica (`src/**/*.test.ts`, config in `vitest.config.ts`); vandaag dekt dat `src/data/selectors.ts` (done-state, due hints, routine-dichtheid, activiteitenfeed-sortering, reminder-triggers).
+- `pnpm typecheck` — `tsc --noEmit && tsc --noEmit -p tsconfig.worker.json` (app + service worker), verplicht vóór elke data-layer wijziging (zie §8).
+- `pnpm test` — `vitest run`, unit tests voor pure logica (`src/**/*.test.ts`, config in `vitest.config.ts`); dekt `src/data/selectors.ts` (done-state, due hints, routine-dichtheid, activiteitenfeed-sortering) en `src/data/reminders.ts` (reminder-triggers, tijdzone-gedrag, en de byte-identiek-guard t.o.v. de edge-function-kopie).
 - Er is nog **geen lint-script of CI-workflow** in deze repo — typecheck en `pnpm test` zijn geautomatiseerd. Voeg je linting/CI toe, werk deze sectie dan bij zodat dit overzicht klopt.
-- Omgevingsvariabelen staan in `.env.example` (`VITE_DATA_MODE`, Supabase-keys voor Phase 3+, VAPID-key voor push, AI-keys voor Phase 4 — die laatste twee blijven server-side, nooit `VITE_`-geprefixt).
+- Omgevingsvariabelen staan in `.env.example`: client-side `VITE_`-vars (`VITE_DATA_MODE`, Supabase-keys, `VITE_VAPID_PUBLIC_KEY`). Server-side secrets (VAPID-privésleutel als `VAPID_KEYS`, `CRON_SECRET`, AI-keys voor Phase 4) blijven server-side — nooit `VITE_`-geprefixt — en worden via `supabase secrets set` gezet, niet in `.env`.
 
 Volledige setup- en contributie-stappen staan in `README.md` en `CONTRIBUTING.md`.
 

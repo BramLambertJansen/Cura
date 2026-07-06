@@ -37,6 +37,17 @@ export interface CreateTaskInput {
   planned?: boolean;
 }
 
+/**
+ * A browser Web Push subscription, flattened to the fields the server needs to
+ * send a VAPID-signed push (endpoint + the two encryption keys). Produced from
+ * `PushSubscription.toJSON()` on the client (see usePushSubscription).
+ */
+export interface PushSubscriptionInput {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
 export interface DataStore {
   readonly mode: DataMode;
 
@@ -114,6 +125,15 @@ export interface DataStore {
    * subscribe to) so callers never need to branch on `store.mode` themselves.
    */
   subscribeToChanges(householdId: string, onChange: () => void): () => void;
+
+  // ── Web Push subscriptions (cloud-only) ──────────────────────────────────
+  // The server-side scheduler reads these to deliver wekker-reminders when the
+  // app is closed. No-ops in local mode (single device, no server to push
+  // from) so callers never branch on `store.mode`. Upserts on endpoint so
+  // re-subscribing the same browser refreshes its keys rather than duplicating.
+  savePushSubscription(householdId: string, userId: string, sub: PushSubscriptionInput): Promise<void>;
+  /** Remove a subscription by its endpoint (e.g. the user turned meldingen off, or it expired). */
+  deletePushSubscription(endpoint: string): Promise<void>;
 }
 
 /**

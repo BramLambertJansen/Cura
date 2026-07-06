@@ -20,7 +20,7 @@ const todayAt = (hours: number, minutes: number): string => {
 
 export function seedDatabase(): Database {
   return {
-    households: [{ id: HOUSEHOLD_ID, name: "Thuis" }],
+    households: [{ id: HOUSEHOLD_ID, name: "Thuis", timeZone: "Europe/Amsterdam" }],
     members: [
       { id: LOCAL_USER_ID, householdId: HOUSEHOLD_ID, displayName: "Bram", userId: LOCAL_USER_ID },
       { id: STEPHANIE_ID, householdId: HOUSEHOLD_ID, displayName: "Stéphanie" },

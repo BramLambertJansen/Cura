@@ -214,4 +214,10 @@ export class LocalStore implements DataStore {
   subscribeToChanges(): () => void {
     return () => {};
   }
+
+  // Web Push needs a server to send from; local mode has none. No-ops keep the
+  // ProfielSheet toggle / usePushSubscription flow branch-free across modes —
+  // in local mode the in-app poller (useTaskReminders) remains the only channel.
+  async savePushSubscription(): Promise<void> {}
+  async deletePushSubscription(): Promise<void> {}
 }
