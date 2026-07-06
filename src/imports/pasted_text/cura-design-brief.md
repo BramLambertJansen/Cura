@@ -2,6 +2,8 @@
 
 > Een kalme, gedeelde huishoud-planner voor twee mensen. Deze brief beschrijft wát te ontwerpen, in welke toon, en — net zo belangrijk — wat juist níét. Lees de filosofie en de "Ontwerp dit niet"-sectie voordat je schermen tekent; ze sturen elke keuze.
 
+> **Historisch artefact.** Dit is de oorspronkelijke wireframe-brief; de filosofie, toon en microcopy zijn nog steeds leidend. De *navigatie* is sindsdien gewijzigd: Samen is geen eigen bottom-nav-tab meer maar zit onder **Meer** (Vandaag · Huis · Routines · Meer). Voor de shipped waarheid over schermen en features, zie `CLAUDE.md` §1 en §5.
+
 ---
 
 ## 1. Wat Cura is
