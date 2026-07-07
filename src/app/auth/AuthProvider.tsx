@@ -76,7 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async signOut() {
       if (mode === "local") return;
-      await supabase.auth.signOut();
+      // scope: "local" clears the session on this device without waiting on a
+      // server round-trip to revoke it everywhere — a flaky/slow Supabase
+      // connection must never be able to strand the user in a signed-in state.
+      await supabase.auth.signOut({ scope: "local" });
     },
   };
 
