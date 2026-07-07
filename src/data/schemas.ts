@@ -15,7 +15,11 @@ import { z } from "zod";
  */
 
 const Id = z.string().min(1);
-const Iso = z.string().datetime(); // ISO 8601 timestamp
+// ISO 8601 timestamp. `offset: true` is REQUIRED: local mode writes UTC via
+// `.toISOString()` ("…Z"), but Postgres `timestamptz` comes back through
+// PostgREST with a numeric offset ("…+00:00") — the strict default rejects the
+// latter and every cloud task with a wekker would fail to load (dueDate).
+const Iso = z.string().datetime({ offset: true });
 
 // ─── Household & membership ─────────────────────────────────────────────────
 // Many-to-many by design (multi-user ready). The "one household per user" cap
