@@ -17,6 +17,10 @@ interface AuthContextValue {
    *  account on first use). Clicking it lands back on the current URL, so
    *  an invite token in the path survives the round trip. */
   signInWithMagicLink: (email: string) => Promise<void>;
+  /** Sets a new password for the signed-in user. The active session is the
+   *  proof of identity, so no current-password re-entry is needed (Supabase's
+   *  default). No-op in local mode, which has no online account. */
+  changePassword: (newPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -72,6 +76,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         options: { emailRedirectTo: window.location.href },
       });
+      if (error) throw error;
+    },
+    async changePassword(newPassword) {
+      if (mode === "local") return;
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
     },
     async signOut() {
