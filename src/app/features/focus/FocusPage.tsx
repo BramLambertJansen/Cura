@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Coffee, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
+import { useTaskViews } from "../../../stores/useViews";
+import { SAGE } from "../../lib/constants";
 import { fadeUp, stagger } from "../../lib/motion";
+import { useStartFocus } from "../../lib/useStartFocus";
 import { PageBanner } from "../../components/PageBanner";
 import { TimerDisplay } from "../../components/TimerDisplay";
-import { DubbelKnop, IconButton, OptieKaart, PillButton, PrimaryButton } from "../../components/shared";
+import { Card, DubbelKnop, IconBadge, IconButton, Kop, OptieKaart, PillButton, PrimaryButton } from "../../components/shared";
 
 /**
  * Focustimer-scherm — een zachte, pomodoro-achtige timer voor vrij gebruik of
@@ -27,6 +30,12 @@ export function FocusPage() {
   const reset = usePomodoroStore((s) => s.reset);
   const addTime = usePomodoroStore((s) => s.addTime);
   const completeLinkedTask = usePomodoroStore((s) => s.completeLinkedTask);
+
+  const tasks = useTaskViews();
+  const startFocus = useStartFocus();
+  // "Volgende" = de eerstvolgende open, geplande taak (Mijn dag) — een kalm aanbod
+  // om door te stromen, geen verplichte volgende ronde (§2).
+  const nextTask = tasks.find((t) => t.planned && !t.done && t.id !== taskId);
 
   const [presetMin, setPresetMin] = useState<number>(25);
   // Afvinken is een klein, betekenisvol moment (§1/§5) — vraag een bevestiging.
@@ -62,7 +71,28 @@ export function FocusPage() {
 
         {idle ? (
           <motion.div variants={stagger} initial="initial" animate="animate" className="mt-8 space-y-6">
-            <motion.div variants={fadeUp}>
+            {nextTask && (
+              <motion.div variants={fadeUp} className="space-y-2">
+                <Kop>Volgende op je dag</Kop>
+                <Card
+                  onClick={() => startFocus(nextTask)}
+                  className="flex items-center gap-3.5 px-4 py-4"
+                  ariaLabel={`Focus starten op ${nextTask.title}`}>
+                  <IconBadge icon={<Timer size={16} aria-hidden="true" />} size={36} />
+                  <span className="flex-1 min-w-0 text-left">
+                    <span className="block text-sm font-semibold text-foreground truncate">{nextTask.title}</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5 truncate">
+                      {[nextTask.room, nextTask.duration].filter(Boolean).join(" · ") || "Start een focussessie"}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-1 text-xs font-semibold flex-shrink-0" style={{ color: SAGE }}>
+                    <Play size={12} aria-hidden="true" /> Start
+                  </span>
+                </Card>
+              </motion.div>
+            )}
+            <motion.div variants={fadeUp} className="space-y-2">
+              {nextTask && <Kop>Of kies zelf een tijd</Kop>}
               <div role="group" aria-label="Kies een focusduur" className="grid grid-cols-3 gap-3">
                 {FOCUS_PRESETS_MIN.map((min) => (
                   <OptieKaart
