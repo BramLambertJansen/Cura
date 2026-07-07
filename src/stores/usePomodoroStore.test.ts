@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // De store roept bij afronden een toast aan en (voor "afvinken") de Cura-store;
-// die zijn hier niet relevant, dus we isoleren de tijd-logica.
+// die zijn hier niet relevant, dus we isoleren de tijd-logica. Een gedeelde spy
+// voor toggleTask zodat we de "afvinken vanaf timer"-koppeling kunnen asserten.
+const toggleTaskSpy = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({ toast: vi.fn() }));
-vi.mock("./useCuraStore", () => ({ useCuraStore: { getState: () => ({ toggleTask: vi.fn() }) } }));
+vi.mock("./useCuraStore", () => ({ useCuraStore: { getState: () => ({ toggleTask: toggleTaskSpy }) } }));
 
 // De testomgeving is `node` (geen DOM). De store leest localStorage al bij import
 // (loadInitial), dus installeer een in-memory shim vóór de import — vi.hoisted
@@ -28,6 +30,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(0);
   localStorage.clear();
+  toggleTaskSpy.mockClear();
   get().reset();
 });
 
@@ -82,6 +85,21 @@ describe("usePomodoroStore", () => {
     get().tick();
     expect(get().status).toBe("idle");
     expect(get().remainingSec).toBe(0);
+  });
+
+  it("completeLinkedTask vinkt de gekoppelde taak af en stopt de timer", () => {
+    get().start({ totalSec: 300, taskId: "t1", taskTitle: "Afwas doen" });
+    get().completeLinkedTask();
+    expect(toggleTaskSpy).toHaveBeenCalledWith("t1", true);
+    expect(get().status).toBe("idle");
+    expect(get().taskId).toBeUndefined();
+  });
+
+  it("completeLinkedTask zonder taak stopt alleen de timer", () => {
+    get().start({ totalSec: 300 });
+    get().completeLinkedTask();
+    expect(toggleTaskSpy).not.toHaveBeenCalled();
+    expect(get().status).toBe("idle");
   });
 
   it("herstelt een lopende timer uit localStorage met herberekende tijd", () => {

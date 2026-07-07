@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { motion } from "motion/react";
-import { Coffee, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Check, Coffee, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
 import { fadeUp, stagger } from "../../lib/motion";
 import { PageBanner } from "../../components/PageBanner";
 import { TimerDisplay } from "../../components/TimerDisplay";
-import { IconButton, OptieKaart, PillButton, PrimaryButton } from "../../components/shared";
+import { DubbelKnop, IconButton, OptieKaart, PillButton, PrimaryButton } from "../../components/shared";
 
 /**
  * Focustimer-scherm — een zachte, pomodoro-achtige timer voor vrij gebruik of
@@ -20,16 +20,26 @@ export function FocusPage() {
   const remainingSec = usePomodoroStore((s) => s.remainingSec);
   const totalSec = usePomodoroStore((s) => s.totalSec);
   const taskTitle = usePomodoroStore((s) => s.taskTitle);
+  const taskId = usePomodoroStore((s) => s.taskId);
   const start = usePomodoroStore((s) => s.start);
   const pause = usePomodoroStore((s) => s.pause);
   const resume = usePomodoroStore((s) => s.resume);
   const reset = usePomodoroStore((s) => s.reset);
   const addTime = usePomodoroStore((s) => s.addTime);
+  const completeLinkedTask = usePomodoroStore((s) => s.completeLinkedTask);
 
   const [presetMin, setPresetMin] = useState<number>(25);
+  // Afvinken is een klein, betekenisvol moment (§1/§5) — vraag een bevestiging.
+  const [confirmFinish, setConfirmFinish] = useState(false);
 
   const idle = status === "idle";
   const running = status === "running";
+
+  // Zodra de sessie eindigt (of z'n taak-koppeling verliest) heeft de bevestiging
+  // geen betekenis meer — sluit hem, zodat hij niet blijft hangen bij een nieuwe sessie.
+  useEffect(() => {
+    if (idle || !taskId) setConfirmFinish(false);
+  }, [idle, taskId]);
 
   return (
     <div className="relative min-h-full">
@@ -92,12 +102,37 @@ export function FocusPage() {
               />
             </div>
 
-            <div className="w-full max-w-xs">
+            <div className="w-full max-w-xs space-y-3">
               <PrimaryButton
                 icon={running ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
                 onClick={() => (running ? pause() : resume())}>
                 {running ? "Pauzeer" : "Hervat"}
               </PrimaryButton>
+
+              {/* Vanaf een taak gestart: rond hem hier af — dat stopt de timer én
+                  vinkt de taak af, met een bevestiging ertussen. */}
+              {taskId && (
+                <AnimatePresence mode="wait" initial={false}>
+                  {confirmFinish ? (
+                    <motion.div key="confirm" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-2.5">
+                      <p className="text-center text-xs text-muted-foreground">
+                        {taskTitle ? `${taskTitle} afvinken en stoppen?` : "Taak afvinken en de timer stoppen?"}
+                      </p>
+                      <DubbelKnop
+                        onCancel={() => setConfirmFinish(false)}
+                        onConfirm={completeLinkedTask}
+                        label="Ja, afvinken"
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div key="trigger" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-center">
+                      <PillButton icon={<Check size={13} aria-hidden="true" />} onClick={() => setConfirmFinish(true)}>
+                        Taak afvinken
+                      </PillButton>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
             </div>
 
             {phase === "break" && (

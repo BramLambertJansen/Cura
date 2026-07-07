@@ -108,6 +108,8 @@ interface PomodoroState extends Persisted {
   addTime: (sec: number) => void;
   /** Stop en terug naar idle (presets). */
   reset: () => void;
+  /** Vink de gekoppelde taak af én stop de timer. No-op op de taak zonder `taskId`. */
+  completeLinkedTask: () => void;
   /** Eén seconde-tik: herberekent resterende tijd uit `endsAt`; bij ≤0 → afronden. */
   tick: () => void;
 }
@@ -182,6 +184,14 @@ export const usePomodoroStore = create<PomodoroState>((set, get) => {
     },
 
     reset: () => {
+      set({ ...IDLE, phase: "focus" });
+      persist(get());
+    },
+
+    completeLinkedTask: () => {
+      const { taskId } = get();
+      // toggleTask (useCuraStore) toont zelf de énige afvink-toast — hier geen tweede.
+      if (taskId) useCuraStore.getState().toggleTask(taskId, true);
       set({ ...IDLE, phase: "focus" });
       persist(get());
     },
