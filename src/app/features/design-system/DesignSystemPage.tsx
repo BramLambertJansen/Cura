@@ -9,6 +9,7 @@ import {
   Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
+import { TimerDisplay } from "../../components/TimerDisplay";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { KamerKunstKiezer } from "../../components/KamerKunstKiezer";
@@ -230,6 +231,14 @@ export function DesignSystemPage() {
           <RingProgress value={0.25} />
           <RingProgress value={0.75} />
           <RingProgress value={1} />
+        </div>
+      </Section>
+
+      <Section title="Focustimer">
+        <p className="text-xs text-muted-foreground">De grote timer-weergave (ring vult op naar goud) — vrij gebruik of gestart vanaf een taak. Zie <span className="font-mono">/focus</span>.</p>
+        <div className="flex items-center justify-around gap-4 flex-wrap">
+          <TimerDisplay remainingSec={22 * 60 + 4} totalSec={25 * 60} phase="focus" size={160} />
+          <TimerDisplay remainingSec={48} totalSec={5 * 60} phase="break" size={160} />
         </div>
       </Section>
 

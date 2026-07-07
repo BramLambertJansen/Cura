@@ -1,10 +1,10 @@
 import { memo, useRef } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion, type PanInfo } from "motion/react";
-import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
+import { Bell, Check, RefreshCw, RotateCcw, Timer, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { CARD_BORDER, Checkbox, PillButton } from "./shared";
+import { CARD_BORDER, Checkbox, IconButton, PillButton } from "./shared";
 
 // Swipe-right-to-toggle: pointer distance (px) that commits the gesture, or a
 // shorter-but-fast flick. The card itself follows at dragElastic's pace, so
@@ -15,7 +15,7 @@ const SWIPE_FLICK_VELOCITY = 650;
 const SWIPE_LEFT_COMMIT_DISTANCE = 96;
 
 export const TaakRij = memo(function TaakRij({
-  task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss,
+  task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss, onStartFocus,
 }: {
   task: TaskView;
   onToggle: () => void;
@@ -24,6 +24,8 @@ export const TaakRij = memo(function TaakRij({
   onUnclaim?: () => void;
   onEdit?: () => void;
   onDismiss?: () => void;
+  /** Start een focussessie op deze taak (opent het focus-scherm). Alleen bij open taken. */
+  onStartFocus?: () => void;
 }) {
   const claimed = !!task.claimedBy;
   const reduceMotion = useReducedMotion();
@@ -147,6 +149,15 @@ export const TaakRij = memo(function TaakRij({
           </button>
         ) : (
           <div className="flex-1 min-w-0">{content}</div>
+        )}
+        {onStartFocus && !task.done && (
+          <IconButton
+            size={8}
+            tone="card"
+            onClick={onStartFocus}
+            label={`Focustimer starten voor ${task.title}`}
+            icon={<Timer size={14} className="text-muted-foreground" aria-hidden="true" />}
+          />
         )}
         {showClaim && !task.done && !claimed && onClaim && (
           <PillButton size="sm" onClick={onClaim} className="flex-shrink-0 leading-none">Ik pak dit</PillButton>
