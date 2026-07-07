@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Bell, Check, ChevronRight, HelpCircle, Home, LogOut, Pencil, UserRound } from "lucide-react";
+import { Bell, Check, ChevronRight, HelpCircle, Home, KeyRound, LogOut, Pencil, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
@@ -10,7 +10,7 @@ import { resolveDataMode } from "../../data/store";
 import { PRESS_TINT, SAGE } from "../lib/constants";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
 
-export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: () => void; onClose: () => void }) {
+export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { onOpenHousehold: () => void; onOpenWachtwoord: () => void; onClose: () => void }) {
   const { signOut, status, userId, email } = useAuth();
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
@@ -148,6 +148,14 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
             right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />}
             onClick={showAccountInfo}
           />
+          {dataMode !== "local" && (
+            <InstRij
+              icon={<KeyRound size={15} />}
+              label="Wachtwoord"
+              right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />}
+              onClick={onOpenWachtwoord}
+            />
+          )}
         </GroupCard>
         {showIosInstallHint && (
           <p className="text-xs text-muted-foreground mt-2.5 px-1 leading-relaxed">

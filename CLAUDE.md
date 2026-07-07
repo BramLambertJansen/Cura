@@ -173,6 +173,7 @@ Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase ver
 
 ### Profiel — `ProfielSheet`
 - Eigen weergavenaam/instellingen, meldingen-toggle (gekoppeld aan echte `Notification.permission` via `useNotificationPreference`), uitloggen.
+- Alleen in `cloud`-modus: een **Wachtwoord**-rij onder Instellingen opent `WachtwoordSheet` (`src/app/sheets/WachtwoordSheet.tsx`) — nieuw wachtwoord + bevestiging via `changePassword` (`AuthProvider` → `supabase.auth.updateUser({ password })`); de lopende sessie is het identiteitsbewijs, dus geen huidig-wachtwoord-herinvoer (Supabase-default). In `local` mode geen account, dus geen rij en `changePassword` is een no-op. Gerenderd op `MainShell`-niveau via de `onOpenWachtwoord`-prop (zelfde sheet-swap als Huishouden), niet genest in `ProfielSheet`.
 
 ### Auth & onboarding — `src/app/features/auth/`
 - `AuthPage`: e-mail/wachtwoord login + registratie via `AuthForm`, plús een passwordless `MagicLinkForm` erboven — `signInWithMagicLink` (`AuthProvider`) stuurt een Supabase OTP-link (`signInWithOtp`), geen SSO-provider nodig. `LandingHeader` (`src/app/components/LandingHeader.tsx`, `public/landing-header.webp`) als full-bleed illustratie-header boven het formulier — valt terug op alleen logo + titel als het beeld ontbreekt.

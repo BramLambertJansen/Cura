@@ -29,6 +29,7 @@ import { NewRoutineSheet } from "./sheets/NewRoutineSheet";
 import { EditRoutineSheet } from "./sheets/EditRoutineSheet";
 import { HouseholdSheet } from "./sheets/HouseholdSheet";
 import { ProfielSheet } from "./sheets/ProfielSheet";
+import { WachtwoordSheet } from "./sheets/WachtwoordSheet";
 import { TemplatesSheet } from "./sheets/TemplatesSheet";
 
 // Route-level code splitting — each tab/screen becomes its own chunk instead
@@ -96,6 +97,7 @@ function MainShell() {
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [showHousehold, setShowHousehold] = useState(false);
   const [showProfiel, setShowProfiel] = useState(false);
+  const [showWachtwoord, setShowWachtwoord] = useState(false);
   const [templatesFor, setTemplatesFor] = useState<{ roomId: string; roomIconKey: string } | null>(null);
 
   const sheetActions: SheetActions = useMemo(
@@ -173,9 +175,11 @@ function MainShell() {
             <ProfielSheet
               key="prof"
               onOpenHousehold={() => { setShowProfiel(false); setTimeout(() => setShowHousehold(true), 160); }}
+              onOpenWachtwoord={() => { setShowProfiel(false); setTimeout(() => setShowWachtwoord(true), 160); }}
               onClose={() => setShowProfiel(false)}
             />
           )}
+          {showWachtwoord && <WachtwoordSheet key="pw" onClose={() => setShowWachtwoord(false)} />}
         </AnimatePresence>
       </div>
     </SheetContext.Provider>
