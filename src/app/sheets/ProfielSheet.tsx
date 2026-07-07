@@ -161,7 +161,11 @@ export function ProfielSheet({ onOpenHousehold, onClose }: { onOpenHousehold: ()
         <InstRij icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={openHelp} />
         <InstRij icon={<LogOut size={15} style={{ color: "var(--destructive)" }} />}
           label={<span style={{ color: "var(--destructive)" }}>Uitloggen</span>} right={null}
-          onClick={() => toast("Uitloggen?", { description: "Je kunt altijd terugkomen.", action: { label: "Uitloggen", onClick: () => { signOut(); toast("Tot de volgende keer."); } } })} />
+          onClick={() => toast("Uitloggen?", { description: "Je kunt altijd terugkomen.", action: { label: "Uitloggen", onClick: () => {
+            void signOut()
+              .then(() => toast("Tot de volgende keer."))
+              .catch((e) => toast.error(e instanceof Error ? e.message : "Uitloggen lukte niet"));
+          } } })} />
       </GroupCard>
       <p className="text-center text-xs text-muted-foreground mt-7">Cura · versie 0.1</p>
     </Sheet>
