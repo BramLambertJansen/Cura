@@ -69,10 +69,10 @@ function NavTab({ tab, active }: { tab: Tab; active: boolean }) {
 
 export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => void }) {
   const { pathname } = useLocation();
-  // Samen en Takenoverzicht hebben geen eigen tab (CLAUDE.md §1) — bereikbaar via Meer, dus die tab blijft actief.
+  // Samen, Takenoverzicht en Focustimer hebben geen eigen tab (CLAUDE.md §1) — bereikbaar via Meer, dus die tab blijft actief.
   const isActive = (to: string) =>
     pathname.startsWith(to) ||
-    (to === "/meer" && (pathname.startsWith("/samen") || pathname.startsWith("/taken")));
+    (to === "/meer" && (pathname.startsWith("/samen") || pathname.startsWith("/taken") || pathname.startsWith("/focus")));
 
   return (
     <nav

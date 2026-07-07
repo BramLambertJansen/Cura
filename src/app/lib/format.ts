@@ -23,6 +23,13 @@ export function intervalLabel(days: number): string {
   return `Elke ${days} dagen`;
 }
 
+/** Countdown as m:ss for the focustimer — clamps to zero, never negative. */
+export function formatCountdown(totalSec: number): string {
+  const s = Math.max(0, Math.floor(totalSec));
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, "0")}`;
+}
+
 /** Soft household-status line for Samen — never a count, streak or comparison, just a warm read of the day so far. */
 export function householdStatusLine(completedTodayCount: number): string {
   return completedTodayCount > 0 ? "Er is vandaag al wat lucht gemaakt" : "Rustige dag tot nu toe";

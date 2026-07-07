@@ -13,6 +13,7 @@ import { RoomHero } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
+import { useStartFocus } from "../../lib/useStartFocus";
 
 export function HuisPage() {
   const { openNewRoom, openEditRoom, openEditTask, openTemplates, openAddTask } = useSheets();
@@ -21,6 +22,7 @@ export function HuisPage() {
   const rooms = useRoomViews();
   const tasks = useTaskViews();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
+  const startFocus = useStartFocus();
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
 
@@ -74,7 +76,7 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
                   {open.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "deze lijst")} />
+                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onStartFocus={() => startFocus(t)} onDismiss={() => dismissWithUndo(t, "deze lijst")} />
                     </motion.div>
                   ))}
                 </motion.div>

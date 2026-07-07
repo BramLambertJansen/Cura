@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTaskReminders } from "./lib/useTaskReminders";
+import { useFocusTimer } from "./lib/useFocusTimer";
 import { usePushReconcile } from "./lib/usePushSubscription";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
@@ -17,6 +18,7 @@ import { FullScreenError } from "./components/FullScreenError";
 import { ConnectivityBanner } from "./components/ConnectivityBanner";
 import { UpdatePrompt } from "./components/UpdatePrompt";
 import { PullToRefreshIndicator } from "./components/PullToRefreshIndicator";
+import { FocusMiniPill } from "./components/FocusMiniPill";
 import { usePullToRefresh } from "./lib/usePullToRefresh";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { AddTaskSheet } from "./sheets/AddTaskSheet";
@@ -37,6 +39,7 @@ const RoutinesPage = lazy(() => import("./features/routines/RoutinesPage").then(
 const SamenPage = lazy(() => import("./features/samen/SamenPage").then((m) => ({ default: m.SamenPage })));
 const MeerPage = lazy(() => import("./features/meer/MeerPage").then((m) => ({ default: m.MeerPage })));
 const TakenPage = lazy(() => import("./features/taken/TakenPage").then((m) => ({ default: m.TakenPage })));
+const FocusPage = lazy(() => import("./features/focus/FocusPage").then((m) => ({ default: m.FocusPage })));
 const DesignSystemPage = lazy(() => import("./features/design-system/DesignSystemPage").then((m) => ({ default: m.DesignSystemPage })));
 const AuthPage = lazy(() => import("./features/auth/AuthPage").then((m) => ({ default: m.AuthPage })));
 const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPage").then((m) => ({ default: m.OnboardingIntroPage })));
@@ -56,6 +59,7 @@ function AnimatedRoutes() {
         <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
         <Route path="/meer" element={<PageTx><MeerPage /></PageTx>} />
         <Route path="/taken" element={<PageTx><TakenPage /></PageTx>} />
+        <Route path="/focus" element={<PageTx><FocusPage /></PageTx>} />
         <Route path="/dev/design-system" element={<PageTx><DesignSystemPage /></PageTx>} />
       </Routes>
     </AnimatePresence>
@@ -76,6 +80,7 @@ function PageTx({ children }: { children: ReactNode }) {
 /** The existing app shell — tabs, sheets, FAB. Assumes useCuraStore is already ready. */
 function MainShell() {
   useTaskReminders();
+  useFocusTimer();
   usePushReconcile();
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -143,6 +148,8 @@ function MainShell() {
           </div>
         </div>
         <PullToRefreshIndicator pull={pull} state={pullState} />
+
+        <FocusMiniPill />
 
         <BottomNav showAdd={showAdd} onAdd={() => { setAddRoomId(null); setShowAdd((s) => !s); }} />
 

@@ -9,6 +9,7 @@ import { getGreeting } from "../../lib/format";
 import { spring, stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
+import { useStartFocus } from "../../lib/useStartFocus";
 import { Avatar, Kop, Leeg } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
 import { TaakRij } from "../../components/TaakRij";
@@ -26,6 +27,7 @@ export function VandaagPage() {
   const routines = useRoutineViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
+  const startFocus = useStartFocus();
   // The suggestions live behind a "peek": the shortest one stays visible as a
   // gentle nudge, the rest wait quietly behind a soft toggle so the section
   // never overshadows the actual day-planning above it.
@@ -110,7 +112,7 @@ export function VandaagPage() {
             : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
                 {allPlanned.map((task) => (
                   <motion.div key={task.id} variants={fadeUp}>
-                    <TaakRij task={task} onToggle={() => toggleTask(task.id, !task.done)} onEdit={() => openEditTask(task.id)} onDismiss={() => { dismissTask(task.id); toast("Even niet vandaag", { description: `${task.title} staat even uit je dag.`, action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) } }); }} />
+                    <TaakRij task={task} onToggle={() => toggleTask(task.id, !task.done)} onEdit={() => openEditTask(task.id)} onStartFocus={() => startFocus(task)} onDismiss={() => { dismissTask(task.id); toast("Even niet vandaag", { description: `${task.title} staat even uit je dag.`, action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) } }); }} />
                   </motion.div>
                 ))}
               </motion.div>
