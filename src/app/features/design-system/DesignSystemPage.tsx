@@ -104,9 +104,9 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Landingsheader">
-        <p className="text-sm text-muted-foreground -mt-1">Volledig-breed illustratie-blok boven auth/onboarding-schermen — valt terug op alleen logo + titel als <code>public/landing-header.webp</code> ontbreekt.</p>
+        <p className="text-sm text-muted-foreground -mt-1">Decoratief, volledig-breed aquarel-illustratieblok (zonsopgang) boven het auth-scherm — het merk en formulier leven in de zwevende kaart eronder, dus dit rendert niets als <code>public/landing-header.webp</code> ontbreekt.</p>
         <div className="rounded-2xl overflow-hidden border border-border/50">
-          <LandingHeader subtitle="Rustig plannen, samen." />
+          <LandingHeader className="h-40" />
         </div>
       </Section>
 
