@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { buildLatestCompletionMap, getDueReminders } from "../../data/reminders";
+import { showLocalNotification } from "./showNotification";
 
 const POLL_MS = 30_000;
 const NOTIF_PREF_KEY = "cura:notif-pref";
@@ -29,11 +30,17 @@ function dispatchReminder(
   if (channel === "notification") {
     // tag = firedForKey: an identical wekker arriving via server push (same key,
     // thanks to the shared timezone-aware engine) coalesces into one OS
-    // notification instead of buzzing twice.
-    const n = new Notification(`Tijd voor: ${title}`, { body: "Je hebt dit op de planning staan.", tag, icon: "/icons/icon-192.png" });
-    if (canOpen) {
-      n.onclick = () => { window.focus(); openTask!(taskId); n.close(); };
-    }
+    // notification instead of buzzing twice. Routes through the service worker
+    // (showLocalNotification) so the bare Notification constructor — illegal on
+    // Android Chrome — can't throw into React; the SW's notificationclick handler
+    // opens the task, so we only pass an onClick fallback for the no-SW path.
+    showLocalNotification(`Tijd voor: ${title}`, {
+      body: "Je hebt dit op de planning staan.",
+      tag,
+      icon: "/icons/icon-192.png",
+      taskId: canOpen ? taskId : undefined,
+      onClick: canOpen ? () => openTask!(taskId) : undefined,
+    });
   } else {
     toast(`Wekker: ${title}`, {
       description: "Tijd voor deze taak.",
