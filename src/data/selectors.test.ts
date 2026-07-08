@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Task, TaskCompletion, Room, Bundle, Member, ShoppingItem } from "./types";
+import type { Task, TaskCompletion, Room, Bundle, Member, ShoppingItem, TaskView } from "./types";
 import {
   buildLatestCompletionMap,
   toTaskView,
@@ -9,6 +9,8 @@ import {
   toSuggestions,
   toTaskOverview,
   toShoppingList,
+  toDagdelen,
+  dagdeelForHour,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -399,5 +401,48 @@ describe("shopping list", () => {
     const { openGroups, checked } = toShoppingList([checkedMilk]);
     expect(openGroups).toHaveLength(0);
     expect(checked[0].category).toBe("cold");
+  });
+});
+
+describe("Vandaag timeline — dagdeel grouping", () => {
+  const taskView = (overrides: Partial<TaskView> = {}): TaskView => ({
+    id: "t1",
+    title: "Was ophangen",
+    planned: true,
+    done: false,
+    ...overrides,
+  });
+  const atHour = (hour: number) => new Date(2024, 0, 1, hour, 0, 0).toISOString();
+
+  it("assigns a dagdeel only from a task's own wekker time", () => {
+    const ochtend = taskView({ id: "t1", dueDate: atHour(8) });
+    const middag = taskView({ id: "t2", dueDate: atHour(14) });
+    const avond = taskView({ id: "t3", dueDate: atHour(20) });
+    const groups = toDagdelen([ochtend, middag, avond]);
+    expect(groups.map((g) => g.key)).toEqual(["ochtend", "middag", "avond"]);
+    expect(groups[0].tasks.map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("never invents a dagdeel for a task without a wekker — it lands in overig", () => {
+    const noWekker = taskView({ id: "t1" });
+    const groups = toDagdelen([noWekker]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].key).toBe("overig");
+  });
+
+  it("omits empty groups and keeps ochtend → middag → avond → overig order", () => {
+    const avond = taskView({ id: "t1", dueDate: atHour(21) });
+    const noWekker = taskView({ id: "t2" });
+    const groups = toDagdelen([avond, noWekker]);
+    expect(groups.map((g) => g.key)).toEqual(["avond", "overig"]);
+  });
+
+  it("splits hours at the same boundaries as the routine trigger options", () => {
+    expect(dagdeelForHour(0)).toBe("ochtend");
+    expect(dagdeelForHour(11)).toBe("ochtend");
+    expect(dagdeelForHour(12)).toBe("middag");
+    expect(dagdeelForHour(17)).toBe("middag");
+    expect(dagdeelForHour(18)).toBe("avond");
+    expect(dagdeelForHour(23)).toBe("avond");
   });
 });

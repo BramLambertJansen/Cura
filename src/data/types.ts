@@ -79,6 +79,19 @@ export interface TaskOverview {
   undated: TaskView[]; // one-off without a wekker — the dateless pool
 }
 
+/**
+ * Open tasks grouped into a soft dagdeel timeline for Vandaag's Tijdlijn-lay-out.
+ * Only a task that actually carries a wekker/dueDate gets assigned to Ochtend/
+ * Middag/Avond (derived from that real time); every other open task lands in
+ * `overig` rather than being assigned a moment it has no signal for (CLAUDE.md
+ * §2: honesty over precision). Groups with no tasks are omitted by the selector.
+ */
+export interface DagdeelGroup {
+  key: "ochtend" | "middag" | "avond" | "overig";
+  label: string;
+  tasks: TaskView[];
+}
+
 /** A room with its pooled tasks and a soft, honest hint. */
 export interface RoomView {
   id: string;
