@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useCuraStore } from "./useCuraStore";
-import { buildLatestCompletionMap, toActivityFeed, toRoomView, toRoutineView, toTaskView } from "../data/selectors";
-import type { ActivityView, RoomView, RoutineView, TaskView } from "../data/types";
+import { buildLatestCompletionMap, toActivityFeed, toRoomView, toRoutineView, toShoppingList, toTaskView } from "../data/selectors";
+import type { ActivityView, RoomView, RoutineView, ShoppingListView, TaskView } from "../data/types";
 
 /** Every task as a view-model — done/dueHint/claimedBy resolved, never stored. */
 export function useTaskViews(): TaskView[] {
@@ -58,6 +58,12 @@ export function useRoomView(roomId: string): RoomView | undefined {
 export function useRoutineView(bundleId: string): RoutineView | undefined {
   const routines = useRoutineViews();
   return useMemo(() => routines.find((b) => b.id === bundleId), [routines, bundleId]);
+}
+
+/** The shopping list, split into open vs already-checked items. */
+export function useShoppingList(): ShoppingListView {
+  const shoppingItems = useCuraStore((s) => s.shoppingItems);
+  return useMemo(() => toShoppingList(shoppingItems), [shoppingItems]);
 }
 
 /** Recent completions as a calm chronological feed for Samen. */

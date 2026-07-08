@@ -4,11 +4,14 @@ import type {
   Room,
   Bundle,
   Member,
+  ShoppingItem,
   TaskView,
   RoomView,
   RoutineView,
   ActivityView,
   TaskOverview,
+  ShoppingItemView,
+  ShoppingListView,
 } from "./types";
 import { buildLatestCompletionMap, isDone, getDueReminders } from "./reminders";
 
@@ -261,6 +264,19 @@ export function toTaskOverview(tasks: TaskView[], now = Date.now()): TaskOvervie
     recurring: open.filter((t) => !!t.intervalDays),
     upcoming: open.filter((t) => !t.intervalDays && !!t.dueDate && dueMs(t) >= now),
     undated: open.filter((t) => !t.intervalDays && !t.dueDate),
+  };
+}
+
+// ─── Shopping list ────────────────────────────────────────────────────────────
+
+/** Split the shopping list into open vs checked, each oldest-added first. */
+export function toShoppingList(items: ShoppingItem[]): ShoppingListView {
+  const views: ShoppingItemView[] = [...items]
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((i) => ({ id: i.id, title: i.title, quantity: i.quantity, checked: i.checked }));
+  return {
+    open: views.filter((i) => !i.checked),
+    checked: views.filter((i) => i.checked),
   };
 }
 

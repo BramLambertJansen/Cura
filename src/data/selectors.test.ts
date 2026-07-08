@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Task, TaskCompletion, Room, Bundle, Member } from "./types";
+import type { Task, TaskCompletion, Room, Bundle, Member, ShoppingItem } from "./types";
 import {
   buildLatestCompletionMap,
   toTaskView,
@@ -8,6 +8,7 @@ import {
   toActivityFeed,
   toSuggestions,
   toTaskOverview,
+  toShoppingList,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -333,5 +334,38 @@ describe("room view hint", () => {
     const view = toRoomView(r, [t], buildLatestCompletionMap(completions), [member()], now);
     expect(view.hint).toBe("Waarschijnlijk weer toe aan een beurt");
     expect(view.openCount).toBe(1);
+  });
+});
+
+describe("shopping list", () => {
+  const now = Date.now();
+  const item = (overrides: Partial<ShoppingItem> = {}): ShoppingItem => ({
+    id: "s1",
+    householdId: "h1",
+    title: "Melk",
+    checked: false,
+    createdAt: iso(0, now),
+    ...overrides,
+  });
+
+  it("splits items into open and checked", () => {
+    const open1 = item({ id: "s1", checked: false });
+    const checked1 = item({ id: "s2", checked: true });
+    const { open, checked } = toShoppingList([open1, checked1]);
+    expect(open.map((i) => i.id)).toEqual(["s1"]);
+    expect(checked.map((i) => i.id)).toEqual(["s2"]);
+  });
+
+  it("orders each group oldest-added first", () => {
+    const newer = item({ id: "s1", createdAt: iso(0, now) });
+    const older = item({ id: "s2", createdAt: iso(DAY_MS, now) });
+    const { open } = toShoppingList([newer, older]);
+    expect(open.map((i) => i.id)).toEqual(["s2", "s1"]);
+  });
+
+  it("carries the optional quantity through to the view", () => {
+    const withQty = item({ id: "s1", quantity: "2" });
+    const { open } = toShoppingList([withQty]);
+    expect(open[0].quantity).toBe("2");
   });
 });

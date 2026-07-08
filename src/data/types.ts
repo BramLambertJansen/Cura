@@ -8,6 +8,7 @@ import {
   TaskSchema,
   TaskCompletionSchema,
   BundleSchema,
+  ShoppingItemSchema,
   DatabaseSchema,
 } from "./schemas";
 
@@ -35,6 +36,7 @@ export type Room = z.infer<typeof RoomSchema>;
 export type Task = z.infer<typeof TaskSchema>;
 export type TaskCompletion = z.infer<typeof TaskCompletionSchema>;
 export type Bundle = z.infer<typeof BundleSchema>;
+export type ShoppingItem = z.infer<typeof ShoppingItemSchema>;
 export type Database = z.infer<typeof DatabaseSchema>;
 
 // ─── View-models (derived, what screens consume) ─────────────────────────────
@@ -104,6 +106,20 @@ export interface RoutineView {
   windowSize: number;
   windowLabel: string; // "ochtenden", "avonden", "weekenden"
   hint: string; // "Zit lekker in je ritme" / "Glipt er de laatste tijd uit"
+}
+
+/** A shopping item as a screen sees it — a plain checklist row, no dueHint/density story. */
+export interface ShoppingItemView {
+  id: string;
+  title: string;
+  quantity?: string;
+  checked: boolean;
+}
+
+/** The shopping list split into open vs already-checked items, oldest-added first within each. */
+export interface ShoppingListView {
+  open: ShoppingItemView[];
+  checked: ShoppingItemView[];
 }
 
 /** One line for the Samen (visibility) feed — a message, not a scoreboard. */
