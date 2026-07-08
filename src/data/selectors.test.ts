@@ -255,6 +255,22 @@ describe("Vandaag suggestions — manual, no AI", () => {
     expect(suggestions.map((s) => s.id)).toEqual(["t2", "t1", "t3"]);
   });
 
+  it("suggests a short open task even without a due hint or wekker (past goed tussendoor)", () => {
+    const now = Date.now();
+    const t = task({ id: "t1", durationMin: 5 });
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()], now);
+    const suggestions = toSuggestions([view]);
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0].id).toBe("t1");
+  });
+
+  it("does not suggest a long open task with no due hint or wekker", () => {
+    const now = Date.now();
+    const t = task({ id: "t1", durationMin: 30 });
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()], now);
+    expect(toSuggestions([view])).toHaveLength(0);
+  });
+
   it("never phrases a suggestion as an exact day count", () => {
     const t = task({ id: "t1", intervalDays: 3 });
     const completions: TaskCompletion[] = [

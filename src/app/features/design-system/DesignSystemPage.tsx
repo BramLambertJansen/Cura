@@ -161,11 +161,12 @@ export function DesignSystemPage() {
           <VerwijderKnop label="Voorbeeld verwijderen" onConfirm={() => {}} />
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5">IconButton — ronde icoon-knop (sluiten, terug); <code>tone</code> secondary/card, <code>size</code> 8/9/10</p>
+          <p className="text-xs text-muted-foreground mb-1.5">IconButton — ronde icoon-knop (sluiten, terug); <code>tone</code> secondary/card/primary, <code>size</code> 8/9/10</p>
           <div className="flex items-center gap-3">
             <IconButton onClick={() => {}} label="Sluiten" icon={<X size={15} className="text-muted-foreground" aria-hidden="true" />} />
             <IconButton onClick={() => {}} label="Terug" tone="card" icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
             <IconButton size={8} onClick={() => {}} label="Terug (klein)" icon={<ChevronLeft size={16} className="text-muted-foreground" aria-hidden="true" />} />
+            <IconButton tone="primary" onClick={() => {}} label="Toevoegen" icon={<Plus size={18} aria-hidden="true" />} />
           </div>
         </div>
       </Section>

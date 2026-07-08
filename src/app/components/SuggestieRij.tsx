@@ -1,17 +1,18 @@
 import { memo } from "react";
 import { motion } from "motion/react";
+import { Plus, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
-import { SAGE, SHADOW } from "../lib/constants";
-import { Card } from "./shared";
+import { SAGE } from "../lib/constants";
+import { Card, IconButton } from "./shared";
 
 /** Soft, non-alarming reason a task surfaced as a suggestion — never an exact day count. */
 function suggestionReason(task: TaskView): string {
-  if (task.dueHint === "Waarschijnlijk weer toe") return "Misschien handig vandaag";
+  if (task.dueHint === "Waarschijnlijk weer toe") return "Waarschijnlijk weer toe";
   if (task.wekkerLabel) return "Staat met een wekker";
   return "Past goed tussendoor";
 }
 
-/** A single "misschien handig vandaag"-suggestion — plan it or wave it off, both reversible. */
+/** A single "misschien handig"-suggestion — plan it or wave it off, both reversible. */
 export const SuggestieRij = memo(function SuggestieRij({
   task, onPlan, onNietVandaag,
 }: {
@@ -21,31 +22,31 @@ export const SuggestieRij = memo(function SuggestieRij({
 }) {
   return (
     <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.22 }}>
-      <Card tone="active" className="px-4 py-3.5">
-        <div>
+      <Card tone="active" className="px-4 py-3.5 flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-[0.9375rem] font-medium text-foreground leading-snug">{task.title}</p>
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            {task.room && <span className="text-xs text-muted-foreground">{task.room}</span>}
-            {task.duration && <span className="text-xs text-muted-foreground opacity-50">· {task.duration}</span>}
-          </div>
-          <p className="text-xs mt-1.5 font-display italic" style={{ color: SAGE }}>{suggestionReason(task)}</p>
+          {/* One calm line: honest reason first, then room · duration — only what exists. */}
+          <p className="text-xs mt-1 leading-snug flex flex-wrap items-center gap-x-1.5">
+            <span className="font-display italic" style={{ color: SAGE }}>{suggestionReason(task)}</span>
+            {task.room && <span className="text-muted-foreground">· {task.room}</span>}
+            {task.duration && <span className="text-muted-foreground opacity-60">· {task.duration}</span>}
+          </p>
         </div>
-        <div className="flex items-center gap-2 mt-3">
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={onPlan}
-            className="flex-1 py-2 rounded-full text-xs font-semibold text-white transition-[box-shadow,transform] focus-ring focus-visible:ring-offset-2"
-            style={{ background: "var(--gradient-primary)", boxShadow: `0 3px 12px color-mix(in srgb, var(--primary) 24%, transparent)` }}>
-            Zet op mijn dag
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.96 }}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <IconButton
+            tone="secondary"
+            size={8}
             onClick={onNietVandaag}
-            aria-label={`${task.title}: niet vandaag`}
-            className="px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground border border-border/70 transition-[background-color,transform] hover:bg-secondary/70 focus-ring focus-visible:ring-offset-2"
-            style={{ boxShadow: SHADOW }}>
-            Niet vandaag
-          </motion.button>
+            label={`${task.title}: niet vandaag`}
+            icon={<X size={16} className="text-muted-foreground" aria-hidden="true" />}
+          />
+          <IconButton
+            tone="primary"
+            size={9}
+            onClick={onPlan}
+            label={`Zet ${task.title} op mijn dag`}
+            icon={<Plus size={18} aria-hidden="true" />}
+          />
         </div>
       </Card>
     </motion.div>
