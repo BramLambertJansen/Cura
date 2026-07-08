@@ -30,7 +30,7 @@ function dispatchReminder(
     // tag = firedForKey: an identical wekker arriving via server push (same key,
     // thanks to the shared timezone-aware engine) coalesces into one OS
     // notification instead of buzzing twice.
-    const n = new Notification(`Tijd voor: ${title}`, { body: "Je hebt dit op de planning staan.", tag });
+    const n = new Notification(`Tijd voor: ${title}`, { body: "Je hebt dit op de planning staan.", tag, icon: "/icons/icon-192.png" });
     if (canOpen) {
       n.onclick = () => { window.focus(); openTask!(taskId); n.close(); };
     }
