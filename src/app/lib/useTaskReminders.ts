@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { buildLatestCompletionMap, getDueReminders } from "../../data/reminders";
+import { buildLatestCompletionMap, getDueReminders, isWithinQuietHours } from "../../data/reminders";
 import { showLocalNotification } from "./showNotification";
 
 const POLL_MS = 30_000;
@@ -64,11 +64,19 @@ function dispatchReminder(
  * When the app IS visible, the service worker forwards an incoming push to this
  * hook (a `cura-reminder` message) instead of showing its own OS notification,
  * so a push and a poll-tick for the same wekker route through one dedup set.
+ *
+ * Quiet hours (a member's own nightly window, ProfielSheet) hold back the poll
+ * tick's dispatch entirely — it deliberately doesn't add the key to `firedRef`,
+ * so the very next check after the window ends fires it: a delayed reminder,
+ * not a dropped one.
  */
 export function useTaskReminders(openTask?: (taskId: string) => void): void {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
   const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
+  const currentUserId = useCuraStore((s) => s.currentUserId);
+  const members = useCuraStore((s) => s.members);
+  const me = members.find((m) => m.userId === currentUserId);
   const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -78,8 +86,10 @@ export function useTaskReminders(openTask?: (taskId: string) => void): void {
       dispatchReminder(title, firedForKey, taskId, openTask);
     }
     function check() {
+      const now = Date.now();
+      if (isWithinQuietHours(now, timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone, me?.quietHoursStart, me?.quietHoursEnd)) return;
       const latestByTask = buildLatestCompletionMap(completions);
-      for (const reminder of getDueReminders(tasks, latestByTask, Date.now(), timeZone)) {
+      for (const reminder of getDueReminders(tasks, latestByTask, now, timeZone)) {
         fire(reminder.firedForKey, reminder.title, reminder.taskId);
       }
     }
@@ -106,7 +116,7 @@ export function useTaskReminders(openTask?: (taskId: string) => void): void {
       clearInterval(id);
       navigator.serviceWorker?.removeEventListener("message", onSwMessage);
     };
-  }, [tasks, completions, timeZone, openTask]);
+  }, [tasks, completions, timeZone, openTask, me?.quietHoursStart, me?.quietHoursEnd]);
 }
 
 // ─── Notification preference — shared between the hook and ProfielSheet ──────
