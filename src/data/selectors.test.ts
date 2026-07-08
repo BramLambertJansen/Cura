@@ -384,4 +384,20 @@ describe("shopping list", () => {
     const { open } = toShoppingList([withQty]);
     expect(open[0].quantity).toBe("2");
   });
+
+  it("adds calm category groups for open items", () => {
+    const milk = item({ id: "s1", title: "Melk" });
+    const apples = item({ id: "s2", title: "Appels" });
+    const bags = item({ id: "s3", title: "Vuilniszakken" });
+    const { openGroups } = toShoppingList([bags, milk, apples]);
+    expect(openGroups.map((group) => group.label)).toEqual(["Vers", "Koeling", "Huis"]);
+    expect(openGroups.map((group) => group.items.map((i) => i.id))).toEqual([["s2"], ["s1"], ["s3"]]);
+  });
+
+  it("keeps checked items out of open category groups", () => {
+    const checkedMilk = item({ id: "s1", title: "Melk", checked: true });
+    const { openGroups, checked } = toShoppingList([checkedMilk]);
+    expect(openGroups).toHaveLength(0);
+    expect(checked[0].category).toBe("cold");
+  });
 });

@@ -12,6 +12,7 @@ import type {
   TaskOverview,
   ShoppingItemView,
   ShoppingListView,
+  ShoppingCategoryKey,
 } from "./types";
 import { buildLatestCompletionMap, isDone, getDueReminders } from "./reminders";
 
@@ -280,14 +281,81 @@ export function toTaskOverview(tasks: TaskView[], now = Date.now()): TaskOvervie
 
 // ─── Shopping list ────────────────────────────────────────────────────────────
 
+const SHOPPING_CATEGORIES: { key: ShoppingCategoryKey; label: string; matches: string[] }[] = [
+  {
+    key: "fresh",
+    label: "Vers",
+    matches: [
+      "appel",
+      "appels",
+      "banaan",
+      "bananen",
+      "broccoli",
+      "citroen",
+      "fruit",
+      "groente",
+      "komkommer",
+      "paprika",
+      "sla",
+      "tomaat",
+      "tomaten",
+      "wortel",
+    ],
+  },
+  {
+    key: "cold",
+    label: "Koeling",
+    matches: ["boter", "eieren", "kaas", "melk", "room", "tofu", "vla", "yoghurt", "yogurt", "zuivel"],
+  },
+  {
+    key: "pantry",
+    label: "Voorraad",
+    matches: ["bonen", "brood", "crackers", "koffie", "meel", "olie", "pasta", "rijst", "suiker", "thee"],
+  },
+  {
+    key: "household",
+    label: "Huis",
+    matches: ["afwas", "bakpapier", "batterij", "batterijen", "keukenpapier", "schoonmaak", "toiletpapier", "vuilniszak"],
+  },
+];
+
+const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategoryKey, string> = {
+  fresh: "Vers",
+  cold: "Koeling",
+  pantry: "Voorraad",
+  household: "Huis",
+  other: "Nog ergens",
+};
+
+const SHOPPING_CATEGORY_ORDER: ShoppingCategoryKey[] = ["fresh", "cold", "pantry", "household", "other"];
+
+function shoppingCategory(title: string): ShoppingCategoryKey {
+  const normalized = title.toLocaleLowerCase("nl-NL");
+  return SHOPPING_CATEGORIES.find((category) =>
+    category.matches.some((match) => normalized.includes(match)),
+  )?.key ?? "other";
+}
+
 /** Split the shopping list into open vs checked, each oldest-added first. */
 export function toShoppingList(items: ShoppingItem[]): ShoppingListView {
   const views: ShoppingItemView[] = [...items]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-    .map((i) => ({ id: i.id, title: i.title, quantity: i.quantity, checked: i.checked }));
+    .map((i) => ({
+      id: i.id,
+      title: i.title,
+      quantity: i.quantity,
+      checked: i.checked,
+      category: shoppingCategory(i.title),
+    }));
+  const open = views.filter((i) => !i.checked);
   return {
-    open: views.filter((i) => !i.checked),
+    open,
     checked: views.filter((i) => i.checked),
+    openGroups: SHOPPING_CATEGORY_ORDER.map((key) => ({
+      key,
+      label: SHOPPING_CATEGORY_LABELS[key],
+      items: open.filter((item) => item.category === key),
+    })).filter((group) => group.items.length > 0),
   };
 }
 
