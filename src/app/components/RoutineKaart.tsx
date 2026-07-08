@@ -1,9 +1,10 @@
 import { memo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, ChevronRight, Pencil } from "lucide-react";
+import { useNavigate } from "react-router";
+import { Check, ChevronRight, Pencil, Play } from "lucide-react";
 import type { RoutineView } from "../../data/types";
 import { PRESS_TINT, SAGE, SHADOW } from "../lib/constants";
-import { CARD_CHROME, RingProgress, Card, StatusBadge } from "./shared";
+import { CARD_CHROME, RingProgress, Card, PillButton, StatusBadge } from "./shared";
 
 export const RoutineKaartCompact = memo(function RoutineKaartCompact({
   routine, onToggleTask,
@@ -45,6 +46,7 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({
 export const RoutineKaart = memo(function RoutineKaart({
   routine, onToggleTask, onEdit,
 }: { routine: RoutineView; onToggleTask: (taskId: string) => void; onEdit: () => void }) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
@@ -109,7 +111,7 @@ export const RoutineKaart = memo(function RoutineKaart({
                   </span>
                 </motion.button>
               ))}
-              <div className="pt-1 border-t border-border/30">
+              <div className="pt-1 border-t border-border/30 flex items-center justify-between gap-2">
                 <motion.button
                   onClick={onEdit}
                   whileTap={{ scale: 0.96 }}
@@ -119,6 +121,15 @@ export const RoutineKaart = memo(function RoutineKaart({
                   <Pencil size={12} aria-hidden="true" />
                   Routine bewerken
                 </motion.button>
+                {done < total && total > 0 && (
+                  <PillButton
+                    size="sm"
+                    icon={<Play size={12} aria-hidden="true" />}
+                    onClick={() => navigate(`/routines/${routine.id}/starten`)}
+                    ariaLabel={`${routine.name} starten`}>
+                    Start
+                  </PillButton>
+                )}
               </div>
             </div>
           </motion.div>
