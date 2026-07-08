@@ -118,6 +118,7 @@ Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase ver
 ### Routines — `src/app/features/routines/RoutinesPage.tsx`
 - Bundels van taken, dichtheid-feedback (ratio-over-venster), routine toevoegen/bewerken (`NewRoutineSheet`, `EditRoutineSheet`, `IntervalKiezer`).
 - Per routine-taak zijn duur en beschrijving optioneel instelbaar door de taak-rij uit te klappen (`TaakDraftRij`), naast de titel; zichtbaar als duur-badge + beschrijving-regel in de uitgeklapte `RoutineKaart`.
+- **Routine starten** (`RoutineSessionPage.tsx`, route `/routines/:bundleId/starten`) — een "Start"-knop op de uitgeklapte `RoutineKaart` (zichtbaar zolang er open taken zijn) opent een volledig-scherm sessie die de open taken van die routine één voor één toont, met Afvinken (bestaande `toggleTask`) en een sessie-lokale, niet-gepersisteerde "Overslaan". Geen eigen store/gepersisteerde voortgang: de huidige taak wordt live afgeleid uit `useRoutineView`, dus wegnavigeren en herstarten hervat vanzelf. `MainShell` verbergt de onderbalk en de bottom-gradient op deze route voor een echte takeover (`isRoutineSession`-check in `src/app/App.tsx`, via `matchPath`).
 
 ### Samen — `src/app/features/samen/SamenPage.tsx`
 - Chronologische "vandaag in huis"-feed. Geen eigen navigatietab meer; bereikbaar via de **Meer**-pagina.

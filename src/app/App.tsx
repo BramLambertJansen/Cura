@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } 
 import { useTaskReminders } from "./lib/useTaskReminders";
 import { useFocusTimer } from "./lib/useFocusTimer";
 import { usePushReconcile } from "./lib/usePushSubscription";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes, matchPath, useLocation } from "react-router";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
@@ -37,6 +37,7 @@ import { TemplatesSheet } from "./sheets/TemplatesSheet";
 const VandaagPage = lazy(() => import("./features/vandaag/VandaagPage").then((m) => ({ default: m.VandaagPage })));
 const HuisPage = lazy(() => import("./features/huis/HuisPage").then((m) => ({ default: m.HuisPage })));
 const RoutinesPage = lazy(() => import("./features/routines/RoutinesPage").then((m) => ({ default: m.RoutinesPage })));
+const RoutineSessionPage = lazy(() => import("./features/routines/RoutineSessionPage").then((m) => ({ default: m.RoutineSessionPage })));
 const SamenPage = lazy(() => import("./features/samen/SamenPage").then((m) => ({ default: m.SamenPage })));
 const MeerPage = lazy(() => import("./features/meer/MeerPage").then((m) => ({ default: m.MeerPage })));
 const TakenPage = lazy(() => import("./features/taken/TakenPage").then((m) => ({ default: m.TakenPage })));
@@ -58,6 +59,7 @@ function AnimatedRoutes() {
         <Route path="/huis" element={<PageTx><HuisPage /></PageTx>} />
         <Route path="/huis/:roomId" element={<PageTx><HuisPage /></PageTx>} />
         <Route path="/routines" element={<PageTx><RoutinesPage /></PageTx>} />
+        <Route path="/routines/:bundleId/starten" element={<PageTx><RoutineSessionPage /></PageTx>} />
         <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
         <Route path="/meer" element={<PageTx><MeerPage /></PageTx>} />
         <Route path="/taken" element={<PageTx><TakenPage /></PageTx>} />
@@ -85,6 +87,11 @@ function MainShell() {
   useTaskReminders();
   useFocusTimer();
   usePushReconcile();
+
+  // Routine-sessie is een echte takeover (§5 Routines) — geen onderbalk/gradient
+  // eronder, minder scroll-bottom-padding omdat er geen navbar te vrijwaren is.
+  const { pathname } = useLocation();
+  const isRoutineSession = Boolean(matchPath("/routines/:bundleId/starten", pathname));
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const refresh = useCuraStore((s) => s.refresh);
@@ -122,10 +129,12 @@ function MainShell() {
       <div className="fixed inset-0 flex flex-col bg-background overflow-hidden">
         <AppBackground />
 
-        <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-30" style={{
-          height: "calc(6rem + var(--safe-bottom))",
-          background: "linear-gradient(to top,color-mix(in srgb, var(--background) 96%, transparent) 0%,color-mix(in srgb, var(--background) 60%, transparent) 45%,transparent 100%)",
-        }} />
+        {!isRoutineSession && (
+          <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-30" style={{
+            height: "calc(6rem + var(--safe-bottom))",
+            background: "linear-gradient(to top,color-mix(in srgb, var(--background) 96%, transparent) 0%,color-mix(in srgb, var(--background) 60%, transparent) 45%,transparent 100%)",
+          }} />
+        )}
 
         <div
           ref={scrollRef}
@@ -134,7 +143,7 @@ function MainShell() {
             paddingTop: "var(--safe-top)",
             paddingLeft: "var(--safe-left)",
             paddingRight: "var(--safe-right)",
-            paddingBottom: "calc(6rem + var(--safe-bottom))",
+            paddingBottom: isRoutineSession ? "var(--safe-bottom)" : "calc(6rem + var(--safe-bottom))",
             // We own the pull gesture at the top — keep native overscroll/PTR out of it.
             overscrollBehaviorY: "contain",
           }}
@@ -155,7 +164,9 @@ function MainShell() {
 
         <FocusMiniPill />
 
-        <BottomNav showAdd={showAdd} onAdd={() => { setAddRoomId(null); setShowAdd((s) => !s); }} />
+        {!isRoutineSession && (
+          <BottomNav showAdd={showAdd} onAdd={() => { setAddRoomId(null); setShowAdd((s) => !s); }} />
+        )}
 
         <AnimatePresence>
           {showAdd && <AddTaskSheet key="add" roomId={addRoomId} onClose={() => setShowAdd(false)} />}
