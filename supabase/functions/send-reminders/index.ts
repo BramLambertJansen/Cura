@@ -20,6 +20,15 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+/** Push endpoint host (e.g. "fcm.googleapis.com") for logging — never the full URL. */
+function hostOf(endpoint: string): string {
+  try {
+    return new URL(endpoint).host;
+  } catch {
+    return "invalid-endpoint";
+  }
+}
+
 Deno.serve(async (req) => {
   // This endpoint sends push, so it must not be publicly callable.
   const secret = Deno.env.get("CRON_SECRET");
@@ -107,10 +116,24 @@ Deno.serve(async (req) => {
         } else if (res.gone) {
           await supabase.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
           pruned++;
+        } else {
+          // A real send failure (bad/misquoted VAPID keys, payload encryption error,
+          // or an FCM 4xx/5xx that isn't 404/410). Log it — otherwise it vanishes and
+          // a broken push setup just looks like "sent: 0" with no clue why.
+          console.error(
+            `[send-reminders] push failed for ${hostOf(s.endpoint)} ` +
+              `(task ${r.taskId}, key ${r.firedForKey}): status=${res.status ?? "n/a"} ` +
+              `error=${res.error ?? "unknown"}`,
+          );
         }
       }
     }
   }
 
+  // One concise line per active tick (quiet minutes stay silent) so the outcome is
+  // visible in the function logs, not only in the HTTP response body / net._http_response.
+  if (claimed > 0 || pruned > 0) {
+    console.log(`[send-reminders] claimed=${claimed} sent=${sent} pruned=${pruned}`);
+  }
   return json({ ok: true, claimed, sent, pruned });
 });
