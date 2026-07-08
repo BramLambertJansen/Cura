@@ -79,7 +79,10 @@ sw.addEventListener("push", (event) => {
         // wekker (e.g. a throttled background tab that still polled) into one.
         tag: payload.firedForKey,
         icon: "/icons/icon-192.png",
-        badge: "/icons/icon-192.png",
+        // badge = de kleine monochrome status-/taakbalk-icoon; Android tint 'm via
+        // het alfakanaal, dus een apart wit huis-silhouet i.p.v. het volkleuren-icoon
+        // (dat als een witte blok zou renderen).
+        badge: "/icons/badge-96.png",
         data: { url: payload.url ?? "/", taskId: payload.taskId },
       });
     })(),

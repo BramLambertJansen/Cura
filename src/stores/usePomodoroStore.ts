@@ -94,7 +94,7 @@ function osNudge(title: string, body: string): void {
   // Zichtbare tab → de toast volstaat; alleen nudgen als de gebruiker elders is.
   if (typeof document !== "undefined" && !document.hidden) return;
   try {
-    new Notification(title, { body, tag: "cura-focus" });
+    new Notification(title, { body, tag: "cura-focus", icon: "/icons/icon-192.png" });
   } catch {
     // Sommige browsers vereisen een SW-registratie voor Notification — stil negeren.
   }
