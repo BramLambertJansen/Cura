@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { useCuraStore } from "./useCuraStore";
+import { showLocalNotification } from "../app/lib/showNotification";
 
 /**
  * Focustimer — een zachte, pomodoro-achtige focustimer.
@@ -93,11 +94,10 @@ function osNudge(title: string, body: string): void {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
   // Zichtbare tab → de toast volstaat; alleen nudgen als de gebruiker elders is.
   if (typeof document !== "undefined" && !document.hidden) return;
-  try {
-    new Notification(title, { body, tag: "cura-focus", icon: "/icons/icon-192.png" });
-  } catch {
-    // Sommige browsers vereisen een SW-registratie voor Notification — stil negeren.
-  }
+  // Via de service worker (showLocalNotification): de kale Notification-constructor
+  // is op Android Chrome een "illegal constructor" — showLocalNotification prefereert
+  // ServiceWorkerRegistration.showNotification() en slikt elke fout stil.
+  showLocalNotification(title, { body, tag: "cura-focus", icon: "/icons/icon-192.png" });
 }
 
 interface PomodoroState extends Persisted {
