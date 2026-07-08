@@ -260,7 +260,12 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         // completion toasts, so screens don't fire their own on top of it.
         if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(8);
         const completion = await store.completeTask(taskId, currentUserId);
-        toast.success("Lekker bezig", { description: `${task.title} is gedaan — zichtbaar voor het huishouden.` });
+        toast.success("Lekker bezig", {
+          description: `${task.title} is gedaan — zichtbaar voor het huishouden.`,
+          // Vergevingsgezind: zet een per ongeluk (swipe-)afvink met één tik terug,
+          // net als de "Even niet vandaag"-dismissals. Hergebruikt het uncomplete-pad.
+          action: { label: "Ongedaan maken", onClick: () => { void get().toggleTask(taskId, false); } },
+        });
         set({ completions: [...get().completions, completion] });
       } else {
         // Mirrors uncompleteTask's own "remove the most recent one" rule, so we
