@@ -311,9 +311,14 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   async createTask(input) {
     try {
       const store = await getDataStore();
-      const { householdId } = get();
+      const { householdId, currentUserId } = get();
       if (!householdId) return;
-      const created = await store.createTask(householdId, input);
+      let created = await store.createTask(householdId, input);
+      // Putting a task on your day is itself a soft "ik doe dit" — claim it for
+      // free instead of requiring a second explicit "ik pak dit" action.
+      if (input.planned && currentUserId) {
+        created = await store.claimTask(created.id, currentUserId);
+      }
       toast.success(`"${created.title}" toegevoegd`, {
         description: input.planned ? "Op je dag gezet" : input.roomId ? undefined : "Gedeelde pool",
       });
@@ -341,7 +346,15 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   async updateTask(taskId, patch) {
     try {
       const store = await getDataStore();
-      const updated = await store.updateTask(taskId, patch);
+      const { currentUserId, tasks } = get();
+      const wasPlanned = tasks.find((t) => t.id === taskId)?.planned ?? false;
+      let updated = await store.updateTask(taskId, patch);
+      // Same soft auto-claim as createTask, but only on the transition into
+      // `planned` (not every re-save of an already-planned task), and only if
+      // nobody else already claimed it — never silently override an existing claim.
+      if (patch.planned && !wasPlanned && currentUserId && !updated.claimedById) {
+        updated = await store.claimTask(taskId, currentUserId);
+      }
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
