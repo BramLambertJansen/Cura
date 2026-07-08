@@ -109,17 +109,27 @@ export interface RoutineView {
 }
 
 /** A shopping item as a screen sees it — a plain checklist row, no dueHint/density story. */
+export type ShoppingCategoryKey = "fresh" | "cold" | "pantry" | "household" | "other";
+
+export interface ShoppingCategoryView {
+  key: ShoppingCategoryKey;
+  label: string;
+  items: ShoppingItemView[];
+}
+
 export interface ShoppingItemView {
   id: string;
   title: string;
   quantity?: string;
   checked: boolean;
+  category: ShoppingCategoryKey;
 }
 
 /** The shopping list split into open vs already-checked items, oldest-added first within each. */
 export interface ShoppingListView {
   open: ShoppingItemView[];
   checked: ShoppingItemView[];
+  openGroups: ShoppingCategoryView[];
 }
 
 /** One line for the Samen (visibility) feed — a message, not a scoreboard. */
