@@ -40,6 +40,8 @@ interface CuraState {
   createHousehold: (name: string) => Promise<void>;
   updateHousehold: (name: string) => Promise<void>;
   updateMember: (displayName: string) => Promise<void>;
+  /** Sets or clears the acting member's quiet hours. Pass null/null to turn them off. */
+  updateQuietHours: (start: string | null, end: string | null) => Promise<void>;
   createInvite: () => Promise<HouseholdInvite | undefined>;
   acceptInvite: (token: string) => Promise<AcceptInviteResult>;
   revokeInvite: (token: string) => Promise<void>;
@@ -213,6 +215,19 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       if (!me) return;
       const updated = await store.updateMember(me.id, { displayName });
       toast("Naam opgeslagen");
+      set({ members: get().members.map((m) => (m.id === me.id ? updated : m)) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Opslaan lukte niet");
+    }
+  },
+
+  async updateQuietHours(start, end) {
+    try {
+      const store = await getDataStore();
+      const me = get().members.find((m) => m.userId === get().currentUserId);
+      if (!me) return;
+      const updated = await store.updateMember(me.id, { quietHoursStart: start, quietHoursEnd: end });
+      toast(start && end ? "Stille uren ingesteld" : "Stille uren uit");
       set({ members: get().members.map((m) => (m.id === me.id ? updated : m)) });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Opslaan lukte niet");

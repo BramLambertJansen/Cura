@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Task, TaskCompletion } from "./types";
-import { buildLatestCompletionMap, isDone, getDueReminders } from "./reminders";
+import { buildLatestCompletionMap, isDone, getDueReminders, isWithinQuietHours } from "./reminders";
 import appEngineSrc from "./reminders.ts?raw";
 import sharedEngineSrc from "../../supabase/functions/_shared/reminders.ts?raw";
 
@@ -120,6 +120,45 @@ describe("reminder trigger logic — explicit timezone (server-side parity)", ()
     const t = task({ dueDate: new Date(now - 60_000).toISOString() });
     expect(getDueReminders([t], buildLatestCompletionMap([]), now, AMS)).toHaveLength(1);
     expect(getDueReminders([t], buildLatestCompletionMap([]), now, "America/New_York")).toHaveLength(1);
+  });
+});
+
+describe("isWithinQuietHours", () => {
+  const AMS = "Europe/Amsterdam"; // UTC+2 on this summer date
+
+  it("is off when start/end are unset", () => {
+    const now = Date.UTC(2026, 6, 6, 23, 0); // 01:00 Amsterdam
+    expect(isWithinQuietHours(now, AMS)).toBe(false);
+    expect(isWithinQuietHours(now, AMS, "22:00")).toBe(false);
+    expect(isWithinQuietHours(now, AMS, undefined, "07:00")).toBe(false);
+  });
+
+  it("matches a same-day range (e.g. 12:00-13:00)", () => {
+    const inRange = Date.UTC(2026, 6, 6, 10, 30); // 12:30 Amsterdam
+    const outOfRange = Date.UTC(2026, 6, 6, 12, 0); // 14:00 Amsterdam
+    expect(isWithinQuietHours(inRange, AMS, "12:00", "13:00")).toBe(true);
+    expect(isWithinQuietHours(outOfRange, AMS, "12:00", "13:00")).toBe(false);
+  });
+
+  it("wraps midnight (e.g. 22:00-07:00)", () => {
+    const lateNight = Date.UTC(2026, 6, 6, 21, 0); // 23:00 Amsterdam
+    const earlyMorning = Date.UTC(2026, 6, 6, 3, 30); // 05:30 Amsterdam (next day, still quiet)
+    const daytime = Date.UTC(2026, 6, 6, 10, 0); // 12:00 Amsterdam
+    expect(isWithinQuietHours(lateNight, AMS, "22:00", "07:00")).toBe(true);
+    expect(isWithinQuietHours(earlyMorning, AMS, "22:00", "07:00")).toBe(true);
+    expect(isWithinQuietHours(daytime, AMS, "22:00", "07:00")).toBe(false);
+  });
+
+  it("treats an equal start/end as off, not a full-day window", () => {
+    const now = Date.UTC(2026, 6, 6, 10, 0);
+    expect(isWithinQuietHours(now, AMS, "09:00", "09:00")).toBe(false);
+  });
+
+  it("start is inclusive, end is exclusive", () => {
+    const atStart = Date.UTC(2026, 6, 6, 20, 0); // 22:00 Amsterdam exactly
+    const atEnd = Date.UTC(2026, 6, 7, 5, 0); // 07:00 Amsterdam exactly
+    expect(isWithinQuietHours(atStart, AMS, "22:00", "07:00")).toBe(true);
+    expect(isWithinQuietHours(atEnd, AMS, "22:00", "07:00")).toBe(false);
   });
 });
 

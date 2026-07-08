@@ -182,3 +182,31 @@ export function getDueReminders(
   }
   return result;
 }
+
+/**
+ * Is `now` inside a member's quiet-hours window (in `timeZone`)? Both `start`
+ * and `end` ("HH:mm") must be set to be active — an unset pair means quiet
+ * hours are off. Wraps midnight as expected (e.g. "22:00" -> "07:00").
+ *
+ * This never drops a wekker: callers use it to hold a ping back, not to skip
+ * `getDueReminders` — the task stays due, and the next check after the window
+ * ends fires it, so a quiet night delays a reminder instead of losing it.
+ */
+export function isWithinQuietHours(
+  now: number,
+  timeZone: string,
+  start?: string,
+  end?: string,
+): boolean {
+  if (!start || !end) return false;
+  const wc = partsInTz(now, timeZone);
+  const nowMin = wc.hour * 60 + wc.minute;
+  const [startH, startM] = start.split(":").map(Number);
+  const [endH, endM] = end.split(":").map(Number);
+  const startMin = startH * 60 + startM;
+  const endMin = endH * 60 + endM;
+  if (startMin === endMin) return false; // degenerate range = off
+  return startMin < endMin
+    ? nowMin >= startMin && nowMin < endMin
+    : nowMin >= startMin || nowMin < endMin; // wraps midnight
+}

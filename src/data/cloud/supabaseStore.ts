@@ -18,7 +18,10 @@ const uid = (): string => crypto.randomUUID();
 // column-for-column — no live DB access in this sandbox to generate types.
 
 interface HouseholdRow { id: string; name: string; time_zone: string }
-interface MemberRow { id: string; household_id: string; display_name: string; user_id: string | null }
+interface MemberRow {
+  id: string; household_id: string; display_name: string; user_id: string | null;
+  quiet_hours_start: string | null; quiet_hours_end: string | null;
+}
 interface InviteRow { token: string; household_id: string; created_by_id: string; created_at: string; expires_at: string | null }
 interface RoomRow { id: string; household_id: string; name: string; icon_key: string; color: string; owner_id: string | null }
 interface BundleRow { id: string; household_id: string; name: string; trigger: string; cadence: "daily" | "weekly"; window_label: string }
@@ -52,7 +55,11 @@ function mapHousehold(r: HouseholdRow): Household {
   return HouseholdSchema.parse({ id: r.id, name: r.name, timeZone: r.time_zone });
 }
 function mapMember(r: MemberRow): Member {
-  return MemberSchema.parse({ id: r.id, householdId: r.household_id, displayName: r.display_name, userId: r.user_id ?? undefined });
+  return MemberSchema.parse({
+    id: r.id, householdId: r.household_id, displayName: r.display_name, userId: r.user_id ?? undefined,
+    quietHoursStart: r.quiet_hours_start ?? undefined,
+    quietHoursEnd: r.quiet_hours_end ?? undefined,
+  });
 }
 function mapInvite(r: InviteRow): HouseholdInvite {
   return HouseholdInviteSchema.parse({
@@ -161,8 +168,15 @@ export class SupabaseStore implements DataStore {
     return mapList((data ?? []) as MemberRow[], mapMember, "member");
   }
 
-  async updateMember(memberId: string, patch: { displayName: string }): Promise<Member> {
-    const { data, error } = await supabase.from("members").update({ display_name: patch.displayName }).eq("id", memberId).select().single();
+  async updateMember(
+    memberId: string,
+    patch: { displayName?: string; quietHoursStart?: string | null; quietHoursEnd?: string | null },
+  ): Promise<Member> {
+    const update: Record<string, unknown> = {};
+    if (patch.displayName !== undefined) update.display_name = patch.displayName;
+    if (patch.quietHoursStart !== undefined) update.quiet_hours_start = patch.quietHoursStart;
+    if (patch.quietHoursEnd !== undefined) update.quiet_hours_end = patch.quietHoursEnd;
+    const { data, error } = await supabase.from("members").update(update).eq("id", memberId).select().single();
     if (error || !data) throw new Error(error?.message ?? `Member not found: ${memberId}`);
     return mapMember(data as MemberRow);
   }

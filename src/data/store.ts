@@ -70,8 +70,15 @@ export interface DataStore {
    */
   getHouseholdsForUser(userId: string): Promise<Household[]>;
   listMembers(householdId: string): Promise<Member[]>;
-  /** Renames the acting member (their own display name only). */
-  updateMember(memberId: string, patch: { displayName: string }): Promise<Member>;
+  /**
+   * Updates the acting member's own settings — display name and/or quiet
+   * hours. Only provided fields are touched; pass `null` for a quiet-hours
+   * bound to clear it (both must be cleared together to turn quiet hours off).
+   */
+  updateMember(
+    memberId: string,
+    patch: { displayName?: string; quietHoursStart?: string | null; quietHoursEnd?: string | null },
+  ): Promise<Member>;
   /**
    * "Create your first household" onboarding — for a signed-in user with zero
    * households. Atomically creates the household, the creator's member row,

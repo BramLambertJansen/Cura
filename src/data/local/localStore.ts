@@ -58,10 +58,15 @@ export class LocalStore implements DataStore {
     return this.db.members.filter((m) => m.householdId === householdId);
   }
 
-  async updateMember(memberId: string, patch: { displayName: string }): Promise<Member> {
+  async updateMember(
+    memberId: string,
+    patch: { displayName?: string; quietHoursStart?: string | null; quietHoursEnd?: string | null },
+  ): Promise<Member> {
     const member = this.db.members.find((m) => m.id === memberId);
     if (!member) throw new Error(`Member not found: ${memberId}`);
-    Object.assign(member, patch);
+    if (patch.displayName !== undefined) member.displayName = patch.displayName;
+    if (patch.quietHoursStart !== undefined) member.quietHoursStart = patch.quietHoursStart ?? undefined;
+    if (patch.quietHoursEnd !== undefined) member.quietHoursEnd = patch.quietHoursEnd ?? undefined;
     this.persist();
     return member;
   }
