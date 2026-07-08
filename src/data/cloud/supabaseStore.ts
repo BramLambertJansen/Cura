@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient";
-import type { CreateTaskInput, DataStore, PushSubscriptionInput } from "../store";
-import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle } from "../types";
+import type { CreateTaskInput, CreateShoppingItemInput, DataStore, PushSubscriptionInput } from "../store";
+import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
 import {
   HouseholdSchema,
   MemberSchema,
@@ -9,6 +9,7 @@ import {
   TaskSchema,
   TaskCompletionSchema,
   BundleSchema,
+  ShoppingItemSchema,
 } from "../schemas";
 
 const uid = (): string => crypto.randomUUID();
@@ -28,6 +29,7 @@ interface TaskRow {
   bundle_id: string | null; claimed_by_id: string | null; planned: boolean;
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
+interface ShoppingItemRow { id: string; household_id: string; title: string; quantity: string | null; checked: boolean; created_at: string }
 interface PushSubscriptionRow {
   id: string; household_id: string; member_id: string;
   endpoint: string; p256dh: string; auth: string; created_at: string;
@@ -75,6 +77,12 @@ function mapTask(r: TaskRow): Task {
 }
 function mapCompletion(r: CompletionRow): TaskCompletion {
   return TaskCompletionSchema.parse({ id: r.id, taskId: r.task_id, completedById: r.completed_by_id, completedAt: r.completed_at });
+}
+function mapShoppingItem(r: ShoppingItemRow): ShoppingItem {
+  return ShoppingItemSchema.parse({
+    id: r.id, householdId: r.household_id, title: r.title,
+    quantity: r.quantity ?? undefined, checked: r.checked, createdAt: r.created_at,
+  });
 }
 
 /**
@@ -350,10 +358,38 @@ export class SupabaseStore implements DataStore {
     if (error) throw new Error(error.message);
   }
 
+  // ── Shopping list ────────────────────────────────────────────────────────
+  async listShoppingItems(householdId: string): Promise<ShoppingItem[]> {
+    const { data, error } = await supabase.from("shopping_items").select("*").eq("household_id", householdId);
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as ShoppingItemRow[]).map(mapShoppingItem);
+  }
+
+  async createShoppingItem(householdId: string, input: CreateShoppingItemInput): Promise<ShoppingItem> {
+    const row: ShoppingItemRow = {
+      id: uid(), household_id: householdId, title: input.title,
+      quantity: input.quantity ?? null, checked: false, created_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("shopping_items").insert(row);
+    if (error) throw new Error(error.message);
+    return mapShoppingItem(row);
+  }
+
+  async toggleShoppingItem(itemId: string, checked: boolean): Promise<ShoppingItem> {
+    const { data, error } = await supabase.from("shopping_items").update({ checked }).eq("id", itemId).select().single();
+    if (error || !data) throw new Error(error?.message ?? `Shopping item not found: ${itemId}`);
+    return mapShoppingItem(data as ShoppingItemRow);
+  }
+
+  async deleteShoppingItem(itemId: string): Promise<void> {
+    const { error } = await supabase.from("shopping_items").delete().eq("id", itemId);
+    if (error) throw new Error(error.message);
+  }
+
   // ── Realtime (Phase 3+) ──────────────────────────────────────────────────
   // One channel per household, subscribed to every table the household view
-  // depends on. tasks/rooms/bundles/members carry household_id and are
-  // filtered server-side; task_completions has no household_id of its own
+  // depends on. tasks/rooms/bundles/members/shopping_items carry household_id
+  // and are filtered server-side; task_completions has no household_id of its own
   // (only via a join to tasks), so it's subscribed unfiltered and relies on
   // the same RLS policy (task_completions_select) that gates normal reads —
   // Supabase's Realtime "postgres_changes" feed is RLS-aware for the
@@ -368,6 +404,7 @@ export class SupabaseStore implements DataStore {
       .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `household_id=eq.${householdId}` }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "bundles", filter: `household_id=eq.${householdId}` }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `household_id=eq.${householdId}` }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "shopping_items", filter: `household_id=eq.${householdId}` }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "task_completions" }, onChange)
       .subscribe();
     return () => {

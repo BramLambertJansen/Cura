@@ -115,6 +115,23 @@ export const BundleSchema = z.object({
   windowLabel: z.string().min(1),
 });
 
+// ─── Shopping list ───────────────────────────────────────────────────────────
+// A plain checklist, deliberately NOT following the "no derived state" rule
+// above: `checked` is a stored flag, not derived from an event log. Unlike a
+// Task, a shopping item has no recurrence, no density/streak story, and never
+// appears in the Samen visibility feed — it's a disposable list, not an
+// activity log, so there's nothing worth event-sourcing (CLAUDE.md §5
+// "Boodschappenlijst").
+
+export const ShoppingItemSchema = z.object({
+  id: Id,
+  householdId: Id,
+  title: z.string().min(1),
+  quantity: z.string().min(1).optional(), // free text: "2", "1 pak" — no fixed unit, deliberately not a number
+  checked: z.boolean().default(false),
+  createdAt: Iso, // stable add-order
+});
+
 // ─── The whole persisted snapshot (what local mode reads/writes) ─────────────
 
 export const DatabaseSchema = z.object({
@@ -126,4 +143,7 @@ export const DatabaseSchema = z.object({
   tasks: z.array(TaskSchema),
   completions: z.array(TaskCompletionSchema),
   bundles: z.array(BundleSchema),
+  // Default so pre-existing local snapshots (before this field existed) keep
+  // loading instead of getting reseeded — same reasoning as timeZone above.
+  shoppingItems: z.array(ShoppingItemSchema).default([]),
 });

@@ -1,6 +1,6 @@
 import { DatabaseSchema } from "../schemas";
-import type { Database, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle } from "../types";
-import type { CreateTaskInput, DataStore } from "../store";
+import type { Database, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
+import type { CreateTaskInput, CreateShoppingItemInput, DataStore } from "../store";
 import { seedDatabase, LOCAL_USER_ID } from "./seed";
 
 const STORAGE_KEY = "cura:db:v1";
@@ -207,6 +207,37 @@ export class LocalStore implements DataStore {
   async deleteBundle(bundleId: string): Promise<void> {
     this.db.bundles = this.db.bundles.filter((b) => b.id !== bundleId);
     this.db.tasks = this.db.tasks.filter((t) => t.bundleId !== bundleId);
+    this.persist();
+  }
+
+  async listShoppingItems(householdId: string): Promise<ShoppingItem[]> {
+    return this.db.shoppingItems.filter((i) => i.householdId === householdId);
+  }
+
+  async createShoppingItem(householdId: string, input: CreateShoppingItemInput): Promise<ShoppingItem> {
+    const created: ShoppingItem = {
+      id: uid(),
+      householdId,
+      title: input.title,
+      quantity: input.quantity,
+      checked: false,
+      createdAt: new Date().toISOString(),
+    };
+    this.db.shoppingItems.push(created);
+    this.persist();
+    return created;
+  }
+
+  async toggleShoppingItem(itemId: string, checked: boolean): Promise<ShoppingItem> {
+    const item = this.db.shoppingItems.find((i) => i.id === itemId);
+    if (!item) throw new Error(`Shopping item not found: ${itemId}`);
+    item.checked = checked;
+    this.persist();
+    return item;
+  }
+
+  async deleteShoppingItem(itemId: string): Promise<void> {
+    this.db.shoppingItems = this.db.shoppingItems.filter((i) => i.id !== itemId);
     this.persist();
   }
 

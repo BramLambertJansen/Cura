@@ -67,5 +67,11 @@ export function seedDatabase(): Database {
       { id: "bundle-avond", householdId: HOUSEHOLD_ID, name: "Avondroutine", trigger: "'s avonds", cadence: "daily", windowLabel: "avonden" },
       { id: "bundle-weekend", householdId: HOUSEHOLD_ID, name: "Weekend schoonmaak", trigger: "Weekeinde", cadence: "weekly", windowLabel: "weekenden" },
     ],
+    shoppingItems: [
+      { id: "shopping-1", householdId: HOUSEHOLD_ID, title: "Melk", checked: false, createdAt: todayAt(9, 0) },
+      { id: "shopping-2", householdId: HOUSEHOLD_ID, title: "Eieren", quantity: "10", checked: false, createdAt: todayAt(9, 1) },
+      { id: "shopping-3", householdId: HOUSEHOLD_ID, title: "Wc-papier", quantity: "1 pak", checked: false, createdAt: todayAt(9, 2) },
+      { id: "shopping-4", householdId: HOUSEHOLD_ID, title: "Afwasmiddel", checked: true, createdAt: todayAt(8, 30) },
+    ],
   };
 }

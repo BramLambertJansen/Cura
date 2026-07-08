@@ -6,6 +6,7 @@ import type {
   Task,
   TaskCompletion,
   Bundle,
+  ShoppingItem,
 } from "./types";
 
 /**
@@ -35,6 +36,11 @@ export interface CreateTaskInput {
   dueDate?: string; // ISO; one-off = full deadline (date+time); recurring = only HH:mm is read
   bundleId?: string;
   planned?: boolean;
+}
+
+export interface CreateShoppingItemInput {
+  title: string;
+  quantity?: string;
 }
 
 /**
@@ -117,12 +123,20 @@ export interface DataStore {
   updateBundle(bundleId: string, patch: Partial<Omit<Bundle, "id" | "householdId">>): Promise<Bundle>;
   deleteBundle(bundleId: string): Promise<void>;
 
+  // ── Shopping list ──────────────────────────────────────────────────────────
+  // Purpose-specific methods (mirrors claimTask/completeTask) rather than a
+  // generic patch — `checked` is the only mutable field besides the item itself.
+  listShoppingItems(householdId: string): Promise<ShoppingItem[]>;
+  createShoppingItem(householdId: string, input: CreateShoppingItemInput): Promise<ShoppingItem>;
+  toggleShoppingItem(itemId: string, checked: boolean): Promise<ShoppingItem>;
+  deleteShoppingItem(itemId: string): Promise<void>;
+
   /**
    * Live updates for this household (tasks, task_completions, rooms, bundles,
-   * members) — cloud-only (Phase 3+ Realtime). `onChange` fires once per burst
-   * of remote change events; the caller decides what to refetch. Returns an
-   * unsubscribe function. A no-op in local mode (single device, nothing to
-   * subscribe to) so callers never need to branch on `store.mode` themselves.
+   * members, shopping_items) — cloud-only (Phase 3+ Realtime). `onChange` fires
+   * once per burst of remote change events; the caller decides what to refetch.
+   * Returns an unsubscribe function. A no-op in local mode (single device,
+   * nothing to subscribe to) so callers never need to branch on `store.mode`.
    */
   subscribeToChanges(householdId: string, onChange: () => void): () => void;
 

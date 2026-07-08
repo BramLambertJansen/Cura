@@ -40,6 +40,7 @@ const RoutinesPage = lazy(() => import("./features/routines/RoutinesPage").then(
 const SamenPage = lazy(() => import("./features/samen/SamenPage").then((m) => ({ default: m.SamenPage })));
 const MeerPage = lazy(() => import("./features/meer/MeerPage").then((m) => ({ default: m.MeerPage })));
 const TakenPage = lazy(() => import("./features/taken/TakenPage").then((m) => ({ default: m.TakenPage })));
+const BoodschappenPage = lazy(() => import("./features/boodschappen/BoodschappenPage").then((m) => ({ default: m.BoodschappenPage })));
 const FocusPage = lazy(() => import("./features/focus/FocusPage").then((m) => ({ default: m.FocusPage })));
 const DesignSystemPage = lazy(() => import("./features/design-system/DesignSystemPage").then((m) => ({ default: m.DesignSystemPage })));
 const AuthPage = lazy(() => import("./features/auth/AuthPage").then((m) => ({ default: m.AuthPage })));
@@ -60,6 +61,7 @@ function AnimatedRoutes() {
         <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
         <Route path="/meer" element={<PageTx><MeerPage /></PageTx>} />
         <Route path="/taken" element={<PageTx><TakenPage /></PageTx>} />
+        <Route path="/boodschappen" element={<PageTx><BoodschappenPage /></PageTx>} />
         <Route path="/focus" element={<PageTx><FocusPage /></PageTx>} />
         <Route path="/dev/design-system" element={<PageTx><DesignSystemPage /></PageTx>} />
       </Routes>

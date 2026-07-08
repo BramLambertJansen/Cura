@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
-import { createDataStore, type CreateTaskInput, type DataStore, type PushSubscriptionInput } from "../data/store";
-import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion } from "../data/types";
+import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput } from "../data/store";
+import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, ShoppingItem } from "../data/types";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
@@ -32,6 +32,7 @@ interface CuraState {
   tasks: Task[];
   completions: TaskCompletion[];
   bundles: Bundle[];
+  shoppingItems: ShoppingItem[];
 
   init: () => Promise<void>;
   /** Re-fetch all lists for the current household (pull-to-refresh, realtime). Resolves silently on failure — a missed refresh isn't worth an alarm. */
@@ -65,6 +66,14 @@ interface CuraState {
     taskDrafts?: TaakDraft[],
   ) => Promise<void>;
   deleteBundle: (bundleId: string) => Promise<void>;
+
+  createShoppingItem: (input: CreateShoppingItemInput) => Promise<void>;
+  toggleShoppingItem: (itemId: string, checked: boolean) => Promise<void>;
+  deleteShoppingItem: (itemId: string) => Promise<void>;
+  /** Removes only the checked items — a "declutter" pass, keeps what's still needed. */
+  clearCheckedShoppingItems: () => Promise<void>;
+  /** Removes every item — "start fresh" after a full shopping trip. */
+  clearShoppingList: () => Promise<void>;
 
   /**
    * Register/unregister this browser's Web Push subscription for the current
@@ -103,6 +112,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   tasks: [],
   completions: [],
   bundles: [],
+  shoppingItems: [],
 
   async init() {
     try {
@@ -117,12 +127,13 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         set({ ready: true, currentUserId: userId, households: [] });
         return;
       }
-      const [members, rooms, tasks, completions, bundles] = await Promise.all([
+      const [members, rooms, tasks, completions, bundles, shoppingItems] = await Promise.all([
         store.listMembers(household.id),
         store.listRooms(household.id),
         store.listTasks(household.id),
         store.listCompletions(household.id),
         store.listBundles(household.id),
+        store.listShoppingItems(household.id),
       ]);
       set({
         ready: true,
@@ -134,6 +145,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         tasks,
         completions,
         bundles,
+        shoppingItems,
       });
 
       // Re-init (e.g. after accepting an invite) replaces any earlier subscription.
@@ -159,16 +171,17 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
-      const [members, rooms, tasks, completions, bundles] = await Promise.all([
+      const [members, rooms, tasks, completions, bundles, shoppingItems] = await Promise.all([
         store.listMembers(householdId),
         store.listRooms(householdId),
         store.listTasks(householdId),
         store.listCompletions(householdId),
         store.listBundles(householdId),
+        store.listShoppingItems(householdId),
       ]);
       // Household changed while the fetch was in flight (sign-out/re-init) — discard.
       if (get().householdId !== householdId) return;
-      set({ members, rooms, tasks, completions, bundles });
+      set({ members, rooms, tasks, completions, bundles, shoppingItems });
     } catch {
       // Silent — a transient refresh failure isn't worth interrupting the session over; the next refresh retries.
     }
@@ -242,7 +255,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       clearTimeout(realtimeRefreshTimer);
       realtimeRefreshTimer = null;
     }
-    set({ ready: false, initError: null, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [] });
+    set({ ready: false, initError: null, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [], shoppingItems: [] });
     dataStorePromise = null;
   },
 
@@ -501,6 +514,64 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Verwijderen lukte niet");
+    }
+  },
+
+  async createShoppingItem(input) {
+    try {
+      const store = await getDataStore();
+      const { householdId } = get();
+      if (!householdId) return;
+      const created = await store.createShoppingItem(householdId, input);
+      set({ shoppingItems: [...get().shoppingItems, created] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+    }
+  },
+
+  async toggleShoppingItem(itemId, checked) {
+    try {
+      const store = await getDataStore();
+      const updated = await store.toggleShoppingItem(itemId, checked);
+      set({ shoppingItems: get().shoppingItems.map((i) => (i.id === itemId ? updated : i)) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Afvinken lukte niet");
+    }
+  },
+
+  async deleteShoppingItem(itemId) {
+    try {
+      const store = await getDataStore();
+      await store.deleteShoppingItem(itemId);
+      set({ shoppingItems: get().shoppingItems.filter((i) => i.id !== itemId) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Verwijderen lukte niet");
+    }
+  },
+
+  async clearCheckedShoppingItems() {
+    try {
+      const store = await getDataStore();
+      const toRemove = get().shoppingItems.filter((i) => i.checked);
+      const results = await Promise.allSettled(toRemove.map((i) => store.deleteShoppingItem(i.id)));
+      const removedIds = new Set(toRemove.filter((_, idx) => results[idx].status === "fulfilled").map((i) => i.id));
+      set({ shoppingItems: get().shoppingItems.filter((i) => !removedIds.has(i.id)) });
+      toast("Afgevinkte items gewist");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Wissen lukte niet");
+    }
+  },
+
+  async clearShoppingList() {
+    try {
+      const store = await getDataStore();
+      const toRemove = get().shoppingItems;
+      const results = await Promise.allSettled(toRemove.map((i) => store.deleteShoppingItem(i.id)));
+      const removedIds = new Set(toRemove.filter((_, idx) => results[idx].status === "fulfilled").map((i) => i.id));
+      set({ shoppingItems: get().shoppingItems.filter((i) => !removedIds.has(i.id)) });
+      toast("Boodschappenlijst geleegd");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Legen lukte niet");
     }
   },
 
