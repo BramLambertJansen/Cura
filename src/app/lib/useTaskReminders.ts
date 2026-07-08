@@ -14,19 +14,31 @@ export function resolveReminderChannel(
   return permission === "granted" ? "notification" : "toast";
 }
 
-function dispatchReminder(title: string, tag: string) {
+function dispatchReminder(
+  title: string,
+  tag: string,
+  taskId: string,
+  openTask?: (taskId: string) => void,
+) {
   const userDisabled = localStorage.getItem(NOTIF_PREF_KEY) === "disabled";
   const permission = typeof Notification === "undefined" ? "unsupported" : Notification.permission;
   const channel = resolveReminderChannel(userDisabled, permission);
+  const canOpen = !!openTask && !!taskId;
 
   if (channel === "none") return;
   if (channel === "notification") {
     // tag = firedForKey: an identical wekker arriving via server push (same key,
     // thanks to the shared timezone-aware engine) coalesces into one OS
     // notification instead of buzzing twice.
-    new Notification(`Tijd voor: ${title}`, { body: "Je hebt dit op de planning staan.", tag });
+    const n = new Notification(`Tijd voor: ${title}`, { body: "Je hebt dit op de planning staan.", tag });
+    if (canOpen) {
+      n.onclick = () => { window.focus(); openTask!(taskId); n.close(); };
+    }
   } else {
-    toast(`Wekker: ${title}`, { description: "Tijd voor deze taak." });
+    toast(`Wekker: ${title}`, {
+      description: "Tijd voor deze taak.",
+      action: canOpen ? { label: "Bekijk", onClick: () => openTask!(taskId) } : undefined,
+    });
   }
 }
 
@@ -46,22 +58,22 @@ function dispatchReminder(title: string, tag: string) {
  * hook (a `cura-reminder` message) instead of showing its own OS notification,
  * so a push and a poll-tick for the same wekker route through one dedup set.
  */
-export function useTaskReminders(): void {
+export function useTaskReminders(openTask?: (taskId: string) => void): void {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
   const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
   const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    function fire(firedForKey: string, title: string) {
+    function fire(firedForKey: string, title: string, taskId: string) {
       if (firedRef.current.has(firedForKey)) return;
       firedRef.current.add(firedForKey);
-      dispatchReminder(title, firedForKey);
+      dispatchReminder(title, firedForKey, taskId, openTask);
     }
     function check() {
       const latestByTask = buildLatestCompletionMap(completions);
       for (const reminder of getDueReminders(tasks, latestByTask, Date.now(), timeZone)) {
-        fire(reminder.firedForKey, reminder.title);
+        fire(reminder.firedForKey, reminder.title, reminder.taskId);
       }
     }
     // Check meteen, niet pas na de eerste 30s-tik: zo gaat een wekker die al toe
@@ -73,9 +85,13 @@ export function useTaskReminders(): void {
     const id = setInterval(check, POLL_MS);
 
     function onSwMessage(e: MessageEvent) {
-      const data = e.data as { type?: string; title?: string; firedForKey?: string } | null;
+      const data = e.data as { type?: string; title?: string; firedForKey?: string; taskId?: string } | null;
       if (data?.type === "cura-reminder" && typeof data.firedForKey === "string") {
-        fire(data.firedForKey, typeof data.title === "string" ? data.title : "een taak");
+        fire(
+          data.firedForKey,
+          typeof data.title === "string" ? data.title : "een taak",
+          typeof data.taskId === "string" ? data.taskId : "",
+        );
       }
     }
     navigator.serviceWorker?.addEventListener("message", onSwMessage);
@@ -83,7 +99,7 @@ export function useTaskReminders(): void {
       clearInterval(id);
       navigator.serviceWorker?.removeEventListener("message", onSwMessage);
     };
-  }, [tasks, completions, timeZone]);
+  }, [tasks, completions, timeZone, openTask]);
 }
 
 // ─── Notification preference — shared between the hook and ProfielSheet ──────

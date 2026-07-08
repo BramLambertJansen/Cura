@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTaskReminders } from "./lib/useTaskReminders";
+import { useTaskDeepLink } from "./lib/useTaskDeepLink";
 import { useFocusTimer } from "./lib/useFocusTimer";
 import { usePushReconcile } from "./lib/usePushSubscription";
 import { BrowserRouter, Navigate, Route, Routes, matchPath, useLocation } from "react-router";
@@ -84,7 +85,6 @@ function PageTx({ children }: { children: ReactNode }) {
 
 /** The existing app shell — tabs, sheets, FAB. Assumes useCuraStore is already ready. */
 function MainShell() {
-  useTaskReminders();
   useFocusTimer();
   usePushReconcile();
 
@@ -123,6 +123,12 @@ function MainShell() {
     }),
     [],
   );
+
+  // Wekker → taak: in-app reminders (toast/OS-notification) and taps on a
+  // closed-app push both open the task. Mounted here (persistent shell) so it
+  // can reach openEditTask; sheetActions is stable, so the deps don't churn.
+  useTaskReminders(sheetActions.openEditTask);
+  useTaskDeepLink(sheetActions.openEditTask);
 
   return (
     <SheetContext.Provider value={sheetActions}>

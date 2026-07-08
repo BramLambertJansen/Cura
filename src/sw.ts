@@ -41,6 +41,8 @@ interface ReminderPayload {
   title: string;
   body?: string;
   firedForKey: string;
+  /** Deep-link target so a wekker tap opens the task (see useTaskDeepLink). */
+  taskId?: string;
   url?: string;
 }
 
@@ -49,7 +51,7 @@ function parsePayload(event: PushEvent): ReminderPayload | null {
   try {
     const data = event.data.json() as Partial<ReminderPayload>;
     if (typeof data.title !== "string" || typeof data.firedForKey !== "string") return null;
-    return { title: data.title, body: data.body, firedForKey: data.firedForKey, url: data.url };
+    return { title: data.title, body: data.body, firedForKey: data.firedForKey, taskId: data.taskId, url: data.url };
   } catch {
     return null;
   }
@@ -68,7 +70,7 @@ sw.addEventListener("push", (event) => {
       if (visible) {
         // App is on screen — let the in-app channel handle it. useTaskReminders
         // dedups against its own poll by firedForKey, so no double notification.
-        visible.postMessage({ type: "cura-reminder", title: payload.title, firedForKey: payload.firedForKey });
+        visible.postMessage({ type: "cura-reminder", title: payload.title, firedForKey: payload.firedForKey, taskId: payload.taskId });
         return;
       }
       await sw.registration.showNotification(`Tijd voor: ${payload.title}`, {
@@ -78,7 +80,7 @@ sw.addEventListener("push", (event) => {
         tag: payload.firedForKey,
         icon: "/icons/icon-192.png",
         badge: "/icons/icon-192.png",
-        data: { url: payload.url ?? "/" },
+        data: { url: payload.url ?? "/", taskId: payload.taskId },
       });
     })(),
   );
@@ -86,7 +88,9 @@ sw.addEventListener("push", (event) => {
 
 sw.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data as { url?: string } | null)?.url ?? "/";
+  const data = event.notification.data as { url?: string; taskId?: string } | null;
+  const url = data?.url ?? "/";
+  const taskId = data?.taskId;
   event.waitUntil(
     (async () => {
       const clients = (await sw.clients.matchAll({
@@ -96,8 +100,12 @@ sw.addEventListener("notificationclick", (event) => {
       const existing = clients[0];
       if (existing) {
         await existing.focus();
+        // Tab already open: route in-SPA (React Router opens EditTaskSheet via
+        // useTaskDeepLink) instead of a hard navigation that would reload.
+        if (taskId) existing.postMessage({ type: "cura-open-task", taskId });
         return;
       }
+      // Cold start: the url carries ?taak=<id>, which useTaskDeepLink reads on mount.
       await sw.clients.openWindow(url);
     })(),
   );

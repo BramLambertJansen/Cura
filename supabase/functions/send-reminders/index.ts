@@ -93,7 +93,12 @@ Deno.serve(async (req) => {
         title: r.title,
         body: "Je hebt dit op de planning staan.",
         firedForKey: r.firedForKey,
-        url: "/",
+        // Deep-link: tik op de wekker opent de taak zelf (EditTaskSheet via
+        // useTaskDeepLink). Expliciet /vandaag i.p.v. "/" want de "/"→/vandaag
+        // Navigate laat de ?taak-query vallen. taskId gaat ook mee zodat een al
+        // open tab in-SPA kan routeren i.p.v. te herladen.
+        taskId: r.taskId,
+        url: `/vandaag?taak=${r.taskId}`,
       };
       for (const s of subs as any[]) {
         const res = await sendWebPush({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload);
