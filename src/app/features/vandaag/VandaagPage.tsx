@@ -10,7 +10,7 @@ import { spring, stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
 import { useStartFocus } from "../../lib/useStartFocus";
-import { Avatar, Kop, Leeg } from "../../components/shared";
+import { Avatar, Kop, Leeg, StatusBadge } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
 import { TaakRij } from "../../components/TaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
@@ -28,18 +28,16 @@ export function VandaagPage() {
   const { isDismissed, dismiss, restore } = useNietVandaag();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
   const startFocus = useStartFocus();
-  // The suggestions live behind a "peek": the shortest one stays visible as a
-  // gentle nudge, the rest wait quietly behind a soft toggle so the section
-  // never overshadows the actual day-planning above it.
-  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  // The whole suggestions section collapses behind a chevron on its heading;
+  // open by default (all suggestions visible), so it reads as a calm, glanceable
+  // list rather than a hidden peek.
+  const [expanded, setExpanded] = useState(true);
 
   const greeting = getGreeting();
   const plannedOpen = tasks.filter((t) => t.planned && !t.done && !isTaskDismissed(t.id));
   const plannedDone = tasks.filter((t) => t.planned && t.done && !isTaskDismissed(t.id));
   const allPlanned = [...plannedOpen, ...plannedDone];
   const suggestions = toSuggestions(tasks).filter((t) => !isDismissed(t.id));
-  const visibleSuggestions = suggestionsOpen ? suggestions : suggestions.slice(0, 1);
-  const hiddenSuggestionCount = suggestions.length - 1;
 
   const me = members.find((m) => m.userId === currentUserId);
   // "Wat deed de ander" — only today's completions (so a task finished days ago
@@ -121,33 +119,45 @@ export function VandaagPage() {
 
         {suggestions.length > 0 && (
           <section>
-            <Kop>Misschien handig vandaag</Kop>
-            <motion.div layout className="space-y-2.5">
-              <AnimatePresence mode="popLayout" initial={false}>
-                {visibleSuggestions.map((task) => (
-                  <SuggestieRij
-                    key={task.id}
-                    task={task}
-                    onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat klaar wanneer jij wilt.` }); }}
-                    onNietVandaag={() => { dismiss(task.id); toast("Even niet vandaag", { description: `${task.title} komt morgen weer langs.`, action: { label: "Ongedaan maken", onClick: () => restore(task.id) } }); }}
-                  />
-                ))}
-              </AnimatePresence>
-              {hiddenSuggestionCount > 0 && (
-                <motion.button
+            <div className="flex items-center gap-2 mb-2 ml-1">
+              <Kop>Misschien handig</Kop>
+              <StatusBadge enter="slide">{suggestions.length}</StatusBadge>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setExpanded((v) => !v)}
+                aria-expanded={expanded}
+                aria-label={expanded ? "Suggesties inklappen" : "Suggesties uitklappen"}
+                className="ml-auto flex items-center justify-center w-7 h-7 rounded-full text-muted-foreground transition-colors hover:bg-secondary/60 focus-ring"
+              >
+                <motion.span animate={{ rotate: expanded ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex">
+                  <ChevronDown size={16} aria-hidden="true" />
+                </motion.span>
+              </motion.button>
+            </div>
+            <AnimatePresence initial={false}>
+              {expanded && (
+                <motion.div
                   layout
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setSuggestionsOpen((v) => !v)}
-                  aria-expanded={suggestionsOpen}
-                  className="flex items-center justify-center gap-1.5 mx-auto px-3.5 py-2 rounded-full text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/60 focus-ring"
+                  key="suggestions"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.24 }}
+                  className="space-y-2.5 overflow-hidden"
                 >
-                  {suggestionsOpen ? "Minder tonen" : `Nog ${hiddenSuggestionCount} suggestie${hiddenSuggestionCount === 1 ? "" : "s"}`}
-                  <motion.span animate={{ rotate: suggestionsOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex">
-                    <ChevronDown size={14} aria-hidden="true" />
-                  </motion.span>
-                </motion.button>
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {suggestions.map((task) => (
+                      <SuggestieRij
+                        key={task.id}
+                        task={task}
+                        onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat klaar wanneer jij wilt.` }); }}
+                        onNietVandaag={() => { dismiss(task.id); toast("Even niet vandaag", { description: `${task.title} komt morgen weer langs.`, action: { label: "Ongedaan maken", onClick: () => restore(task.id) } }); }}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </motion.div>
               )}
-            </motion.div>
+            </AnimatePresence>
           </section>
         )}
 

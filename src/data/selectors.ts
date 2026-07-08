@@ -224,16 +224,28 @@ function densityHint(done: number, total: number): string {
 
 // ─── Vandaag suggestions — manual, no AI ─────────────────────────────────────
 
+/** A quick task (≤ this many minutes) can be gently offered as "past goed tussendoor". */
+const TUSSENDOOR_MAX_MIN = 10;
+
 /**
  * Candidate tasks that could be handy to plan today: not already on today's
- * plan, still open, and either softly due (`dueHint` says so) or carrying a
- * wekker/dueDate. Sorted shortest-duration-first (a gentle, optional nudge —
- * never a priority ranking) with unknown-duration tasks trailing. No AI, no
- * external calls — pure derivation from data already in the domain.
+ * plan, still open, and one of three gentle classes —
+ *   - softly due (`dueHint` says "Waarschijnlijk weer toe"),
+ *   - carrying a wekker/dueDate, or
+ *   - short enough to slot in between things (`durationMin` ≤ TUSSENDOOR_MAX_MIN,
+ *     the "past goed tussendoor"-class).
+ * Sorted shortest-duration-first (a gentle, optional nudge — never a priority
+ * ranking) with unknown-duration tasks trailing. No AI, no external calls —
+ * pure derivation from data already in the domain.
  */
-export function toSuggestions(tasks: TaskView[], limit = 5): TaskView[] {
+export function toSuggestions(tasks: TaskView[], limit = 4): TaskView[] {
   const candidates = tasks.filter(
-    (t) => !t.planned && !t.done && (t.dueHint === "Waarschijnlijk weer toe" || t.dueDate !== undefined),
+    (t) =>
+      !t.planned &&
+      !t.done &&
+      (t.dueHint === "Waarschijnlijk weer toe" ||
+        t.dueDate !== undefined ||
+        (t.durationMin !== undefined && t.durationMin <= TUSSENDOOR_MAX_MIN)),
   );
   return [...candidates]
     .sort((a, b) => suggestionDurationMin(a) - suggestionDurationMin(b))
@@ -241,8 +253,7 @@ export function toSuggestions(tasks: TaskView[], limit = 5): TaskView[] {
 }
 
 function suggestionDurationMin(task: TaskView): number {
-  const match = task.duration?.match(/(\d+)/);
-  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+  return task.durationMin ?? Number.MAX_SAFE_INTEGER;
 }
 
 // ─── Task overview — open tasks bucketed by date status ──────────────────────

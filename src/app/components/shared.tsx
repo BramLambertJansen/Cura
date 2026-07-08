@@ -665,12 +665,18 @@ export function IconButton({
   icon, onClick, label, size = 9, tone = "secondary", className = "",
 }: {
   icon: ReactNode; onClick: () => void; label: string;
-  size?: 8 | 9 | 10; tone?: "secondary" | "card"; className?: string;
+  size?: 8 | 9 | 10; tone?: "secondary" | "card" | "primary"; className?: string;
 }) {
   const dim = size === 8 ? "w-8 h-8" : size === 10 ? "w-10 h-10" : "w-9 h-9";
-  const toneCls = tone === "card" ? "bg-card shadow-sm" : "bg-secondary";
+  const toneCls =
+    tone === "card" ? "bg-card shadow-sm" : tone === "primary" ? "text-white" : "bg-secondary";
+  // The green + is a CTA: gradient fill + soft glow, both routed back to tokens.
+  const style =
+    tone === "primary"
+      ? { background: "var(--gradient-primary)", boxShadow: `0 3px 12px color-mix(in srgb, var(--primary) 26%, transparent)` }
+      : undefined;
   return (
-    <motion.button whileTap={{ scale: 0.9 }} onClick={onClick} aria-label={label}
+    <motion.button whileTap={{ scale: 0.9 }} onClick={onClick} aria-label={label} style={style}
       className={`${dim} rounded-full flex items-center justify-center flex-shrink-0 ${toneCls} focus-ring ${className}`}>
       {icon}
     </motion.button>
