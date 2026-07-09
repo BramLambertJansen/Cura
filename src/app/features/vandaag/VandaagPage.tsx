@@ -27,7 +27,7 @@ const DAGDEEL_ICON: Record<DagdeelGroup["key"], typeof Sunrise> = {
 };
 
 export function VandaagPage() {
-  const { openProfiel, openEditTask } = useSheets();
+  const { openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
   const members = useCuraStore((s) => s.members);
@@ -86,17 +86,12 @@ export function VandaagPage() {
       {/* Same sunrise art as the auth screen, so opening the app and starting the day feel like one moment. */}
       <PageBanner src="/landing-header.webp" className="h-48" position="72% 35%" />
       <div className="relative px-5 pt-14 pb-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">{greeting.date}</p>
-            <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display">
-              {greeting.text}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
-          </div>
-          <motion.button onClick={openProfiel} whileTap={{ scale: 0.88 }} aria-label="Profiel openen" className="flex-shrink-0 mt-1">
-            <Avatar name={me?.displayName ?? "Jij"} size={36} tone="solid" serif />
-          </motion.button>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">{greeting.date}</p>
+          <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display">
+            {greeting.text}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
         </div>
 
         <motion.div
