@@ -5,10 +5,9 @@ import type { ShoppingItemView } from "../../data/types";
 import { Card, Checkbox, IconButton } from "./shared";
 
 /**
- * A single boodschappenlijst row — checkbox + title/aantal + direct delete.
- * No swipe, no tap-to-edit (unlike TaakRij): a shopping item is a disposable
- * one-field checklist entry, trivial to re-add, so a confirm-less delete and
- * no edit affordance keep it light rather than mirroring the full task row.
+ * A single boodschappenlijst row: checkbox + title/aantal + direct delete.
+ * The title area toggles too, because on a shopping trip the whole row should
+ * feel easy to hit without turning delete into a risky accidental action.
  */
 export const BoodschapRij = memo(function BoodschapRij({
   item, onToggle, onDelete,
@@ -21,12 +20,21 @@ export const BoodschapRij = memo(function BoodschapRij({
           onToggle={onToggle}
           label={item.checked ? `${item.title} terugzetten` : `${item.title} afvinken`}
         />
-        <motion.p
+        <motion.button
+          type="button"
+          onClick={onToggle}
+          aria-label={item.checked ? `${item.title} terugzetten` : `${item.title} afvinken`}
           animate={{ color: item.checked ? "var(--muted-foreground)" : "var(--foreground)" }}
-          className={`flex-1 min-w-0 text-[0.9375rem] font-medium leading-snug truncate ${item.checked ? "line-through" : ""}`}>
-          {item.title}
-          {item.quantity && <span className="text-xs text-muted-foreground font-normal"> · {item.quantity}</span>}
-        </motion.p>
+          className="flex-1 min-w-0 text-left focus-ring rounded-xl -my-1 py-1">
+          <span className={`block text-[0.9375rem] font-medium leading-snug truncate ${item.checked ? "line-through" : ""}`}>
+            {item.title}
+          </span>
+          {item.quantity && (
+            <span className={`block text-xs text-muted-foreground font-normal leading-snug truncate ${item.checked ? "line-through" : ""}`}>
+              {item.quantity}
+            </span>
+          )}
+        </motion.button>
         <IconButton
           size={8}
           onClick={onDelete}
