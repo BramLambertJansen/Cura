@@ -75,7 +75,7 @@ Daarmee werkt de app zonder backend en gebruikt hij `localStorage`.
 | `VITE_DATA_MODE` | Altijd | `local` voor localStorage of `cloud` voor Supabase. |
 | `VITE_SUPABASE_URL` | Cloud mode | Supabase project-URL. |
 | `VITE_SUPABASE_ANON_KEY` | Cloud mode | Supabase anon/public key. |
-| `VITE_VAPID_PUBLIC_KEY` | Toekomstige push-flow | Publieke VAPID-key voor web push. |
+| `VITE_VAPID_PUBLIC_KEY` | Cloud mode, push | Publieke VAPID-key voor web push (wekkers als de app dicht is); server-secrets (`VAPID_KEYS`, `CRON_SECRET`) staan niet hier maar in Supabase secrets — zie `CLAUDE.md` §5 Push-notificaties. |
 
 Keys zonder `VITE_` blijven server-side en mogen niet naar de client worden gelekt.
 
@@ -86,7 +86,7 @@ Keys zonder `VITE_` blijven server-side en mogen niet naar de client worden gele
 | `pnpm dev` | Start de Vite dev server. |
 | `pnpm build` | Maakt een productie-build inclusief PWA-assets/service worker. |
 | `pnpm preview` | Serveert de productie-build lokaal. |
-| `pnpm typecheck` | Draait `tsc --noEmit`. |
+| `pnpm typecheck` | Draait `tsc --noEmit` (app) én `tsc --noEmit -p tsconfig.worker.json` (service worker). |
 | `pnpm test` | Draait Vitest unit tests. |
 
 ## Standaard validatie vóór een PR
