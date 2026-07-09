@@ -289,7 +289,7 @@ export function DesignSystemPage() {
       <Section title="Taakrij">
         <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten), en naar links om de focustimer te starten — de checkbox en timer-knop blijven de toetsenbord/screenreader-route.</p>
         <div className="space-y-2.5">
-          <TaakRij task={demoTaskOpen} onToggle={() => {}} onStartFocus={() => {}} />
+          <TaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onClaim={() => {}} />
           <TaakRij task={demoTaskDone} onToggle={() => {}} />
         </div>
@@ -298,7 +298,7 @@ export function DesignSystemPage() {
       <Section title="Tijdlijn-taakrij (Vandaag)">
         <p className="text-sm text-muted-foreground -mt-1">De tijdlijn-variant van de taakrij: geen eigen kaart, rijen staan direct in de gedeelde dagdeel-kaart.</p>
         <div className="rounded-[1.6rem] bg-card border border-border/60 p-4" style={{ boxShadow: "var(--shadow-card)" }}>
-          <TijdlijnTaakRij task={demoTaskOpen} onToggle={() => {}} onStartFocus={() => {}} />
+          <TijdlijnTaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TijdlijnTaakRij task={demoTaskClaimed} onToggle={() => {}} onDismiss={() => {}} />
         </div>
       </Section>

@@ -6,6 +6,20 @@ import type { RoutineView } from "../../data/types";
 import { PRESS_TINT, SAGE, SHADOW } from "../lib/constants";
 import { CARD_CHROME, RingProgress, Card, PillButton, StatusBadge } from "./shared";
 
+function routineTone(routine: RoutineView): string {
+  const done = routine.tasks.filter((t) => t.done).length;
+  const total = routine.tasks.length;
+  if (total > 0 && done === total) return "Rond voor nu";
+  if (routine.windowSize > 0) return routine.hint;
+  if (total > 0) return "Rustig op te pakken";
+  return "Nog leeg";
+}
+
+function routineWindowLine(routine: RoutineView): string | null {
+  if (routine.windowSize <= 0) return null;
+  return `${routine.doneInWindow} van ${routine.windowSize} ${routine.windowLabel}`;
+}
+
 /**
  * Vandaag's timeline-variant routine card — a fixed-width tile meant for a
  * horizontally scrolling row (see VandaagPage), not the vertical stack the
@@ -31,7 +45,7 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({ routine }
       </div>
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground truncate">{routine.name}</p>
-        <p className="text-xs text-muted-foreground mt-0.5 font-display italic truncate">{routine.trigger} · {done}/{total}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 font-display italic truncate">{routineTone(routine)}</p>
       </div>
       {allDone ? (
         <StatusBadge>Klaar</StatusBadge>
@@ -65,7 +79,7 @@ export const RoutineKaart = memo(function RoutineKaart({
         aria-label={`${routine.name} ${open ? "inklappen" : "uitklappen"}`}
         className="w-full flex items-center gap-4 text-left transition-colors px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--primary)_40%,transparent)]"
         style={{ paddingTop: "1.1rem", paddingBottom: "1.1rem" }}>
-        <RingProgress value={total > 0 ? done / total : 0} size={50} stroke={4} />
+        <RingProgress value={total > 0 ? done / total : 0} size={44} stroke={3.5} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="font-semibold text-foreground">{routine.name}</p>
@@ -75,10 +89,11 @@ export const RoutineKaart = memo(function RoutineKaart({
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{routine.trigger}</p>
           <p className="text-xs mt-1 leading-snug font-display italic" style={{ color: "var(--muted-foreground)" }}>
-            {routine.windowSize > 0
-              ? `${routine.doneInWindow} van ${routine.windowSize} ${routine.windowLabel} — ${routine.hint.toLowerCase()}`
-              : routine.hint}
+            {routineTone(routine)}
           </p>
+          {routineWindowLine(routine) && (
+            <p className="text-[0.68rem] text-muted-foreground/70 mt-1">{routineWindowLine(routine)}</p>
+          )}
         </div>
         <motion.div animate={{ rotate: open ? 90 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }}>
           <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" aria-hidden="true" />

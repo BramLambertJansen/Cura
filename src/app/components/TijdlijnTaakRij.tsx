@@ -1,10 +1,10 @@
 import { memo, useRef } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion, type PanInfo } from "motion/react";
-import { Bell, Check, RefreshCw, RotateCcw, Timer, X } from "lucide-react";
+import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { Checkbox, IconButton } from "./shared";
+import { Checkbox } from "./shared";
 import { SWIPE_COMMIT_DISTANCE, SWIPE_FLICK_DISTANCE, SWIPE_FLICK_VELOCITY, SWIPE_LEFT_COMMIT_DISTANCE } from "./TaakRij";
 
 /**
@@ -17,13 +17,12 @@ import { SWIPE_COMMIT_DISTANCE, SWIPE_FLICK_DISTANCE, SWIPE_FLICK_VELOCITY, SWIP
  * visual shell differs here.
  */
 export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
-  task, onToggle, onEdit, onDismiss, onStartFocus,
+  task, onToggle, onEdit, onDismiss,
 }: {
   task: TaskView;
   onToggle: () => void;
   onEdit?: () => void;
   onDismiss?: () => void;
-  onStartFocus?: () => void;
 }) {
   const reduceMotion = useReducedMotion();
   const x = useMotionValue(0);
@@ -32,10 +31,7 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
   const revealOpacityLeft = useTransform(x, [-48, -10], [1, 0]);
   const revealScaleLeft = useTransform(x, [-60, -10], [1, 0.6]);
 
-  // Mirrors TaakRij: swipe-left starts the focus timer when the task is timeable,
-  // otherwise falls back to "niet vandaag" (dismiss).
-  const leftAction: "focus" | "dismiss" | null =
-    onStartFocus && !task.done ? "focus" : onDismiss ? "dismiss" : null;
+  const canDismiss = Boolean(onDismiss);
 
   const wasDragged = useRef(false);
 
@@ -46,10 +42,7 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
     const commitLeft = info.offset.x < -SWIPE_LEFT_COMMIT_DISTANCE;
 
     if (commitRight) onToggle();
-    if (commitLeft) {
-      if (leftAction === "focus") onStartFocus!();
-      else if (leftAction === "dismiss") onDismiss!();
-    }
+    if (commitLeft && canDismiss) onDismiss!();
 
     setTimeout(() => { wasDragged.current = false; }, 0);
   }
@@ -94,17 +87,13 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
           </span>
         </motion.div>
       </motion.div>
-      {leftAction && (
+      {canDismiss && (
         <motion.div aria-hidden="true" style={{ opacity: revealOpacityLeft }} className="absolute inset-0 flex items-center justify-end pr-4 pointer-events-none">
-          <div className="absolute inset-0" style={{ background: leftAction === "focus"
-            ? "color-mix(in srgb, var(--accent) 35%, transparent)"
-            : "color-mix(in srgb, var(--destructive) 10%, transparent)" }} />
+          <div className="absolute inset-0" style={{ background: "color-mix(in srgb, var(--destructive) 10%, transparent)" }} />
           <motion.div style={{ scale: revealScaleLeft }} className="relative w-7 h-7 rounded-full flex items-center justify-center">
             <span className="w-full h-full rounded-full flex items-center justify-center"
-              style={{ background: leftAction === "focus" ? SAGE : "var(--destructive)" }}>
-              {leftAction === "focus"
-                ? <Timer size={13} strokeWidth={2.5} className="text-white" />
-                : <X size={13} strokeWidth={3} className="text-white" />}
+              style={{ background: "var(--destructive)" }}>
+              <X size={13} strokeWidth={3} className="text-white" />
             </span>
           </motion.div>
         </motion.div>
@@ -133,17 +122,6 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
           </button>
         ) : (
           <div className="flex-1 min-w-0 self-center">{content}</div>
-        )}
-        {onStartFocus && !task.done && (
-          <div className="self-center">
-            <IconButton
-              size={8}
-              tone="card"
-              onClick={onStartFocus}
-              label={`Focustimer starten voor ${task.title}`}
-              icon={<Timer size={14} className="text-muted-foreground" aria-hidden="true" />}
-            />
-          </div>
         )}
       </motion.div>
     </motion.div>

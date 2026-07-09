@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Link, useLocation } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { CalendarDays, Home, RefreshCw, MoreHorizontal, Plus } from "lucide-react";
 import { SAGE, MUTED_FG, DESTRUCTIVE } from "../lib/constants";
 
@@ -90,18 +90,6 @@ export function BottomNav({ showAdd, onAdd }: { showAdd: boolean; onAdd: () => v
       <div className="flex items-center h-[4.25rem]">
         {LEFT.map((t) => <NavTab key={t.to} tab={t} active={isActive(t.to)} />)}
         <div className="relative flex items-center justify-center w-20 flex-shrink-0" style={{ marginTop: "-1.75rem" }}>
-          <AnimatePresence>
-            {!showAdd && (
-              <motion.div
-                key="pulse"
-                className="absolute rounded-full pointer-events-none"
-                style={{ width: "3.625rem", height: "3.625rem", border: `2px solid ${SAGE}` }}
-                initial={{ scale: 1, opacity: 0 }}
-                animate={{ scale: 1.55, opacity: 0 }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut", delay: 0.8 }}
-              />
-            )}
-          </AnimatePresence>
           <motion.button onClick={onAdd}
             animate={{ rotate: showAdd ? 45 : 0, backgroundColor: showAdd ? DESTRUCTIVE : SAGE }}
             whileTap={{ scale: 0.87 }} whileHover={{ scale: 1.06 }}
