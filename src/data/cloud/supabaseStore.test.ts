@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { isMissingShoppingCategoryColumn, mapList, shoppingItemUpdateRow } from "./supabaseStore";
+import { isMissingShoppingColumn, mapList, shoppingItemUpdateRow } from "./supabaseStore";
 import { TaskSchema } from "../schemas";
 
 /**
@@ -42,28 +42,35 @@ describe("mapList", () => {
 });
 
 describe("shoppingItemUpdateRow", () => {
-  it("trims title and converts an empty quantity to null for Supabase", () => {
-    expect(shoppingItemUpdateRow({ title: "  Melk  ", quantity: "   " })).toEqual({
+  it("trims title and converts an empty description to null for Supabase", () => {
+    expect(shoppingItemUpdateRow({ title: "  Melk  ", description: "   " })).toEqual({
       title: "Melk",
-      quantity: null,
+      description: null,
     });
   });
 
-  it("leaves quantity untouched when it is not part of the patch", () => {
+  it("passes amount/unit through, converting an explicit clear to null", () => {
+    expect(shoppingItemUpdateRow({ amount: 500, unit: "ml" })).toEqual({ amount: 500, unit: "ml" });
+    expect(shoppingItemUpdateRow({ amount: undefined })).toEqual({ amount: null });
+  });
+
+  it("leaves fields untouched when they are not part of the patch", () => {
     expect(shoppingItemUpdateRow({ title: "Koffie" })).toEqual({ title: "Koffie" });
   });
 });
 
-describe("isMissingShoppingCategoryColumn", () => {
-  it("recognizes Supabase schema-cache misses for shopping_items.category", () => {
-    expect(isMissingShoppingCategoryColumn({
-      code: "PGRST204",
-      message: "Could not find the 'category' column of 'shopping_items' in the schema cache",
-    })).toBe(true);
+describe("isMissingShoppingColumn", () => {
+  it("recognizes Supabase schema-cache misses for the optional shopping_items columns", () => {
+    for (const column of ["category", "amount", "unit", "description"]) {
+      expect(isMissingShoppingColumn({
+        code: "PGRST204",
+        message: `Could not find the '${column}' column of 'shopping_items' in the schema cache`,
+      })).toBe(true);
+    }
   });
 
-  it("does not treat unrelated Supabase errors as category-cache misses", () => {
-    expect(isMissingShoppingCategoryColumn({
+  it("does not treat unrelated Supabase errors as missing-column misses", () => {
+    expect(isMissingShoppingColumn({
       code: "PGRST204",
       message: "Could not find the 'title' column of 'shopping_items' in the schema cache",
     })).toBe(false);

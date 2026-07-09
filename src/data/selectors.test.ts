@@ -381,10 +381,24 @@ describe("shopping list", () => {
     expect(open.map((i) => i.id)).toEqual(["s2", "s1"]);
   });
 
-  it("carries the optional quantity through to the view", () => {
+  it("carries the legacy free-text quantity through to the view when there's no amount/unit", () => {
     const withQty = item({ id: "s1", quantity: "2" });
     const { open } = toShoppingList([withQty]);
     expect(open[0].quantity).toBe("2");
+  });
+
+  it("formats amount + unit into a compact quantity label", () => {
+    const ml = item({ id: "s1", amount: 500, unit: "ml" });
+    const kg = item({ id: "s2", amount: 1, unit: "kg" });
+    const stuks = item({ id: "s3", amount: 3, unit: "stuks" });
+    const { open } = toShoppingList([ml, kg, stuks]);
+    expect(open.map((i) => i.quantity)).toEqual(["500ml", "1kg", "3"]);
+  });
+
+  it("prefers amount/unit over a legacy quantity when both are present", () => {
+    const withBoth = item({ id: "s1", quantity: "1 pak", amount: 2, unit: "kg" });
+    const { open } = toShoppingList([withBoth]);
+    expect(open[0].quantity).toBe("2kg");
   });
 
   it("adds calm category groups for open items", () => {

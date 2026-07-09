@@ -7,9 +7,14 @@ import { stagger, fadeUp } from "../../lib/motion";
 import { SAGE } from "../../lib/constants";
 import { PageHeader, Leeg, Kop, PillButton, VerwijderKnop, fieldBorderColor, fieldBoxShadow } from "../../components/shared";
 import { BoodschapRij } from "../../components/BoodschapRij";
-import { parseShoppingInput } from "./shoppingInput";
-import { SHOPPING_CATEGORY_LABELS, SHOPPING_CATEGORY_ORDER, shoppingCategory } from "../../../data/selectors";
-import type { ShoppingCategoryKey } from "../../../data/types";
+import {
+  SHOPPING_CATEGORY_LABELS,
+  SHOPPING_CATEGORY_ORDER,
+  SHOPPING_UNIT_LABELS,
+  SHOPPING_UNIT_ORDER,
+  shoppingCategory,
+} from "../../../data/selectors";
+import type { ShoppingCategoryKey, ShoppingUnitKey } from "../../../data/types";
 
 const DEFAULT_QUICK_ITEMS = ["Melk", "Brood", "Eieren", "Bananen", "Wc-papier", "Pasta"];
 const QUICK_ITEMS_STORAGE_KEY = "cura:shopping:quick-items:v1";
@@ -63,29 +68,36 @@ function useQuickShoppingItems() {
 }
 
 /**
- * Quick-add row for the boodschappenlijst. One calm input accepts either just
- * the item ("melk") or a small quantity phrase ("2 melk", "melk 2 pakken").
+ * Quick-add row for the boodschappenlijst: title + an optional amount, plus
+ * unit and category pickers below ("500ml melk", "1kg suiker", or just
+ * "melk" with no amount at all).
  */
-function BoodschapToevoegRij({ onAdd }: { onAdd: (title: string, quantity?: string, category?: ShoppingCategoryKey) => void }) {
-  const [value, setValue] = useState("");
-  const [active, setActive] = useState(false);
+function BoodschapToevoegRij({
+  onAdd,
+}: {
+  onAdd: (title: string, amount: number | undefined, unit: ShoppingUnitKey | undefined, category?: ShoppingCategoryKey) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [unit, setUnit] = useState<ShoppingUnitKey>("stuks");
+  const [active, setActive] = useState<"title" | "amount" | null>(null);
   const [category, setCategory] = useState<ShoppingCategoryKey>("other");
   const [categoryTouched, setCategoryTouched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function changeValue(next: string) {
-    setValue(next);
-    if (!categoryTouched) {
-      const parsed = parseShoppingInput(next);
-      setCategory(parsed ? shoppingCategory(parsed.title) : "other");
-    }
+  function changeTitle(next: string) {
+    setTitle(next);
+    if (!categoryTouched) setCategory(next.trim() ? shoppingCategory(next) : "other");
   }
 
   function submit() {
-    const parsed = parseShoppingInput(value);
-    if (!parsed) return;
-    onAdd(parsed.title, parsed.quantity, category);
-    setValue("");
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
+    const parsedAmount = amount.trim() ? Number(amount.trim().replace(",", ".")) : undefined;
+    onAdd(trimmedTitle, parsedAmount && parsedAmount > 0 ? parsedAmount : undefined, unit, category);
+    setTitle("");
+    setAmount("");
+    setUnit("stuks");
     setCategory("other");
     setCategoryTouched(false);
     inputRef.current?.focus();
@@ -96,26 +108,63 @@ function BoodschapToevoegRij({ onAdd }: { onAdd: (title: string, quantity?: stri
       <div className="flex gap-2">
         <input
           ref={inputRef}
-          value={value}
-          onChange={(e) => changeValue(e.target.value)}
-          onFocus={() => setActive(true)}
-          onBlur={() => setActive(false)}
+          value={title}
+          onChange={(e) => changeTitle(e.target.value)}
+          onFocus={() => setActive("title")}
+          onBlur={() => setActive(null)}
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-          placeholder="Bijv. 2 melk of koffie 1 pak"
-          aria-label="Boodschap met optioneel aantal"
+          placeholder="Bijv. melk of suiker"
+          aria-label="Boodschap"
           className="min-w-0 flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
           style={{
             background: "var(--input-background)",
-            borderColor: fieldBorderColor({ active, hasValue: !!value }),
-            boxShadow: fieldBoxShadow({ active }),
+            borderColor: fieldBorderColor({ active: active === "title", hasValue: !!title }),
+            boxShadow: fieldBoxShadow({ active: active === "title" }),
           }}
         />
-        <motion.button whileTap={{ scale: 0.88 }} onClick={submit} disabled={!value.trim()}
+        <input
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          onFocus={() => setActive("amount")}
+          onBlur={() => setActive(null)}
+          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          type="number"
+          inputMode="decimal"
+          min={0}
+          placeholder="Aantal"
+          aria-label="Aantal"
+          className="min-w-0 w-20 rounded-2xl px-2.5 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
+          style={{
+            background: "var(--input-background)",
+            borderColor: fieldBorderColor({ active: active === "amount", hasValue: !!amount }),
+            boxShadow: fieldBoxShadow({ active: active === "amount" }),
+          }}
+        />
+        <motion.button whileTap={{ scale: 0.88 }} onClick={submit} disabled={!title.trim()}
           aria-label="Item toevoegen"
           className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-ring focus-visible:ring-offset-2"
           style={{ background: SAGE }}>
           <Plus size={17} className="text-white" aria-hidden="true" />
         </motion.button>
+      </div>
+      <div className="mt-2 flex gap-1.5 overflow-x-auto scrollbar-hide pb-1" aria-label="Eenheid kiezen">
+        {SHOPPING_UNIT_ORDER.map((key) => {
+          const selected = unit === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setUnit(key)}
+              aria-pressed={selected}
+              className="flex-shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold focus-ring"
+              style={{
+                background: selected ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "var(--secondary)",
+                color: selected ? SAGE : "var(--muted-foreground)",
+              }}>
+              {SHOPPING_UNIT_LABELS[key]}
+            </button>
+          );
+        })}
       </div>
       <div className="mt-2 flex gap-1.5 overflow-x-auto scrollbar-hide pb-1" aria-label="Categorie kiezen">
         {SHOPPING_CATEGORY_ORDER.map((key) => {
@@ -279,7 +328,7 @@ export function BoodschappenPage() {
         }
       />
 
-      <BoodschapToevoegRij onAdd={(title, quantity, category) => void createShoppingItem({ title, quantity, category })} />
+      <BoodschapToevoegRij onAdd={(title, amount, unit, category) => void createShoppingItem({ title, amount, unit, category })} />
       <SnelleBoodschappen
         items={quickItems}
         onAdd={(title) => void createShoppingItem({ title, category: shoppingCategory(title) })}

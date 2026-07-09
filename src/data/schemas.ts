@@ -132,11 +132,21 @@ export const BundleSchema = z.object({
 
 export const ShoppingCategorySchema = z.enum(["fresh", "cold", "pantry", "household", "other"]);
 
+// Common metric measures + a bare count ("stuks") — covers "500ml melk", "1kg
+// suiker" without trying to model every container word a household might use.
+export const ShoppingUnitSchema = z.enum(["stuks", "g", "kg", "ml", "l"]);
+
 export const ShoppingItemSchema = z.object({
   id: Id,
   householdId: Id,
   title: z.string().min(1),
-  quantity: z.string().min(1).optional(), // free text: "2", "1 pak" — no fixed unit, deliberately not a number
+  // Legacy free text ("2", "1 pak") from before amount/unit existed. New items
+  // no longer write this — kept only so older rows keep displaying correctly
+  // (formatShoppingQuantity in selectors.ts falls back to it).
+  quantity: z.string().min(1).optional(),
+  amount: z.number().positive().optional(),
+  unit: ShoppingUnitSchema.optional(),
+  description: z.string().min(1).optional(),
   category: ShoppingCategorySchema.optional(),
   checked: z.boolean().default(false),
   createdAt: Iso, // stable add-order

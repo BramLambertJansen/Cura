@@ -32,7 +32,12 @@ interface TaskRow {
   bundle_id: string | null; claimed_by_id: string | null; planned: boolean;
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
-interface ShoppingItemRow { id: string; household_id: string; title: string; quantity: string | null; category: string | null; checked: boolean; created_at: string }
+interface ShoppingItemRow {
+  id: string; household_id: string; title: string;
+  quantity: string | null; // legacy free text, no longer written by the app
+  amount: number | null; unit: string | null; description: string | null;
+  category: string | null; checked: boolean; created_at: string;
+}
 interface PushSubscriptionRow {
   id: string; household_id: string; member_id: string;
   endpoint: string; p256dh: string; auth: string; created_at: string;
@@ -88,30 +93,38 @@ function mapCompletion(r: CompletionRow): TaskCompletion {
 function mapShoppingItem(r: ShoppingItemRow): ShoppingItem {
   return ShoppingItemSchema.parse({
     id: r.id, householdId: r.household_id, title: r.title,
-    quantity: r.quantity ?? undefined, category: r.category ?? undefined, checked: r.checked, createdAt: r.created_at,
+    quantity: r.quantity ?? undefined,
+    amount: r.amount ?? undefined, unit: r.unit ?? undefined, description: r.description ?? undefined,
+    category: r.category ?? undefined, checked: r.checked, createdAt: r.created_at,
   });
 }
 
-export function isMissingShoppingCategoryColumn(error: unknown): boolean {
+// Optional shopping_items columns added after the initial table (category,
+// then amount/unit/description) — since migrations apply manually and can lag
+// behind deployed code, a request touching a not-yet-migrated column must
+// degrade instead of throwing (same reasoning as the category column before it).
+const NEW_SHOPPING_COLUMNS = ["category", "amount", "unit", "description"] as const;
+
+export function isMissingShoppingColumn(error: unknown): boolean {
   const err = error as { code?: string; message?: string } | null | undefined;
-  return (
-    err?.code === "PGRST204" &&
-    typeof err.message === "string" &&
-    err.message.includes("'category'") &&
-    err.message.includes("'shopping_items'")
-  );
+  if (err?.code !== "PGRST204" || typeof err.message !== "string") return false;
+  const message = err.message;
+  return NEW_SHOPPING_COLUMNS.some((col) => message.includes(`'${col}'`)) && message.includes("'shopping_items'");
 }
 
-function withoutShoppingCategory(row: ShoppingItemRow): Omit<ShoppingItemRow, "category"> {
-  const { category: _category, ...rest } = row;
-  return rest;
+function withoutNewShoppingColumns<T extends Partial<Record<(typeof NEW_SHOPPING_COLUMNS)[number], unknown>>>(row: T): T {
+  const clone = { ...row };
+  for (const col of NEW_SHOPPING_COLUMNS) delete clone[col];
+  return clone;
 }
 
 export function shoppingItemUpdateRow(patch: UpdateShoppingItemInput): Partial<ShoppingItemRow> {
   const normalized = normalizeShoppingItemPatch(patch);
   const update: Partial<ShoppingItemRow> = {};
   if (normalized.title !== undefined) update.title = normalized.title;
-  if ("quantity" in normalized) update.quantity = normalized.quantity ?? null;
+  if ("amount" in normalized) update.amount = normalized.amount ?? null;
+  if ("unit" in normalized) update.unit = normalized.unit ?? null;
+  if ("description" in normalized) update.description = normalized.description ?? null;
   if (normalized.category !== undefined) update.category = normalized.category;
   return update;
 }
@@ -436,14 +449,16 @@ export class SupabaseStore implements DataStore {
   async createShoppingItem(householdId: string, input: CreateShoppingItemInput): Promise<ShoppingItem> {
     const row: ShoppingItemRow = {
       id: uid(), household_id: householdId, title: input.title,
-      quantity: input.quantity ?? null, category: input.category ?? null, checked: false, created_at: new Date().toISOString(),
+      quantity: null,
+      amount: input.amount ?? null, unit: input.unit ?? null, description: input.description ?? null,
+      category: input.category ?? null, checked: false, created_at: new Date().toISOString(),
     };
     const { error } = await supabase.from("shopping_items").insert(row);
     if (error) {
-      if (!isMissingShoppingCategoryColumn(error)) throw new Error(error.message);
-      const { error: retryError } = await supabase.from("shopping_items").insert(withoutShoppingCategory(row));
+      if (!isMissingShoppingColumn(error)) throw new Error(error.message);
+      const { error: retryError } = await supabase.from("shopping_items").insert(withoutNewShoppingColumns(row));
       if (retryError) throw new Error(retryError.message);
-      return mapShoppingItem({ ...row, category: null });
+      return mapShoppingItem({ ...row, category: null, amount: null, unit: null, description: null });
     }
     return mapShoppingItem(row);
   }
@@ -452,8 +467,8 @@ export class SupabaseStore implements DataStore {
     const update = shoppingItemUpdateRow(patch);
     const { data, error } = await supabase.from("shopping_items").update(update).eq("id", itemId).select().single();
     if (error) {
-      if (!isMissingShoppingCategoryColumn(error)) throw new Error(error.message);
-      const { category: _category, ...retryUpdate } = update;
+      if (!isMissingShoppingColumn(error)) throw new Error(error.message);
+      const retryUpdate = withoutNewShoppingColumns(update);
       const retryQuery = Object.keys(retryUpdate).length > 0
         ? supabase.from("shopping_items").update(retryUpdate).eq("id", itemId).select().single()
         : supabase.from("shopping_items").select("*").eq("id", itemId).single();

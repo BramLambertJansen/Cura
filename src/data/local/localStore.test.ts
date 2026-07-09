@@ -17,7 +17,8 @@ const baseDb = {
       id: "s1",
       householdId: "h1",
       title: "Melk",
-      quantity: "2",
+      amount: 2,
+      unit: "l",
       checked: false,
       createdAt: "2026-07-09T08:00:00.000Z",
     },
@@ -38,14 +39,22 @@ beforeEach(() => {
 });
 
 describe("LocalStore shopping items", () => {
-  it("updates the title and clears quantity when the quantity patch is empty", async () => {
+  it("updates the title and the amount/unit", async () => {
     const store = new LocalStore();
-    const updated = await store.updateShoppingItem("s1", { title: "  Koffie  ", quantity: "   " });
+    const updated = await store.updateShoppingItem("s1", { title: "  Koffie  ", amount: 1, unit: "kg" });
 
     expect(updated.title).toBe("Koffie");
-    expect(updated.quantity).toBeUndefined();
+    expect(updated.amount).toBe(1);
+    expect(updated.unit).toBe("kg");
     await expect(store.listShoppingItems("h1")).resolves.toMatchObject([
-      { id: "s1", title: "Koffie", quantity: undefined },
+      { id: "s1", title: "Koffie", amount: 1, unit: "kg" },
     ]);
+  });
+
+  it("clears the amount when the patch explicitly sets it to undefined", async () => {
+    const store = new LocalStore();
+    const updated = await store.updateShoppingItem("s1", { title: "Melk", amount: undefined });
+
+    expect(updated.amount).toBeUndefined();
   });
 });
