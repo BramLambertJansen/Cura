@@ -1,7 +1,7 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
-import { Check, X, Trash2, Plus } from "lucide-react";
+import { Check, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
 
@@ -355,8 +355,8 @@ export function Leeg({
 }
 
 /** Section heading — Lora italic, warm muted, sentence case */
-export function Kop({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-muted-foreground mb-2 ml-1 font-display italic" style={{ letterSpacing: "0.01em" }}>{children}</p>;
+export function Kop({ children, id }: { children: ReactNode; id?: string }) {
+  return <p id={id} className="text-sm text-muted-foreground mb-2 ml-1 font-display italic" style={{ letterSpacing: "0.01em" }}>{children}</p>;
 }
 
 /** Shared visual state for every "field" surface (VeldInput, VeldTextarea, FieldShell) — active means real DOM focus, never just "has a value". */
@@ -392,31 +392,47 @@ export function VeldInput({
   ariaLabel?: string; type?: "text" | "email" | "password"; disabled?: boolean; invalid?: boolean; name?: string; autoComplete?: string; inputMode?: "text" | "email" | "numeric" | "tel" | "url" | "search"; spellCheck?: boolean;
 }) {
   const [active, setActive] = useState(false);
+  const [reveal, setReveal] = useState(false);
   const state: FieldState = { active, hasValue: value.length > 0, invalid, disabled };
+  const isPassword = type === "password";
   return (
-    <input
-      autoFocus={autoFocus}
-      type={type}
-      name={name}
-      autoComplete={autoComplete}
-      inputMode={inputMode}
-      spellCheck={spellCheck}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
-      onFocus={() => setActive(true)}
-      onBlur={() => setActive(false)}
-      placeholder={placeholder}
-      aria-label={ariaLabel ?? placeholder}
-      aria-invalid={invalid || undefined}
-      disabled={disabled}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60"
-      style={{
-        background: fieldBackground(state),
-        borderColor: fieldBorderColor(state),
-        boxShadow: fieldBoxShadow(state),
-        transition: "box-shadow 0.18s ease, border-color 0.18s ease",
-      }} />
+    <div className="relative">
+      <input
+        autoFocus={autoFocus}
+        type={isPassword && reveal ? "text" : type}
+        name={name}
+        autoComplete={autoComplete}
+        inputMode={inputMode}
+        spellCheck={spellCheck}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
+        onFocus={() => setActive(true)}
+        onBlur={() => setActive(false)}
+        placeholder={placeholder}
+        aria-label={ariaLabel ?? placeholder}
+        aria-invalid={invalid || undefined}
+        disabled={disabled}
+        className={`w-full rounded-2xl px-4 py-[1rem] ${isPassword ? "pr-11" : ""} text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60`}
+        style={{
+          background: fieldBackground(state),
+          borderColor: fieldBorderColor(state),
+          boxShadow: fieldBoxShadow(state),
+          transition: "box-shadow 0.18s ease, border-color 0.18s ease",
+        }} />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setReveal((v) => !v)}
+          disabled={disabled}
+          aria-label={reveal ? "Wachtwoord verbergen" : "Wachtwoord tonen"}
+          aria-pressed={reveal}
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-muted-foreground/70 hover:text-muted-foreground disabled:cursor-not-allowed focus-ring rounded-full p-1"
+        >
+          {reveal ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -665,12 +681,18 @@ export function IconButton({
   icon, onClick, label, size = 9, tone = "secondary", className = "",
 }: {
   icon: ReactNode; onClick: () => void; label: string;
-  size?: 8 | 9 | 10; tone?: "secondary" | "card"; className?: string;
+  size?: 8 | 9 | 10; tone?: "secondary" | "card" | "primary"; className?: string;
 }) {
   const dim = size === 8 ? "w-8 h-8" : size === 10 ? "w-10 h-10" : "w-9 h-9";
-  const toneCls = tone === "card" ? "bg-card shadow-sm" : "bg-secondary";
+  const toneCls =
+    tone === "card" ? "bg-card shadow-sm" : tone === "primary" ? "text-white" : "bg-secondary";
+  // The green + is a CTA: gradient fill + soft glow, both routed back to tokens.
+  const style =
+    tone === "primary"
+      ? { background: "var(--gradient-primary)", boxShadow: `0 3px 12px color-mix(in srgb, var(--primary) 26%, transparent)` }
+      : undefined;
   return (
-    <motion.button whileTap={{ scale: 0.9 }} onClick={onClick} aria-label={label}
+    <motion.button whileTap={{ scale: 0.9 }} onClick={onClick} aria-label={label} style={style}
       className={`${dim} rounded-full flex items-center justify-center flex-shrink-0 ${toneCls} focus-ring ${className}`}>
       {icon}
     </motion.button>

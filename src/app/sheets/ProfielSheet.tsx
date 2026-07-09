@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Bell, Check, ChevronRight, HelpCircle, Home, KeyRound, LogOut, Pencil, UserRound } from "lucide-react";
+import { Bell, Check, ChevronRight, HelpCircle, Home, KeyRound, LogOut, Moon, Pencil, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
@@ -16,7 +16,9 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const updateMember = useCuraStore((s) => s.updateMember);
+  const updateQuietHours = useCuraStore((s) => s.updateQuietHours);
   const me = members.find((m) => m.userId === currentUserId);
+  const quietEnabled = !!(me?.quietHoursStart && me?.quietHoursEnd);
 
   const { enabled: notif, toggle: toggleNotif } = useNotificationPreference();
   const { supported: pushSupported, standalone, subscribe, unsubscribe } = usePushSubscription();
@@ -49,6 +51,10 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
         });
       }
     }
+  }
+
+  function handleQuietToggle() {
+    void updateQuietHours(quietEnabled ? null : "22:00", quietEnabled ? null : "07:00");
   }
 
   const [naam, setNaam] = useState(me?.displayName ?? "");
@@ -142,6 +148,7 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
       <div className="mb-7">
         <GroupCard>
           <InstRij icon={<Bell size={15} />} label="Meldingen" right={<Toggle checked={notif} label="Meldingen" onChange={() => { void handleNotifToggle(); }} />} />
+          <InstRij icon={<Moon size={15} />} label="Stille uren" right={<Toggle checked={quietEnabled} label="Stille uren" onChange={handleQuietToggle} />} />
           <InstRij
             icon={<UserRound size={15} />}
             label={<span className="flex flex-col"><span>Account</span><span className="text-xs font-normal text-muted-foreground truncate max-w-[12rem]">{accountLabel}</span></span>}
@@ -157,6 +164,22 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
             />
           )}
         </GroupCard>
+        {quietEnabled && (
+          <div className="mt-2.5 px-1 flex items-center gap-2.5 text-sm text-muted-foreground">
+            <span>Geen meldingen van</span>
+            <input type="time" value={me?.quietHoursStart ?? "22:00"}
+              onChange={(e) => { void updateQuietHours(e.target.value, me?.quietHoursEnd ?? "07:00"); }}
+              aria-label="Stille uren beginnen"
+              className="rounded-xl px-2.5 py-1.5 border border-border text-foreground outline-none focus-ring"
+              style={{ background: "var(--input-background)" }} />
+            <span>tot</span>
+            <input type="time" value={me?.quietHoursEnd ?? "07:00"}
+              onChange={(e) => { void updateQuietHours(me?.quietHoursStart ?? "22:00", e.target.value); }}
+              aria-label="Stille uren eindigen"
+              className="rounded-xl px-2.5 py-1.5 border border-border text-foreground outline-none focus-ring"
+              style={{ background: "var(--input-background)" }} />
+          </div>
+        )}
         {showIosInstallHint && (
           <p className="text-xs text-muted-foreground mt-2.5 px-1 leading-relaxed">
             Zet Cura op je beginscherm (Deel → "Zet op beginscherm") om ook meldingen te krijgen als de app dicht is.

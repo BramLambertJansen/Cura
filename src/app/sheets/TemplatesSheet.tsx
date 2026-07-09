@@ -29,7 +29,7 @@ export function TemplatesSheet({
   function save() {
     const chosen = templates.filter((t) => selected.has(t.title));
     if (chosen.length === 0) return;
-    createTasksFromTemplates(roomId, chosen);
+    void createTasksFromTemplates(roomId, chosen);
     onClose();
   }
 

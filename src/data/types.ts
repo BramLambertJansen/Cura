@@ -79,6 +79,19 @@ export interface TaskOverview {
   undated: TaskView[]; // one-off without a wekker — the dateless pool
 }
 
+/**
+ * Open tasks grouped into a soft dagdeel timeline for Vandaag's Tijdlijn-lay-out.
+ * Only a task that actually carries a wekker/dueDate gets assigned to Ochtend/
+ * Middag/Avond (derived from that real time); every other open task lands in
+ * `overig` rather than being assigned a moment it has no signal for (CLAUDE.md
+ * §2: honesty over precision). Groups with no tasks are omitted by the selector.
+ */
+export interface DagdeelGroup {
+  key: "ochtend" | "middag" | "avond" | "overig";
+  label: string;
+  tasks: TaskView[];
+}
+
 /** A room with its pooled tasks and a soft, honest hint. */
 export interface RoomView {
   id: string;
@@ -109,17 +122,27 @@ export interface RoutineView {
 }
 
 /** A shopping item as a screen sees it — a plain checklist row, no dueHint/density story. */
+export type ShoppingCategoryKey = "fresh" | "cold" | "pantry" | "household" | "other";
+
+export interface ShoppingCategoryView {
+  key: ShoppingCategoryKey;
+  label: string;
+  items: ShoppingItemView[];
+}
+
 export interface ShoppingItemView {
   id: string;
   title: string;
   quantity?: string;
   checked: boolean;
+  category: ShoppingCategoryKey;
 }
 
 /** The shopping list split into open vs already-checked items, oldest-added first within each. */
 export interface ShoppingListView {
   open: ShoppingItemView[];
   checked: ShoppingItemView[];
+  openGroups: ShoppingCategoryView[];
 }
 
 /** One line for the Samen (visibility) feed — a message, not a scoreboard. */

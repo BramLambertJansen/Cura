@@ -72,7 +72,7 @@ function BoodschapToevoegRij({ onAdd }: { onAdd: (title: string, quantity?: stri
 }
 
 export function BoodschappenPage() {
-  const { open, checked } = useShoppingList();
+  const { open, checked, openGroups } = useShoppingList();
   const createShoppingItem = useCuraStore((s) => s.createShoppingItem);
   const toggleShoppingItem = useCuraStore((s) => s.toggleShoppingItem);
   const deleteShoppingItem = useCuraStore((s) => s.deleteShoppingItem);
@@ -107,17 +107,29 @@ export function BoodschappenPage() {
         <Leeg icon="🛒" text="Nog niets op je lijst" />
       ) : (
         <>
-          <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
-            {open.map((item) => (
-              <motion.div key={item.id} variants={fadeUp}>
-                <BoodschapRij
-                  item={item}
-                  onToggle={() => void toggleShoppingItem(item.id, true)}
-                  onDelete={() => void deleteShoppingItem(item.id)}
-                />
-              </motion.div>
+          <div className="space-y-5">
+            {openGroups.map((group) => (
+              <section key={group.key} aria-labelledby={`boodschappen-${group.key}`}>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <Kop id={`boodschappen-${group.key}`}>{group.label}</Kop>
+                  <span className="text-xs text-muted-foreground">
+                    {group.items.length} {group.items.length === 1 ? "ding" : "dingen"}
+                  </span>
+                </div>
+                <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
+                  {group.items.map((item) => (
+                    <motion.div key={item.id} variants={fadeUp}>
+                      <BoodschapRij
+                        item={item}
+                        onToggle={() => void toggleShoppingItem(item.id, true)}
+                        onDelete={() => void deleteShoppingItem(item.id)}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              </section>
             ))}
-          </motion.div>
+          </div>
 
           {checked.length > 0 && (
             <div className="mt-6">

@@ -9,6 +9,7 @@ import {
   Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
+import { TijdlijnTaakRij } from "../../components/TijdlijnTaakRij";
 import { TimerDisplay } from "../../components/TimerDisplay";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { KamerKaart } from "../../components/KamerKaart";
@@ -81,6 +82,7 @@ export function DesignSystemPage() {
   const [chip, setChip] = useState("a");
   const [kamerKey, setKamerKey] = useState("utensils");
   const [veld, setVeld] = useState("");
+  const [veldWachtwoord, setVeldWachtwoord] = useState("");
   const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
   const [reactie, setReactie] = useState<ReactieKind | undefined>(undefined);
@@ -161,11 +163,12 @@ export function DesignSystemPage() {
           <VerwijderKnop label="Voorbeeld verwijderen" onConfirm={() => {}} />
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5">IconButton — ronde icoon-knop (sluiten, terug); <code>tone</code> secondary/card, <code>size</code> 8/9/10</p>
+          <p className="text-xs text-muted-foreground mb-1.5">IconButton — ronde icoon-knop (sluiten, terug); <code>tone</code> secondary/card/primary, <code>size</code> 8/9/10</p>
           <div className="flex items-center gap-3">
             <IconButton onClick={() => {}} label="Sluiten" icon={<X size={15} className="text-muted-foreground" aria-hidden="true" />} />
             <IconButton onClick={() => {}} label="Terug" tone="card" icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
             <IconButton size={8} onClick={() => {}} label="Terug (klein)" icon={<ChevronLeft size={16} className="text-muted-foreground" aria-hidden="true" />} />
+            <IconButton tone="primary" onClick={() => {}} label="Toevoegen" icon={<Plus size={18} aria-hidden="true" />} />
           </div>
         </div>
       </Section>
@@ -244,6 +247,7 @@ export function DesignSystemPage() {
 
       <Section title="Veld">
         <VeldInput value={veld} onChange={setVeld} placeholder="Taaknaam" />
+        <VeldInput value={veldWachtwoord} onChange={setVeldWachtwoord} placeholder="Wachtwoord" type="password" ariaLabel="Wachtwoord" />
         <VeldTextarea value={veldTextarea} onChange={setVeldTextarea} placeholder="Beschrijving (optioneel)" />
         <p className="text-xs text-muted-foreground">TaakToevoegRij — veld + sage "+"-knop voor het opbouwen van een routine-takenlijst</p>
         <TaakToevoegRij value={taak} onChange={setTaak} onAdd={() => setTaak("")} placeholder="Taak omschrijving…" />
@@ -283,16 +287,27 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Taakrij">
-        <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten) — de checkbox blijft de toetsenbord/screenreader-route.</p>
+        <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten), en naar links om de focustimer te starten — de checkbox en timer-knop blijven de toetsenbord/screenreader-route.</p>
         <div className="space-y-2.5">
-          <TaakRij task={demoTaskOpen} onToggle={() => {}} />
+          <TaakRij task={demoTaskOpen} onToggle={() => {}} onStartFocus={() => {}} />
           <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onClaim={() => {}} />
           <TaakRij task={demoTaskDone} onToggle={() => {}} />
         </div>
       </Section>
 
+      <Section title="Tijdlijn-taakrij (Vandaag)">
+        <p className="text-sm text-muted-foreground -mt-1">De tijdlijn-variant van de taakrij: geen eigen kaart, rijen staan direct in de gedeelde dagdeel-kaart.</p>
+        <div className="rounded-[1.6rem] bg-card border border-border/60 p-4" style={{ boxShadow: "var(--shadow-card)" }}>
+          <TijdlijnTaakRij task={demoTaskOpen} onToggle={() => {}} onStartFocus={() => {}} />
+          <TijdlijnTaakRij task={demoTaskClaimed} onToggle={() => {}} onDismiss={() => {}} />
+        </div>
+      </Section>
+
       <Section title="Suggestie (Vandaag)">
-        <SuggestieRij task={{ ...demoTaskOpen, dueHint: "Waarschijnlijk weer toe" }} onPlan={() => {}} onNietVandaag={() => {}} />
+        <p className="text-sm text-muted-foreground -mt-1">Zit genest in de "Misschien handig"-kaart — een vlakke --card-rij binnen de warmere --card-active van de kaart, geen eigen schaduw.</p>
+        <div className="rounded-2xl bg-card-active border border-border/60 p-3" style={{ boxShadow: "var(--shadow-card)" }}>
+          <SuggestieRij task={{ ...demoTaskOpen, dueHint: "Waarschijnlijk weer toe" }} onPlan={() => {}} onNietVandaag={() => {}} />
+        </div>
       </Section>
 
       <Section title="Activiteit-reacties (Samen)">
@@ -350,9 +365,12 @@ export function DesignSystemPage() {
           <EmptyIllustration />
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Routinekaart — compact & uitgeklapt</p>
+          <p className="text-xs text-muted-foreground mb-2">Routinekaart — tijdlijn-variant (compact, voor Vandaag's horizontale rij) & uitgeklapt</p>
           <div className="space-y-3">
-            <RoutineKaartCompact routine={demoRoutine} onToggleTask={() => {}} />
+            <div className="flex gap-3">
+              <div className="w-[168px]"><RoutineKaartCompact routine={demoRoutine} /></div>
+              <div className="w-[168px]"><RoutineKaartCompact routine={{ ...demoRoutine, id: "ro2", tasks: demoRoutine.tasks.map((t) => ({ ...t, done: true })) }} /></div>
+            </div>
             <RoutineKaart routine={demoRoutine} onToggleTask={() => {}} onEdit={() => {}} />
           </div>
         </div>

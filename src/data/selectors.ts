@@ -10,8 +10,10 @@ import type {
   RoutineView,
   ActivityView,
   TaskOverview,
+  DagdeelGroup,
   ShoppingItemView,
   ShoppingListView,
+  ShoppingCategoryKey,
 } from "./types";
 import { buildLatestCompletionMap, isDone, getDueReminders } from "./reminders";
 
@@ -224,16 +226,28 @@ function densityHint(done: number, total: number): string {
 
 // ─── Vandaag suggestions — manual, no AI ─────────────────────────────────────
 
+/** A quick task (≤ this many minutes) can be gently offered as "past goed tussendoor". */
+const TUSSENDOOR_MAX_MIN = 10;
+
 /**
  * Candidate tasks that could be handy to plan today: not already on today's
- * plan, still open, and either softly due (`dueHint` says so) or carrying a
- * wekker/dueDate. Sorted shortest-duration-first (a gentle, optional nudge —
- * never a priority ranking) with unknown-duration tasks trailing. No AI, no
- * external calls — pure derivation from data already in the domain.
+ * plan, still open, and one of three gentle classes —
+ *   - softly due (`dueHint` says "Waarschijnlijk weer toe"),
+ *   - carrying a wekker/dueDate, or
+ *   - short enough to slot in between things (`durationMin` ≤ TUSSENDOOR_MAX_MIN,
+ *     the "past goed tussendoor"-class).
+ * Sorted shortest-duration-first (a gentle, optional nudge — never a priority
+ * ranking) with unknown-duration tasks trailing. No AI, no external calls —
+ * pure derivation from data already in the domain.
  */
-export function toSuggestions(tasks: TaskView[], limit = 5): TaskView[] {
+export function toSuggestions(tasks: TaskView[], limit = 4): TaskView[] {
   const candidates = tasks.filter(
-    (t) => !t.planned && !t.done && (t.dueHint === "Waarschijnlijk weer toe" || t.dueDate !== undefined),
+    (t) =>
+      !t.planned &&
+      !t.done &&
+      (t.dueHint === "Waarschijnlijk weer toe" ||
+        t.dueDate !== undefined ||
+        (t.durationMin !== undefined && t.durationMin <= TUSSENDOOR_MAX_MIN)),
   );
   return [...candidates]
     .sort((a, b) => suggestionDurationMin(a) - suggestionDurationMin(b))
@@ -241,8 +255,7 @@ export function toSuggestions(tasks: TaskView[], limit = 5): TaskView[] {
 }
 
 function suggestionDurationMin(task: TaskView): number {
-  const match = task.duration?.match(/(\d+)/);
-  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER;
+  return task.durationMin ?? Number.MAX_SAFE_INTEGER;
 }
 
 // ─── Task overview — open tasks bucketed by date status ──────────────────────
@@ -267,16 +280,117 @@ export function toTaskOverview(tasks: TaskView[], now = Date.now()): TaskOvervie
   };
 }
 
+// ─── Vandaag timeline — soft dagdeel grouping, never invented ────────────────
+
+const DAGDEEL_LABELS: Record<DagdeelGroup["key"], string> = {
+  ochtend: "Ochtend",
+  middag: "Middag",
+  avond: "Avond",
+  overig: "Overig",
+};
+
+/** Which dagdeel a given hour-of-day falls in — the same three-way split the routine trigger options already use ('s Ochtends / 's Middags / 's Avonds). */
+export function dagdeelForHour(hour: number): "ochtend" | "middag" | "avond" {
+  if (hour < 12) return "ochtend";
+  if (hour < 18) return "middag";
+  return "avond";
+}
+
+/**
+ * Groups open tasks into Ochtend/Middag/Avond for Vandaag's timeline layout —
+ * but only a task with a real wekker/dueDate gets a dagdeel, derived from that
+ * exact time. Everything else lands in `overig` instead of being falsely
+ * assigned a moment the data has no signal for. Empty groups are omitted;
+ * order is always ochtend → middag → avond → overig.
+ */
+export function toDagdelen(tasks: TaskView[]): DagdeelGroup[] {
+  const buckets: Record<DagdeelGroup["key"], TaskView[]> = { ochtend: [], middag: [], avond: [], overig: [] };
+  for (const t of tasks) {
+    const key = t.dueDate ? dagdeelForHour(new Date(t.dueDate).getHours()) : "overig";
+    buckets[key].push(t);
+  }
+  return (["ochtend", "middag", "avond", "overig"] as const)
+    .map((key) => ({ key, label: DAGDEEL_LABELS[key], tasks: buckets[key] }))
+    .filter((g) => g.tasks.length > 0);
+}
+
 // ─── Shopping list ────────────────────────────────────────────────────────────
+
+const SHOPPING_CATEGORIES: { key: ShoppingCategoryKey; label: string; matches: string[] }[] = [
+  {
+    key: "fresh",
+    label: "Vers",
+    matches: [
+      "appel",
+      "appels",
+      "banaan",
+      "bananen",
+      "broccoli",
+      "citroen",
+      "fruit",
+      "groente",
+      "komkommer",
+      "paprika",
+      "sla",
+      "tomaat",
+      "tomaten",
+      "wortel",
+    ],
+  },
+  {
+    key: "cold",
+    label: "Koeling",
+    matches: ["boter", "eieren", "kaas", "melk", "room", "tofu", "vla", "yoghurt", "yogurt", "zuivel"],
+  },
+  {
+    key: "pantry",
+    label: "Voorraad",
+    matches: ["bonen", "brood", "crackers", "koffie", "meel", "olie", "pasta", "rijst", "suiker", "thee"],
+  },
+  {
+    key: "household",
+    label: "Huis",
+    matches: ["afwas", "bakpapier", "batterij", "batterijen", "keukenpapier", "schoonmaak", "toiletpapier", "vuilniszak"],
+  },
+];
+
+const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategoryKey, string> = {
+  fresh: "Vers",
+  cold: "Koeling",
+  pantry: "Voorraad",
+  household: "Huis",
+  other: "Nog ergens",
+};
+
+const SHOPPING_CATEGORY_ORDER: ShoppingCategoryKey[] = ["fresh", "cold", "pantry", "household", "other"];
+
+function shoppingCategory(title: string): ShoppingCategoryKey {
+  const normalized = title.toLocaleLowerCase("nl-NL");
+  return SHOPPING_CATEGORIES.find((category) =>
+    category.matches.some((match) => normalized.includes(match)),
+  )?.key ?? "other";
+}
 
 /** Split the shopping list into open vs checked, each oldest-added first. */
 export function toShoppingList(items: ShoppingItem[]): ShoppingListView {
   const views: ShoppingItemView[] = [...items]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-    .map((i) => ({ id: i.id, title: i.title, quantity: i.quantity, checked: i.checked }));
+    .map((i) => ({
+      id: i.id,
+      title: i.title,
+      quantity: i.quantity,
+      checked: i.checked,
+      category: shoppingCategory(i.title),
+    }));
+  const open = views.filter((i) => !i.checked);
   return {
-    open: views.filter((i) => !i.checked),
+    open,
     checked: views.filter((i) => i.checked),
+    openGroups: SHOPPING_CATEGORY_ORDER.map((key) => ({
+      key,
+      label: SHOPPING_CATEGORY_LABELS[key],
+      items: open.filter((item) => item.category === key),
+    })).filter((group) => group.items.length > 0),
   };
 }
 

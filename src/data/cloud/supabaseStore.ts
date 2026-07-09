@@ -18,7 +18,10 @@ const uid = (): string => crypto.randomUUID();
 // column-for-column — no live DB access in this sandbox to generate types.
 
 interface HouseholdRow { id: string; name: string; time_zone: string }
-interface MemberRow { id: string; household_id: string; display_name: string; user_id: string | null }
+interface MemberRow {
+  id: string; household_id: string; display_name: string; user_id: string | null;
+  quiet_hours_start: string | null; quiet_hours_end: string | null;
+}
 interface InviteRow { token: string; household_id: string; created_by_id: string; created_at: string; expires_at: string | null }
 interface RoomRow { id: string; household_id: string; name: string; icon_key: string; color: string; owner_id: string | null }
 interface BundleRow { id: string; household_id: string; name: string; trigger: string; cadence: "daily" | "weekly"; window_label: string }
@@ -52,7 +55,11 @@ function mapHousehold(r: HouseholdRow): Household {
   return HouseholdSchema.parse({ id: r.id, name: r.name, timeZone: r.time_zone });
 }
 function mapMember(r: MemberRow): Member {
-  return MemberSchema.parse({ id: r.id, householdId: r.household_id, displayName: r.display_name, userId: r.user_id ?? undefined });
+  return MemberSchema.parse({
+    id: r.id, householdId: r.household_id, displayName: r.display_name, userId: r.user_id ?? undefined,
+    quietHoursStart: r.quiet_hours_start ?? undefined,
+    quietHoursEnd: r.quiet_hours_end ?? undefined,
+  });
 }
 function mapInvite(r: InviteRow): HouseholdInvite {
   return HouseholdInviteSchema.parse({
@@ -83,6 +90,36 @@ function mapShoppingItem(r: ShoppingItemRow): ShoppingItem {
     id: r.id, householdId: r.household_id, title: r.title,
     quantity: r.quantity ?? undefined, checked: r.checked, createdAt: r.created_at,
   });
+}
+
+/**
+ * Map a list of rows, tolerating a single bad one.
+ *
+ * The initial load reads EVERY row for the household. Before this, one row that
+ * failed schema validation (an unexpected timestamp format, an out-of-range
+ * value, a NULL that shouldn't be) threw straight out of `.map()` and took down
+ * the whole `init()` — the app then showed "Laden lukte even niet" on every
+ * restart, because the same server data reloaded and threw again (this is how
+ * the timestamptz-offset bug in #54 surfaced). CLAUDE.md §3 wants the app to
+ * degrade gracefully with partial data, not brick on one row: skip-and-log the
+ * odd row so the rest of the household still loads. A dropped row reappears the
+ * moment its data (or the schema) is fixed — nothing is deleted.
+ *
+ * Kept to the bulk LIST reads (startup path). Single-row write mappers stay
+ * strict: a write that comes back unparseable is a real error the caller
+ * surfaces as a toast, not a row to silently swallow.
+ */
+export function mapList<Row, T>(rows: readonly Row[], map: (r: Row) => T, label: string): T[] {
+  const out: T[] = [];
+  for (const row of rows) {
+    try {
+      out.push(map(row));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(`Overslaan van onleesbare ${label}-rij bij het laden`, e, row);
+    }
+  }
+  return out;
 }
 
 /**
@@ -128,11 +165,18 @@ export class SupabaseStore implements DataStore {
   async listMembers(householdId: string): Promise<Member[]> {
     const { data, error } = await supabase.from("members").select("*").eq("household_id", householdId);
     if (error) throw new Error(error.message);
-    return ((data ?? []) as MemberRow[]).map(mapMember);
+    return mapList((data ?? []) as MemberRow[], mapMember, "member");
   }
 
-  async updateMember(memberId: string, patch: { displayName: string }): Promise<Member> {
-    const { data, error } = await supabase.from("members").update({ display_name: patch.displayName }).eq("id", memberId).select().single();
+  async updateMember(
+    memberId: string,
+    patch: { displayName?: string; quietHoursStart?: string | null; quietHoursEnd?: string | null },
+  ): Promise<Member> {
+    const update: Record<string, unknown> = {};
+    if (patch.displayName !== undefined) update.display_name = patch.displayName;
+    if (patch.quietHoursStart !== undefined) update.quiet_hours_start = patch.quietHoursStart;
+    if (patch.quietHoursEnd !== undefined) update.quiet_hours_end = patch.quietHoursEnd;
+    const { data, error } = await supabase.from("members").update(update).eq("id", memberId).select().single();
     if (error || !data) throw new Error(error?.message ?? `Member not found: ${memberId}`);
     return mapMember(data as MemberRow);
   }
@@ -204,7 +248,7 @@ export class SupabaseStore implements DataStore {
   async listRooms(householdId: string): Promise<Room[]> {
     const { data, error } = await supabase.from("rooms").select("*").eq("household_id", householdId);
     if (error) throw new Error(error.message);
-    return ((data ?? []) as RoomRow[]).map(mapRoom);
+    return mapList((data ?? []) as RoomRow[], mapRoom, "room");
   }
 
   async createRoom(householdId: string, room: Omit<Room, "id" | "householdId">): Promise<Room> {
@@ -237,7 +281,7 @@ export class SupabaseStore implements DataStore {
   async listTasks(householdId: string): Promise<Task[]> {
     const { data, error } = await supabase.from("tasks").select("*").eq("household_id", householdId);
     if (error) throw new Error(error.message);
-    return ((data ?? []) as TaskRow[]).map(mapTask);
+    return mapList((data ?? []) as TaskRow[], mapTask, "task");
   }
 
   async createTask(householdId: string, input: CreateTaskInput): Promise<Task> {
@@ -318,14 +362,14 @@ export class SupabaseStore implements DataStore {
     if (since) query = query.gte("completed_at", since);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
-    return ((data ?? []) as unknown as CompletionRow[]).map(mapCompletion);
+    return mapList((data ?? []) as unknown as CompletionRow[], mapCompletion, "completion");
   }
 
   // ── Bundles ──────────────────────────────────────────────────────────────
   async listBundles(householdId: string): Promise<Bundle[]> {
     const { data, error } = await supabase.from("bundles").select("*").eq("household_id", householdId);
     if (error) throw new Error(error.message);
-    return ((data ?? []) as BundleRow[]).map(mapBundle);
+    return mapList((data ?? []) as BundleRow[], mapBundle, "bundle");
   }
 
   async createBundle(householdId: string, bundle: Omit<Bundle, "id" | "householdId">): Promise<Bundle> {

@@ -8,11 +8,13 @@ import { CARD_BORDER, Checkbox, IconButton, PillButton } from "./shared";
 
 // Swipe-right-to-toggle: pointer distance (px) that commits the gesture, or a
 // shorter-but-fast flick. The card itself follows at dragElastic's pace, so
-// these are finger distances, not visual card offsets.
-const SWIPE_COMMIT_DISTANCE = 96;
-const SWIPE_FLICK_DISTANCE = 48;
-const SWIPE_FLICK_VELOCITY = 650;
-const SWIPE_LEFT_COMMIT_DISTANCE = 96;
+// these are finger distances, not visual card offsets. Exported so
+// TijdlijnTaakRij (Vandaag's timeline row) commits at the same feel instead
+// of re-tuning its own thresholds.
+export const SWIPE_COMMIT_DISTANCE = 96;
+export const SWIPE_FLICK_DISTANCE = 48;
+export const SWIPE_FLICK_VELOCITY = 650;
+export const SWIPE_LEFT_COMMIT_DISTANCE = 96;
 
 export const TaakRij = memo(function TaakRij({
   task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss, onStartFocus,
@@ -34,6 +36,13 @@ export const TaakRij = memo(function TaakRij({
   const revealOpacity = useTransform(x, [10, 48], [0, 1]);
   const revealScale = useTransform(x, [10, 60], [0.6, 1]);
 
+  // Swipe-left action: starting a focus timer takes precedence when the task can
+  // be timed (open task with onStartFocus wired); rows that can only dismiss
+  // ("niet vandaag") keep that as their left-swipe instead. Two actions, one
+  // gesture — the timer wins wherever a task is actually timeable.
+  const leftAction: "focus" | "dismiss" | null =
+    onStartFocus && !task.done ? "focus" : onDismiss ? "dismiss" : null;
+
   // Releasing a drag still fires a click on whatever child the pointer ends over
   // (the edit button) — swallow that one click so a swipe never doubles as a tap.
   const wasDragged = useRef(false);
@@ -45,7 +54,10 @@ export const TaakRij = memo(function TaakRij({
     const commitLeft = info.offset.x < -SWIPE_LEFT_COMMIT_DISTANCE;
 
     if (commitRight) onToggle();
-    if (commitLeft && onDismiss) onDismiss();
+    if (commitLeft) {
+      if (leftAction === "focus") onStartFocus!();
+      else if (leftAction === "dismiss") onDismiss!();
+    }
 
     // The synthetic click dispatches right after pointerup; clear the flag a tick later.
     setTimeout(() => { wasDragged.current = false; }, 0);
@@ -96,18 +108,23 @@ export const TaakRij = memo(function TaakRij({
           </span>
         </motion.div>
       </div>
-      {onDismiss && (
+      {leftAction && (
         <div
           aria-hidden="true"
           className="absolute inset-0 rounded-2xl flex items-center justify-end pr-5 pointer-events-none"
-          style={{ background: "color-mix(in srgb, var(--destructive) 12%, transparent)" }}
+          style={{ background: leftAction === "focus"
+            ? "color-mix(in srgb, var(--accent) 40%, transparent)"
+            : "color-mix(in srgb, var(--destructive) 12%, transparent)" }}
         >
           <motion.div
             style={{ opacity: useTransform(x, [-48, -10], [1, 0]), scale: useTransform(x, [-60, -10], [1, 0.6]) }}
             className="w-7 h-7 rounded-full flex items-center justify-center"
           >
-            <span className="w-full h-full rounded-full flex items-center justify-center" style={{ background: "var(--destructive)" }}>
-              <X size={13} strokeWidth={3} className="text-white" />
+            <span className="w-full h-full rounded-full flex items-center justify-center"
+              style={{ background: leftAction === "focus" ? SAGE : "var(--destructive)" }}>
+              {leftAction === "focus"
+                ? <Timer size={13} strokeWidth={2.5} className="text-white" />
+                : <X size={13} strokeWidth={3} className="text-white" />}
             </span>
           </motion.div>
         </div>

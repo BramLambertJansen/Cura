@@ -37,11 +37,18 @@ export const HouseholdSchema = z.object({
   timeZone: z.string().min(1).default("Europe/Amsterdam"),
 });
 
+const HHmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+
 export const MemberSchema = z.object({
   id: Id,
   householdId: Id,
   displayName: z.string().min(1), // "Bram", "Stéphanie" — what the UI shows
   userId: Id.optional(), // links to an auth user in cloud mode; absent in local mode
+  // Nightly window this member doesn't want to be pinged in. Both set = enabled;
+  // either absent = off. Never drops the wekker itself — see reminders.ts
+  // isWithinQuietHours, which just holds the ping back until the window ends.
+  quietHoursStart: HHmm.optional(),
+  quietHoursEnd: HHmm.optional(),
 });
 
 // Junction. No unique constraint on userId — the cap lives in the app layer.

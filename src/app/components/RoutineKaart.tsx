@@ -6,39 +6,45 @@ import type { RoutineView } from "../../data/types";
 import { PRESS_TINT, SAGE, SHADOW } from "../lib/constants";
 import { CARD_CHROME, RingProgress, Card, PillButton, StatusBadge } from "./shared";
 
-export const RoutineKaartCompact = memo(function RoutineKaartCompact({
-  routine, onToggleTask,
-}: { routine: RoutineView; onToggleTask: (taskId: string) => void }) {
+/**
+ * Vandaag's timeline-variant routine card — a fixed-width tile meant for a
+ * horizontally scrolling row (see VandaagPage), not the vertical stack the
+ * older compact card used. Ring progress + trigger + count only; no inline
+ * subtask checkboxes here — "Start" hands off to the existing full-screen
+ * routine session (`/routines/:id/starten`), the same route RoutineKaart's own
+ * Start button already navigates to.
+ */
+export const RoutineKaartCompact = memo(function RoutineKaartCompact({ routine }: { routine: RoutineView }) {
+  const navigate = useNavigate();
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
+  const allDone = total > 0 && done === total;
   return (
-    <Card tone="active" className="px-4 py-4">
-      <div className="flex items-center gap-3.5 mb-3.5">
-        <RingProgress value={total > 0 ? done / total : 0} size={40} stroke={3} />
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-foreground">{routine.name}</p>
-          <p className="text-xs text-muted-foreground mt-0.5 font-display italic">{routine.trigger}</p>
-        </div>
-        <span className="text-xs tabular-nums font-medium text-muted-foreground">{done}/{total}</span>
+    <Card tone="active" className="px-3.5 py-4 flex flex-col items-start gap-2.5">
+      <div className="relative">
+        <RingProgress value={total > 0 ? done / total : 0} size={44} stroke={3.5} />
+        {allDone && (
+          <span className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+            <Check size={15} strokeWidth={3} style={{ color: "var(--chart-4)" }} />
+          </span>
+        )}
       </div>
-      <div className="space-y-2.5">
-        {routine.tasks.map((t) => (
-          <motion.button
-            key={t.id}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => onToggleTask(t.id)}
-            role="checkbox"
-            aria-checked={t.done}
-            aria-label={t.done ? `${t.title} als niet gedaan markeren` : `${t.title} afvinken`}
-            className="flex items-center gap-2.5 w-full focus-ring rounded-lg">
-            <div className="w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-all duration-200" aria-hidden="true"
-              style={{ background: t.done ? SAGE : "transparent", borderColor: t.done ? SAGE : "color-mix(in srgb, var(--outline-color) 32%, transparent)" }}>
-              {t.done && <Check size={8} strokeWidth={3.5} className="text-white" />}
-            </div>
-            <span className={`text-xs leading-snug text-left flex-1 ${t.done ? "line-through text-muted-foreground" : "text-foreground"}`}>{t.title}</span>
-          </motion.button>
-        ))}
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-foreground truncate">{routine.name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 font-display italic truncate">{routine.trigger} · {done}/{total}</p>
       </div>
+      {allDone ? (
+        <StatusBadge>Klaar</StatusBadge>
+      ) : total > 0 ? (
+        <PillButton
+          size="sm"
+          icon={<Play size={11} aria-hidden="true" />}
+          onClick={() => navigate(`/routines/${routine.id}/starten`)}
+          ariaLabel={`${routine.name} starten`}
+          className="w-full justify-center">
+          Start
+        </PillButton>
+      ) : null}
     </Card>
   );
 });
