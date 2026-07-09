@@ -232,7 +232,7 @@ export function TaskFormFields({
                 </div>
 
                 <p className="text-xs text-muted-foreground px-1 leading-relaxed">
-                  We laten het je rustig weten, zolang de app open staat.
+                  We laten het je rustig weten — ook als de app dicht staat, zodra je meldingen hebt aangezet.
                 </p>
               </div>
             </motion.div>
@@ -251,7 +251,7 @@ export function TaskFormFields({
             value={duurMin ?? ""}
             onChange={(e) => {
               const v = parseInt(e.target.value, 10);
-              onDuurMinChange(isNaN(v) || v <= 0 ? undefined : v);
+              onDuurMinChange(isNaN(v) || v <= 0 ? undefined : Math.min(480, v));
             }}
             onFocus={() => setDuurActive(true)}
             onBlur={() => setDuurActive(false)}
