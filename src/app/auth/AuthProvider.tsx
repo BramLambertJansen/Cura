@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { resolveDataMode } from "../../data/store";
-import { supabase } from "../../data/cloud/supabaseClient";
+import type { CuraSupabaseClient } from "../../data/cloud/supabaseClient";
 import { LOCAL_USER_ID } from "../../data/local/seed";
 
 export type AuthStatus = "loading" | "signedOut" | "signedIn";
@@ -26,6 +26,12 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+let supabasePromise: Promise<CuraSupabaseClient> | null = null;
+function getSupabase(): Promise<CuraSupabaseClient> {
+  supabasePromise ??= import("../../data/cloud/supabaseClient").then((m) => m.supabase);
+  return supabasePromise;
+}
+
 /**
  * Always mounted, mode-aware: in local mode it resolves to signedIn
  * synchronously (matching seed.ts's fixed implicit user) so App.tsx doesn't
@@ -39,17 +45,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (mode === "local") return;
-    supabase.auth.getSession().then(({ data }) => {
-      setStatus(data.session ? "signedIn" : "signedOut");
-      setUserId(data.session?.user.id ?? null);
-      setEmail(data.session?.user.email ?? null);
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+    void getSupabase().then((supabase) => {
+      if (cancelled) return;
+      void supabase.auth.getSession().then(({ data }) => {
+        if (cancelled) return;
+        setStatus(data.session ? "signedIn" : "signedOut");
+        setUserId(data.session?.user.id ?? null);
+        setEmail(data.session?.user.email ?? null);
+      });
+      const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+        setStatus(session ? "signedIn" : "signedOut");
+        setUserId(session?.user.id ?? null);
+        setEmail(session?.user.email ?? null);
+      });
+      unsubscribe = () => sub.subscription.unsubscribe();
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setStatus(session ? "signedIn" : "signedOut");
-      setUserId(session?.user.id ?? null);
-      setEmail(session?.user.email ?? null);
-    });
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
   }, [mode]);
 
   const value: AuthContextValue = {
@@ -57,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     userId,
     email,
     async signUp(email, password, displayName) {
+      const supabase = await getSupabase();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -68,10 +85,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { needsConfirmation: !data.session };
     },
     async signIn(email, password) {
+      const supabase = await getSupabase();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     },
     async signInWithMagicLink(email) {
+      const supabase = await getSupabase();
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: window.location.href },
@@ -80,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async changePassword(newPassword) {
       if (mode === "local") return;
+      const supabase = await getSupabase();
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
     },
@@ -88,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // scope: "local" clears the session on this device without waiting on a
       // server round-trip to revoke it everywhere — a flaky/slow Supabase
       // connection must never be able to strand the user in a signed-in state.
+      const supabase = await getSupabase();
       await supabase.auth.signOut({ scope: "local" });
     },
   };

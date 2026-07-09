@@ -22,8 +22,14 @@
 --   --   (select id from vault.secrets where name = 'cura_cron_secret'),
 --   --   '<new-secret>');
 --
--- The project ref below is this project's (the xxxx in https://xxxx.supabase.co);
--- change it only if you point this at a different project.
+-- Store the Edge Functions base URL in Vault too, so this migration is reusable
+-- across local/staging/production projects instead of silently posting to an
+-- old project ref. Example:
+--
+--   select vault.create_secret(
+--     'https://<your-project-ref>.supabase.co',
+--     'cura_functions_base_url'
+--   );
 -- ============================================================
 
 create extension if not exists pg_cron;
@@ -38,7 +44,10 @@ select cron.schedule(
   '* * * * *',
   $$
   select net.http_post(
-    url := 'https://vhsohqmpforqshsvcwpb.supabase.co/functions/v1/send-reminders',
+    url := (
+      select decrypted_secret from vault.decrypted_secrets
+      where name = 'cura_functions_base_url'
+    ) || '/functions/v1/send-reminders',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'x-cron-secret', (
