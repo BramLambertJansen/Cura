@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { ListTodo, Plus, Sparkles } from "lucide-react";
+import { ChevronDown, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { roomIcon } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { PageHeader, HintBanner, Card, IconBadge, KeuzeChip } from "../../components/shared";
+import { PageHeader, HintBanner, Card, IconBadge, KeuzeChip, StatusBadge } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { RoomHero } from "../../components/RoomThumb";
@@ -26,6 +26,13 @@ function durationMatches(durationMin: number | undefined, filter: DurationFilter
   return durationMin > 45;
 }
 
+const DURATION_LABELS: Record<DurationFilter, string> = {
+  alles: "Alle duur",
+  kort: "≤ 15 min",
+  middel: "15–45 min",
+  lang: "45+ min",
+};
+
 export function HuisPage() {
   const { openNewRoom, openEditRoom, openEditTask, openTemplates, openAddTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
@@ -38,6 +45,7 @@ export function HuisPage() {
   const [tab, setTab] = useState<HuisTab>("kamers");
   const [roomFilter, setRoomFilter] = useState("alles");
   const [durationFilter, setDurationFilter] = useState<DurationFilter>("alles");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Room detail is a real route (/huis/:roomId) so the OS/browser back gesture
   // returns to the list instead of leaving the tab, and switching tabs and back
@@ -58,6 +66,12 @@ export function HuisPage() {
   );
   const openTasks = filteredTasks.filter((t) => !t.done);
   const doneTasks = filteredTasks.filter((t) => t.done);
+  const activeFilterCount = (roomFilter !== "alles" ? 1 : 0) + (durationFilter !== "alles" ? 1 : 0);
+  const filterSummary = activeFilterCount === 0
+    ? "Filter op kamer en duur"
+    : [roomFilter === "alles" ? null : rooms.find((r) => r.id === roomFilter)?.name, durationFilter === "alles" ? null : DURATION_LABELS[durationFilter]]
+        .filter(Boolean)
+        .join(" · ");
 
   if (room) {
     const ic = roomIcon(room.iconKey);
@@ -190,33 +204,65 @@ export function HuisPage() {
         </>
       ) : (
         <div className="space-y-4 pb-20">
-          <Card className="p-4 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Alle taken</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Filter op kamer en duur.</p>
-              </div>
-              <IconBadge icon={<ListTodo size={18} />} size={40} />
+          <div className="rounded-2xl bg-card-active border border-border/60 overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
+            <div className="flex items-center gap-1 pr-2">
+              <motion.button
+                whileTap={{ scale: 0.99 }}
+                onClick={() => setFiltersOpen((v) => !v)}
+                aria-expanded={filtersOpen}
+                aria-label={filtersOpen ? "Filters inklappen" : "Filters uitklappen"}
+                className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3.5 focus-ring">
+                <IconBadge icon={<SlidersHorizontal size={18} />} size={40} />
+                <div className="flex-1 min-w-0 text-left">
+                  <span className="inline-flex items-center gap-2">
+                    <p className="text-sm font-semibold text-foreground">Filters</p>
+                    {activeFilterCount > 0 && <StatusBadge enter="slide">{activeFilterCount}</StatusBadge>}
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{filterSummary}</p>
+                </div>
+                <motion.span animate={{ rotate: filtersOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground flex-shrink-0">
+                  <ChevronDown size={15} aria-hidden="true" />
+                </motion.span>
+              </motion.button>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setRoomFilter("alles"); setDurationFilter("alles"); }}
+                  className="text-xs font-medium text-muted-foreground px-2 py-1.5 rounded-lg focus-ring flex-shrink-0">
+                  Wis
+                </button>
+              )}
             </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Kamer</p>
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-                <KeuzeChip selected={roomFilter === "alles"} onClick={() => setRoomFilter("alles")}>Alles</KeuzeChip>
-                {rooms.map((r) => (
-                  <KeuzeChip key={r.id} selected={roomFilter === r.id} onClick={() => setRoomFilter(r.id)}>{r.name}</KeuzeChip>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Duur</p>
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-                <KeuzeChip selected={durationFilter === "alles"} onClick={() => setDurationFilter("alles")}>Alles</KeuzeChip>
-                <KeuzeChip selected={durationFilter === "kort"} onClick={() => setDurationFilter("kort")}>≤ 15 min</KeuzeChip>
-                <KeuzeChip selected={durationFilter === "middel"} onClick={() => setDurationFilter("middel")}>15–45 min</KeuzeChip>
-                <KeuzeChip selected={durationFilter === "lang"} onClick={() => setDurationFilter("lang")}>45+ min</KeuzeChip>
-              </div>
-            </div>
-          </Card>
+            <AnimatePresence initial={false}>
+              {filtersOpen && (
+                <motion.div
+                  key="filters"
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.24 }} className="overflow-hidden">
+                  <div className="px-4 pb-4 space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Kamer</p>
+                      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                        <KeuzeChip selected={roomFilter === "alles"} onClick={() => setRoomFilter("alles")}>Alles</KeuzeChip>
+                        {rooms.map((r) => (
+                          <KeuzeChip key={r.id} selected={roomFilter === r.id} onClick={() => setRoomFilter(r.id)}>{r.name}</KeuzeChip>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Duur</p>
+                      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                        <KeuzeChip selected={durationFilter === "alles"} onClick={() => setDurationFilter("alles")}>Alles</KeuzeChip>
+                        <KeuzeChip selected={durationFilter === "kort"} onClick={() => setDurationFilter("kort")}>≤ 15 min</KeuzeChip>
+                        <KeuzeChip selected={durationFilter === "middel"} onClick={() => setDurationFilter("middel")}>15–45 min</KeuzeChip>
+                        <KeuzeChip selected={durationFilter === "lang"} onClick={() => setDurationFilter("lang")}>45+ min</KeuzeChip>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {filteredTasks.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 py-10 px-6 text-center">
