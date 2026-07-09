@@ -80,7 +80,7 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
           must fade in/out with the drag too, not just the circle inside it, or
           it would show through at rest instead of staying hidden underneath. */}
       <motion.div aria-hidden="true" style={{ opacity: revealOpacityRight }} className="absolute inset-0 flex items-center pl-9 pointer-events-none">
-        <div className="absolute inset-0" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }} />
+        <div className="absolute inset-0 rounded-xl" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)" }} />
         <motion.div style={{ scale: revealScaleRight }} className="relative w-7 h-7 rounded-full flex items-center justify-center">
           <span className="w-full h-full rounded-full flex items-center justify-center" style={{ background: SAGE }}>
             {task.done ? <RotateCcw size={13} strokeWidth={2.5} className="text-white" /> : <Check size={13} strokeWidth={3} className="text-white" />}
@@ -89,7 +89,7 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
       </motion.div>
       {canDismiss && (
         <motion.div aria-hidden="true" style={{ opacity: revealOpacityLeft }} className="absolute inset-0 flex items-center justify-end pr-4 pointer-events-none">
-          <div className="absolute inset-0" style={{ background: "color-mix(in srgb, var(--destructive) 10%, transparent)" }} />
+          <div className="absolute inset-0 rounded-xl" style={{ background: "color-mix(in srgb, var(--destructive) 10%, transparent)" }} />
           <motion.div style={{ scale: revealScaleLeft }} className="relative w-7 h-7 rounded-full flex items-center justify-center">
             <span className="w-full h-full rounded-full flex items-center justify-center"
               style={{ background: "var(--destructive)" }}>
