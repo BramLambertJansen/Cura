@@ -402,6 +402,12 @@ describe("shopping list", () => {
     expect(openGroups).toHaveLength(0);
     expect(checked[0].category).toBe("cold");
   });
+
+  it("uses a manually chosen category before the title-based fallback", () => {
+    const milk = item({ id: "s1", title: "Melk", category: "household" });
+    const { openGroups } = toShoppingList([milk]);
+    expect(openGroups.map((group) => group.label)).toEqual(["Huis"]);
+  });
 });
 
 describe("Vandaag timeline — dagdeel grouping", () => {

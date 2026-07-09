@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { toast } from "sonner";
-import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput } from "../data/store";
+import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../data/store";
 import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, ShoppingItem } from "../data/types";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
@@ -70,6 +70,7 @@ interface CuraState {
   deleteBundle: (bundleId: string) => Promise<void>;
 
   createShoppingItem: (input: CreateShoppingItemInput) => Promise<void>;
+  updateShoppingItem: (itemId: string, patch: UpdateShoppingItemInput) => Promise<void>;
   toggleShoppingItem: (itemId: string, checked: boolean) => Promise<void>;
   deleteShoppingItem: (itemId: string) => Promise<void>;
   /** Removes only the checked items — a "declutter" pass, keeps what's still needed. */
@@ -559,6 +560,16 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ shoppingItems: [...get().shoppingItems, created] });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+    }
+  },
+
+  async updateShoppingItem(itemId, patch) {
+    try {
+      const store = await getDataStore();
+      const updated = await store.updateShoppingItem(itemId, patch);
+      set({ shoppingItems: get().shoppingItems.map((i) => (i.id === itemId ? updated : i)) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
     }
   },
 

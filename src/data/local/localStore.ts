@@ -1,6 +1,6 @@
 import { DatabaseSchema } from "../schemas";
 import type { Database, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
-import type { CreateTaskInput, CreateShoppingItemInput, DataStore } from "../store";
+import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type UpdateShoppingItemInput } from "../store";
 import { seedDatabase, LOCAL_USER_ID } from "./seed";
 
 const STORAGE_KEY = "cura:db:v1";
@@ -225,12 +225,24 @@ export class LocalStore implements DataStore {
       householdId,
       title: input.title,
       quantity: input.quantity,
+      category: input.category,
       checked: false,
       createdAt: new Date().toISOString(),
     };
     this.db.shoppingItems.push(created);
     this.persist();
     return created;
+  }
+
+  async updateShoppingItem(itemId: string, patch: UpdateShoppingItemInput): Promise<ShoppingItem> {
+    const item = this.db.shoppingItems.find((i) => i.id === itemId);
+    if (!item) throw new Error(`Shopping item not found: ${itemId}`);
+    const normalized = normalizeShoppingItemPatch(patch);
+    if (normalized.title !== undefined) item.title = normalized.title;
+    if ("quantity" in normalized) item.quantity = normalized.quantity;
+    if (normalized.category !== undefined) item.category = normalized.category;
+    this.persist();
+    return item;
   }
 
   async toggleShoppingItem(itemId: string, checked: boolean): Promise<ShoppingItem> {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { mapList } from "./supabaseStore";
+import { isMissingShoppingCategoryColumn, mapList, shoppingItemUpdateRow } from "./supabaseStore";
 import { TaskSchema } from "../schemas";
 
 /**
@@ -38,5 +38,34 @@ describe("mapList", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const out = mapList([1, 2], () => { throw new Error("all bad"); }, "thing");
     expect(out).toEqual([]);
+  });
+});
+
+describe("shoppingItemUpdateRow", () => {
+  it("trims title and converts an empty quantity to null for Supabase", () => {
+    expect(shoppingItemUpdateRow({ title: "  Melk  ", quantity: "   " })).toEqual({
+      title: "Melk",
+      quantity: null,
+    });
+  });
+
+  it("leaves quantity untouched when it is not part of the patch", () => {
+    expect(shoppingItemUpdateRow({ title: "Koffie" })).toEqual({ title: "Koffie" });
+  });
+});
+
+describe("isMissingShoppingCategoryColumn", () => {
+  it("recognizes Supabase schema-cache misses for shopping_items.category", () => {
+    expect(isMissingShoppingCategoryColumn({
+      code: "PGRST204",
+      message: "Could not find the 'category' column of 'shopping_items' in the schema cache",
+    })).toBe(true);
+  });
+
+  it("does not treat unrelated Supabase errors as category-cache misses", () => {
+    expect(isMissingShoppingCategoryColumn({
+      code: "PGRST204",
+      message: "Could not find the 'title' column of 'shopping_items' in the schema cache",
+    })).toBe(false);
   });
 });
