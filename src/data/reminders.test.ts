@@ -32,6 +32,40 @@ describe("isDone", () => {
     expect(isDone(t, pastCycle, now)).toBe(false);
     expect(isDone(t, undefined, now)).toBe(false);
   });
+
+  // A daily task (intervalDays === 1) is "done" for the current calendar day only:
+  // it resets at local midnight, NOT 24h after the completion moment. This is the
+  // routine "reset iedere dag" behavior. Uses a fixed IANA zone so the machine/CI
+  // timezone never changes the result.
+  describe("daily task resets at local midnight, not on a rolling 24h window", () => {
+    const AMS = "Europe/Amsterdam"; // UTC+2 on these summer dates
+    const daily = (): Task => task({ intervalDays: 1 });
+    const done = (completedAt: string): TaskCompletion => ({ id: "c1", taskId: "t1", completedById: "m1", completedAt });
+
+    it("is done when completed earlier the same local day", () => {
+      const now = Date.UTC(2026, 6, 6, 20, 0); // 22:00 Amsterdam
+      const earlier = new Date(Date.UTC(2026, 6, 6, 6, 0)).toISOString(); // 08:00 Amsterdam, same day
+      expect(isDone(daily(), done(earlier), now, AMS)).toBe(true);
+    });
+
+    it("re-opens the next local day even though less than 24h has passed", () => {
+      // Completed 23:00 Amsterdam yesterday; now 07:00 Amsterdam today — only 8h
+      // later, so the OLD rolling window would call it done. Calendar-day reset opens it.
+      const lastNight = new Date(Date.UTC(2026, 6, 5, 21, 0)).toISOString(); // 2026-07-05 23:00 Amsterdam
+      const now = Date.UTC(2026, 6, 6, 5, 0); // 2026-07-06 07:00 Amsterdam
+      expect(now - new Date(lastNight).getTime()).toBeLessThan(DAY_MS); // < 24h, yet…
+      expect(isDone(daily(), done(lastNight), now, AMS)).toBe(false); // …a new day, so open again
+    });
+
+    it("uses the household local day, not the UTC day, to decide", () => {
+      // 2026-07-06 21:00 New York (UTC-4) == 2026-07-07 01:00Z: a DIFFERENT UTC day,
+      // but the SAME New York day the task was completed — so still done locally.
+      const NY = "America/New_York";
+      const completed = new Date(Date.UTC(2026, 6, 6, 22, 0)).toISOString(); // 2026-07-06 18:00 New York
+      const now = Date.UTC(2026, 6, 7, 1, 0); // 2026-07-06 21:00 New York, same NY day
+      expect(isDone(daily(), done(completed), now, NY)).toBe(true);
+    });
+  });
 });
 
 describe("reminder trigger logic", () => {

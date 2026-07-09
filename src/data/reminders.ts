@@ -42,14 +42,38 @@ export function buildLatestCompletionMap(
 /**
  * Is a task "done" right now?
  *  - One-off task (no intervalDays): done if it has ANY completion.
- *  - Recurring task: done if its latest completion falls within the current cycle
- *    (i.e. less than intervalDays ago). After that it quietly becomes due again.
+ *  - Daily task (intervalDays === 1): done only if its latest completion falls on
+ *    the CURRENT calendar day (in `timeZone`). It resets at local midnight, not
+ *    24h after the completion moment — so a routine ticked off at 23:00 is open
+ *    again the next morning instead of lingering as "done" for another day.
+ *  - Other recurring task: done if its latest completion falls within the current
+ *    cycle (less than intervalDays ago). After that it quietly becomes due again.
+ *
+ * `timeZone` defaults to the runtime zone so client call-sites (which run in the
+ * user's own zone) keep working unchanged; the server MUST pass the household's
+ * stored timezone so its midnight lines up with the household's, not UTC's.
  */
-export function isDone(task: Task, latest?: TaskCompletion, now = Date.now()): boolean {
+export function isDone(
+  task: Task,
+  latest?: TaskCompletion,
+  now = Date.now(),
+  timeZone: string = runtimeTimeZone(),
+): boolean {
   if (!latest) return false;
   if (!task.intervalDays) return true; // one-off, ever-completed = done
+  if (task.intervalDays === 1) {
+    // daily: done for the current calendar day only (resets at local midnight)
+    return isSameLocalDay(new Date(latest.completedAt).getTime(), now, timeZone);
+  }
   const age = now - new Date(latest.completedAt).getTime();
   return age < task.intervalDays * DAY_MS;
+}
+
+/** Do two instants fall on the same calendar day when read in `timeZone`? */
+function isSameLocalDay(aMs: number, bMs: number, timeZone: string): boolean {
+  const a = partsInTz(aMs, timeZone);
+  const b = partsInTz(bMs, timeZone);
+  return a.year === b.year && a.month === b.month && a.day === b.day;
 }
 
 // ─── Timezone helpers — correct wall-clock in an explicit IANA zone ──────────
@@ -153,7 +177,7 @@ export function getDueReminders(
   for (const task of tasks) {
     if (!task.dueDate) continue;
     const latest = latestByTask.get(task.id);
-    if (isDone(task, latest, now)) continue;
+    if (isDone(task, latest, now, timeZone)) continue;
 
     const dueMs = new Date(task.dueDate).getTime();
 
