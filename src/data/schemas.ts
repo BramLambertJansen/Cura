@@ -130,11 +130,14 @@ export const BundleSchema = z.object({
 // activity log, so there's nothing worth event-sourcing (CLAUDE.md §5
 // "Boodschappenlijst").
 
+export const ShoppingCategorySchema = z.enum(["fresh", "cold", "pantry", "household", "other"]);
+
 export const ShoppingItemSchema = z.object({
   id: Id,
   householdId: Id,
   title: z.string().min(1),
   quantity: z.string().min(1).optional(), // free text: "2", "1 pak" — no fixed unit, deliberately not a number
+  category: ShoppingCategorySchema.optional(),
   checked: z.boolean().default(false),
   createdAt: Iso, // stable add-order
 });

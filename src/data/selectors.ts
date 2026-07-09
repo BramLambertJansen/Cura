@@ -354,17 +354,17 @@ const SHOPPING_CATEGORIES: { key: ShoppingCategoryKey; label: string; matches: s
   },
 ];
 
-const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategoryKey, string> = {
+export const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategoryKey, string> = {
   fresh: "Vers",
   cold: "Koeling",
   pantry: "Voorraad",
   household: "Huis",
-  other: "Nog ergens",
+  other: "Overig",
 };
 
-const SHOPPING_CATEGORY_ORDER: ShoppingCategoryKey[] = ["fresh", "cold", "pantry", "household", "other"];
+export const SHOPPING_CATEGORY_ORDER: ShoppingCategoryKey[] = ["fresh", "cold", "pantry", "household", "other"];
 
-function shoppingCategory(title: string): ShoppingCategoryKey {
+export function shoppingCategory(title: string): ShoppingCategoryKey {
   const normalized = title.toLocaleLowerCase("nl-NL");
   return SHOPPING_CATEGORIES.find((category) =>
     category.matches.some((match) => normalized.includes(match)),
@@ -380,7 +380,7 @@ export function toShoppingList(items: ShoppingItem[]): ShoppingListView {
       title: i.title,
       quantity: i.quantity,
       checked: i.checked,
-      category: shoppingCategory(i.title),
+      category: i.category ?? shoppingCategory(i.title),
     }));
   const open = views.filter((i) => !i.checked);
   return {

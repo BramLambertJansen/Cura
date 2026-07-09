@@ -7,6 +7,7 @@ import type {
   TaskCompletion,
   Bundle,
   ShoppingItem,
+  ShoppingCategoryKey,
 } from "./types";
 
 /**
@@ -41,6 +42,24 @@ export interface CreateTaskInput {
 export interface CreateShoppingItemInput {
   title: string;
   quantity?: string;
+  category?: ShoppingCategoryKey;
+}
+
+export interface UpdateShoppingItemInput {
+  title?: string;
+  quantity?: string;
+  category?: ShoppingCategoryKey;
+}
+
+export function normalizeShoppingItemPatch(patch: UpdateShoppingItemInput): UpdateShoppingItemInput {
+  const normalized: UpdateShoppingItemInput = {};
+  if (patch.title !== undefined) normalized.title = patch.title.trim();
+  if ("quantity" in patch) {
+    const quantity = patch.quantity?.trim();
+    normalized.quantity = quantity || undefined;
+  }
+  if (patch.category !== undefined) normalized.category = patch.category;
+  return normalized;
 }
 
 /**
@@ -135,6 +154,7 @@ export interface DataStore {
   // generic patch — `checked` is the only mutable field besides the item itself.
   listShoppingItems(householdId: string): Promise<ShoppingItem[]>;
   createShoppingItem(householdId: string, input: CreateShoppingItemInput): Promise<ShoppingItem>;
+  updateShoppingItem(itemId: string, patch: UpdateShoppingItemInput): Promise<ShoppingItem>;
   toggleShoppingItem(itemId: string, checked: boolean): Promise<ShoppingItem>;
   deleteShoppingItem(itemId: string): Promise<void>;
 
