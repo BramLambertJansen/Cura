@@ -2,8 +2,8 @@ import { memo, useRef, useState, type ReactNode } from "react";
 import { motion, useMotionValue, useReducedMotion, useTransform, type PanInfo } from "motion/react";
 import { Check, Minus, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { ShoppingItemView, ShoppingUnitKey } from "../../data/types";
-import { SHOPPING_UNIT_ORDER, SHOPPING_UNIT_LABELS } from "../../data/selectors";
-import { CARD_BORDER, Checkbox, IconButton, KeuzeChip, fieldBorderColor, fieldBoxShadow } from "./shared";
+import { SHOPPING_UNIT_ORDER, SHOPPING_UNIT_LABELS, shoppingAmountOptions } from "../../data/selectors";
+import { CARD_BORDER, Checkbox, IconButton, KeuzeChip, VeldSelect, fieldBorderColor, fieldBoxShadow } from "./shared";
 import { SHADOW } from "../lib/constants";
 
 type ShoppingItemPatch = { title?: string; amount?: number; unit?: ShoppingUnitKey; description?: string };
@@ -43,7 +43,7 @@ export const BoodschapRij = memo(function BoodschapRij({
   const [amount, setAmount] = useState(item.amount !== undefined ? String(item.amount) : "");
   const [unit, setUnit] = useState<ShoppingUnitKey>(item.unit ?? "stuks");
   const [description, setDescription] = useState(item.description ?? "");
-  const [active, setActive] = useState<"title" | "amount" | "description" | null>(null);
+  const [active, setActive] = useState<"title" | "description" | null>(null);
   const reduceMotion = useReducedMotion();
   const x = useMotionValue(0);
   const deleteOpacity = useTransform(x, [-48, -10], [1, 0]);
@@ -69,14 +69,18 @@ export const BoodschapRij = memo(function BoodschapRij({
 
   function saveEdit() {
     if (!canSave) return;
-    const parsedAmount = amount.trim() ? Number(amount.trim().replace(",", ".")) : undefined;
     onUpdate({
       title: title.trim(),
-      amount: parsedAmount && parsedAmount > 0 ? parsedAmount : undefined,
+      amount: amount ? Number(amount) : undefined,
       unit,
       description: description.trim() || undefined,
     });
     setEditing(false);
+  }
+
+  function changeUnit(next: ShoppingUnitKey) {
+    setUnit(next);
+    setAmount("");
   }
 
   function adjustAmount(delta: 1 | -1) {
@@ -138,26 +142,12 @@ export const BoodschapRij = memo(function BoodschapRij({
                   boxShadow: fieldBoxShadow({ active: active === "title", invalid: !canSave }),
                 }}
               />
-              <input
+              <VeldSelect
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                onFocus={() => setActive("amount")}
-                onBlur={() => setActive(null)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") saveEdit();
-                  if (e.key === "Escape") cancelEdit();
-                }}
-                type="number"
-                inputMode="decimal"
-                min={0}
-                placeholder="Aantal"
-                aria-label="Aantal"
-                className="min-w-0 w-20 rounded-xl px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none border transition-all"
-                style={{
-                  background: "var(--input-background)",
-                  borderColor: fieldBorderColor({ active: active === "amount", hasValue: !!amount }),
-                  boxShadow: fieldBoxShadow({ active: active === "amount" }),
-                }}
+                onChange={setAmount}
+                options={shoppingAmountOptions(unit, unit === (item.unit ?? "stuks") ? item.amount : undefined)}
+                ariaLabel="Aantal"
+                className="min-w-0 w-24 py-2 text-sm"
               />
               <div className="flex items-center gap-1 flex-shrink-0">
                 <IconButton
@@ -178,7 +168,7 @@ export const BoodschapRij = memo(function BoodschapRij({
             </div>
             <div className="flex gap-1.5 flex-wrap" aria-label="Eenheid kiezen">
               {SHOPPING_UNIT_ORDER.map((key) => (
-                <KeuzeChip key={key} selected={unit === key} onClick={() => setUnit(key)}>
+                <KeuzeChip key={key} selected={unit === key} onClick={() => changeUnit(key)}>
                   {SHOPPING_UNIT_LABELS[key]}
                 </KeuzeChip>
               ))}

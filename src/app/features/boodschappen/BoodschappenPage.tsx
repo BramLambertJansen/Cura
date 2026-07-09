@@ -5,13 +5,14 @@ import { useCuraStore } from "../../../stores/useCuraStore";
 import { useShoppingList, useTaskViews } from "../../../stores/useViews";
 import { stagger, fadeUp } from "../../lib/motion";
 import { SAGE } from "../../lib/constants";
-import { PageHeader, Leeg, Kop, PillButton, VerwijderKnop, fieldBorderColor, fieldBoxShadow } from "../../components/shared";
+import { PageHeader, Leeg, Kop, PillButton, VerwijderKnop, VeldSelect, fieldBorderColor, fieldBoxShadow } from "../../components/shared";
 import { BoodschapRij } from "../../components/BoodschapRij";
 import {
   SHOPPING_CATEGORY_LABELS,
   SHOPPING_CATEGORY_ORDER,
   SHOPPING_UNIT_LABELS,
   SHOPPING_UNIT_ORDER,
+  shoppingAmountOptions,
   shoppingCategory,
 } from "../../../data/selectors";
 import type { ShoppingCategoryKey, ShoppingUnitKey } from "../../../data/types";
@@ -80,7 +81,7 @@ function BoodschapToevoegRij({
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [unit, setUnit] = useState<ShoppingUnitKey>("stuks");
-  const [active, setActive] = useState<"title" | "amount" | null>(null);
+  const [titleActive, setTitleActive] = useState(false);
   const [category, setCategory] = useState<ShoppingCategoryKey>("other");
   const [categoryTouched, setCategoryTouched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,11 +91,15 @@ function BoodschapToevoegRij({
     if (!categoryTouched) setCategory(next.trim() ? shoppingCategory(next) : "other");
   }
 
+  function changeUnit(next: ShoppingUnitKey) {
+    setUnit(next);
+    setAmount("");
+  }
+
   function submit() {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
-    const parsedAmount = amount.trim() ? Number(amount.trim().replace(",", ".")) : undefined;
-    onAdd(trimmedTitle, parsedAmount && parsedAmount > 0 ? parsedAmount : undefined, unit, category);
+    onAdd(trimmedTitle, amount ? Number(amount) : undefined, unit, category);
     setTitle("");
     setAmount("");
     setUnit("stuks");
@@ -110,35 +115,24 @@ function BoodschapToevoegRij({
           ref={inputRef}
           value={title}
           onChange={(e) => changeTitle(e.target.value)}
-          onFocus={() => setActive("title")}
-          onBlur={() => setActive(null)}
+          onFocus={() => setTitleActive(true)}
+          onBlur={() => setTitleActive(false)}
           onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
           placeholder="Bijv. melk of suiker"
           aria-label="Boodschap"
           className="min-w-0 flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
           style={{
             background: "var(--input-background)",
-            borderColor: fieldBorderColor({ active: active === "title", hasValue: !!title }),
-            boxShadow: fieldBoxShadow({ active: active === "title" }),
+            borderColor: fieldBorderColor({ active: titleActive, hasValue: !!title }),
+            boxShadow: fieldBoxShadow({ active: titleActive }),
           }}
         />
-        <input
+        <VeldSelect
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          onFocus={() => setActive("amount")}
-          onBlur={() => setActive(null)}
-          onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-          type="number"
-          inputMode="decimal"
-          min={0}
-          placeholder="Aantal"
-          aria-label="Aantal"
-          className="min-w-0 w-20 rounded-2xl px-2.5 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
-          style={{
-            background: "var(--input-background)",
-            borderColor: fieldBorderColor({ active: active === "amount", hasValue: !!amount }),
-            boxShadow: fieldBoxShadow({ active: active === "amount" }),
-          }}
+          onChange={setAmount}
+          options={shoppingAmountOptions(unit)}
+          ariaLabel="Aantal"
+          className="min-w-0 w-24 py-3 text-sm"
         />
         <motion.button whileTap={{ scale: 0.88 }} onClick={submit} disabled={!title.trim()}
           aria-label="Item toevoegen"
@@ -154,7 +148,7 @@ function BoodschapToevoegRij({
             <button
               key={key}
               type="button"
-              onClick={() => setUnit(key)}
+              onClick={() => changeUnit(key)}
               aria-pressed={selected}
               className="flex-shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold focus-ring"
               style={{
