@@ -78,7 +78,9 @@ sw.addEventListener("push", (event) => {
         // tag = firedForKey: coalesces with an in-app Notification of the same
         // wekker (e.g. a throttled background tab that still polled) into one.
         tag: payload.firedForKey,
-        icon: "/icons/icon-192.png",
+        // Geen `icon`: als geïnstalleerde WebAPK toont Android het Cura-app-icoon al
+        // links op de melding — een grote huisje-afbeelding rechts zou datzelfde
+        // beeld dubbel tonen. De monochrome `badge` hieronder hoort bij dat app-icoon.
         // badge = de kleine monochrome status-/taakbalk-icoon; Android tint 'm via
         // het alfakanaal, dus een apart wit huis-silhouet i.p.v. het volkleuren-icoon
         // (dat als een witte blok zou renderen).
