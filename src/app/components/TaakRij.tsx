@@ -8,11 +8,13 @@ import { CARD_BORDER, Checkbox, IconButton, PillButton } from "./shared";
 
 // Swipe-right-to-toggle: pointer distance (px) that commits the gesture, or a
 // shorter-but-fast flick. The card itself follows at dragElastic's pace, so
-// these are finger distances, not visual card offsets.
-const SWIPE_COMMIT_DISTANCE = 96;
-const SWIPE_FLICK_DISTANCE = 48;
-const SWIPE_FLICK_VELOCITY = 650;
-const SWIPE_LEFT_COMMIT_DISTANCE = 96;
+// these are finger distances, not visual card offsets. Exported so
+// TijdlijnTaakRij (Vandaag's timeline row) commits at the same feel instead
+// of re-tuning its own thresholds.
+export const SWIPE_COMMIT_DISTANCE = 96;
+export const SWIPE_FLICK_DISTANCE = 48;
+export const SWIPE_FLICK_VELOCITY = 650;
+export const SWIPE_LEFT_COMMIT_DISTANCE = 96;
 
 export const TaakRij = memo(function TaakRij({
   task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss, onStartFocus,

@@ -10,6 +10,7 @@ import type {
   RoutineView,
   ActivityView,
   TaskOverview,
+  DagdeelGroup,
   ShoppingItemView,
   ShoppingListView,
   ShoppingCategoryKey,
@@ -277,6 +278,40 @@ export function toTaskOverview(tasks: TaskView[], now = Date.now()): TaskOvervie
     upcoming: open.filter((t) => !t.intervalDays && !!t.dueDate && dueMs(t) >= now),
     undated: open.filter((t) => !t.intervalDays && !t.dueDate),
   };
+}
+
+// ─── Vandaag timeline — soft dagdeel grouping, never invented ────────────────
+
+const DAGDEEL_LABELS: Record<DagdeelGroup["key"], string> = {
+  ochtend: "Ochtend",
+  middag: "Middag",
+  avond: "Avond",
+  overig: "Overig",
+};
+
+/** Which dagdeel a given hour-of-day falls in — the same three-way split the routine trigger options already use ('s Ochtends / 's Middags / 's Avonds). */
+export function dagdeelForHour(hour: number): "ochtend" | "middag" | "avond" {
+  if (hour < 12) return "ochtend";
+  if (hour < 18) return "middag";
+  return "avond";
+}
+
+/**
+ * Groups open tasks into Ochtend/Middag/Avond for Vandaag's timeline layout —
+ * but only a task with a real wekker/dueDate gets a dagdeel, derived from that
+ * exact time. Everything else lands in `overig` instead of being falsely
+ * assigned a moment the data has no signal for. Empty groups are omitted;
+ * order is always ochtend → middag → avond → overig.
+ */
+export function toDagdelen(tasks: TaskView[]): DagdeelGroup[] {
+  const buckets: Record<DagdeelGroup["key"], TaskView[]> = { ochtend: [], middag: [], avond: [], overig: [] };
+  for (const t of tasks) {
+    const key = t.dueDate ? dagdeelForHour(new Date(t.dueDate).getHours()) : "overig";
+    buckets[key].push(t);
+  }
+  return (["ochtend", "middag", "avond", "overig"] as const)
+    .map((key) => ({ key, label: DAGDEEL_LABELS[key], tasks: buckets[key] }))
+    .filter((g) => g.tasks.length > 0);
 }
 
 // ─── Shopping list ────────────────────────────────────────────────────────────
