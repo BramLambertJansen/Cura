@@ -32,6 +32,11 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
   const revealOpacityLeft = useTransform(x, [-48, -10], [1, 0]);
   const revealScaleLeft = useTransform(x, [-60, -10], [1, 0.6]);
 
+  // Mirrors TaakRij: swipe-left starts the focus timer when the task is timeable,
+  // otherwise falls back to "niet vandaag" (dismiss).
+  const leftAction: "focus" | "dismiss" | null =
+    onStartFocus && !task.done ? "focus" : onDismiss ? "dismiss" : null;
+
   const wasDragged = useRef(false);
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
@@ -41,7 +46,10 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
     const commitLeft = info.offset.x < -SWIPE_LEFT_COMMIT_DISTANCE;
 
     if (commitRight) onToggle();
-    if (commitLeft && onDismiss) onDismiss();
+    if (commitLeft) {
+      if (leftAction === "focus") onStartFocus!();
+      else if (leftAction === "dismiss") onDismiss!();
+    }
 
     setTimeout(() => { wasDragged.current = false; }, 0);
   }
@@ -86,12 +94,17 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
           </span>
         </motion.div>
       </motion.div>
-      {onDismiss && (
+      {leftAction && (
         <motion.div aria-hidden="true" style={{ opacity: revealOpacityLeft }} className="absolute inset-0 flex items-center justify-end pr-4 pointer-events-none">
-          <div className="absolute inset-0" style={{ background: "color-mix(in srgb, var(--destructive) 10%, transparent)" }} />
+          <div className="absolute inset-0" style={{ background: leftAction === "focus"
+            ? "color-mix(in srgb, var(--accent) 35%, transparent)"
+            : "color-mix(in srgb, var(--destructive) 10%, transparent)" }} />
           <motion.div style={{ scale: revealScaleLeft }} className="relative w-7 h-7 rounded-full flex items-center justify-center">
-            <span className="w-full h-full rounded-full flex items-center justify-center" style={{ background: "var(--destructive)" }}>
-              <X size={13} strokeWidth={3} className="text-white" />
+            <span className="w-full h-full rounded-full flex items-center justify-center"
+              style={{ background: leftAction === "focus" ? SAGE : "var(--destructive)" }}>
+              {leftAction === "focus"
+                ? <Timer size={13} strokeWidth={2.5} className="text-white" />
+                : <X size={13} strokeWidth={3} className="text-white" />}
             </span>
           </motion.div>
         </motion.div>
