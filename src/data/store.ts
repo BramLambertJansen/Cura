@@ -8,6 +8,7 @@ import type {
   Bundle,
   ShoppingItem,
   ShoppingCategoryKey,
+  ShoppingUnitKey,
 } from "./types";
 
 /**
@@ -41,22 +42,28 @@ export interface CreateTaskInput {
 
 export interface CreateShoppingItemInput {
   title: string;
-  quantity?: string;
+  amount?: number;
+  unit?: ShoppingUnitKey;
+  description?: string;
   category?: ShoppingCategoryKey;
 }
 
 export interface UpdateShoppingItemInput {
   title?: string;
-  quantity?: string;
+  amount?: number;
+  unit?: ShoppingUnitKey;
+  description?: string;
   category?: ShoppingCategoryKey;
 }
 
 export function normalizeShoppingItemPatch(patch: UpdateShoppingItemInput): UpdateShoppingItemInput {
   const normalized: UpdateShoppingItemInput = {};
   if (patch.title !== undefined) normalized.title = patch.title.trim();
-  if ("quantity" in patch) {
-    const quantity = patch.quantity?.trim();
-    normalized.quantity = quantity || undefined;
+  if ("amount" in patch) normalized.amount = patch.amount;
+  if ("unit" in patch) normalized.unit = patch.unit;
+  if ("description" in patch) {
+    const description = patch.description?.trim();
+    normalized.description = description || undefined;
   }
   if (patch.category !== undefined) normalized.category = patch.category;
   return normalized;

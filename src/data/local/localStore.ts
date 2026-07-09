@@ -224,7 +224,9 @@ export class LocalStore implements DataStore {
       id: uid(),
       householdId,
       title: input.title,
-      quantity: input.quantity,
+      amount: input.amount,
+      unit: input.unit,
+      description: input.description,
       category: input.category,
       checked: false,
       createdAt: new Date().toISOString(),
@@ -239,7 +241,9 @@ export class LocalStore implements DataStore {
     if (!item) throw new Error(`Shopping item not found: ${itemId}`);
     const normalized = normalizeShoppingItemPatch(patch);
     if (normalized.title !== undefined) item.title = normalized.title;
-    if ("quantity" in normalized) item.quantity = normalized.quantity;
+    if ("amount" in normalized) item.amount = normalized.amount;
+    if ("unit" in normalized) item.unit = normalized.unit;
+    if ("description" in normalized) item.description = normalized.description;
     if (normalized.category !== undefined) item.category = normalized.category;
     this.persist();
     return item;

@@ -9,6 +9,7 @@ import {
   TaskCompletionSchema,
   BundleSchema,
   ShoppingItemSchema,
+  ShoppingUnitSchema,
   DatabaseSchema,
 } from "./schemas";
 
@@ -37,6 +38,7 @@ export type Task = z.infer<typeof TaskSchema>;
 export type TaskCompletion = z.infer<typeof TaskCompletionSchema>;
 export type Bundle = z.infer<typeof BundleSchema>;
 export type ShoppingItem = z.infer<typeof ShoppingItemSchema>;
+export type ShoppingUnitKey = z.infer<typeof ShoppingUnitSchema>;
 export type Database = z.infer<typeof DatabaseSchema>;
 
 // ─── View-models (derived, what screens consume) ─────────────────────────────
@@ -133,7 +135,11 @@ export interface ShoppingCategoryView {
 export interface ShoppingItemView {
   id: string;
   title: string;
+  amount?: number;
+  unit?: ShoppingUnitKey;
+  /** Compact display label ("500ml", "1kg", "3") — derived from amount+unit, or the legacy free-text quantity for older rows. */
   quantity?: string;
+  description?: string;
   checked: boolean;
   category: ShoppingCategoryKey;
 }

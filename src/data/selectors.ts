@@ -14,6 +14,7 @@ import type {
   ShoppingItemView,
   ShoppingListView,
   ShoppingCategoryKey,
+  ShoppingUnitKey,
 } from "./types";
 import { buildLatestCompletionMap, isDone, getDueReminders } from "./reminders";
 
@@ -371,6 +372,28 @@ export function shoppingCategory(title: string): ShoppingCategoryKey {
   )?.key ?? "other";
 }
 
+export const SHOPPING_UNIT_ORDER: ShoppingUnitKey[] = ["stuks", "g", "kg", "ml", "l"];
+
+export const SHOPPING_UNIT_LABELS: Record<ShoppingUnitKey, string> = {
+  stuks: "stuks",
+  g: "g",
+  kg: "kg",
+  ml: "ml",
+  l: "l",
+};
+
+/**
+ * Compact display label for a shopping item's amount ("500ml", "1kg", "3" for
+ * a bare/"stuks" count) — falls back to the legacy free-text `quantity` for
+ * rows created before amount/unit existed.
+ */
+export function formatShoppingQuantity(item: Pick<ShoppingItem, "amount" | "unit" | "quantity">): string | undefined {
+  if (item.amount === undefined) return item.quantity;
+  const amount = Number.isInteger(item.amount) ? String(item.amount) : String(item.amount).replace(".", ",");
+  if (!item.unit || item.unit === "stuks") return amount;
+  return `${amount}${item.unit}`;
+}
+
 /** Split the shopping list into open vs checked, each oldest-added first. */
 export function toShoppingList(items: ShoppingItem[]): ShoppingListView {
   const views: ShoppingItemView[] = [...items]
@@ -378,7 +401,10 @@ export function toShoppingList(items: ShoppingItem[]): ShoppingListView {
     .map((i) => ({
       id: i.id,
       title: i.title,
-      quantity: i.quantity,
+      amount: i.amount,
+      unit: i.unit,
+      quantity: formatShoppingQuantity(i),
+      description: i.description,
       checked: i.checked,
       category: i.category ?? shoppingCategory(i.title),
     }));

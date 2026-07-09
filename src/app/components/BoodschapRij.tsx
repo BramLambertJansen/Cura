@@ -1,21 +1,17 @@
 import { memo, useRef, useState, type ReactNode } from "react";
 import { motion, useMotionValue, useReducedMotion, useTransform, type PanInfo } from "motion/react";
 import { Check, Minus, Pencil, Plus, Trash2, X } from "lucide-react";
-import type { ShoppingItemView } from "../../data/types";
-import { CARD_BORDER, Checkbox, IconButton, fieldBorderColor, fieldBoxShadow } from "./shared";
+import type { ShoppingItemView, ShoppingUnitKey } from "../../data/types";
+import { SHOPPING_UNIT_ORDER, SHOPPING_UNIT_LABELS } from "../../data/selectors";
+import { CARD_BORDER, Checkbox, IconButton, KeuzeChip, fieldBorderColor, fieldBoxShadow } from "./shared";
 import { SHADOW } from "../lib/constants";
 
-type ShoppingItemPatch = { title?: string; quantity?: string };
+type ShoppingItemPatch = { title?: string; amount?: number; unit?: ShoppingUnitKey; description?: string };
 const SWIPE_DELETE_DISTANCE = 96;
 
-export function nextShoppingQuantity(quantity: string | undefined, delta: 1 | -1): string | undefined {
-  const value = quantity?.trim();
-  if (!value) return delta > 0 ? "1" : undefined;
-  const match = value.match(/^(\d+)(.*)$/);
-  if (!match) return delta > 0 ? `1 ${value}` : undefined;
-  const next = Number(match[1]) + delta;
-  if (next <= 0) return undefined;
-  return `${next}${match[2]}`;
+export function nextShoppingAmount(amount: number | undefined, delta: 1 | -1): number | undefined {
+  const next = (amount ?? 0) + delta;
+  return next > 0 ? next : undefined;
 }
 
 function QuantityButton({
@@ -44,8 +40,10 @@ export const BoodschapRij = memo(function BoodschapRij({
 }: { item: ShoppingItemView; onToggle: () => void; onDelete: () => void; onUpdate: (patch: ShoppingItemPatch) => void }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(item.title);
-  const [quantity, setQuantity] = useState(item.quantity ?? "");
-  const [active, setActive] = useState<"title" | "quantity" | null>(null);
+  const [amount, setAmount] = useState(item.amount !== undefined ? String(item.amount) : "");
+  const [unit, setUnit] = useState<ShoppingUnitKey>(item.unit ?? "stuks");
+  const [description, setDescription] = useState(item.description ?? "");
+  const [active, setActive] = useState<"title" | "amount" | "description" | null>(null);
   const reduceMotion = useReducedMotion();
   const x = useMotionValue(0);
   const deleteOpacity = useTransform(x, [-48, -10], [1, 0]);
@@ -55,24 +53,34 @@ export const BoodschapRij = memo(function BoodschapRij({
 
   function beginEdit() {
     setTitle(item.title);
-    setQuantity(item.quantity ?? "");
+    setAmount(item.amount !== undefined ? String(item.amount) : "");
+    setUnit(item.unit ?? "stuks");
+    setDescription(item.description ?? "");
     setEditing(true);
   }
 
   function cancelEdit() {
     setTitle(item.title);
-    setQuantity(item.quantity ?? "");
+    setAmount(item.amount !== undefined ? String(item.amount) : "");
+    setUnit(item.unit ?? "stuks");
+    setDescription(item.description ?? "");
     setEditing(false);
   }
 
   function saveEdit() {
     if (!canSave) return;
-    onUpdate({ title: title.trim(), quantity: quantity.trim() || undefined });
+    const parsedAmount = amount.trim() ? Number(amount.trim().replace(",", ".")) : undefined;
+    onUpdate({
+      title: title.trim(),
+      amount: parsedAmount && parsedAmount > 0 ? parsedAmount : undefined,
+      unit,
+      description: description.trim() || undefined,
+    });
     setEditing(false);
   }
 
-  function adjustQuantity(delta: 1 | -1) {
-    onUpdate({ quantity: nextShoppingQuantity(item.quantity, delta) });
+  function adjustAmount(delta: 1 | -1) {
+    onUpdate({ amount: nextShoppingAmount(item.amount, delta) });
   }
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
@@ -107,11 +115,11 @@ export const BoodschapRij = memo(function BoodschapRij({
             e.stopPropagation();
           }
         }}
-        className={`relative z-10 flex items-center gap-3.5 rounded-2xl px-4 py-3.5 ${item.checked ? "bg-card" : "bg-card-active"} ${CARD_BORDER}`}
+        className={`relative z-10 flex ${editing ? "items-start" : "items-center"} gap-3.5 rounded-2xl px-4 py-3.5 ${item.checked ? "bg-card" : "bg-card-active"} ${CARD_BORDER}`}
         style={{ x, touchAction: "pan-y", boxShadow: SHADOW }}>
         {editing ? (
-          <>
-            <div className="flex-1 min-w-0 grid grid-cols-[minmax(0,1fr)_5.5rem] gap-2">
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <div className="flex items-start gap-2">
               <input
                 autoFocus
                 value={title}
@@ -123,7 +131,7 @@ export const BoodschapRij = memo(function BoodschapRij({
                   if (e.key === "Escape") cancelEdit();
                 }}
                 aria-label="Boodschap"
-                className="min-w-0 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none border transition-all"
+                className="min-w-0 flex-1 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none border transition-all"
                 style={{
                   background: "var(--input-background)",
                   borderColor: fieldBorderColor({ active: active === "title", hasValue: !!title, invalid: !canSave }),
@@ -131,41 +139,69 @@ export const BoodschapRij = memo(function BoodschapRij({
                 }}
               />
               <input
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                onFocus={() => setActive("quantity")}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                onFocus={() => setActive("amount")}
                 onBlur={() => setActive(null)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") saveEdit();
                   if (e.key === "Escape") cancelEdit();
                 }}
+                type="number"
+                inputMode="decimal"
+                min={0}
                 placeholder="Aantal"
                 aria-label="Aantal"
-                className="min-w-0 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none border transition-all"
+                className="min-w-0 w-20 rounded-xl px-2.5 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none border transition-all"
                 style={{
                   background: "var(--input-background)",
-                  borderColor: fieldBorderColor({ active: active === "quantity", hasValue: !!quantity }),
-                  boxShadow: fieldBoxShadow({ active: active === "quantity" }),
+                  borderColor: fieldBorderColor({ active: active === "amount", hasValue: !!amount }),
+                  boxShadow: fieldBoxShadow({ active: active === "amount" }),
                 }}
               />
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <IconButton
+                  size={8}
+                  tone="primary"
+                  onClick={saveEdit}
+                  label={`${item.title} opslaan`}
+                  className={canSave ? "" : "opacity-40 pointer-events-none"}
+                  icon={<Check size={13} className="text-white" aria-hidden="true" />}
+                />
+                <IconButton
+                  size={8}
+                  onClick={cancelEdit}
+                  label="Bewerken annuleren"
+                  icon={<X size={13} className="text-muted-foreground" aria-hidden="true" />}
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <IconButton
-                size={8}
-                tone="primary"
-                onClick={saveEdit}
-                label={`${item.title} opslaan`}
-                className={canSave ? "" : "opacity-40 pointer-events-none"}
-                icon={<Check size={13} className="text-white" aria-hidden="true" />}
-              />
-              <IconButton
-                size={8}
-                onClick={cancelEdit}
-                label="Bewerken annuleren"
-                icon={<X size={13} className="text-muted-foreground" aria-hidden="true" />}
-              />
+            <div className="flex gap-1.5 flex-wrap" aria-label="Eenheid kiezen">
+              {SHOPPING_UNIT_ORDER.map((key) => (
+                <KeuzeChip key={key} selected={unit === key} onClick={() => setUnit(key)}>
+                  {SHOPPING_UNIT_LABELS[key]}
+                </KeuzeChip>
+              ))}
             </div>
-          </>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onFocus={() => setActive("description")}
+              onBlur={() => setActive(null)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveEdit();
+                if (e.key === "Escape") cancelEdit();
+              }}
+              placeholder="Beschrijving (optioneel)"
+              aria-label="Beschrijving"
+              className="min-w-0 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none border transition-all"
+              style={{
+                background: "var(--input-background)",
+                borderColor: fieldBorderColor({ active: active === "description", hasValue: !!description }),
+                boxShadow: fieldBoxShadow({ active: active === "description" }),
+              }}
+            />
+          </div>
         ) : (
           <>
             <Checkbox
@@ -187,17 +223,22 @@ export const BoodschapRij = memo(function BoodschapRij({
                   {item.quantity}
                 </span>
               )}
+              {item.description && (
+                <span className={`block text-xs text-muted-foreground/80 italic font-normal leading-snug truncate ${item.checked ? "line-through" : ""}`}>
+                  {item.description}
+                </span>
+              )}
             </motion.button>
             {!item.checked && (
               <div className="flex items-center gap-1.5 flex-shrink-0" aria-label={`Aantal ${item.title} aanpassen`}>
                 <QuantityButton
-                  onClick={() => adjustQuantity(-1)}
-                  disabled={!item.quantity}
+                  onClick={() => adjustAmount(-1)}
+                  disabled={!item.amount}
                   label={`Aantal ${item.title} verlagen`}>
                   <Minus size={12} aria-hidden="true" />
                 </QuantityButton>
                 <QuantityButton
-                  onClick={() => adjustQuantity(1)}
+                  onClick={() => adjustAmount(1)}
                   label={`Aantal ${item.title} verhogen`}>
                   <Plus size={12} aria-hidden="true" />
                 </QuantityButton>

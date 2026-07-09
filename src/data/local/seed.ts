@@ -68,8 +68,9 @@ export function seedDatabase(): Database {
       { id: "bundle-weekend", householdId: HOUSEHOLD_ID, name: "Weekend schoonmaak", trigger: "Weekeinde", cadence: "weekly", windowLabel: "weekenden" },
     ],
     shoppingItems: [
-      { id: "shopping-1", householdId: HOUSEHOLD_ID, title: "Melk", checked: false, createdAt: todayAt(9, 0) },
-      { id: "shopping-2", householdId: HOUSEHOLD_ID, title: "Eieren", quantity: "10", checked: false, createdAt: todayAt(9, 1) },
+      { id: "shopping-1", householdId: HOUSEHOLD_ID, title: "Melk", amount: 500, unit: "ml", checked: false, createdAt: todayAt(9, 0) },
+      { id: "shopping-2", householdId: HOUSEHOLD_ID, title: "Eieren", amount: 10, unit: "stuks", checked: false, createdAt: todayAt(9, 1) },
+      // Legacy free-text row (pre-amount/unit) — demonstrates the display fallback still works.
       { id: "shopping-3", householdId: HOUSEHOLD_ID, title: "Wc-papier", quantity: "1 pak", checked: false, createdAt: todayAt(9, 2) },
       { id: "shopping-4", householdId: HOUSEHOLD_ID, title: "Afwasmiddel", checked: true, createdAt: todayAt(8, 30) },
     ],
