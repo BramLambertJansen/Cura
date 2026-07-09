@@ -25,6 +25,7 @@ export interface TaskFormState {
 
 export interface TaskFormFieldsProps extends TaskFormState {
   rooms: RoomView[];
+  showDayToggle?: boolean;
   onRoomChange: (id: string | null) => void;
   onOpMijnDagChange: (v: boolean) => void;
   onHerhalenChange: (v: boolean) => void;
@@ -57,6 +58,7 @@ export function extractTijd(iso: string): string {
 
 export function TaskFormFields({
   rooms,
+  showDayToggle = true,
   selectedRoomId, onRoomChange,
   opMijnDag, onOpMijnDagChange,
   herhalenAan, onHerhalenChange,
@@ -75,15 +77,17 @@ export function TaskFormFields({
     <>
       {/* Op mijn dag — makes the task show up in "Mijn dag" on Vandaag right away,
           instead of quietly landing only in the shared pool. */}
-      <div className="mb-4">
-        <FieldShell hasValue={opMijnDag} className="flex items-center justify-between py-3.5 px-4">
-          <div className="flex items-center gap-2.5">
-            <Sun size={16} style={{ color: opMijnDag ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
-            <span className="text-sm font-medium text-foreground">Zet op mijn dag</span>
-          </div>
-          <Toggle checked={opMijnDag} onChange={onOpMijnDagChange} label="Zet op mijn dag" />
-        </FieldShell>
-      </div>
+      {showDayToggle && (
+        <div className="mb-4">
+          <FieldShell hasValue={opMijnDag} className="flex items-center justify-between py-3.5 px-4">
+            <div className="flex items-center gap-2.5">
+              <Sun size={16} style={{ color: opMijnDag ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
+              <span className="text-sm font-medium text-foreground">Zet op mijn dag</span>
+            </div>
+            <Toggle checked={opMijnDag} onChange={onOpMijnDagChange} label="Zet op mijn dag" />
+          </FieldShell>
+        </div>
+      )}
 
       {/* Room selection */}
       <div className="grid grid-cols-2 gap-2 mb-6">

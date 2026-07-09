@@ -1,10 +1,10 @@
 import { memo, useRef } from "react";
 import { motion, useMotionValue, useTransform, useReducedMotion, type PanInfo } from "motion/react";
-import { Bell, Check, RefreshCw, RotateCcw, Timer, X } from "lucide-react";
+import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { CARD_BORDER, Checkbox, IconButton, PillButton } from "./shared";
+import { CARD_BORDER, Checkbox, PillButton } from "./shared";
 
 // Swipe-right-to-toggle: pointer distance (px) that commits the gesture, or a
 // shorter-but-fast flick. The card itself follows at dragElastic's pace, so
@@ -17,7 +17,7 @@ export const SWIPE_FLICK_VELOCITY = 650;
 export const SWIPE_LEFT_COMMIT_DISTANCE = 96;
 
 export const TaakRij = memo(function TaakRij({
-  task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss, onStartFocus,
+  task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss,
 }: {
   task: TaskView;
   onToggle: () => void;
@@ -26,8 +26,6 @@ export const TaakRij = memo(function TaakRij({
   onUnclaim?: () => void;
   onEdit?: () => void;
   onDismiss?: () => void;
-  /** Start een focussessie op deze taak (opent het focus-scherm). Alleen bij open taken. */
-  onStartFocus?: () => void;
 }) {
   const claimed = !!task.claimedBy;
   const reduceMotion = useReducedMotion();
@@ -40,8 +38,7 @@ export const TaakRij = memo(function TaakRij({
   // be timed (open task with onStartFocus wired); rows that can only dismiss
   // ("niet vandaag") keep that as their left-swipe instead. Two actions, one
   // gesture — the timer wins wherever a task is actually timeable.
-  const leftAction: "focus" | "dismiss" | null =
-    onStartFocus && !task.done ? "focus" : onDismiss ? "dismiss" : null;
+  const canDismiss = Boolean(onDismiss);
 
   // Releasing a drag still fires a click on whatever child the pointer ends over
   // (the edit button) — swallow that one click so a swipe never doubles as a tap.
@@ -54,10 +51,7 @@ export const TaakRij = memo(function TaakRij({
     const commitLeft = info.offset.x < -SWIPE_LEFT_COMMIT_DISTANCE;
 
     if (commitRight) onToggle();
-    if (commitLeft) {
-      if (leftAction === "focus") onStartFocus!();
-      else if (leftAction === "dismiss") onDismiss!();
-    }
+    if (commitLeft && canDismiss) onDismiss!();
 
     // The synthetic click dispatches right after pointerup; clear the flag a tick later.
     setTimeout(() => { wasDragged.current = false; }, 0);
@@ -108,23 +102,19 @@ export const TaakRij = memo(function TaakRij({
           </span>
         </motion.div>
       </div>
-      {leftAction && (
+      {canDismiss && (
         <div
           aria-hidden="true"
           className="absolute inset-0 rounded-2xl flex items-center justify-end pr-5 pointer-events-none"
-          style={{ background: leftAction === "focus"
-            ? "color-mix(in srgb, var(--accent) 40%, transparent)"
-            : "color-mix(in srgb, var(--destructive) 12%, transparent)" }}
+          style={{ background: "color-mix(in srgb, var(--destructive) 12%, transparent)" }}
         >
           <motion.div
             style={{ opacity: useTransform(x, [-48, -10], [1, 0]), scale: useTransform(x, [-60, -10], [1, 0.6]) }}
             className="w-7 h-7 rounded-full flex items-center justify-center"
           >
             <span className="w-full h-full rounded-full flex items-center justify-center"
-              style={{ background: leftAction === "focus" ? SAGE : "var(--destructive)" }}>
-              {leftAction === "focus"
-                ? <Timer size={13} strokeWidth={2.5} className="text-white" />
-                : <X size={13} strokeWidth={3} className="text-white" />}
+              style={{ background: "var(--destructive)" }}>
+              <X size={13} strokeWidth={3} className="text-white" />
             </span>
           </motion.div>
         </div>
@@ -166,15 +156,6 @@ export const TaakRij = memo(function TaakRij({
           </button>
         ) : (
           <div className="flex-1 min-w-0">{content}</div>
-        )}
-        {onStartFocus && !task.done && (
-          <IconButton
-            size={8}
-            tone="card"
-            onClick={onStartFocus}
-            label={`Focustimer starten voor ${task.title}`}
-            icon={<Timer size={14} className="text-muted-foreground" aria-hidden="true" />}
-          />
         )}
         {showClaim && !task.done && !claimed && onClaim && (
           <PillButton size="sm" onClick={onClaim} className="flex-shrink-0 leading-none">Ik pak dit</PillButton>

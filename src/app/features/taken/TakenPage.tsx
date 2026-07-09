@@ -9,7 +9,6 @@ import { stagger, fadeUp } from "../../lib/motion";
 import { Kop, Leeg, PageHeader, KeuzeChip } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { useSheets } from "../../sheetContext";
-import { useStartFocus } from "../../lib/useStartFocus";
 
 const ALL = "all";
 const NONE = "none";
@@ -27,7 +26,6 @@ export function TakenPage() {
   const createTask = useCuraStore((s) => s.createTask);
   const deleteTask = useCuraStore((s) => s.deleteTask);
   const tasks = useTaskViews();
-  const startFocus = useStartFocus();
   const [roomFilter, setRoomFilter] = useState<string>(ALL);
 
   // Room chips are built from the rooms present among open tasks, plus a
@@ -104,7 +102,6 @@ export function TakenPage() {
                         task={task}
                         onToggle={() => toggleTask(task.id, !task.done)}
                         onEdit={() => openEditTask(task.id)}
-                        onStartFocus={() => startFocus(task)}
                       />
                       {group.renew && !task.intervalDays && (
                         <div className="flex justify-end">

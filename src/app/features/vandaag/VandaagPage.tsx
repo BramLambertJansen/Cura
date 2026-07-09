@@ -10,7 +10,6 @@ import { getGreeting } from "../../lib/format";
 import { stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
-import { useStartFocus } from "../../lib/useStartFocus";
 import { SAGE } from "../../lib/constants";
 import { Avatar, Kop, Leeg, StatusBadge } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
@@ -37,13 +36,12 @@ export function VandaagPage() {
   const routines = useRoutineViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
-  const startFocus = useStartFocus();
   // The suggestions section collapses behind a chevron; open by default (an
   // established choice, unrelated to this restyle) so it reads as a calm,
   // glanceable list rather than a hidden peek. The two NEW collapsible
   // sections below (afgerond, logboek) start closed — secondary information
   // with no prior default to preserve.
-  const [suggestiesOpen, setSuggestiesOpen] = useState(true);
+  const [suggestiesOpen, setSuggestiesOpen] = useState(false);
   const [afgerondOpen, setAfgerondOpen] = useState(false);
   const [logboekOpen, setLogboekOpen] = useState(false);
 
@@ -80,8 +78,8 @@ export function VandaagPage() {
       : allDone
         ? "Mooi gedaan vandaag."
         : doneCount === 0
-          ? `${totalPlanned} ${totalPlanned === 1 ? "ding staat" : "dingen staan"} klaar.`
-          : `${doneCount} van ${totalPlanned} afgerond.`;
+          ? `${totalPlanned} ${totalPlanned === 1 ? "ding staat" : "dingen staan"} rustig klaar.`
+          : `${doneCount} van ${totalPlanned} rustig afgerond.`;
 
   return (
     <div className="relative">
@@ -105,11 +103,8 @@ export function VandaagPage() {
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, delay: 0.05 }}
           className="mt-5 rounded-[1.5rem] bg-card border border-border/60 px-5 py-4"
           style={{ boxShadow: "var(--shadow-card)" }}>
-          <div className="flex items-baseline justify-between gap-3 mb-3">
+          <div className="mb-3">
             <p className="font-display text-[1.2rem] leading-tight text-foreground">{heroTitle}</p>
-            {totalPlanned > 0 && (
-              <span className="font-display text-lg flex-shrink-0" style={{ color: SAGE }}>{Math.round(pct * 100)}%</span>
-            )}
           </div>
           <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "color-mix(in srgb, var(--muted-foreground) 14%, transparent)" }}>
             <motion.div
@@ -166,7 +161,6 @@ export function VandaagPage() {
                             task={task}
                             onToggle={() => toggleTask(task.id, !task.done)}
                             onEdit={() => openEditTask(task.id)}
-                            onStartFocus={() => startFocus(task)}
                             onDismiss={() => {
                               dismissTask(task.id);
                               toast("Even niet vandaag", {
