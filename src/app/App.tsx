@@ -22,16 +22,6 @@ import { PullToRefreshIndicator } from "./components/PullToRefreshIndicator";
 import { FocusMiniPill } from "./components/FocusMiniPill";
 import { usePullToRefresh } from "./lib/usePullToRefresh";
 import { SheetContext, type SheetActions } from "./sheetContext";
-import { AddTaskSheet } from "./sheets/AddTaskSheet";
-import { EditTaskSheet } from "./sheets/EditTaskSheet";
-import { NewRoomSheet } from "./sheets/NewRoomSheet";
-import { EditRoomSheet } from "./sheets/EditRoomSheet";
-import { NewRoutineSheet } from "./sheets/NewRoutineSheet";
-import { EditRoutineSheet } from "./sheets/EditRoutineSheet";
-import { HouseholdSheet } from "./sheets/HouseholdSheet";
-import { ProfielSheet } from "./sheets/ProfielSheet";
-import { WachtwoordSheet } from "./sheets/WachtwoordSheet";
-import { TemplatesSheet } from "./sheets/TemplatesSheet";
 
 // Route-level code splitting — each tab/screen becomes its own chunk instead
 // of shipping in the single main bundle (CLAUDE.md §9 build verification).
@@ -49,6 +39,20 @@ const AuthPage = lazy(() => import("./features/auth/AuthPage").then((m) => ({ de
 const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPage").then((m) => ({ default: m.OnboardingIntroPage })));
 const CreateHouseholdPage = lazy(() => import("./features/auth/CreateHouseholdPage").then((m) => ({ default: m.CreateHouseholdPage })));
 const AcceptInvitePage = lazy(() => import("./features/invite/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
+const AddTaskSheet = lazy(() => import("./sheets/AddTaskSheet").then((m) => ({ default: m.AddTaskSheet })));
+const EditTaskSheet = lazy(() => import("./sheets/EditTaskSheet").then((m) => ({ default: m.EditTaskSheet })));
+const NewRoomSheet = lazy(() => import("./sheets/NewRoomSheet").then((m) => ({ default: m.NewRoomSheet })));
+const EditRoomSheet = lazy(() => import("./sheets/EditRoomSheet").then((m) => ({ default: m.EditRoomSheet })));
+const NewRoutineSheet = lazy(() => import("./sheets/NewRoutineSheet").then((m) => ({ default: m.NewRoutineSheet })));
+const EditRoutineSheet = lazy(() => import("./sheets/EditRoutineSheet").then((m) => ({ default: m.EditRoutineSheet })));
+const HouseholdSheet = lazy(() => import("./sheets/HouseholdSheet").then((m) => ({ default: m.HouseholdSheet })));
+const ProfielSheet = lazy(() => import("./sheets/ProfielSheet").then((m) => ({ default: m.ProfielSheet })));
+const WachtwoordSheet = lazy(() => import("./sheets/WachtwoordSheet").then((m) => ({ default: m.WachtwoordSheet })));
+const TemplatesSheet = lazy(() => import("./sheets/TemplatesSheet").then((m) => ({ default: m.TemplatesSheet })));
+
+function LazyOverlay({ children }: { children: ReactNode }) {
+  return <Suspense fallback={null}>{children}</Suspense>;
+}
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -175,30 +179,32 @@ function MainShell() {
         )}
 
         <AnimatePresence>
-          {showAdd && <AddTaskSheet key="add" roomId={addRoomId} onClose={() => setShowAdd(false)} />}
-          {editingTaskId && <EditTaskSheet key="edit-task" taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />}
-          {showNewRoutine && <NewRoutineSheet key="nr" onClose={() => setShowNewRoutine(false)} />}
-          {editingRoutineId && <EditRoutineSheet key="er" bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} />}
-          {showNewRoom && <NewRoomSheet key="room" onClose={() => setShowNewRoom(false)} />}
-          {editingRoomId && <EditRoomSheet key="edit" roomId={editingRoomId} onClose={() => setEditingRoomId(null)} />}
+          {showAdd && <LazyOverlay key="add"><AddTaskSheet roomId={addRoomId} onClose={() => setShowAdd(false)} /></LazyOverlay>}
+          {editingTaskId && <LazyOverlay key="edit-task"><EditTaskSheet taskId={editingTaskId} onClose={() => setEditingTaskId(null)} /></LazyOverlay>}
+          {showNewRoutine && <LazyOverlay key="nr"><NewRoutineSheet onClose={() => setShowNewRoutine(false)} /></LazyOverlay>}
+          {editingRoutineId && <LazyOverlay key="er"><EditRoutineSheet bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} /></LazyOverlay>}
+          {showNewRoom && <LazyOverlay key="room"><NewRoomSheet onClose={() => setShowNewRoom(false)} /></LazyOverlay>}
+          {editingRoomId && <LazyOverlay key="edit"><EditRoomSheet roomId={editingRoomId} onClose={() => setEditingRoomId(null)} /></LazyOverlay>}
           {templatesFor && (
-            <TemplatesSheet
-              key="templates"
-              roomId={templatesFor.roomId}
-              roomIconKey={templatesFor.roomIconKey}
-              onClose={() => setTemplatesFor(null)}
-            />
+            <LazyOverlay key="templates">
+              <TemplatesSheet
+                roomId={templatesFor.roomId}
+                roomIconKey={templatesFor.roomIconKey}
+                onClose={() => setTemplatesFor(null)}
+              />
+            </LazyOverlay>
           )}
-          {showHousehold && <HouseholdSheet key="hs" onClose={() => setShowHousehold(false)} />}
+          {showHousehold && <LazyOverlay key="hs"><HouseholdSheet onClose={() => setShowHousehold(false)} /></LazyOverlay>}
           {showProfiel && (
-            <ProfielSheet
-              key="prof"
-              onOpenHousehold={() => { setShowProfiel(false); setTimeout(() => setShowHousehold(true), 160); }}
-              onOpenWachtwoord={() => { setShowProfiel(false); setTimeout(() => setShowWachtwoord(true), 160); }}
-              onClose={() => setShowProfiel(false)}
-            />
+            <LazyOverlay key="prof">
+              <ProfielSheet
+                onOpenHousehold={() => { setShowProfiel(false); setTimeout(() => setShowHousehold(true), 160); }}
+                onOpenWachtwoord={() => { setShowProfiel(false); setTimeout(() => setShowWachtwoord(true), 160); }}
+                onClose={() => setShowProfiel(false)}
+              />
+            </LazyOverlay>
           )}
-          {showWachtwoord && <WachtwoordSheet key="pw" onClose={() => setShowWachtwoord(false)} />}
+          {showWachtwoord && <LazyOverlay key="pw"><WachtwoordSheet onClose={() => setShowWachtwoord(false)} /></LazyOverlay>}
         </AnimatePresence>
       </div>
     </SheetContext.Provider>
