@@ -462,6 +462,41 @@ export function VeldTextarea({
   );
 }
 
+/** Native <select> with the same field chrome as VeldInput — for pick-one-from-a-short-list fields (e.g. hoeveelheid presets) where a real dropdown beats free text. */
+export function VeldSelect({
+  value, onChange, options, ariaLabel, disabled, className = "",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  ariaLabel?: string;
+  disabled?: boolean;
+  className?: string;
+}) {
+  const [active, setActive] = useState(false);
+  const state: FieldState = { active, hasValue: value.length > 0, disabled };
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setActive(true)}
+      onBlur={() => setActive(false)}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      className={`rounded-2xl px-3 text-foreground outline-none text-[0.9375rem] border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      style={{
+        background: fieldBackground(state),
+        borderColor: fieldBorderColor(state),
+        boxShadow: fieldBoxShadow(state),
+        transition: "box-shadow 0.18s ease, border-color 0.18s ease",
+      }}>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  );
+}
+
 /** Plain-div field chrome for non-<input> "field-like" rows (date-picker trigger, time/duur wrappers, Herhalen/Wekker rows) that need the same background/border/shadow state machine as VeldInput, without Framer Motion. */
 export function FieldShell({
   children, active, hasValue, invalid, disabled, className = "",
