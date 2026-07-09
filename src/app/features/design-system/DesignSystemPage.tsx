@@ -82,6 +82,7 @@ export function DesignSystemPage() {
   const [chip, setChip] = useState("a");
   const [kamerKey, setKamerKey] = useState("utensils");
   const [veld, setVeld] = useState("");
+  const [veldWachtwoord, setVeldWachtwoord] = useState("");
   const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
   const [reactie, setReactie] = useState<ReactieKind | undefined>(undefined);
@@ -246,6 +247,7 @@ export function DesignSystemPage() {
 
       <Section title="Veld">
         <VeldInput value={veld} onChange={setVeld} placeholder="Taaknaam" />
+        <VeldInput value={veldWachtwoord} onChange={setVeldWachtwoord} placeholder="Wachtwoord" type="password" ariaLabel="Wachtwoord" />
         <VeldTextarea value={veldTextarea} onChange={setVeldTextarea} placeholder="Beschrijving (optioneel)" />
         <p className="text-xs text-muted-foreground">TaakToevoegRij — veld + sage "+"-knop voor het opbouwen van een routine-takenlijst</p>
         <TaakToevoegRij value={taak} onChange={setTaak} onAdd={() => setTaak("")} placeholder="Taak omschrijving…" />
