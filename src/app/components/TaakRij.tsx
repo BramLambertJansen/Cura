@@ -1,26 +1,30 @@
 import { memo } from "react";
 import { motion, useTransform } from "motion/react";
-import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
+import { Bell, CalendarPlus, Check, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
 import { useSwipeRow } from "../lib/useSwipeRow";
-import { CARD_BORDER, Checkbox, PillButton } from "./shared";
+import { CARD_BORDER, Checkbox } from "./shared";
 
 export const TaakRij = memo(function TaakRij({
-  task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss,
+  task, onToggle, showClaim = false, onUnclaim, onPlan, onEdit, onDismiss,
 }: {
   task: TaskView;
   onToggle: () => void;
   showClaim?: boolean;
-  onClaim?: () => void;
   onUnclaim?: () => void;
+  onPlan?: () => void;
   onEdit?: () => void;
   onDismiss?: () => void;
 }) {
   const claimed = !!task.claimedBy;
+  // Swipe-right normally toggles done, but on an unclaimed pool row (onPlan
+  // wired, e.g. Huis) it instead means "op mijn dag" — claim it for today.
+  // Once someone's claimed it, swipe-right reverts to the plain toggle.
+  const canPlan = Boolean(onPlan) && !claimed && !task.done;
   // Visual x of the card while swiping; the sage check behind it fades/grows in step.
-  const { x, dragProps } = useSwipeRow({ onToggle, onDismiss });
+  const { x, dragProps } = useSwipeRow({ onToggle, onDismiss, onSwipeRight: canPlan ? onPlan : undefined });
   const revealOpacity = useTransform(x, [10, 48], [0, 1]);
   const revealScale = useTransform(x, [10, 60], [0.6, 1]);
   // Gates the left-swipe reveal layer below — whatever the caller wires as
@@ -66,9 +70,11 @@ export const TaakRij = memo(function TaakRij({
           className="w-7 h-7 rounded-full flex items-center justify-center"
         >
           <span className="w-full h-full rounded-full flex items-center justify-center" style={{ background: SAGE }}>
-            {task.done
-              ? <RotateCcw size={13} strokeWidth={2.5} className="text-white" />
-              : <Check size={13} strokeWidth={3} className="text-white" />}
+            {canPlan
+              ? <CalendarPlus size={13} strokeWidth={2.5} className="text-white" />
+              : task.done
+                ? <RotateCcw size={13} strokeWidth={2.5} className="text-white" />
+                : <Check size={13} strokeWidth={3} className="text-white" />}
           </span>
         </motion.div>
       </div>
@@ -90,9 +96,10 @@ export const TaakRij = memo(function TaakRij({
         </div>
       )}
       <motion.div
-        // Swipe right to toggle — an enhancement on top of the checkbox, never a replacement
-        // (§6: the checkbox stays the keyboard/screenreader path). touchAction pan-y leaves
-        // vertical scrolling native; the drag only owns horizontal movement.
+        // Swipe right to toggle (or, on an unclaimed pool row, to plan) — an
+        // enhancement on top of the checkbox, never a replacement (§6: the
+        // checkbox stays the keyboard/screenreader path). touchAction pan-y
+        // leaves vertical scrolling native; the drag only owns horizontal movement.
         {...dragProps}
         // relative z-10 keeps the card ABOVE the absolute swipe-reveal layers — at
         // rest (x=0) it has no transform, so without this it paints as an in-flow
@@ -115,9 +122,6 @@ export const TaakRij = memo(function TaakRij({
           </button>
         ) : (
           <div className="flex-1 min-w-0">{content}</div>
-        )}
-        {showClaim && !task.done && !claimed && onClaim && (
-          <PillButton size="sm" onClick={onClaim} className="flex-shrink-0 leading-none">Ik pak dit</PillButton>
         )}
         {showClaim && !task.done && claimed && onUnclaim && (
           <motion.button whileTap={{ scale: 0.9 }}

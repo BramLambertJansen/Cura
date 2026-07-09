@@ -55,6 +55,7 @@ function Swatch({ label, value }: { label: string; value: string }) {
 const demoTaskOpen: TaskView = { id: "t1", title: "Stofzuigen woonkamer", room: "Woonkamer", duration: "10 min", intervalDays: 7, planned: true, done: false };
 const demoTaskClaimed: TaskView = { ...demoTaskOpen, id: "t2", title: "Planten water geven", claimedBy: "Stéphanie", intervalDays: 3 };
 const demoTaskDone: TaskView = { ...demoTaskOpen, id: "t3", title: "Vaatwasser uitruimen", done: true, doneBy: "Bram", doneAt: "08:42" };
+const demoTaskPool: TaskView = { ...demoTaskOpen, id: "t4", title: "Ramen zemen", claimedBy: undefined, planned: false };
 
 const demoRoom: RoomView = {
   id: "r1", name: "Keuken", iconKey: "utensils", color: "#B8924A", owner: "Bram",
@@ -288,10 +289,11 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Taakrij">
-        <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten), en naar links om de focustimer te starten — de checkbox en timer-knop blijven de toetsenbord/screenreader-route.</p>
+        <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten), en naar links om te dismissen — de checkbox blijft de toetsenbord/screenreader-route. Op een ongeclaimde pool-rij (bv. Huis, <code>onPlan</code>) betekent veeg-rechts in plaats daarvan "op mijn dag zetten"; is de taak eenmaal geclaimd, dan geeft "Laat los" de claim terug.</p>
         <div className="space-y-2.5">
           <TaakRij task={demoTaskOpen} onToggle={() => {}} />
-          <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onClaim={() => {}} />
+          <TaakRij task={demoTaskPool} onToggle={() => {}} showClaim onPlan={() => {}} />
+          <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onUnclaim={() => {}} />
           <TaakRij task={demoTaskDone} onToggle={() => {}} />
         </div>
       </Section>

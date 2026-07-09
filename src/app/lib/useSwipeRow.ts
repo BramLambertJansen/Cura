@@ -18,7 +18,7 @@ export const SWIPE_LEFT_COMMIT_DISTANCE = 96;
  * enhancement layered on top of the checkbox, never a replacement for it
  * (CLAUDE.md §6: the checkbox stays the keyboard/screenreader route).
  */
-export function useSwipeRow({ onToggle, onDismiss }: { onToggle: () => void; onDismiss?: () => void }) {
+export function useSwipeRow({ onToggle, onDismiss, onSwipeRight }: { onToggle: () => void; onDismiss?: () => void; onSwipeRight?: () => void }) {
   const reduceMotion = useReducedMotion();
   const x = useMotionValue(0);
   // Releasing a drag still fires a click on whatever child the pointer ends over
@@ -31,7 +31,7 @@ export function useSwipeRow({ onToggle, onDismiss }: { onToggle: () => void; onD
       (info.offset.x > SWIPE_FLICK_DISTANCE && info.velocity.x > SWIPE_FLICK_VELOCITY);
     const commitLeft = info.offset.x < -SWIPE_LEFT_COMMIT_DISTANCE;
 
-    if (commitRight) onToggle();
+    if (commitRight) (onSwipeRight ?? onToggle)();
     if (commitLeft && onDismiss) onDismiss();
 
     // The synthetic click dispatches right after pointerup; clear the flag a tick later.
