@@ -4,9 +4,9 @@ import { AnimatePresence } from "motion/react";
 import { Plus, Link2, Home, Bell, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, Card, Checkbox, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton, InstRij, KeuzeChip, Leeg,
-  OptieKaart, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge, TaakToevoegRij,
-  Toggle, VeldInput, VeldTextarea, VerwijderKnop,
+  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton,
+  InstRij, KeuzeChip, Leeg, OptieKaart, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge,
+  TaakToevoegRij, Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { TijdlijnTaakRij } from "../../components/TijdlijnTaakRij";
@@ -88,6 +88,7 @@ export function DesignSystemPage() {
   const [reactie, setReactie] = useState<ReactieKind | undefined>(undefined);
   const [optie, setOptie] = useState(true);
   const [taak, setTaak] = useState("");
+  const [collapsibleOpen, setCollapsibleOpen] = useState(true);
 
   return (
     <div className="px-5 pt-14 pb-16 space-y-10">
@@ -297,10 +298,18 @@ export function DesignSystemPage() {
 
       <Section title="Tijdlijn-taakrij (Vandaag)">
         <p className="text-sm text-muted-foreground -mt-1">De tijdlijn-variant van de taakrij: geen eigen kaart, rijen staan direct in de gedeelde dagdeel-kaart.</p>
-        <div className="rounded-[1.6rem] bg-card border border-border/60 p-4" style={{ boxShadow: "var(--shadow-card)" }}>
+        <div className={`rounded-[1.6rem] p-4 ${CARD_CHROME}`} style={{ boxShadow: "var(--shadow-card)" }}>
           <TijdlijnTaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TijdlijnTaakRij task={demoTaskClaimed} onToggle={() => {}} onDismiss={() => {}} />
+          <TijdlijnTaakRij task={demoTaskDone} onToggle={() => {}} />
         </div>
+      </Section>
+
+      <Section title="Inklapbare sectie (CollapsibleSection)">
+        <p className="text-sm text-muted-foreground -mt-1">Gedeelde kop + telbadge + chevron voor secundaire lijsten (Vandaag's "Afgerond"/"Misschien handig"/"Logboek") — de accessible name komt puur uit de zichtbare kop/telbadge, nooit een los aria-label.</p>
+        <CollapsibleSection title="Voorbeeld" count={3} open={collapsibleOpen} onToggle={() => setCollapsibleOpen((v) => !v)}>
+          <p className="text-sm text-muted-foreground px-1 py-1">Inhoud van de sectie.</p>
+        </CollapsibleSection>
       </Section>
 
       <Section title="Suggestie (Vandaag)">

@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { Check, ChevronDown, Moon, Sun, Sunrise } from "lucide-react";
+import { Check, Moon, Pencil, Sun, Sunrise } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour } from "../../../data/selectors";
@@ -11,7 +11,7 @@ import { stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
 import { SAGE } from "../../lib/constants";
-import { Avatar, Kop, Leeg, StatusBadge } from "../../components/shared";
+import { Avatar, CARD_CHROME, CollapsibleSection, IconButton, Kop, Leeg } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
 import { TijdlijnTaakRij } from "../../components/TijdlijnTaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
@@ -45,13 +45,22 @@ export function VandaagPage() {
   const [afgerondOpen, setAfgerondOpen] = useState(false);
   const [logboekOpen, setLogboekOpen] = useState(false);
 
+  // Re-render roughly once a minute so `nuDagdeel` below (derived from
+  // `new Date()`) doesn't stay stuck on the previous dagdeel after 12:00/18:00
+  // while the page stays open with no other state change to trigger a render.
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((n) => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const greeting = getGreeting();
   const plannedOpen = tasks.filter((t) => t.planned && !t.done && !isTaskDismissed(t.id));
   const plannedDone = tasks.filter((t) => t.planned && t.done && !isTaskDismissed(t.id));
   const totalPlanned = plannedOpen.length + plannedDone.length;
   const doneCount = plannedDone.length;
   const suggestions = toSuggestions(tasks).filter((t) => !isDismissed(t.id));
-  const dagdelen = useMemo(() => toDagdelen(plannedOpen), [plannedOpen]);
+  const dagdelen = toDagdelen(plannedOpen);
   const nuDagdeel = dagdeelForHour(new Date().getHours());
 
   const me = members.find((m) => m.userId === currentUserId);
@@ -63,11 +72,8 @@ export function VandaagPage() {
     d.setHours(0, 0, 0, 0);
     return d.toISOString();
   }, []);
-  const feedToday = useActivityFeed(sinceIso);
-  const logboek = useMemo(
-    () => [...feedToday].sort((a, b) => b.doneAt.localeCompare(a.doneAt)),
-    [feedToday],
-  );
+  // toActivityFeed (selectors.ts) already sorts newest-first by completedAt — no re-sort needed here.
+  const logboek = useActivityFeed(sinceIso);
 
   const pct = totalPlanned > 0 ? doneCount / totalPlanned : 0;
   const allDone = totalPlanned > 0 && doneCount === totalPlanned;
@@ -76,7 +82,7 @@ export function VandaagPage() {
     totalPlanned === 0
       ? "Niets op de planning."
       : allDone
-        ? "Mooi gedaan vandaag."
+        ? "Mooi gedaan."
         : doneCount === 0
           ? `${totalPlanned} ${totalPlanned === 1 ? "ding staat" : "dingen staan"} rustig klaar.`
           : `${doneCount} van ${totalPlanned} rustig afgerond.`;
@@ -96,7 +102,7 @@ export function VandaagPage() {
 
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, delay: 0.05 }}
-          className="mt-5 rounded-[1.5rem] bg-card border border-border/60 px-5 py-4"
+          className={`mt-5 rounded-[1.5rem] px-5 py-4 ${CARD_CHROME}`}
           style={{ boxShadow: "var(--shadow-card)" }}>
           <div className="mb-3">
             <p className="font-display text-[1.2rem] leading-tight text-foreground">{heroTitle}</p>
@@ -129,46 +135,50 @@ export function VandaagPage() {
               text={allDone ? "Alles rond voor vandaag. Geniet van de rust." : "Niets op de planning. Geniet ervan."}
             />
           ) : (
-            <div className="rounded-[1.6rem] bg-card border border-border/60 p-4" style={{ boxShadow: "var(--shadow-card)" }}>
+            <div className={`rounded-[1.6rem] p-4 ${CARD_CHROME}`} style={{ boxShadow: "var(--shadow-card)" }}>
               <div className="space-y-5">
-                {dagdelen.map((groep) => {
-                  const Icon = DAGDEEL_ICON[groep.key];
-                  const isNu = groep.key === nuDagdeel;
-                  return (
-                    <section key={groep.key}>
-                      <div
-                        className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
-                        style={{ background: isNu ? "color-mix(in srgb, var(--primary) 13%, transparent)" : "color-mix(in srgb, var(--muted-foreground) 7%, transparent)" }}>
-                        <Icon size={11} aria-hidden="true" style={{ color: isNu ? SAGE : "var(--muted-foreground)" }} />
-                        <span className="text-[0.66rem] font-semibold tracking-wide uppercase" style={{ color: isNu ? SAGE : "var(--muted-foreground)" }}>
-                          {groep.label}
-                        </span>
-                        {isNu && (
-                          <span className="text-[0.58rem] font-semibold uppercase px-1.5 py-px rounded-full" style={{ color: SAGE, background: "color-mix(in srgb, var(--card) 55%, transparent)" }}>
-                            nu
+                <AnimatePresence initial={false}>
+                  {dagdelen.map((groep) => {
+                    const Icon = DAGDEEL_ICON[groep.key];
+                    const isNu = groep.key === nuDagdeel;
+                    return (
+                      <motion.section key={groep.key} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                        <div
+                          className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
+                          style={{ background: isNu ? "color-mix(in srgb, var(--primary) 13%, transparent)" : "color-mix(in srgb, var(--muted-foreground) 7%, transparent)" }}>
+                          <Icon size={11} aria-hidden="true" style={{ color: isNu ? SAGE : "var(--muted-foreground)" }} />
+                          <span className="text-[0.66rem] font-semibold tracking-wide uppercase" style={{ color: isNu ? SAGE : "var(--muted-foreground)" }}>
+                            {groep.label}
                           </span>
-                        )}
-                      </div>
-                      <div>
-                        {groep.tasks.map((task) => (
-                          <TijdlijnTaakRij
-                            key={task.id}
-                            task={task}
-                            onToggle={() => toggleTask(task.id, !task.done)}
-                            onEdit={() => openEditTask(task.id)}
-                            onDismiss={() => {
-                              dismissTask(task.id);
-                              toast("Even niet vandaag", {
-                                description: `${task.title} staat even uit je dag.`,
-                                action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) },
-                              });
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
+                          {isNu && (
+                            <span className="text-[0.58rem] font-semibold uppercase px-1.5 py-px rounded-full" style={{ color: SAGE, background: "color-mix(in srgb, var(--card) 55%, transparent)" }}>
+                              nu
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <AnimatePresence mode="popLayout" initial={false}>
+                            {groep.tasks.map((task) => (
+                              <TijdlijnTaakRij
+                                key={task.id}
+                                task={task}
+                                onToggle={() => toggleTask(task.id, !task.done)}
+                                onEdit={() => openEditTask(task.id)}
+                                onDismiss={() => {
+                                  dismissTask(task.id);
+                                  toast("Even niet vandaag", {
+                                    description: `${task.title} staat even uit je dag.`,
+                                    action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) },
+                                  });
+                                }}
+                              />
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      </motion.section>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             </div>
           )}
@@ -176,92 +186,60 @@ export function VandaagPage() {
 
         {plannedDone.length > 0 && (
           <section>
-            <div className="rounded-2xl overflow-hidden" style={{ background: "color-mix(in srgb, var(--card) 60%, transparent)", border: "1px solid var(--border)" }}>
-              <motion.button
-                whileTap={{ scale: 0.99 }}
-                onClick={() => setAfgerondOpen((v) => !v)}
-                aria-expanded={afgerondOpen}
-                aria-label={afgerondOpen ? "Afgeronde taken inklappen" : "Afgeronde taken uitklappen"}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
-                <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                  <Check size={13} style={{ color: SAGE }} aria-hidden="true" /> {plannedDone.length} afgerond vandaag
-                </span>
-                <motion.span animate={{ rotate: afgerondOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
-                  <ChevronDown size={15} aria-hidden="true" />
-                </motion.span>
-              </motion.button>
-              <AnimatePresence initial={false}>
-                {afgerondOpen && (
-                  <motion.div
-                    key="afgerond"
-                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.24 }} className="overflow-hidden">
-                    <div className="px-3 pb-3 space-y-1.5">
-                      {plannedDone.map((task) => (
-                        <button
-                          key={task.id}
-                          onClick={() => toggleTask(task.id, false)}
-                          aria-label={`${task.title} als niet gedaan markeren`}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-card text-left focus-ring">
-                          <span className="w-[19px] h-[19px] rounded-full flex items-center justify-center flex-shrink-0" style={{ background: SAGE }} aria-hidden="true">
-                            <Check size={10} strokeWidth={3.4} className="text-white" />
-                          </span>
-                          <span className="flex-1 min-w-0 text-sm text-muted-foreground line-through truncate">{task.title}</span>
-                          <span className="text-[0.66rem] flex-shrink-0" style={{ color: "color-mix(in srgb, var(--muted-foreground) 60%, transparent)" }}>terug</span>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <CollapsibleSection
+              title="Afgerond"
+              count={plannedDone.length}
+              icon={<Check size={13} style={{ color: SAGE }} aria-hidden="true" />}
+              open={afgerondOpen}
+              onToggle={() => setAfgerondOpen((v) => !v)}>
+              <div className="space-y-1.5">
+                {plannedDone.map((task) => (
+                  <div key={task.id} className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => toggleTask(task.id, false)}
+                      aria-label={`${task.title} als niet gedaan markeren`}
+                      className="flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-card text-left focus-ring">
+                      <span className="w-[19px] h-[19px] rounded-full flex items-center justify-center flex-shrink-0" style={{ background: SAGE }} aria-hidden="true">
+                        <Check size={10} strokeWidth={3.4} className="text-white" />
+                      </span>
+                      <span className="flex-1 min-w-0 text-sm text-muted-foreground line-through truncate">{task.title}</span>
+                      <span className="text-[0.66rem] flex-shrink-0" style={{ color: "color-mix(in srgb, var(--muted-foreground) 60%, transparent)" }}>terug</span>
+                    </button>
+                    <IconButton
+                      size={8}
+                      tone="card"
+                      onClick={() => openEditTask(task.id)}
+                      label={`${task.title} bewerken`}
+                      icon={<Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
+                    />
+                  </div>
+                ))}
+              </div>
+            </CollapsibleSection>
           </section>
         )}
 
         {suggestions.length > 0 && (
           <section>
-            <div className="rounded-2xl bg-card-active border border-border/60 overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
-              <motion.button
-                whileTap={{ scale: 0.99 }}
-                onClick={() => setSuggestiesOpen((v) => !v)}
-                aria-expanded={suggestiesOpen}
-                aria-label={suggestiesOpen ? "Suggesties inklappen" : "Suggesties uitklappen"}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
-                <span className="inline-flex items-center gap-2">
-                  <span className="font-display font-semibold text-sm text-foreground">Misschien handig</span>
-                  <StatusBadge enter="slide">{suggestions.length}</StatusBadge>
-                </span>
-                <motion.span animate={{ rotate: suggestiesOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
-                  <ChevronDown size={15} aria-hidden="true" />
-                </motion.span>
-              </motion.button>
-              <AnimatePresence initial={false}>
-                {suggestiesOpen && (
-                  <motion.div
-                    layout
-                    key="suggestions"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.24 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-3 pb-3 space-y-2">
-                      <AnimatePresence mode="popLayout" initial={false}>
-                        {suggestions.map((task) => (
-                          <SuggestieRij
-                            key={task.id}
-                            task={task}
-                            onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat klaar wanneer jij wilt.` }); }}
-                            onNietVandaag={() => { dismiss(task.id); toast("Even niet vandaag", { description: `${task.title} komt morgen weer langs.`, action: { label: "Ongedaan maken", onClick: () => restore(task.id) } }); }}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <CollapsibleSection
+              title="Misschien handig"
+              count={suggestions.length}
+              open={suggestiesOpen}
+              onToggle={() => setSuggestiesOpen((v) => !v)}
+              tone="active">
+              <div className="space-y-2">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {suggestions.map((task) => (
+                    <SuggestieRij
+                      key={task.id}
+                      task={task}
+                      onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat klaar wanneer jij wilt.` }); }}
+                      onNietVandaag={() => { dismiss(task.id); toast("Even niet vandaag", { description: `${task.title} komt morgen weer langs.`, action: { label: "Ongedaan maken", onClick: () => restore(task.id) } }); }}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </CollapsibleSection>
           </section>
         )}
 
@@ -280,49 +258,26 @@ export function VandaagPage() {
 
         {logboek.length > 0 && (
           <section>
-            <div className="rounded-2xl overflow-hidden" style={{ background: "color-mix(in srgb, var(--card) 60%, transparent)", border: "1px solid var(--border)" }}>
-              <motion.button
-                whileTap={{ scale: 0.99 }}
-                onClick={() => setLogboekOpen((v) => !v)}
-                aria-expanded={logboekOpen}
-                aria-label={logboekOpen ? "Logboek inklappen" : "Logboek uitklappen"}
-                className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
-                <span className="inline-flex items-center gap-2">
-                  <span className="font-display font-semibold text-sm text-foreground">Logboek</span>
-                  <StatusBadge enter="slide">{logboek.length}</StatusBadge>
-                </span>
-                <motion.span animate={{ rotate: logboekOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
-                  <ChevronDown size={15} aria-hidden="true" />
-                </motion.span>
-              </motion.button>
-              <AnimatePresence initial={false}>
-                {logboekOpen && (
-                  <motion.div
-                    key="logboek"
-                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.24 }} className="overflow-hidden" aria-live="polite">
-                    <div className="px-3 pb-3 space-y-2">
-                      {logboek.map((a) => {
-                        const mine = !!a.doneById && a.doneById === me?.id;
-                        return (
-                          <div key={`${a.taskId}-${a.doneAt}`} className="flex items-start gap-2.5 px-2.5 py-2 rounded-xl bg-card">
-                            <Avatar name={mine ? "Jij" : a.doneBy} size={28} tone={mine ? "solid" : "soft"} serif />
-                            <div className="min-w-0">
-                              <p className="text-sm text-foreground leading-snug">
-                                <span className="font-semibold">{mine ? "Jij" : a.doneBy}</span> {mine ? "hebt" : "heeft"} {a.title.toLowerCase()} gedaan
-                              </p>
-                              <p className="text-[0.68rem] text-muted-foreground mt-0.5">
-                                {new Date(a.doneAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
+            <CollapsibleSection title="Logboek" count={logboek.length} open={logboekOpen} onToggle={() => setLogboekOpen((v) => !v)}>
+              <div className="space-y-2" aria-live="polite">
+                {logboek.map((a) => {
+                  const mine = !!a.doneById && a.doneById === me?.id;
+                  return (
+                    <div key={`${a.taskId}-${a.doneAt}`} className="flex items-start gap-2.5 px-2.5 py-2 rounded-xl bg-card">
+                      <Avatar name={mine ? "Jij" : a.doneBy} size={28} tone={mine ? "solid" : "soft"} serif />
+                      <div className="min-w-0">
+                        <p className="text-sm text-foreground leading-snug">
+                          <span className="font-semibold">{mine ? "Jij" : a.doneBy}</span> {mine ? "hebt" : "heeft"} {a.title.toLowerCase()} gedaan
+                        </p>
+                        <p className="text-[0.68rem] text-muted-foreground mt-0.5">
+                          {new Date(a.doneAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                  );
+                })}
+              </div>
+            </CollapsibleSection>
           </section>
         )}
       </div>

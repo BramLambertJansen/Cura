@@ -1,7 +1,7 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
-import { Check, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
+import { Check, ChevronDown, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
 
@@ -779,6 +779,54 @@ export function StatusBadge({
       style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
       {children}
     </motion.span>
+  );
+}
+
+/**
+ * Collapsible group-card for a secondary, out-of-the-way list behind a
+ * heading + count badge + chevron (Vandaag's "Afgerond"/"Misschien
+ * handig"/"Logboek" sections). The header's accessible name comes from its
+ * own visible text (heading + count) — never a separate `aria-label` — so a
+ * screen-reader/voice-control user hears exactly what a sighted user reads;
+ * `aria-expanded` conveys open/closed state on top of that, the standard
+ * disclosure-button pattern.
+ */
+export function CollapsibleSection({
+  title, count, icon, open, onToggle, tone = "muted", children,
+}: {
+  title: string; count: number; icon?: ReactNode; open: boolean; onToggle: () => void;
+  tone?: "muted" | "active"; children: ReactNode;
+}) {
+  const chrome = tone === "active" ? "bg-card-active border border-border/60" : "border border-border";
+  return (
+    <div
+      className={`rounded-2xl overflow-hidden ${chrome}`}
+      style={tone === "active" ? { boxShadow: "var(--shadow-card)" } : { background: "color-mix(in srgb, var(--card) 60%, transparent)" }}>
+      <motion.button
+        whileTap={{ scale: 0.99 }}
+        onClick={onToggle}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
+        <span className="inline-flex items-center gap-2">
+          {icon}
+          <span className="font-display font-semibold text-sm text-foreground">{title}</span>
+          <StatusBadge enter="slide">{count}</StatusBadge>
+        </span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
+          <ChevronDown size={15} aria-hidden="true" />
+        </motion.span>
+      </motion.button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="body"
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.24 }} className="overflow-hidden">
+            <div className="px-3 pb-3">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 

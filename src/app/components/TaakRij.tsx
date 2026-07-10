@@ -1,20 +1,11 @@
-import { memo, useRef } from "react";
-import { motion, useMotionValue, useTransform, useReducedMotion, type PanInfo } from "motion/react";
+import { memo } from "react";
+import { motion, useTransform } from "motion/react";
 import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
+import { useSwipeRow } from "../lib/useSwipeRow";
 import { CARD_BORDER, Checkbox, PillButton } from "./shared";
-
-// Swipe-right-to-toggle: pointer distance (px) that commits the gesture, or a
-// shorter-but-fast flick. The card itself follows at dragElastic's pace, so
-// these are finger distances, not visual card offsets. Exported so
-// TijdlijnTaakRij (Vandaag's timeline row) commits at the same feel instead
-// of re-tuning its own thresholds.
-export const SWIPE_COMMIT_DISTANCE = 96;
-export const SWIPE_FLICK_DISTANCE = 48;
-export const SWIPE_FLICK_VELOCITY = 650;
-export const SWIPE_LEFT_COMMIT_DISTANCE = 96;
 
 export const TaakRij = memo(function TaakRij({
   task, onToggle, showClaim = false, onClaim, onUnclaim, onEdit, onDismiss,
@@ -28,34 +19,13 @@ export const TaakRij = memo(function TaakRij({
   onDismiss?: () => void;
 }) {
   const claimed = !!task.claimedBy;
-  const reduceMotion = useReducedMotion();
   // Visual x of the card while swiping; the sage check behind it fades/grows in step.
-  const x = useMotionValue(0);
+  const { x, dragProps } = useSwipeRow({ onToggle, onDismiss });
   const revealOpacity = useTransform(x, [10, 48], [0, 1]);
   const revealScale = useTransform(x, [10, 60], [0.6, 1]);
-
-  // Swipe-left action: starting a focus timer takes precedence when the task can
-  // be timed (open task with onStartFocus wired); rows that can only dismiss
-  // ("niet vandaag") keep that as their left-swipe instead. Two actions, one
-  // gesture — the timer wins wherever a task is actually timeable.
+  // Gates the left-swipe reveal layer below — whatever the caller wires as
+  // onDismiss (usually "niet vandaag") is what swiping left actually does.
   const canDismiss = Boolean(onDismiss);
-
-  // Releasing a drag still fires a click on whatever child the pointer ends over
-  // (the edit button) — swallow that one click so a swipe never doubles as a tap.
-  const wasDragged = useRef(false);
-
-  function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
-    const commitRight =
-      info.offset.x > SWIPE_COMMIT_DISTANCE ||
-      (info.offset.x > SWIPE_FLICK_DISTANCE && info.velocity.x > SWIPE_FLICK_VELOCITY);
-    const commitLeft = info.offset.x < -SWIPE_LEFT_COMMIT_DISTANCE;
-
-    if (commitRight) onToggle();
-    if (commitLeft && canDismiss) onDismiss!();
-
-    // The synthetic click dispatches right after pointerup; clear the flag a tick later.
-    setTimeout(() => { wasDragged.current = false; }, 0);
-  }
 
   const content = (
     <>
@@ -123,18 +93,7 @@ export const TaakRij = memo(function TaakRij({
         // Swipe right to toggle — an enhancement on top of the checkbox, never a replacement
         // (§6: the checkbox stays the keyboard/screenreader path). touchAction pan-y leaves
         // vertical scrolling native; the drag only owns horizontal movement.
-        drag={reduceMotion ? false : "x"}
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={{ left: 0.7, right: 0.7 }}
-        dragMomentum={false}
-        onDragStart={() => { wasDragged.current = true; }}
-        onDragEnd={handleDragEnd}
-        onClickCapture={(e) => {
-          if (wasDragged.current) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
+        {...dragProps}
         // relative z-10 keeps the card ABOVE the absolute swipe-reveal layers — at
         // rest (x=0) it has no transform, so without this it paints as an in-flow
         // block *below* its absolute siblings and their tint bleeds over the card.
