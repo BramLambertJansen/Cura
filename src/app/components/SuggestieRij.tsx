@@ -29,7 +29,7 @@ export const SuggestieRij = memo(function SuggestieRij({
     <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.22 }}
       className="bg-card rounded-[0.875rem] px-3.5 py-3 flex items-center gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-[0.9375rem] font-medium text-foreground leading-snug truncate">{task.title}</p>
+        <p className="text-[0.9375rem] font-medium text-foreground leading-snug">{task.title}</p>
         {/* Honest reason first, then room · duration — only what exists. Free to
             wrap onto a second line rather than truncate; it's short enough that
             it rarely needs to. */}

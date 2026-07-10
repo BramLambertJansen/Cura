@@ -1,20 +1,20 @@
-import { memo, useRef } from "react";
-import { motion, useMotionValue, useTransform, useReducedMotion, type PanInfo } from "motion/react";
+import { memo } from "react";
+import { motion, useTransform } from "motion/react";
 import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
+import { useSwipeRow } from "../lib/useSwipeRow";
 import { Checkbox } from "./shared";
-import { SWIPE_COMMIT_DISTANCE, SWIPE_FLICK_DISTANCE, SWIPE_FLICK_VELOCITY, SWIPE_LEFT_COMMIT_DISTANCE } from "./TaakRij";
 
 /**
  * A single task row inside Vandaag's dagdeel-tijdlijn — the timeline variant of
  * TaakRij. Rows sit directly inside one shared white group-card, without the
  * per-row card chrome (background/border/shadow) TaakRij carries elsewhere.
  * Everything else (swipe right to toggle, swipe left to dismiss, tap to edit,
- * timer button, interval/wekker badges) mirrors TaakRij exactly, so the
- * interaction language stays one thing across Vandaag/Huis/Taken — only the
- * visual shell differs here.
+ * interval/wekker/claimed badges) mirrors TaakRij exactly — both share the
+ * drag mechanics via `useSwipeRow` — so the interaction language stays one
+ * thing across Vandaag/Huis/Taken; only the visual shell differs here.
  */
 export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
   task, onToggle, onEdit, onDismiss,
@@ -24,28 +24,13 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
   onEdit?: () => void;
   onDismiss?: () => void;
 }) {
-  const reduceMotion = useReducedMotion();
-  const x = useMotionValue(0);
+  const claimed = !!task.claimedBy;
+  const { x, dragProps } = useSwipeRow({ onToggle, onDismiss });
   const revealOpacityRight = useTransform(x, [10, 48], [0, 1]);
   const revealScaleRight = useTransform(x, [10, 60], [0.6, 1]);
   const revealOpacityLeft = useTransform(x, [-48, -10], [1, 0]);
   const revealScaleLeft = useTransform(x, [-60, -10], [1, 0.6]);
-
   const canDismiss = Boolean(onDismiss);
-
-  const wasDragged = useRef(false);
-
-  function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
-    const commitRight =
-      info.offset.x > SWIPE_COMMIT_DISTANCE ||
-      (info.offset.x > SWIPE_FLICK_DISTANCE && info.velocity.x > SWIPE_FLICK_VELOCITY);
-    const commitLeft = info.offset.x < -SWIPE_LEFT_COMMIT_DISTANCE;
-
-    if (commitRight) onToggle();
-    if (commitLeft && canDismiss) onDismiss!();
-
-    setTimeout(() => { wasDragged.current = false; }, 0);
-  }
 
   const content = (
     <>
@@ -69,12 +54,13 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
             <Bell size={8} aria-hidden="true" /> {task.wekkerLabel}
           </span>
         )}
+        {claimed && !task.done && <span className="text-xs font-semibold ml-0.5" style={{ color: SAGE }}>{task.claimedBy} pakt dit</span>}
       </div>
     </>
   );
 
   return (
-    <motion.div layout animate={{ opacity: task.done ? 0.48 : 1 }} transition={{ duration: 0.28 }} className="relative">
+    <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: task.done ? 0.48 : 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.28 }} className="relative">
       {/* Unlike TaakRij's own card, this row has no opaque background of its own
           (it sits directly on the shared white group-card) — so the reveal tint
           must fade in/out with the drag too, not just the circle inside it, or
@@ -99,18 +85,7 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
         </motion.div>
       )}
       <motion.div
-        drag={reduceMotion ? false : "x"}
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={{ left: 0.7, right: 0.7 }}
-        dragMomentum={false}
-        onDragStart={() => { wasDragged.current = true; }}
-        onDragEnd={handleDragEnd}
-        onClickCapture={(e) => {
-          if (wasDragged.current) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-        }}
+        {...dragProps}
         className="relative z-10 flex items-stretch gap-3 py-[0.65rem]"
         style={{ x, touchAction: "pan-y" }}>
         <div className="flex-shrink-0 flex items-center justify-center">
