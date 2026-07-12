@@ -37,6 +37,17 @@ export function HuisPage() {
   const { openNewRoom, openEditRoom, openEditTask, openTemplates, openAddTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const claimTask = useCuraStore((s) => s.claimTask);
+  const updateTask = useCuraStore((s) => s.updateTask);
+  // Swipe-right on a pool row both plans and claims the task. Planning an
+  // unplanned task auto-claims it (useCuraStore.updateTask); a task that's
+  // already planned but unclaimed (e.g. someone let go of it via "Laat los")
+  // needs the direct claim instead, since re-setting `planned: true` on an
+  // already-planned task is a no-op transition and wouldn't claim it.
+  const planTask = (t: { id: string; title: string; planned: boolean }) => {
+    if (t.planned) claimTask(t.id, true);
+    else updateTask(t.id, { planned: true });
+    toast("Op je dag gezet", { description: `${t.title} staat klaar wanneer jij wilt.` });
+  };
   const rooms = useRoomViews();
   const tasks = useTaskViews();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
@@ -115,7 +126,7 @@ export function HuisPage() {
                       task={t}
                       onToggle={() => toggleTask(t.id, !t.done)}
                       showClaim
-                      onClaim={() => claimTask(t.id, true)}
+                      onPlan={() => planTask(t)}
                       onUnclaim={() => claimTask(t.id, false)}
                       onEdit={() => openEditTask(t.id)}
                       onDismiss={() => dismissWithUndo(t, "deze lijst")}
@@ -276,7 +287,7 @@ export function HuisPage() {
             <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
               {openTasks.map((t) => (
                 <motion.div key={t.id} variants={fadeUp}>
-                  <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onClaim={() => claimTask(t.id, true)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
+                  <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onPlan={() => planTask(t)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
                 </motion.div>
               ))}
               {doneTasks.map((t) => (
