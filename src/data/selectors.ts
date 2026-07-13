@@ -91,6 +91,10 @@ export function toTaskView(
 ): TaskView {
   const latest = latestByTask.get(task.id);
   const done = isDone(task, latest, now);
+  const checklistItems = task.checklistItems ?? [];
+  const checklistProgress = checklistItems.length > 0
+    ? { done: checklistItems.filter((i) => i.checked).length, total: checklistItems.length }
+    : undefined;
   return {
     id: task.id,
     title: task.title,
@@ -108,6 +112,10 @@ export function toTaskView(
     dueHint: done ? undefined : dueHint(task, latest, now),
     dueDate: task.dueDate,
     wekkerLabel: wekkerLabel(task),
+    startedAt: task.startedAt,
+    status: done ? "klaar" : task.startedAt ? "bezig" : "open",
+    checklistItems,
+    checklistProgress,
   };
 }
 

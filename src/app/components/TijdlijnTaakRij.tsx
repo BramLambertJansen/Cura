@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { motion, useTransform } from "motion/react";
-import { Bell, Check, RefreshCw, RotateCcw, X } from "lucide-react";
+import { Bell, Check, ListChecks, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
@@ -52,6 +52,18 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
           <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
             style={{ background: "color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--muted-foreground)" }}>
             <Bell size={8} aria-hidden="true" /> {task.wekkerLabel}
+          </span>
+        )}
+        {task.checklistProgress && (
+          <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+            style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)", color: SAGE }}>
+            <ListChecks size={8} aria-hidden="true" /> {task.checklistProgress.done}/{task.checklistProgress.total}
+          </span>
+        )}
+        {task.status === "bezig" && (
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+            style={{ background: "color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--muted-foreground)" }}>
+            Bezig
           </span>
         )}
         {claimed && !task.done && <span className="text-xs font-semibold ml-0.5" style={{ color: SAGE }}>{task.claimedBy} pakt dit</span>}

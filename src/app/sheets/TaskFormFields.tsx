@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Bell, CalendarDays, Check, Clock, RefreshCw, Sun } from "lucide-react";
+import { Bell, CalendarDays, Check, Clock, Play, RefreshCw, Sun } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { Kop, Toggle, VeldTextarea, FieldShell, StatusBadge, OptieKaart, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { Kop, Toggle, VeldTextarea, FieldShell, StatusBadge, OptieKaart, TaakToevoegRij, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { IntervalKiezer } from "./IntervalKiezer";
+import { ChecklistItemRij } from "./ChecklistItemRij";
 import { Calendar } from "../components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
-import type { RoomView } from "../../data/types";
+import type { RoomView, ChecklistItem } from "../../data/types";
 
 export interface TaskFormState {
   selectedRoomId: string | null;
@@ -21,6 +22,8 @@ export interface TaskFormState {
   wekkerTijd: string; // "HH:mm"
   duurMin: number | undefined;
   beschrijving: string;
+  gestartAan: boolean;
+  checklistItems: ChecklistItem[];
 }
 
 export interface TaskFormFieldsProps extends TaskFormState {
@@ -35,6 +38,8 @@ export interface TaskFormFieldsProps extends TaskFormState {
   onWekkerTijdChange: (v: string) => void;
   onDuurMinChange: (v: number | undefined) => void;
   onBeschrijvingChange: (v: string) => void;
+  onGestartChange: (v: boolean) => void;
+  onChecklistItemsChange: (items: ChecklistItem[]) => void;
 }
 
 /** Combines a selected date and HH:mm string into a full ISO timestamp. */
@@ -68,10 +73,13 @@ export function TaskFormFields({
   wekkerTijd, onWekkerTijdChange,
   duurMin, onDuurMinChange,
   beschrijving, onBeschrijvingChange,
+  gestartAan, onGestartChange,
+  checklistItems, onChecklistItemsChange,
 }: TaskFormFieldsProps) {
   const [calOpen, setCalOpen] = useState(false);
   const [tijdActive, setTijdActive] = useState(false);
   const [duurActive, setDuurActive] = useState(false);
+  const [checklistInput, setChecklistInput] = useState("");
 
   return (
     <>
@@ -244,6 +252,18 @@ export function TaskFormFields({
         </AnimatePresence>
       </div>
 
+      {/* Gestart — handmatige "ik ben begonnen"-markering, los van de checklist */}
+      <div className="mb-4">
+        <FieldShell hasValue={gestartAan} className="flex items-center justify-between py-3.5 px-4">
+          <div className="flex items-center gap-2.5">
+            <Play size={16} style={{ color: gestartAan ? SAGE : "var(--muted-foreground)" }} aria-hidden="true" />
+            <span className="text-sm font-medium text-foreground">Gestart</span>
+            {gestartAan && <StatusBadge enter="slide">Bezig</StatusBadge>}
+          </div>
+          <Toggle checked={gestartAan} onChange={onGestartChange} label="Taak als gestart markeren" />
+        </FieldShell>
+      </div>
+
       {/* Duur */}
       <div className="mb-6">
         <Kop>Duur <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
@@ -265,6 +285,36 @@ export function TaskFormFields({
           />
           <span className="text-xs text-muted-foreground flex-shrink-0">min</span>
         </FieldShell>
+      </div>
+
+      {/* Checklist — subtaken; afvinken zet de taak automatisch op "Bezig"
+          (useCuraStore.createTask/updateTask), los van de hoofd-checkbox. */}
+      <div className="mb-6">
+        <Kop>Checklist <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
+        <div className="space-y-2 mb-3 max-h-64 overflow-y-auto scrollbar-hide">
+          <AnimatePresence>
+            {checklistItems.map((item, i) => (
+              <ChecklistItemRij
+                key={item.id}
+                item={item}
+                onToggle={() => onChecklistItemsChange(checklistItems.map((it, j) => (j === i ? { ...it, checked: !it.checked } : it)))}
+                onTitleChange={(title) => onChecklistItemsChange(checklistItems.map((it, j) => (j === i ? { ...it, title } : it)))}
+                onRemove={() => onChecklistItemsChange(checklistItems.filter((_, j) => j !== i))}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+        <TaakToevoegRij
+          value={checklistInput}
+          onChange={setChecklistInput}
+          onAdd={() => {
+            if (!checklistInput.trim()) return;
+            onChecklistItemsChange([...checklistItems, { id: crypto.randomUUID(), title: checklistInput.trim(), checked: false }]);
+            setChecklistInput("");
+          }}
+          placeholder="Subtaak toevoegen…"
+          ariaLabel="Checklist-item toevoegen"
+        />
       </div>
 
       {/* Beschrijving */}

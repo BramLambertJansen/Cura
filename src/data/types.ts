@@ -6,6 +6,7 @@ import {
   HouseholdInviteSchema,
   RoomSchema,
   TaskSchema,
+  ChecklistItemSchema,
   TaskCompletionSchema,
   BundleSchema,
   ShoppingItemSchema,
@@ -35,6 +36,7 @@ export type HouseholdMember = z.infer<typeof HouseholdMemberSchema>;
 export type HouseholdInvite = z.infer<typeof HouseholdInviteSchema>;
 export type Room = z.infer<typeof RoomSchema>;
 export type Task = z.infer<typeof TaskSchema>;
+export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
 export type TaskCompletion = z.infer<typeof TaskCompletionSchema>;
 export type Bundle = z.infer<typeof BundleSchema>;
 export type ShoppingItem = z.infer<typeof ShoppingItemSchema>;
@@ -66,6 +68,13 @@ export interface TaskView {
   dueHint?: string; // soft: "Waarschijnlijk weer toe" / "Nog even goed"
   dueDate?: string; // raw ISO, for the reminder engine — not for display
   wekkerLabel?: string; // soft, calm label: "wo 2 jul, 15:00" (one-off) or "Wekker om 09:00" (recurring)
+  startedAt?: string; // raw ISO, for the edit form's manual "Gestart" toggle — not for display
+  /** Derived status label: done -> "klaar"; startedAt set -> "bezig"; else "open" ("niet gestart"). Never stored. */
+  status: "open" | "bezig" | "klaar";
+  /** Direct pass-through of the domain checklist — no resolution step needed (no names to look up). */
+  checklistItems: ChecklistItem[];
+  /** undefined when the task has no checklist at all, so badge call-sites can just check truthiness. */
+  checklistProgress?: { done: number; total: number };
 }
 
 /**

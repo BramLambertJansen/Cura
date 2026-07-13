@@ -12,6 +12,7 @@ const task = (overrides: Partial<Task> = {}): Task => ({
   householdId: "h1",
   title: "Afwas",
   planned: false,
+  checklistItems: [],
   ...overrides,
 });
 

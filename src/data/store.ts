@@ -4,6 +4,7 @@ import type {
   HouseholdInvite,
   Room,
   Task,
+  ChecklistItem,
   TaskCompletion,
   Bundle,
   ShoppingItem,
@@ -38,6 +39,8 @@ export interface CreateTaskInput {
   dueDate?: string; // ISO; one-off = full deadline (date+time); recurring = only HH:mm is read
   bundleId?: string;
   planned?: boolean;
+  startedAt?: string; // manual "Gestart" toggle; ISO or undefined-to-clear
+  checklistItems?: ChecklistItem[]; // omitted/undefined treated as [] by both backends
 }
 
 export interface CreateShoppingItemInput {
