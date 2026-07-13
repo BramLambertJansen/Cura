@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../src/*"],
+      "virtual:pwa-register/react": ["./stubs/pwa-register.ts"]
+    }
+  }
+}
