@@ -1,41 +1,63 @@
 import { BoodschapRij } from 'cura';
 
-// A single boodschappenlijst row: checkbox + title/aantal, quantity −/+ steppers
-// and an edit pencil while open; faded + struck-through when checked. It carries
-// its own card chrome (bg-card* + hairline + shadow), so it stands alone. The
-// component's signature is { item, onToggle, onDelete, onUpdate } — onUpdate is
-// required (fires on the steppers/edit), so it's wired here too.
+// A single boodschappenlijst row inside a category card: an animated checkbox +
+// title/aantal that toggles on tap, and swipe-left-to-delete. It carries no card
+// chrome of its own (the group card supplies the rounded border + shadow), and
+// `isLast` drops the hairline divider on the final row. Signature is
+// { item, onToggle, onDelete, isLast } — amount/unit/category are set in the add
+// sheet, so the row itself has no steppers or inline edit.
 const noop = () => {};
 
-export function Open() {
+// Give the chrome-less rows the group-card frame they live in, so the preview
+// reads the way they actually render on the page.
+function Card({ children }: { children: React.ReactNode }) {
   return (
-    <BoodschapRij
-      item={{ id: 'b1', title: 'Melk', quantity: '2 pakken', checked: false, category: 'cold' }}
-      onToggle={noop}
-      onDelete={noop}
-      onUpdate={noop}
-    />
+    <div style={{ borderRadius: 24, border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)', background: 'var(--card)', padding: '0 16px', width: 320 }}>
+      {children}
+    </div>
   );
 }
 
-export function ZonderAantal() {
+export function Open() {
   return (
-    <BoodschapRij
-      item={{ id: 'b2', title: 'Wasmiddel', checked: false, category: 'household' }}
-      onToggle={noop}
-      onDelete={noop}
-      onUpdate={noop}
-    />
+    <Card>
+      <BoodschapRij
+        item={{ id: 'b1', title: 'Melk', quantity: '2 l', checked: false, category: 'cold' }}
+        onToggle={noop}
+        onDelete={noop}
+        isLast
+      />
+    </Card>
+  );
+}
+
+export function MetRij() {
+  return (
+    <Card>
+      <BoodschapRij
+        item={{ id: 'b1', title: 'Bananen', quantity: '1 kg', checked: false, category: 'fresh' }}
+        onToggle={noop}
+        onDelete={noop}
+      />
+      <BoodschapRij
+        item={{ id: 'b2', title: 'Wc-papier', checked: false, category: 'household' }}
+        onToggle={noop}
+        onDelete={noop}
+        isLast
+      />
+    </Card>
   );
 }
 
 export function Afgevinkt() {
   return (
-    <BoodschapRij
-      item={{ id: 'b3', title: 'Brood', quantity: '1 heel', checked: true, category: 'fresh' }}
-      onToggle={noop}
-      onDelete={noop}
-      onUpdate={noop}
-    />
+    <Card>
+      <BoodschapRij
+        item={{ id: 'b3', title: 'Brood', quantity: '1', checked: true, category: 'pantry' }}
+        onToggle={noop}
+        onDelete={noop}
+        isLast
+      />
+    </Card>
   );
 }

@@ -40,6 +40,7 @@ const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPa
 const CreateHouseholdPage = lazy(() => import("./features/auth/CreateHouseholdPage").then((m) => ({ default: m.CreateHouseholdPage })));
 const AcceptInvitePage = lazy(() => import("./features/invite/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
 const AddTaskSheet = lazy(() => import("./sheets/AddTaskSheet").then((m) => ({ default: m.AddTaskSheet })));
+const BoodschapToevoegSheet = lazy(() => import("./sheets/BoodschapToevoegSheet").then((m) => ({ default: m.BoodschapToevoegSheet })));
 const EditTaskSheet = lazy(() => import("./sheets/EditTaskSheet").then((m) => ({ default: m.EditTaskSheet })));
 const NewRoomSheet = lazy(() => import("./sheets/NewRoomSheet").then((m) => ({ default: m.NewRoomSheet })));
 const EditRoomSheet = lazy(() => import("./sheets/EditRoomSheet").then((m) => ({ default: m.EditRoomSheet })));
@@ -102,6 +103,7 @@ function MainShell() {
   const { pull, state: pullState } = usePullToRefresh(scrollRef, refresh);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [showAddBoodschap, setShowAddBoodschap] = useState(false);
   const [addRoomId, setAddRoomId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [showNewRoom, setShowNewRoom] = useState(false);
@@ -116,6 +118,7 @@ function MainShell() {
   const sheetActions: SheetActions = useMemo(
     () => ({
       openAddTask: (roomId?: string) => { setAddRoomId(roomId ?? null); setShowAdd(true); },
+      openAddBoodschap: () => setShowAddBoodschap(true),
       openEditTask: (taskId) => setEditingTaskId(taskId),
       openNewRoom: () => setShowNewRoom(true),
       openEditRoom: (roomId) => setEditingRoomId(roomId),
@@ -180,6 +183,7 @@ function MainShell() {
 
         <AnimatePresence>
           {showAdd && <LazyOverlay key="add"><AddTaskSheet roomId={addRoomId} onClose={() => setShowAdd(false)} /></LazyOverlay>}
+          {showAddBoodschap && <LazyOverlay key="add-boodschap"><BoodschapToevoegSheet onClose={() => setShowAddBoodschap(false)} /></LazyOverlay>}
           {editingTaskId && <LazyOverlay key="edit-task"><EditTaskSheet taskId={editingTaskId} onClose={() => setEditingTaskId(null)} /></LazyOverlay>}
           {showNewRoutine && <LazyOverlay key="nr"><NewRoutineSheet onClose={() => setShowNewRoutine(false)} /></LazyOverlay>}
           {editingRoutineId && <LazyOverlay key="er"><EditRoutineSheet bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} /></LazyOverlay>}
