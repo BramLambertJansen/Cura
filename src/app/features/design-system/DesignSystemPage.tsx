@@ -52,10 +52,19 @@ function Swatch({ label, value }: { label: string; value: string }) {
   );
 }
 
-const demoTaskOpen: TaskView = { id: "t1", title: "Stofzuigen woonkamer", room: "Woonkamer", duration: "10 min", intervalDays: 7, planned: true, done: false };
+const demoTaskOpen: TaskView = { id: "t1", title: "Stofzuigen woonkamer", room: "Woonkamer", duration: "10 min", intervalDays: 7, planned: true, done: false, status: "open", checklistItems: [] };
 const demoTaskClaimed: TaskView = { ...demoTaskOpen, id: "t2", title: "Planten water geven", claimedBy: "Stéphanie", intervalDays: 3 };
-const demoTaskDone: TaskView = { ...demoTaskOpen, id: "t3", title: "Vaatwasser uitruimen", done: true, doneBy: "Bram", doneAt: "08:42" };
+const demoTaskDone: TaskView = { ...demoTaskOpen, id: "t3", title: "Vaatwasser uitruimen", done: true, doneBy: "Bram", doneAt: "08:42", status: "klaar" };
 const demoTaskPool: TaskView = { ...demoTaskOpen, id: "t4", title: "Ramen zemen", claimedBy: undefined, planned: false };
+const demoTaskChecklist: TaskView = {
+  ...demoTaskOpen, id: "t5", title: "Boodschappen doen", status: "bezig",
+  startedAt: new Date().toISOString(),
+  checklistItems: [
+    { id: "c1", title: "Melk", checked: true },
+    { id: "c2", title: "Brood", checked: false },
+  ],
+  checklistProgress: { done: 1, total: 2 },
+};
 
 const demoRoom: RoomView = {
   id: "r1", name: "Keuken", iconKey: "utensils", color: "#B8924A", owner: "Bram",
@@ -294,6 +303,7 @@ export function DesignSystemPage() {
           <TaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TaakRij task={demoTaskPool} onToggle={() => {}} showClaim onPlan={() => {}} />
           <TaakRij task={demoTaskClaimed} onToggle={() => {}} showClaim onUnclaim={() => {}} />
+          <TaakRij task={demoTaskChecklist} onToggle={() => {}} />
           <TaakRij task={demoTaskDone} onToggle={() => {}} />
         </div>
       </Section>
@@ -303,6 +313,7 @@ export function DesignSystemPage() {
         <div className={`rounded-[1.6rem] p-4 ${CARD_CHROME}`} style={{ boxShadow: "var(--shadow-card)" }}>
           <TijdlijnTaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TijdlijnTaakRij task={demoTaskClaimed} onToggle={() => {}} onDismiss={() => {}} />
+          <TijdlijnTaakRij task={demoTaskChecklist} onToggle={() => {}} />
           <TijdlijnTaakRij task={demoTaskDone} onToggle={() => {}} />
         </div>
       </Section>

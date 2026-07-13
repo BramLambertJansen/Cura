@@ -82,6 +82,18 @@ export const RoomSchema = z.object({
 // The single source of truth. NOTE what's absent: done / doneBy / doneAt.
 // Completion is an event (see TaskCompletion), not a mutable flag on the task.
 
+// A checklist item is a plain sub-checklist row, same deliberate exception to
+// "no derived state" as ShoppingItem.checked below: a subtask has no
+// recurrence, no density story, and always lives inside its parent task's own
+// edit form. `id` is generated client-side (crypto.randomUUID(), same
+// precedent as the routine-task drafts in NewRoutineSheet/EditRoutineSheet)
+// so React keys and removal/reordering stay stable even before first save.
+export const ChecklistItemSchema = z.object({
+  id: Id,
+  title: z.string().min(1),
+  checked: z.boolean().default(false),
+});
+
 export const TaskSchema = z.object({
   id: Id,
   householdId: Id,
@@ -94,6 +106,16 @@ export const TaskSchema = z.object({
   bundleId: Id.optional(), // belongs to a routine bundle (a grouping, see below)
   claimedById: Id.optional(), // "ik pak dit" — optional, never required
   planned: z.boolean().default(false), // is it on today's plan?
+  // Manual/auto "I've started this" timestamp — a raw fact, like dueDate, NOT
+  // a stored status. The human-readable status ("niet gestart"/"bezig"/
+  // "klaar") is computed only in toTaskView (selectors.ts): done -> "klaar",
+  // else startedAt set -> "bezig", else "niet gestart".
+  startedAt: Iso.optional(),
+  // Subtask checklist. Deliberate exception to "no derived state" — see
+  // ChecklistItemSchema above and the ShoppingItemSchema comment below for
+  // the same reasoning. Independent of done: checking every item here never
+  // auto-completes the task.
+  checklistItems: z.array(ChecklistItemSchema).default([]),
 });
 
 // ─── Completions — the event layer ───────────────────────────────────────────

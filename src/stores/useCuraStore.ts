@@ -334,7 +334,16 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const store = await getDataStore();
       const { householdId, currentUserId } = get();
       if (!householdId) return;
-      let created = await store.createTask(householdId, input);
+      // Creating a task with an already-checked checklist item is itself a
+      // soft "I've started this" signal — same spirit as the planned
+      // auto-claim below. This is the only place this rule is evaluated (see
+      // updateTask for the edit-time equivalent), so it's never duplicated
+      // per call-site.
+      const hasCheckedItem = input.checklistItems?.some((i) => i.checked) ?? false;
+      const finalInput = hasCheckedItem && !input.startedAt
+        ? { ...input, startedAt: new Date().toISOString() }
+        : input;
+      let created = await store.createTask(householdId, finalInput);
       // Putting a task on your day is itself a soft "ik doe dit" — claim it for
       // free instead of requiring a second explicit "ik pak dit" action.
       if (input.planned && currentUserId) {
@@ -368,8 +377,19 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     try {
       const store = await getDataStore();
       const { currentUserId, tasks } = get();
-      const wasPlanned = tasks.find((t) => t.id === taskId)?.planned ?? false;
-      let updated = await store.updateTask(taskId, patch);
+      const existing = tasks.find((t) => t.id === taskId);
+      const wasPlanned = existing?.planned ?? false;
+      // Same rule as createTask above, for the edit-time transition: checking
+      // a checklist item auto-sets startedAt IF the task wasn't already
+      // started before this save AND the caller didn't already send an
+      // explicit startedAt (never overrides a manual "Gestart" value set in
+      // the same save, and never re-fires once startedAt already exists).
+      const hasCheckedItem = patch.checklistItems?.some((i) => i.checked) ?? false;
+      const alreadyStarted = !!existing?.startedAt;
+      const finalPatch = hasCheckedItem && !alreadyStarted && !patch.startedAt
+        ? { ...patch, startedAt: new Date().toISOString() }
+        : patch;
+      let updated = await store.updateTask(taskId, finalPatch);
       // Same soft auto-claim as createTask, but only on the transition into
       // `planned` (not every re-save of an already-planned task), and only if
       // nobody else already claimed it — never silently override an existing claim.

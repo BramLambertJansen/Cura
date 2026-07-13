@@ -23,6 +23,8 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
     wekkerTijd: "08:00",
     duurMin: undefined,
     beschrijving: "",
+    gestartAan: false,
+    checklistItems: [],
   });
 
   const selectedRoom = rooms.find((r) => r.id === formState.selectedRoomId);
@@ -31,6 +33,8 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
     formState.herhalenAan ? "Herhalen" : null,
     formState.wekkerAan ? "Wekker" : null,
     formState.duurMin ? `${formState.duurMin} min` : null,
+    formState.gestartAan ? "Gestart" : null,
+    formState.checklistItems.length ? `${formState.checklistItems.length} subtaken` : null,
   ].filter(Boolean).join(" / ");
 
   async function handleAdd() {
@@ -50,6 +54,8 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
       dueDate,
       durationMin: formState.duurMin,
       planned: formState.opMijnDag,
+      startedAt: formState.gestartAan ? new Date().toISOString() : undefined,
+      checklistItems: formState.checklistItems,
     });
     onClose();
   }
@@ -116,6 +122,8 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
                   onWekkerTijdChange={(v) => setFormState((s) => ({ ...s, wekkerTijd: v }))}
                   onDuurMinChange={(v) => setFormState((s) => ({ ...s, duurMin: v }))}
                   onBeschrijvingChange={(v) => setFormState((s) => ({ ...s, beschrijving: v }))}
+                  onGestartChange={(v) => setFormState((s) => ({ ...s, gestartAan: v }))}
+                  onChecklistItemsChange={(items) => setFormState((s) => ({ ...s, checklistItems: items }))}
                 />
               </div>
             </motion.div>

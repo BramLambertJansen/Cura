@@ -135,6 +135,8 @@ export class LocalStore implements DataStore {
       dueDate: input.dueDate,
       bundleId: input.bundleId,
       planned: input.planned ?? false,
+      startedAt: input.startedAt,
+      checklistItems: input.checklistItems ?? [],
     };
     this.db.tasks.push(created);
     this.persist();

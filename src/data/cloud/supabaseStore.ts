@@ -30,6 +30,8 @@ interface TaskRow {
   description: string | null;
   duration_min: number | null; interval_days: number | null; due_date: string | null;
   bundle_id: string | null; claimed_by_id: string | null; planned: boolean;
+  started_at: string | null;
+  checklist_items: { id: string; title: string; checked: boolean }[];
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
 interface ShoppingItemRow {
@@ -85,6 +87,8 @@ function mapTask(r: TaskRow): Task {
     durationMin: r.duration_min ?? undefined, intervalDays: r.interval_days ?? undefined,
     dueDate: r.due_date ?? undefined, bundleId: r.bundle_id ?? undefined,
     claimedById: r.claimed_by_id ?? undefined, planned: r.planned,
+    startedAt: r.started_at ?? undefined,
+    checklistItems: r.checklist_items ?? [],
   });
 }
 function mapCompletion(r: CompletionRow): TaskCompletion {
@@ -115,6 +119,26 @@ export function isMissingShoppingColumn(error: unknown): boolean {
 function withoutNewShoppingColumns<T extends Partial<Record<(typeof NEW_SHOPPING_COLUMNS)[number], unknown>>>(row: T): T {
   const clone = { ...row };
   for (const col of NEW_SHOPPING_COLUMNS) delete clone[col];
+  return clone;
+}
+
+// Optional tasks columns added after the initial table (started_at,
+// checklist_items) — since migrations apply manually and can lag behind
+// deployed code, a request touching a not-yet-migrated column must degrade
+// instead of throwing (same reasoning/pattern as the shopping_items columns
+// above — kept as a second, table-scoped trio rather than a shared helper).
+const NEW_TASK_COLUMNS = ["started_at", "checklist_items"] as const;
+
+export function isMissingTaskColumn(error: unknown): boolean {
+  const err = error as { code?: string; message?: string } | null | undefined;
+  if (err?.code !== "PGRST204" || typeof err.message !== "string") return false;
+  const message = err.message;
+  return NEW_TASK_COLUMNS.some((col) => message.includes(`'${col}'`)) && message.includes("'tasks'");
+}
+
+function withoutNewTaskColumns<T extends Partial<Record<(typeof NEW_TASK_COLUMNS)[number], unknown>>>(row: T): T {
+  const clone = { ...row };
+  for (const col of NEW_TASK_COLUMNS) delete clone[col];
   return clone;
 }
 
@@ -328,9 +352,16 @@ export class SupabaseStore implements DataStore {
       duration_min: input.durationMin ?? null, interval_days: input.intervalDays ?? null,
       due_date: input.dueDate ?? null, bundle_id: input.bundleId ?? null,
       claimed_by_id: null, planned: input.planned ?? false,
+      started_at: input.startedAt ?? null,
+      checklist_items: input.checklistItems ?? [],
     };
     const { error } = await supabase.from("tasks").insert(row);
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (!isMissingTaskColumn(error)) throw new Error(error.message);
+      const { error: retryError } = await supabase.from("tasks").insert(withoutNewTaskColumns(row));
+      if (retryError) throw new Error(retryError.message);
+      return mapTask({ ...row, started_at: null, checklist_items: [] });
+    }
     return mapTask(row);
   }
 
@@ -344,8 +375,24 @@ export class SupabaseStore implements DataStore {
     if (patch.dueDate !== undefined) update.due_date = patch.dueDate ?? null;
     if (patch.bundleId !== undefined) update.bundle_id = patch.bundleId ?? null;
     if (patch.planned !== undefined) update.planned = patch.planned;
+    // Key-presence check (not !== undefined): EditTaskSheet always sends this
+    // key, including `startedAt: undefined` to explicitly clear it (the
+    // "Gestart" toggle turned off) — an !== undefined guard would silently
+    // skip that clear.
+    if ("startedAt" in patch) update.started_at = patch.startedAt ?? null;
+    if ("checklistItems" in patch) update.checklist_items = patch.checklistItems ?? [];
     const { data, error } = await supabase.from("tasks").update(update).eq("id", taskId).select().single();
-    if (error || !data) throw new Error(error?.message ?? `Task not found: ${taskId}`);
+    if (error) {
+      if (!isMissingTaskColumn(error)) throw new Error(error.message);
+      const retryUpdate = withoutNewTaskColumns(update);
+      const retryQuery = Object.keys(retryUpdate).length > 0
+        ? supabase.from("tasks").update(retryUpdate).eq("id", taskId).select().single()
+        : supabase.from("tasks").select("*").eq("id", taskId).single();
+      const { data: retryData, error: retryError } = await retryQuery;
+      if (retryError || !retryData) throw new Error(retryError?.message ?? `Task not found: ${taskId}`);
+      return mapTask(retryData as TaskRow);
+    }
+    if (!data) throw new Error(`Task not found: ${taskId}`);
     return mapTask(data as TaskRow);
   }
 

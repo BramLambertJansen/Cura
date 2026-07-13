@@ -28,6 +28,7 @@ const task = (overrides: Partial<Task> = {}): Task => ({
   householdId: "h1",
   title: "Afwas",
   planned: false,
+  checklistItems: [],
   ...overrides,
 });
 
@@ -100,6 +101,62 @@ describe("one-off task done-state", () => {
     expect(view.done).toBe(false);
     // One-off tasks have no recurring rhythm, so no soft due hint either.
     expect(view.dueHint).toBeUndefined();
+  });
+});
+
+describe("task status — derived, never stored", () => {
+  it("is 'open' with no startedAt and no completion", () => {
+    const now = Date.now();
+    const t = task();
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()], now);
+    expect(view.status).toBe("open");
+  });
+
+  it("is 'bezig' once startedAt is set, even with no checklist", () => {
+    const now = Date.now();
+    const t = task({ startedAt: new Date(now).toISOString() });
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()], now);
+    expect(view.status).toBe("bezig");
+  });
+
+  it("is 'klaar' whenever done, regardless of startedAt", () => {
+    const now = Date.now();
+    const t = task({ startedAt: new Date(now).toISOString() });
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: t.id, completedById: "m1", completedAt: new Date(now).toISOString() },
+    ];
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    expect(view.status).toBe("klaar");
+  });
+
+  it("is 'klaar' even without startedAt ever having been set — done doesn't require having 'started'", () => {
+    const now = Date.now();
+    const t = task();
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: t.id, completedById: "m1", completedAt: new Date(now).toISOString() },
+    ];
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    expect(view.status).toBe("klaar");
+  });
+});
+
+describe("checklist progress — derived, independent of the task's own done-flag", () => {
+  it("is undefined when the task has no checklist items", () => {
+    const view = toTaskView(task(), buildLatestCompletionMap([]), [], [member()]);
+    expect(view.checklistProgress).toBeUndefined();
+    expect(view.checklistItems).toEqual([]);
+  });
+
+  it("counts checked vs total, independent of task.done", () => {
+    const t = task({
+      checklistItems: [
+        { id: "c1", title: "Melk", checked: true },
+        { id: "c2", title: "Brood", checked: false },
+      ],
+    });
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()]);
+    expect(view.checklistProgress).toEqual({ done: 1, total: 2 });
+    expect(view.done).toBe(false); // checking a checklist item never auto-completes the task
   });
 });
 
@@ -430,6 +487,8 @@ describe("Vandaag timeline — dagdeel grouping", () => {
     title: "Was ophangen",
     planned: true,
     done: false,
+    status: "open",
+    checklistItems: [],
     ...overrides,
   });
   const atHour = (hour: number) => new Date(2024, 0, 1, hour, 0, 0).toISOString();

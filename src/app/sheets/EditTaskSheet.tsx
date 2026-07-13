@@ -24,6 +24,8 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       wekkerTijd: hasWekker ? extractTijd(task!.dueDate!) : "08:00",
       duurMin: task?.durationMin,
       beschrijving: task?.description ?? "",
+      gestartAan: !!task?.startedAt,
+      checklistItems: task?.checklistItems ?? [],
     };
   });
 
@@ -38,6 +40,11 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       formState.wekkerDatum,
       formState.wekkerTijd,
     );
+    // Keep the original "started" moment across unrelated re-saves (e.g.
+    // fixing a title typo shouldn't reset when the task started).
+    const startedAt = formState.gestartAan
+      ? (task!.startedAt ?? new Date().toISOString())
+      : undefined;
     await updateTask(taskId, {
       title: title.trim(),
       description: formState.beschrijving.trim() || undefined,
@@ -46,6 +53,8 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       dueDate,
       durationMin: formState.duurMin,
       planned: formState.opMijnDag,
+      startedAt,
+      checklistItems: formState.checklistItems,
     });
     onClose();
   }
@@ -73,6 +82,8 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
         onWekkerTijdChange={(v) => setFormState((s) => ({ ...s, wekkerTijd: v }))}
         onDuurMinChange={(v) => setFormState((s) => ({ ...s, duurMin: v }))}
         onBeschrijvingChange={(v) => setFormState((s) => ({ ...s, beschrijving: v }))}
+        onGestartChange={(v) => setFormState((s) => ({ ...s, gestartAan: v }))}
+        onChecklistItemsChange={(items) => setFormState((s) => ({ ...s, checklistItems: items }))}
       />
 
       <div className="mt-2 mb-4">
