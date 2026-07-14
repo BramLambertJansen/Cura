@@ -4,7 +4,9 @@ import { TijdlijnTaakRij } from 'cura';
 // card chrome of their own — they sit directly on a shared white group-card
 // (the dagdeel-tijdlijn in VandaagPage). The preview supplies that surface so
 // each row reads in the context it's designed for. TaskView props are plain
-// literals (types are erased at build).
+// literals (types are erased at build). Same meta-row badges as TaakRij: a
+// truthy `checklistProgress` shows a "1/2" pill and `status: "bezig"` a "Bezig"
+// pill (this duplicated badge-row is kept in sync between both files, CLAUDE.md §5).
 const noop = () => {};
 
 function Groep({ children }: { children: React.ReactNode }) {
@@ -70,6 +72,33 @@ export function Afgevinkt() {
     <Groep>
       <TijdlijnTaakRij
         task={{ id: 't4', title: 'Bed opmaken', room: 'Slaapkamer', duration: '3 min', planned: true, done: true }}
+        onToggle={noop}
+        onEdit={noop}
+        onDismiss={noop}
+      />
+    </Groep>
+  );
+}
+
+export function BezigMetChecklist() {
+  return (
+    <Groep>
+      <TijdlijnTaakRij
+        task={{
+          id: 't5',
+          title: 'Boodschappen doen',
+          room: 'Keuken',
+          duration: '30 min',
+          planned: true,
+          done: false,
+          status: 'bezig',
+          startedAt: '2026-07-14T09:00:00.000Z',
+          checklistItems: [
+            { id: 'c1', title: 'Melk', checked: true },
+            { id: 'c2', title: 'Brood', checked: false },
+          ],
+          checklistProgress: { done: 1, total: 2 },
+        }}
         onToggle={noop}
         onEdit={noop}
         onDismiss={noop}

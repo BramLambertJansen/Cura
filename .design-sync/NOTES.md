@@ -151,8 +151,12 @@ Components that load images via absolute `/…` paths therefore can't show art:
   built with the DS. Author previews with source-present classes or inline pixel
   `style`. Confirmed present: `w-16/w-20/w-full/h-full`, `rounded-2xl/3xl/full`,
   `px-5`, `pt-14`, `bg-card`, `bg-card-active`, `border-border`, `text-*`, `space-y-*`.
-- **BoodschapRij** signature is `{ item, onToggle, onDelete, onUpdate }` — `onUpdate`
-  is REQUIRED (steppers/inline edit), not optional.
+- **BoodschapRij** signature CHANGED in the V2 redesign (#87) to
+  `{ item, onToggle, onDelete, isLast }` — the old `onUpdate` (quantity steppers /
+  inline edit) is GONE (amount/unit/category are set in the add flow now). The row
+  is chrome-less; the parent category card supplies border+shadow, so the preview
+  wraps it in a group-card `<Card>` frame and `isLast` drops the final hairline.
+  (Preview + wrapper were refreshed in #87; this bullet was the stale leftover.)
 - **RoomHero** without art renders only its floating back/edit control bar (its
   watercolor header can't load) — sparse but honest; candidate for a future art
   treatment if public assets ever ship.
@@ -164,6 +168,28 @@ Components that load images via absolute `/…` paths therefore can't show art:
   ONCE, early. (Adding `react-router` mid-run forced a full re-grade this sync.)
 - **Full builds are slow (~5–7 min)** because `react-router` (an extraEntry) has a
   large `.d.ts` tree that ts-morph parses on every build. Background the build.
+
+## Wave-3 input refresh (checklist/status badges + CSS resnapshot)
+Not a full re-sync — the `/design-sync` build/capture/validate harness was NOT
+staged in this session (only the DesignSync upload tool is), so the durable inputs
+were hand-updated to match source; the bundle/zip were NOT rebuilt or re-verified.
+- **TaakRij / TijdlijnTaakRij gained two meta-row badge pills** (#88): a
+  `checklistProgress` ({done,total}) pill ("1/3", `ListChecks` icon, sage tint) and
+  a "Bezig" pill when `status === "bezig"`. New `TaskView` fields: `status`
+  (`"open"|"bezig"|"klaar"`, REQUIRED, derived), `checklistItems` (REQUIRED, `[]`),
+  optional `startedAt` / `checklistProgress`. Added a `BezigMetChecklist` story to
+  both preview cards to exercise both pills. The badge-row markup is DUPLICATED
+  across the two components (CLAUDE.md §5) — keep both stories in sync.
+- **`ds-compiled.css` re-snapshotted** via `pnpm build && cp dist/assets/index-*.css`
+  (51,039 → 52,027 B). It now carries utilities the recent PRs use that the prior
+  snapshot had tree-shaken away — `w-28`, `min-w-[22px]`, `w-[7px]`/`h-[7px]` (routine
+  step dots), `border-b`, `-my-1`, `pr-3.5`, `text-[0.82rem]`/`[0.95rem]`,
+  `--tracking-wider`. (Directly relevant to the wave-2 "tree-shaken CSS" caveat.)
+- **The prebuilt `cura-design-system-export.zip` is now STALE** re: the checklist
+  badge stories. It was NOT rebuilt here (no converter). A `/design-sync` re-run
+  rebuilds + re-verifies it from these refreshed inputs; upload still targets the
+  owner's PRIVATE account (this session's DesignSync only lists work-account
+  projects — "Ciphix Design System"/"Design System", neither a Cura project).
 
 ## Known render warns (legitimate — re-sync must not read these as new)
 - **`[FONT_REMOTE]` Plus Jakarta Sans, Lora** — fonts load via a remote Google
