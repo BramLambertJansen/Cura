@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Check, Moon, Pencil, Sun, Sunrise, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed, useRoutineViews, useTaskViews } from "../../../stores/useViews";
-import { toSuggestions, toDagdelen, dagdeelForHour } from "../../../data/selectors";
+import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen } from "../../../data/selectors";
 import type { DagdeelGroup } from "../../../data/types";
 import { getGreeting } from "../../lib/format";
 import { stagger, fadeUp } from "../../lib/motion";
@@ -46,6 +46,7 @@ export function VandaagPage() {
   const [suggestiesOpen, setSuggestiesOpen] = useState(false);
   const [afgerondOpen, setAfgerondOpen] = useState(false);
   const [logboekOpen, setLogboekOpen] = useState(false);
+  const [laterOpen, setLaterOpen] = useState(false);
 
   // Re-render roughly once a minute so `nuDagdeel` below (derived from
   // `new Date()`) doesn't stay stuck on the previous dagdeel after 12:00/18:00
@@ -64,7 +65,9 @@ export function VandaagPage() {
   const suggestions = toSuggestions(tasks).filter((t) => !isDismissed(t.id));
   const dagdelen = toDagdelen(plannedOpen);
   const nuDagdeel = dagdeelForHour(new Date().getHours());
-  const firstTaskId = dagdelen[0]?.tasks[0]?.id;
+  const { dagdelenNow, dagdelenLater } = splitDagdelen(dagdelen, nuDagdeel);
+  const laterCount = dagdelenLater.reduce((n, g) => n + g.tasks.length, 0);
+  const firstTaskId = dagdelenNow[0]?.tasks[0]?.id;
 
   const me = members.find((m) => m.userId === currentUserId);
   // "Logboek" — vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag
@@ -77,6 +80,48 @@ export function VandaagPage() {
   }, []);
   // toActivityFeed (selectors.ts) already sorts newest-first by completedAt — no re-sort needed here.
   const logboek = useActivityFeed(sinceIso);
+
+  const renderDagdeelGroep = (groep: DagdeelGroup) => {
+    const Icon = DAGDEEL_ICON[groep.key];
+    const isNu = groep.key === nuDagdeel;
+    return (
+      <motion.section key={groep.key} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+        <div
+          className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
+          style={{ background: isNu ? "color-mix(in srgb, var(--primary) 13%, transparent)" : "color-mix(in srgb, var(--muted-foreground) 7%, transparent)" }}>
+          <Icon size={11} aria-hidden="true" style={{ color: isNu ? SAGE : "var(--muted-foreground)" }} />
+          <span className="text-[0.66rem] font-semibold tracking-wide uppercase" style={{ color: isNu ? SAGE : "var(--muted-foreground)" }}>
+            {groep.label}
+          </span>
+          {isNu && (
+            <span className="text-[0.58rem] font-semibold uppercase px-1.5 py-px rounded-full" style={{ color: SAGE, background: "color-mix(in srgb, var(--card) 55%, transparent)" }}>
+              nu
+            </span>
+          )}
+        </div>
+        <div>
+          <AnimatePresence mode="popLayout" initial={false}>
+            {groep.tasks.map((task) => (
+              <TijdlijnTaakRij
+                key={task.id}
+                task={task}
+                onToggle={() => toggleTask(task.id, !task.done)}
+                onEdit={() => openEditTask(task.id)}
+                onDismiss={() => {
+                  dismissTask(task.id);
+                  toast("Even niet vandaag", {
+                    description: `${task.title} staat even uit je dag.`,
+                    action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) },
+                  });
+                }}
+                peek={!swipeHint.seen && task.id === firstTaskId}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      </motion.section>
+    );
+  };
 
   const pct = totalPlanned > 0 ? doneCount / totalPlanned : 0;
   const allDone = totalPlanned > 0 && doneCount === totalPlanned;
@@ -157,49 +202,20 @@ export function VandaagPage() {
             <div className={`rounded-[1.6rem] p-4 ${CARD_CHROME}`} style={{ boxShadow: "var(--shadow-card)" }}>
               <div className="space-y-5">
                 <AnimatePresence initial={false}>
-                  {dagdelen.map((groep) => {
-                    const Icon = DAGDEEL_ICON[groep.key];
-                    const isNu = groep.key === nuDagdeel;
-                    return (
-                      <motion.section key={groep.key} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-                        <div
-                          className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
-                          style={{ background: isNu ? "color-mix(in srgb, var(--primary) 13%, transparent)" : "color-mix(in srgb, var(--muted-foreground) 7%, transparent)" }}>
-                          <Icon size={11} aria-hidden="true" style={{ color: isNu ? SAGE : "var(--muted-foreground)" }} />
-                          <span className="text-[0.66rem] font-semibold tracking-wide uppercase" style={{ color: isNu ? SAGE : "var(--muted-foreground)" }}>
-                            {groep.label}
-                          </span>
-                          {isNu && (
-                            <span className="text-[0.58rem] font-semibold uppercase px-1.5 py-px rounded-full" style={{ color: SAGE, background: "color-mix(in srgb, var(--card) 55%, transparent)" }}>
-                              nu
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <AnimatePresence mode="popLayout" initial={false}>
-                            {groep.tasks.map((task) => (
-                              <TijdlijnTaakRij
-                                key={task.id}
-                                task={task}
-                                onToggle={() => toggleTask(task.id, !task.done)}
-                                onEdit={() => openEditTask(task.id)}
-                                onDismiss={() => {
-                                  dismissTask(task.id);
-                                  toast("Even niet vandaag", {
-                                    description: `${task.title} staat even uit je dag.`,
-                                    action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) },
-                                  });
-                                }}
-                                peek={!swipeHint.seen && task.id === firstTaskId}
-                              />
-                            ))}
-                          </AnimatePresence>
-                        </div>
-                      </motion.section>
-                    );
-                  })}
+                  {dagdelenNow.map(renderDagdeelGroep)}
                 </AnimatePresence>
               </div>
+            </div>
+          )}
+          {laterCount > 0 && (
+            <div className="mt-3">
+              <CollapsibleSection title="Later vandaag" count={laterCount} open={laterOpen} onToggle={() => setLaterOpen((v) => !v)}>
+                <div className="space-y-5">
+                  <AnimatePresence initial={false}>
+                    {dagdelenLater.map(renderDagdeelGroep)}
+                  </AnimatePresence>
+                </div>
+              </CollapsibleSection>
             </div>
           )}
         </section>
