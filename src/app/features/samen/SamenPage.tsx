@@ -9,7 +9,7 @@ import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
 import { householdStatusLine } from "../../lib/format";
 import { useReacties, type ReactieKind } from "../../lib/useReacties";
-import { Leeg, PageHeader, Card, HintBanner, IconButton } from "../../components/shared";
+import { Leeg, PageHeader, Card, HintBanner, IconButton, Avatar } from "../../components/shared";
 import { ActiviteitReacties } from "../../components/ActiviteitReacties";
 
 const REACTIE_TOAST: Record<ReactieKind, string> = {
@@ -56,12 +56,18 @@ export function SamenPage() {
         : <motion.div variants={stagger} initial="initial" animate="animate" aria-live="polite" className="space-y-1.5 mb-8">
             {completedToday.map((activity, i) => {
               const activityKey = `${activity.taskId}-${activity.doneAt}`;
+              const mine = !!activity.doneById && activity.doneById === me?.id;
               return (
                 <motion.div key={activityKey} variants={fadeUp} className="flex gap-3 items-stretch">
                   <div className="flex flex-col items-center pt-2 flex-shrink-0">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: activity.doneBy === me?.displayName ? "color-mix(in srgb, var(--primary) 12%, transparent)" : "color-mix(in srgb, var(--accent) 45%, transparent)" }}>
-                      <Check size={13} strokeWidth={2.5} style={{ color: SAGE }} />
+                    <div className="relative flex-shrink-0">
+                      <Avatar name={activity.doneBy} size={32} tone={mine ? "solid" : "soft"} />
+                      <span
+                        aria-hidden="true"
+                        className="absolute -bottom-0.5 -right-0.5 w-[15px] h-[15px] rounded-full flex items-center justify-center"
+                        style={{ background: SAGE, border: "2px solid var(--card)" }}>
+                        <Check size={8} strokeWidth={3} className="text-white" />
+                      </span>
                     </div>
                     {i < completedToday.length - 1 && <div className="w-px flex-1 bg-border mt-1.5" />}
                   </div>
