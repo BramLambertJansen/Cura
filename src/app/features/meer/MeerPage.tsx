@@ -26,7 +26,7 @@ export function MeerPage() {
     {
       title: "Samen",
       items: [
-        { icon: <Heart size={16} />, label: "Samen", hint: "Wat is er vandaag gedaan", onClick: () => navigate("/samen") },
+        { icon: <Heart size={16} />, label: "Samen", hint: "Wat is er vandaag gedaan", onClick: () => navigate("/samen", { state: { from: "meer" } }) },
       ],
     },
     {

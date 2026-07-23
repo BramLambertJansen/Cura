@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { ArrowLeft, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +20,12 @@ const REACTIE_TOAST: Record<ReactieKind, string> = {
 
 export function SamenPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Origin-aware back: Samen can now be reached from Vandaag's own preview
+  // card as well as Meer, so "terug" must return wherever the user actually
+  // came from instead of always assuming Meer. Falls back to Meer for a
+  // direct link/refresh, where there's no navigation state to read.
+  const cameFrom = (location.state as { from?: "vandaag" | "meer" } | null)?.from === "vandaag" ? "vandaag" : "meer";
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const me = members.find((m) => m.userId === currentUserId);
@@ -34,7 +40,10 @@ export function SamenPage() {
 
   return (
     <div className="px-5 pt-14 pb-8">
-      <IconButton onClick={() => navigate("/meer")} label="Terug naar Meer" tone="card" className="mb-4"
+      <IconButton
+        onClick={() => navigate(cameFrom === "vandaag" ? "/vandaag" : "/meer")}
+        label={cameFrom === "vandaag" ? "Terug naar Vandaag" : "Terug naar Meer"}
+        tone="card" className="mb-4"
         icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
       <PageHeader title="Samen" subtitle="Wat is er vandaag gedaan?" />
 
