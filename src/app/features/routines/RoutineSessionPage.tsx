@@ -75,7 +75,12 @@ export function RoutineSessionPage() {
   // same as when everything's been checked off. Skipping the last task must
   // advance to the "klaar"-screen, not loop back onto an already-skipped card.
   const currentTask = openTasks.find((t) => !skipped.has(t.id)) ?? null;
-  const position = currentTask ? routine.tasks.findIndex((t) => t.id === currentTask.id) + 1 : 0;
+  // Scoped to this session's own remaining tasks, not the whole routine — the
+  // hero ring above already shows the whole-routine "{done}/{total} gedaan"
+  // ratio, so repeating that same total here would be redundant and, for a
+  // routine that's mostly done already, actively misleading ("4 van 4" for
+  // what's really the only card left to see).
+  const position = currentTask ? openTasks.findIndex((t) => t.id === currentTask.id) + 1 : 0;
 
   return (
     <div className="relative min-h-full flex flex-col px-5 pt-14 pb-10 overflow-hidden">
@@ -120,7 +125,7 @@ export function RoutineSessionPage() {
               exit={{ opacity: 0, y: -8 }}
               className="flex-1 flex flex-col justify-center gap-7">
               <Card className="px-6 py-8 flex flex-col items-center text-center gap-3">
-                <p className="text-xs font-medium text-muted-foreground">Taak {position} van {total}</p>
+                <p className="text-xs font-medium text-muted-foreground">Taak {position} van {openTasks.length}</p>
                 <h2 className="text-[1.7rem] leading-[1.15] text-foreground font-medium font-display">{currentTask.title}</h2>
                 {currentTask.description && (
                   <p className="text-sm text-muted-foreground leading-relaxed">{currentTask.description}</p>
