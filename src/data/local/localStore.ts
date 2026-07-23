@@ -157,10 +157,12 @@ export class LocalStore implements DataStore {
     this.persist();
   }
 
-  async claimTask(taskId: string, userId: string | null): Promise<Task> {
+  async claimTask(taskId: string, userId: string | null, trackPickup = false): Promise<Task> {
     const task = this.db.tasks.find((t) => t.id === taskId);
     if (!task) throw new Error(`Task not found: ${taskId}`);
     task.claimedById = userId ?? undefined;
+    if (!userId) task.pickedUpAt = undefined;
+    else if (trackPickup) task.pickedUpAt = new Date().toISOString();
     this.persist();
     return task;
   }

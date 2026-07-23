@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { isMissingShoppingColumn, mapList, shoppingItemUpdateRow } from "./supabaseStore";
+import { isMissingShoppingColumn, mapList, missingTaskColumns, shoppingItemUpdateRow } from "./supabaseStore";
 import { TaskSchema } from "../schemas";
 
 /**
@@ -74,5 +74,38 @@ describe("isMissingShoppingColumn", () => {
       code: "PGRST204",
       message: "Could not find the 'title' column of 'shopping_items' in the schema cache",
     })).toBe(false);
+  });
+});
+
+/**
+ * Regression guard: an earlier version of this fallback dropped the WHOLE
+ * started_at/checklist_items/picked_up_at trio whenever any one of them was
+ * reported missing — so a deployment where started_at/checklist_items were
+ * already migrated but picked_up_at wasn't would silently discard checklist
+ * data on every insert, not just skip the genuinely-missing column.
+ */
+describe("missingTaskColumns", () => {
+  it("names only the column the error actually reports, not its siblings", () => {
+    expect(missingTaskColumns({
+      code: "PGRST204",
+      message: "Could not find the 'picked_up_at' column of 'tasks' in the schema cache",
+    })).toEqual(["picked_up_at"]);
+  });
+
+  it("recognizes each of the optional tasks columns", () => {
+    for (const column of ["started_at", "checklist_items", "picked_up_at"]) {
+      expect(missingTaskColumns({
+        code: "PGRST204",
+        message: `Could not find the '${column}' column of 'tasks' in the schema cache`,
+      })).toEqual([column]);
+    }
+  });
+
+  it("returns nothing for an unrelated Supabase error", () => {
+    expect(missingTaskColumns({
+      code: "PGRST204",
+      message: "Could not find the 'title' column of 'tasks' in the schema cache",
+    })).toEqual([]);
+    expect(missingTaskColumns({ code: "23505", message: "duplicate key" })).toEqual([]);
   });
 });

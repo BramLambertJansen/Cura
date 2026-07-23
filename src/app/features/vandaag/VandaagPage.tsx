@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { Check, Moon, Pencil, Sun, Sunrise, X } from "lucide-react";
+import { Check, Moon, Pencil, Plus, Sun, Sunrise, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed, useRoutineViews, useTaskViews } from "../../../stores/useViews";
-import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen } from "../../../data/selectors";
+import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen, splitPickedUpToday } from "../../../data/selectors";
 import type { DagdeelGroup } from "../../../data/types";
 import { getGreeting } from "../../lib/format";
 import { stagger, fadeUp } from "../../lib/motion";
@@ -63,10 +63,14 @@ export function VandaagPage() {
   const totalPlanned = plannedOpen.length + plannedDone.length;
   const doneCount = plannedDone.length;
   const suggestions = toSuggestions(tasks).filter((t) => !isDismissed(t.id));
-  const dagdelen = toDagdelen(plannedOpen);
+  const { pickedUpToday, rest } = splitPickedUpToday(plannedOpen);
+  const dagdelen = toDagdelen(rest);
   const nuDagdeel = dagdeelForHour(new Date().getHours());
   const { dagdelenNow, dagdelenLater } = splitDagdelen(dagdelen, nuDagdeel);
   const laterCount = dagdelenLater.reduce((n, g) => n + g.tasks.length, 0);
+  // Never the first "Vandaag opgepakt" row: those rows get no onDismiss (no
+  // left-swipe postpone), so peeking one there would visually demonstrate a
+  // gesture that then does nothing on that exact row.
   const firstTaskId = dagdelenNow[0]?.tasks[0]?.id;
 
   const me = members.find((m) => m.userId === currentUserId);
@@ -176,7 +180,7 @@ export function VandaagPage() {
               <span className="text-xs font-semibold text-muted-foreground ml-auto">{plannedOpen.length} open</span>
             )}
           </div>
-          {!swipeHint.seen && plannedOpen.length > 0 && (
+          {!swipeHint.seen && dagdelen.length > 0 && (
             <div
               className="flex items-start gap-3 rounded-2xl px-4 py-3 mb-3"
               style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 36%, transparent)" }}>
@@ -199,13 +203,40 @@ export function VandaagPage() {
               text={allDone ? "Alles rond voor vandaag. Geniet van de rust." : "Niets op de planning. Geniet ervan."}
             />
           ) : (
-            <div className={`rounded-[1.6rem] p-4 ${CARD_CHROME}`} style={{ boxShadow: "var(--shadow-card)" }}>
-              <div className="space-y-5">
-                <AnimatePresence initial={false}>
-                  {dagdelenNow.map(renderDagdeelGroep)}
-                </AnimatePresence>
-              </div>
-            </div>
+            <>
+              {pickedUpToday.length > 0 && (
+                <div className={`rounded-[1.6rem] p-4 mb-3 ${CARD_CHROME}`} style={{ boxShadow: "var(--shadow-card)" }}>
+                  <div
+                    className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
+                    style={{ background: "color-mix(in srgb, var(--primary) 13%, transparent)" }}>
+                    <Plus size={11} aria-hidden="true" style={{ color: SAGE }} />
+                    <span className="text-[0.66rem] font-semibold tracking-wide uppercase" style={{ color: SAGE }}>
+                      Vandaag opgepakt
+                    </span>
+                  </div>
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {pickedUpToday.map((task) => (
+                      <TijdlijnTaakRij
+                        key={task.id}
+                        task={task}
+                        onToggle={() => toggleTask(task.id, !task.done)}
+                        onEdit={() => openEditTask(task.id)}
+                        peek={!swipeHint.seen && task.id === firstTaskId}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+              {dagdelenNow.length > 0 && (
+                <div className={`rounded-[1.6rem] p-4 ${CARD_CHROME}`} style={{ boxShadow: "var(--shadow-card)" }}>
+                  <div className="space-y-5">
+                    <AnimatePresence initial={false}>
+                      {dagdelenNow.map(renderDagdeelGroep)}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )}
+            </>
           )}
           {laterCount > 0 && (
             <div className="mt-3">

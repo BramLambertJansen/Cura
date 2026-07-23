@@ -32,6 +32,7 @@ interface TaskRow {
   bundle_id: string | null; claimed_by_id: string | null; planned: boolean;
   started_at: string | null;
   checklist_items: { id: string; title: string; checked: boolean }[];
+  picked_up_at: string | null;
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
 interface ShoppingItemRow {
@@ -87,6 +88,7 @@ function mapTask(r: TaskRow): Task {
     durationMin: r.duration_min ?? undefined, intervalDays: r.interval_days ?? undefined,
     dueDate: r.due_date ?? undefined, bundleId: r.bundle_id ?? undefined,
     claimedById: r.claimed_by_id ?? undefined, planned: r.planned,
+    pickedUpAt: r.picked_up_at ?? undefined,
     startedAt: r.started_at ?? undefined,
     checklistItems: r.checklist_items ?? [],
   });
@@ -123,22 +125,39 @@ function withoutNewShoppingColumns<T extends Partial<Record<(typeof NEW_SHOPPING
 }
 
 // Optional tasks columns added after the initial table (started_at,
-// checklist_items) — since migrations apply manually and can lag behind
-// deployed code, a request touching a not-yet-migrated column must degrade
-// instead of throwing (same reasoning/pattern as the shopping_items columns
-// above — kept as a second, table-scoped trio rather than a shared helper).
-const NEW_TASK_COLUMNS = ["started_at", "checklist_items"] as const;
+// checklist_items, picked_up_at) — since migrations apply manually and can lag
+// behind deployed code, a request touching a not-yet-migrated column must
+// degrade instead of throwing (same reasoning/pattern as the shopping_items
+// columns above — kept as a second, table-scoped trio rather than a shared helper).
+const NEW_TASK_COLUMNS = ["started_at", "checklist_items", "picked_up_at"] as const;
 
-export function isMissingTaskColumn(error: unknown): boolean {
+/**
+ * Which of NEW_TASK_COLUMNS a PGRST204 "column not found" error is actually
+ * naming — PostgREST reports one missing column per error, so this is never
+ * more than one entry, but callers must re-check after each retry (a second
+ * column can still be missing behind the first). NEVER used to justify
+ * dropping the whole trio for one column's absence — an earlier version of
+ * this fallback did exactly that and would silently discard started_at/
+ * checklist_items on an insert whose only real problem was a still-missing
+ * picked_up_at column (a deployment mid-migration-rollout).
+ */
+export function missingTaskColumns(error: unknown): (typeof NEW_TASK_COLUMNS)[number][] {
   const err = error as { code?: string; message?: string } | null | undefined;
-  if (err?.code !== "PGRST204" || typeof err.message !== "string") return false;
+  if (err?.code !== "PGRST204" || typeof err.message !== "string" || !err.message.includes("'tasks'")) return [];
   const message = err.message;
-  return NEW_TASK_COLUMNS.some((col) => message.includes(`'${col}'`)) && message.includes("'tasks'");
+  return NEW_TASK_COLUMNS.filter((col) => message.includes(`'${col}'`));
 }
 
-function withoutNewTaskColumns<T extends Partial<Record<(typeof NEW_TASK_COLUMNS)[number], unknown>>>(row: T): T {
+export function isMissingTaskColumn(error: unknown): boolean {
+  return missingTaskColumns(error).length > 0;
+}
+
+function withoutTaskColumns<T extends Partial<Record<(typeof NEW_TASK_COLUMNS)[number], unknown>>>(
+  row: T,
+  cols: readonly (typeof NEW_TASK_COLUMNS)[number][],
+): T {
   const clone = { ...row };
-  for (const col of NEW_TASK_COLUMNS) delete clone[col];
+  for (const col of cols) delete clone[col];
   return clone;
 }
 
@@ -346,7 +365,7 @@ export class SupabaseStore implements DataStore {
   }
 
   async createTask(householdId: string, input: CreateTaskInput): Promise<Task> {
-    const row: TaskRow = {
+    let row: TaskRow = {
       id: uid(), household_id: householdId, room_id: input.roomId ?? null, title: input.title,
       description: input.description ?? null,
       duration_min: input.durationMin ?? null, interval_days: input.intervalDays ?? null,
@@ -354,19 +373,25 @@ export class SupabaseStore implements DataStore {
       claimed_by_id: null, planned: input.planned ?? false,
       started_at: input.startedAt ?? null,
       checklist_items: input.checklistItems ?? [],
+      picked_up_at: null,
     };
-    const { error } = await supabase.from("tasks").insert(row);
-    if (error) {
-      if (!isMissingTaskColumn(error)) throw new Error(error.message);
-      const { error: retryError } = await supabase.from("tasks").insert(withoutNewTaskColumns(row));
-      if (retryError) throw new Error(retryError.message);
-      return mapTask({ ...row, started_at: null, checklist_items: [] });
+    // Each retry drops only the column(s) THIS error actually named — never
+    // the whole NEW_TASK_COLUMNS trio — so a lone still-missing column never
+    // takes a sibling that's already migrated down with it. Bounded by
+    // NEW_TASK_COLUMNS.length since a retry can reveal at most one new
+    // missing column per attempt.
+    for (let attempt = 0; attempt <= NEW_TASK_COLUMNS.length; attempt++) {
+      const { error } = await supabase.from("tasks").insert(row);
+      if (!error) return mapTask(row);
+      const missing = missingTaskColumns(error);
+      if (missing.length === 0) throw new Error(error.message);
+      row = withoutTaskColumns(row, missing);
     }
-    return mapTask(row);
+    throw new Error("Taak aanmaken mislukt: onverwacht veel ontbrekende kolommen op 'tasks'.");
   }
 
   async updateTask(taskId: string, patch: Partial<CreateTaskInput>): Promise<Task> {
-    const update: Partial<TaskRow> = {};
+    let update: Partial<TaskRow> = {};
     if (patch.title !== undefined) update.title = patch.title;
     if (patch.description !== undefined) update.description = patch.description ?? null;
     if (patch.roomId !== undefined) update.room_id = patch.roomId ?? null;
@@ -381,19 +406,20 @@ export class SupabaseStore implements DataStore {
     // skip that clear.
     if ("startedAt" in patch) update.started_at = patch.startedAt ?? null;
     if ("checklistItems" in patch) update.checklist_items = patch.checklistItems ?? [];
-    const { data, error } = await supabase.from("tasks").update(update).eq("id", taskId).select().single();
-    if (error) {
-      if (!isMissingTaskColumn(error)) throw new Error(error.message);
-      const retryUpdate = withoutNewTaskColumns(update);
-      const retryQuery = Object.keys(retryUpdate).length > 0
-        ? supabase.from("tasks").update(retryUpdate).eq("id", taskId).select().single()
+    for (let attempt = 0; attempt <= NEW_TASK_COLUMNS.length; attempt++) {
+      const query = Object.keys(update).length > 0
+        ? supabase.from("tasks").update(update).eq("id", taskId).select().single()
         : supabase.from("tasks").select("*").eq("id", taskId).single();
-      const { data: retryData, error: retryError } = await retryQuery;
-      if (retryError || !retryData) throw new Error(retryError?.message ?? `Task not found: ${taskId}`);
-      return mapTask(retryData as TaskRow);
+      const { data, error } = await query;
+      if (!error) {
+        if (!data) throw new Error(`Task not found: ${taskId}`);
+        return mapTask(data as TaskRow);
+      }
+      const missing = missingTaskColumns(error);
+      if (missing.length === 0) throw new Error(error.message);
+      update = withoutTaskColumns(update, missing);
     }
-    if (!data) throw new Error(`Task not found: ${taskId}`);
-    return mapTask(data as TaskRow);
+    throw new Error("Taak bijwerken mislukt: onverwacht veel ontbrekende kolommen op 'tasks'.");
   }
 
   async deleteTask(taskId: string): Promise<void> {
@@ -401,16 +427,32 @@ export class SupabaseStore implements DataStore {
     if (error) throw new Error(error.message);
   }
 
-  async claimTask(taskId: string, userId: string | null): Promise<Task> {
+  async claimTask(taskId: string, userId: string | null, trackPickup = false): Promise<Task> {
     let claimedById: string | null = null;
     if (userId) {
       const { data: taskData, error: taskError } = await supabase.from("tasks").select("household_id").eq("id", taskId).single();
       if (taskError || !taskData) throw new Error(`Task not found: ${taskId}`);
       claimedById = await this.memberIdFor(userId, (taskData as { household_id: string }).household_id);
     }
-    const { data, error } = await supabase.from("tasks").update({ claimed_by_id: claimedById }).eq("id", taskId).select().single();
-    if (error || !data) throw new Error(error?.message ?? `Task not found: ${taskId}`);
-    return mapTask(data as TaskRow);
+    // Unclaiming always clears picked_up_at. Claiming stamps it only when
+    // trackPickup is set (the explicit Huis pool-claim action) — the generic
+    // planned-auto-claim (createTask/updateTask) omits the key entirely so it
+    // never touches an existing value.
+    let update: Partial<TaskRow> = { claimed_by_id: claimedById };
+    if (!claimedById) update.picked_up_at = null;
+    else if (trackPickup) update.picked_up_at = new Date().toISOString();
+
+    for (let attempt = 0; attempt <= NEW_TASK_COLUMNS.length; attempt++) {
+      const { data, error } = await supabase.from("tasks").update(update).eq("id", taskId).select().single();
+      if (!error) {
+        if (!data) throw new Error(`Task not found: ${taskId}`);
+        return mapTask(data as TaskRow);
+      }
+      const missing = missingTaskColumns(error);
+      if (missing.length === 0) throw new Error(error.message);
+      update = withoutTaskColumns(update, missing);
+    }
+    throw new Error("Taak claimen mislukt: onverwacht veel ontbrekende kolommen op 'tasks'.");
   }
 
   // ── Completions ──────────────────────────────────────────────────────────
