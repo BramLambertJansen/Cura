@@ -61,7 +61,7 @@ export function SamenPage() {
                 <motion.div key={activityKey} variants={fadeUp} className="flex gap-3 items-stretch">
                   <div className="flex flex-col items-center pt-2 flex-shrink-0">
                     <div className="relative flex-shrink-0">
-                      <Avatar name={activity.doneBy} size={32} tone={mine ? "solid" : "soft"} />
+                      <Avatar name={mine ? "Jij" : activity.doneBy} size={32} tone={mine ? "solid" : "soft"} />
                       <span
                         aria-hidden="true"
                         className="absolute -bottom-0.5 -right-0.5 w-[15px] h-[15px] rounded-full flex items-center justify-center"
@@ -75,7 +75,7 @@ export function SamenPage() {
                     <Card>
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-foreground leading-snug">{activity.title}</p>
-                        <span className="text-xs font-semibold flex-shrink-0" style={{ color: SAGE }}>{activity.doneBy}</span>
+                        <span className="text-xs font-semibold flex-shrink-0" style={{ color: SAGE }}>{mine ? "Jij" : activity.doneBy}</span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {activity.room}{activity.doneAt && ` · ${new Date(activity.doneAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}`}
