@@ -12,6 +12,10 @@ export const KamerKaart = memo(function KamerKaart({
   const ic = roomIcon(room.iconKey);
   const c = room.color || ic.color;
   const openCount = room.openCount;
+  // A room with zero defined tasks has never had anything to finish — showing
+  // the same "alles gedaan" checkmark as a room that's truly cleared out would
+  // misrepresent a just-created, empty room as caught up.
+  const showDoneBadge = openCount === 0 && room.tasks.length > 0;
 
   return (
     <motion.button
@@ -21,7 +25,9 @@ export const KamerKaart = memo(function KamerKaart({
       aria-label={
         featured
           ? `${room.name}, verdient aandacht, ${openCount} ${openCount === 1 ? "taak" : "taken"} open`
-          : openCount > 0 ? `${room.name}, ${openCount} ${openCount === 1 ? "taak" : "taken"} open` : `${room.name}, alles gedaan`
+          : openCount > 0 ? `${room.name}, ${openCount} ${openCount === 1 ? "taak" : "taken"} open`
+          : showDoneBadge ? `${room.name}, alles gedaan`
+          : room.name
       }
       // bg-card-room = a hair of the illustrations' cream mixed into --card (token in theme.css).
       className={`w-full flex items-center text-left gap-4 pl-3 pr-5 py-3 rounded-3xl overflow-hidden relative bg-card-room focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${featured ? "border-2" : "border border-border/60"}`}
@@ -56,12 +62,12 @@ export const KamerKaart = memo(function KamerKaart({
               {openCount === 1 ? "taak" : "taken"}
             </span>
           </div>
-        ) : (
+        ) : showDoneBadge ? (
           <div className="w-6 h-6 rounded-full flex items-center justify-center" aria-hidden="true"
             style={{ background: `color-mix(in srgb, ${c} 8%, transparent)` }}>
             <Check size={11} strokeWidth={2.5} style={{ color: c, opacity: 0.65 }} />
           </div>
-        )}
+        ) : null}
         <ChevronRight size={15} className="text-muted-foreground/40" aria-hidden="true" />
       </div>
     </motion.button>
