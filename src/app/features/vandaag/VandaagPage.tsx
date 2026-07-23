@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { Check, Moon, Pencil, Sun, Sunrise } from "lucide-react";
+import { Check, Moon, Pencil, Sun, Sunrise, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen } from "../../../data/selectors";
@@ -10,6 +10,7 @@ import { getGreeting } from "../../lib/format";
 import { stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
+import { useSwipeHint } from "../../lib/useSwipeHint";
 import { SAGE } from "../../lib/constants";
 import { Avatar, CARD_CHROME, CollapsibleSection, IconButton, Kop, Leeg } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
@@ -36,6 +37,7 @@ export function VandaagPage() {
   const routines = useRoutineViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
+  const swipeHint = useSwipeHint();
   // The suggestions section collapses behind a chevron; open by default (an
   // established choice, unrelated to this restyle) so it reads as a calm,
   // glanceable list rather than a hidden peek. The two NEW collapsible
@@ -65,6 +67,7 @@ export function VandaagPage() {
   const nuDagdeel = dagdeelForHour(new Date().getHours());
   const { dagdelenNow, dagdelenLater } = splitDagdelen(dagdelen, nuDagdeel);
   const laterCount = dagdelenLater.reduce((n, g) => n + g.tasks.length, 0);
+  const firstTaskId = dagdelenNow[0]?.tasks[0]?.id;
 
   const me = members.find((m) => m.userId === currentUserId);
   // "Logboek" — vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag
@@ -111,6 +114,7 @@ export function VandaagPage() {
                     action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) },
                   });
                 }}
+                peek={!swipeHint.seen && task.id === firstTaskId}
               />
             ))}
           </AnimatePresence>
@@ -172,6 +176,22 @@ export function VandaagPage() {
               <span className="text-xs font-semibold text-muted-foreground ml-auto">{plannedOpen.length} open</span>
             )}
           </div>
+          {!swipeHint.seen && plannedOpen.length > 0 && (
+            <div
+              className="flex items-start gap-3 rounded-2xl px-4 py-3 mb-3"
+              style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 36%, transparent)" }}>
+              <p className="flex-1 text-xs text-foreground leading-relaxed">
+                Veeg een taak naar rechts om af te vinken, naar links om uit te stellen. Tik voor details.
+              </p>
+              <IconButton
+                size={8}
+                tone="card"
+                onClick={swipeHint.dismiss}
+                label="Hint sluiten"
+                icon={<X size={13} className="text-muted-foreground" aria-hidden="true" />}
+              />
+            </div>
+          )}
           {plannedOpen.length === 0 ? (
             <Leeg
               icon="🌿"

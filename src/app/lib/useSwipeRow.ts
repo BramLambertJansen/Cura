@@ -40,6 +40,7 @@ export function useSwipeRow({ onToggle, onDismiss, onSwipeRight }: { onToggle: (
 
   return {
     x,
+    reduceMotion,
     dragProps: {
       drag: reduceMotion ? (false as const) : ("x" as const),
       dragConstraints: { left: 0, right: 0 },
