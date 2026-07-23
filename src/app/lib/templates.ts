@@ -13,17 +13,6 @@ export interface TaskTemplate {
 
 export type TemplateCategory = "keuken" | "badkamer" | "woonkamer" | "slaapkamer" | "toilet" | "algemeen";
 
-export const TEMPLATE_CATEGORY_LABEL: Record<TemplateCategory, string> = {
-  keuken: "Keuken",
-  badkamer: "Badkamer",
-  woonkamer: "Woonkamer",
-  slaapkamer: "Slaapkamer",
-  toilet: "Toilet",
-  algemeen: "Algemeen",
-};
-
-export const TEMPLATE_CATEGORIES: TemplateCategory[] = ["keuken", "badkamer", "woonkamer", "slaapkamer", "toilet", "algemeen"];
-
 export const ROOM_TEMPLATES: Record<TemplateCategory, TaskTemplate[]> = {
   keuken: [
     { title: "Afwassen", durationMin: 10, intervalDays: 1 },
@@ -72,7 +61,7 @@ export const ROOM_TEMPLATES: Record<TemplateCategory, TaskTemplate[]> = {
   ],
 };
 
-/** Best-guess starting category for a room, from its icon — falls back to "algemeen" (still a full tab, just not auto-selected). */
+/** Best-guess category for a room, from its icon — falls back to "algemeen" for icon keys without a dedicated template list. */
 export function categoryForIconKey(iconKey: string): TemplateCategory {
   switch (iconKey) {
     case "utensils": return "keuken";

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Check, ChevronDown, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
-import { roomIcon, SAGE } from "../../lib/constants";
+import { roomIcon, SAGE, SHADOW } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
 import { PageHeader, HintBanner, Card, IconBadge, KeuzeChip, StatusBadge, Kop, CollapsibleSection } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
@@ -14,6 +14,7 @@ import { RoomHero } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
+import { ROOM_TEMPLATES, categoryForIconKey } from "../../lib/templates";
 
 type DurationFilter = "alles" | "kort" | "middel" | "lang";
 
@@ -33,10 +34,11 @@ const DURATION_LABELS: Record<DurationFilter, string> = {
 };
 
 export function HuisPage() {
-  const { openNewRoom, openEditRoom, openEditTask, openTemplates, openAddTask } = useSheets();
+  const { openNewRoom, openEditRoom, openEditTask, openAddTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const claimTask = useCuraStore((s) => s.claimTask);
   const updateTask = useCuraStore((s) => s.updateTask);
+  const createTasksFromTemplates = useCuraStore((s) => s.createTasksFromTemplates);
   // Swipe-right on a pool row both plans and claims the task. Planning an
   // unplanned task auto-claims it (useCuraStore.updateTask); a task that's
   // already planned but unclaimed (e.g. someone let go of it via "Laat los")
@@ -96,6 +98,13 @@ export function HuisPage() {
     const roomTasks = tasks.filter((t) => t.roomId === room.id && !isTaskDismissed(t.id));
     const open = roomTasks.filter((t) => !t.done);
     const done = roomTasks.filter((t) => t.done);
+    // Up to 2 one-tap suggestions from this room's template category, skipping
+    // anything already added (by title) so a suggestion disappears the moment
+    // it's used instead of staying around as a now-redundant offer.
+    const existingTitles = new Set(roomTasks.map((t) => t.title.trim().toLowerCase()));
+    const quickSuggestions = ROOM_TEMPLATES[categoryForIconKey(room.iconKey)]
+      .filter((t) => !existingTitles.has(t.title.trim().toLowerCase()))
+      .slice(0, 2);
 
     return (
       <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={spring}>
@@ -117,13 +126,10 @@ export function HuisPage() {
 
         <div className="px-5 pb-28 space-y-3">
           {roomTasks.length === 0 ? (
-            <Card onClick={() => openTemplates(room.id, room.iconKey)} className="flex flex-col items-center gap-3 py-10 px-6 text-center" ariaLabel="Snelle taken toevoegen aan deze kamer">
-              <IconBadge icon={<Sparkles size={20} />} size={44} />
-              <div>
-                <p className="text-sm font-semibold text-foreground">Voeg snelle taken toe</p>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[220px]">Kies uit een paar veelvoorkomende taken voor deze ruimte.</p>
-              </div>
-            </Card>
+            <div className="text-center pt-2 pb-4">
+              <EmptyIllustration />
+              <p className="text-sm text-muted-foreground mt-1">Nog geen taken in deze kamer.</p>
+            </div>
           ) : (
             <>
               <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
@@ -156,12 +162,24 @@ export function HuisPage() {
             </div>
             <span className="text-sm font-medium">Taak toevoegen aan {room.name}</span>
           </button>
-          {roomTasks.length > 0 && (
-            <button
-              onClick={() => openTemplates(room.id, room.iconKey)}
-              className="w-full text-center text-xs font-medium text-muted-foreground py-1 focus-ring rounded-lg">
-              Of kies uit snelle taken
-            </button>
+
+          {quickSuggestions.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground ml-1">Snel toevoegen</p>
+              {quickSuggestions.map((t) => (
+                <button
+                  key={t.title}
+                  onClick={() => createTasksFromTemplates(room.id, [t])}
+                  className="w-full flex items-center gap-3 bg-card rounded-2xl px-4 py-3 border border-border/60 focus-ring text-left"
+                  style={{ boxShadow: SHADOW }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-secondary">
+                    <Plus size={15} strokeWidth={2} aria-hidden="true" />
+                  </div>
+                  <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">{t.title}</span>
+                  {t.durationMin && <span className="text-xs text-muted-foreground flex-shrink-0">{t.durationMin} min</span>}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       </motion.div>
