@@ -65,7 +65,7 @@ export interface TaskView {
   doneBy?: string; // resolved member display name
   doneAt?: string; // formatted time of the completion, e.g. "08:42"
   claimedBy?: string; // resolved member display name ("ik pak dit")
-  claimedAt?: string; // raw ISO, for splitPickedUpToday's "Vandaag opgepakt" grouping — not for display
+  pickedUpAt?: string; // raw ISO, set only by the Huis pool-claim action — for splitPickedUpToday's "Vandaag opgepakt" grouping, not for display
   dueHint?: string; // soft: "Waarschijnlijk weer toe" / "Nog even goed"
   dueDate?: string; // raw ISO, for the reminder engine — not for display
   wekkerLabel?: string; // soft, calm label: "wo 2 jul, 15:00" (one-off) or "Wekker om 09:00" (recurring)

@@ -105,12 +105,16 @@ export const TaskSchema = z.object({
   dueDate: Iso.optional(), // "wekker": one-off = exact deadline (date+time); recurring = only HH:mm is read (daily reminder time)
   bundleId: Id.optional(), // belongs to a routine bundle (a grouping, see below)
   claimedById: Id.optional(), // "ik pak dit" — optional, never required
-  // When claimedById was last set — a raw fact (like dueDate/startedAt), not a
-  // display value itself. Lets Vandaag's "Vandaag opgepakt" grouping (see
-  // splitPickedUpToday in selectors.ts) tell a Huis-pool task claimed minutes
-  // ago apart from one that's been planned/claimed for days. Cleared alongside
-  // claimedById on unclaim.
-  claimedAt: Iso.optional(),
+  // Set ONLY by the explicit Huis pool-claim/unclaim action (useCuraStore's
+  // top-level `claimTask`, driven by HuisPage's plan/"Laat los" flow) — NOT by
+  // the generic planned-auto-claim inside createTask/updateTask (AddTaskSheet,
+  // EditTaskSheet, SuggestieRij's "Zet op mijn dag" all go through that path
+  // instead). That distinction is the whole point: without it, any roomId task
+  // planned from Vandaag would misread as "just grabbed from Huis". A raw
+  // fact, like dueDate/startedAt — not a display value. Cleared alongside
+  // claimedById on unclaim. Drives Vandaag's "Vandaag opgepakt" grouping (see
+  // splitPickedUpToday in selectors.ts).
+  pickedUpAt: Iso.optional(),
   planned: z.boolean().default(false), // is it on today's plan?
   // Manual/auto "I've started this" timestamp — a raw fact, like dueDate, NOT
   // a stored status. The human-readable status ("niet gestart"/"bezig"/

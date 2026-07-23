@@ -320,7 +320,10 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       if (!currentUserId) return;
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
-      const updated = await store.claimTask(taskId, claimed ? currentUserId : null);
+      // trackPickup: true — this action is exclusively Huis's pool-claim/"Laat
+      // los" flow (see HuisPage), never the generic planned-auto-claim below,
+      // so it's the one true "picked up from Huis" signal for Vandaag.
+      const updated = await store.claimTask(taskId, claimed ? currentUserId : null, true);
       if (claimed) toast(`Jij pakt "${task.title}"`, { description: "Anderen zien dat jij dit doet." });
       else toast(`"${task.title}" vrijgegeven`);
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });

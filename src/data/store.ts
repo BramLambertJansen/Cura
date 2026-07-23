@@ -142,8 +142,15 @@ export interface DataStore {
   createTask(householdId: string, input: CreateTaskInput): Promise<Task>;
   updateTask(taskId: string, patch: Partial<CreateTaskInput>): Promise<Task>;
   deleteTask(taskId: string): Promise<void>;
-  /** "Ik pak dit" — optional, reversible. Pass null to release. */
-  claimTask(taskId: string, userId: string | null): Promise<Task>;
+  /**
+   * "Ik pak dit" — optional, reversible. Pass null to release.
+   * `trackPickup`: stamp `pickedUpAt` when claiming — reserved for the
+   * explicit Huis pool-claim action (useCuraStore's top-level `claimTask`).
+   * The generic planned-auto-claim inside createTask/updateTask always omits
+   * it, so a task planned from Vandaag (AddTaskSheet/EditTaskSheet/
+   * SuggestieRij) never misreads as "picked up from Huis".
+   */
+  claimTask(taskId: string, userId: string | null, trackPickup?: boolean): Promise<Task>;
 
   // ── Completions (the core interaction + the event layer) ─────────────────────
   /** One tap to complete. Writes an event; done/visibility/density derive from it. */

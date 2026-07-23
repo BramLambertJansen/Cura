@@ -109,7 +109,7 @@ export function toTaskView(
     doneBy: done ? memberName(members, latest?.completedById) : undefined,
     doneAt: done && latest ? formatTime(latest.completedAt) : undefined,
     claimedBy: memberName(members, task.claimedById),
-    claimedAt: task.claimedAt,
+    pickedUpAt: task.pickedUpAt,
     dueHint: done ? undefined : dueHint(task, latest, now),
     dueDate: task.dueDate,
     wekkerLabel: wekkerLabel(task),
@@ -353,11 +353,17 @@ export function splitDagdelen(
  * Pulls tasks claimed today straight from a Huis room's pool out of the
  * normal dagdeel timeline into their own "Vandaag opgepakt" group — a
  * spontaneous pickup reads differently from something that was planned ahead,
- * and shouldn't be buried in "Overig" next to it. A task counts as a
- * same-day pickup only if it has a room (came from the Huis pool, not a
- * hand-added task), is claimed, and `claimedAt` falls on today's calendar day
- * (household-wide — Vandaag doesn't otherwise filter by who's viewing it).
- * `now` is injectable so tests don't depend on the real clock.
+ * and shouldn't be buried in "Overig" next to it.
+ *
+ * `pickedUpAt` (see TaskSchema) is stamped ONLY by the explicit Huis
+ * pool-claim/unclaim action, never by the generic planned-auto-claim that
+ * AddTaskSheet/EditTaskSheet/SuggestieRij's "Zet op mijn dag" go through — so
+ * it's already the right signal on its own; the `roomId` check on top just
+ * matches the ticket's literal "vanuit een Huis-kamer" scope, in case a
+ * roomless task is ever claimed from Huis's household-wide "Alle taken" list.
+ * "Today" is the household's local calendar day, not per-viewer (Vandaag
+ * doesn't otherwise filter by who's viewing it). `now` is injectable so tests
+ * don't depend on the real clock.
  */
 export function splitPickedUpToday(tasks: TaskView[], now = Date.now()): { pickedUpToday: TaskView[]; rest: TaskView[] } {
   const todayStart = new Date(now);
@@ -366,8 +372,8 @@ export function splitPickedUpToday(tasks: TaskView[], now = Date.now()): { picke
   const pickedUpToday: TaskView[] = [];
   const rest: TaskView[] = [];
   for (const t of tasks) {
-    const claimedToday = !!t.roomId && !!t.claimedBy && !!t.claimedAt && new Date(t.claimedAt).getTime() >= todayStartMs;
-    (claimedToday ? pickedUpToday : rest).push(t);
+    const pickedUpTodayFlag = !!t.roomId && !!t.pickedUpAt && new Date(t.pickedUpAt).getTime() >= todayStartMs;
+    (pickedUpTodayFlag ? pickedUpToday : rest).push(t);
   }
   return { pickedUpToday, rest };
 }

@@ -68,7 +68,10 @@ export function VandaagPage() {
   const nuDagdeel = dagdeelForHour(new Date().getHours());
   const { dagdelenNow, dagdelenLater } = splitDagdelen(dagdelen, nuDagdeel);
   const laterCount = dagdelenLater.reduce((n, g) => n + g.tasks.length, 0);
-  const firstTaskId = pickedUpToday[0]?.id ?? dagdelenNow[0]?.tasks[0]?.id;
+  // Never the first "Vandaag opgepakt" row: those rows get no onDismiss (no
+  // left-swipe postpone), so peeking one there would visually demonstrate a
+  // gesture that then does nothing on that exact row.
+  const firstTaskId = dagdelenNow[0]?.tasks[0]?.id;
 
   const me = members.find((m) => m.userId === currentUserId);
   // "Logboek" — vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag
@@ -177,7 +180,7 @@ export function VandaagPage() {
               <span className="text-xs font-semibold text-muted-foreground ml-auto">{plannedOpen.length} open</span>
             )}
           </div>
-          {!swipeHint.seen && plannedOpen.length > 0 && (
+          {!swipeHint.seen && dagdelen.length > 0 && (
             <div
               className="flex items-start gap-3 rounded-2xl px-4 py-3 mb-3"
               style={{ background: "color-mix(in srgb, var(--accent) 20%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 36%, transparent)" }}>

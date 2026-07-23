@@ -541,22 +541,22 @@ describe("Vandaag opgepakt — same-day Huis-pool claims, split from the timelin
   const todayEarlier = new Date(2024, 0, 2, 8, 0, 0).toISOString();
   const yesterday = new Date(2024, 0, 1, 20, 0, 0).toISOString();
 
-  it("pulls out a room task claimed today", () => {
-    const picked = taskView({ id: "t1", roomId: "r1", claimedBy: "Bram", claimedAt: todayEarlier });
+  it("pulls out a room task picked up from Huis today", () => {
+    const picked = taskView({ id: "t1", roomId: "r1", claimedBy: "Bram", pickedUpAt: todayEarlier });
     const { pickedUpToday, rest } = splitPickedUpToday([picked], now);
     expect(pickedUpToday.map((t) => t.id)).toEqual(["t1"]);
     expect(rest).toEqual([]);
   });
 
-  it("leaves a room task claimed on an earlier day in rest", () => {
-    const oldClaim = taskView({ id: "t1", roomId: "r1", claimedBy: "Bram", claimedAt: yesterday });
+  it("leaves a room task picked up from Huis on an earlier day in rest", () => {
+    const oldClaim = taskView({ id: "t1", roomId: "r1", claimedBy: "Bram", pickedUpAt: yesterday });
     const { pickedUpToday, rest } = splitPickedUpToday([oldClaim], now);
     expect(pickedUpToday).toEqual([]);
     expect(rest.map((t) => t.id)).toEqual(["t1"]);
   });
 
-  it("never treats a hand-added task (no roomId) as picked up, even if claimed today", () => {
-    const noRoom = taskView({ id: "t1", claimedBy: "Bram", claimedAt: todayEarlier });
+  it("never treats a hand-added task (no roomId) as picked up, even with a same-day pickup timestamp", () => {
+    const noRoom = taskView({ id: "t1", claimedBy: "Bram", pickedUpAt: todayEarlier });
     const { pickedUpToday, rest } = splitPickedUpToday([noRoom], now);
     expect(pickedUpToday).toEqual([]);
     expect(rest.map((t) => t.id)).toEqual(["t1"]);
@@ -565,6 +565,13 @@ describe("Vandaag opgepakt — same-day Huis-pool claims, split from the timelin
   it("leaves an unclaimed room task in rest", () => {
     const unclaimed = taskView({ id: "t1", roomId: "r1" });
     const { pickedUpToday, rest } = splitPickedUpToday([unclaimed], now);
+    expect(pickedUpToday).toEqual([]);
+    expect(rest.map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("leaves a room task claimed today via the generic auto-claim (no pickedUpAt) in rest — e.g. planned from a Vandaag suggestion, not claimed via Huis", () => {
+    const plannedFromSuggestion = taskView({ id: "t1", roomId: "r1", claimedBy: "Bram" });
+    const { pickedUpToday, rest } = splitPickedUpToday([plannedFromSuggestion], now);
     expect(pickedUpToday).toEqual([]);
     expect(rest.map((t) => t.id)).toEqual(["t1"]);
   });
