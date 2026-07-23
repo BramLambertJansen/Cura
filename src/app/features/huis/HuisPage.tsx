@@ -75,6 +75,9 @@ export function HuisPage() {
   );
   const openTasks = filteredTasks.filter((t) => !t.done);
   const doneTasks = filteredTasks.filter((t) => t.done);
+  // Total across every room, unfiltered — a stable at-a-glance household load,
+  // not the (room/duration-)filtered subset currently shown in the list below.
+  const totalOpenCount = useMemo(() => visibleTasks.filter((t) => !t.done).length, [visibleTasks]);
   const activeFilterCount = (roomFilter !== "alles" ? 1 : 0) + (durationFilter !== "alles" ? 1 : 0);
   const filterSummary = activeFilterCount === 0
     ? "Filter op kamer en duur"
@@ -166,7 +169,7 @@ export function HuisPage() {
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-2 ml-1">
           <Kop>Alle taken</Kop>
-          {openTasks.length > 0 && <span className="text-xs font-semibold text-muted-foreground ml-auto">{openTasks.length} open</span>}
+          {totalOpenCount > 0 && <span className="text-xs font-semibold ml-auto" style={{ color: SAGE }}>{totalOpenCount} open</span>}
         </div>
         <div className="space-y-4">
           <div className="rounded-2xl bg-card-active border border-border/60 overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
