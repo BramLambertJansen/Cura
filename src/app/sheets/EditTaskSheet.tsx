@@ -1,12 +1,18 @@
 import { useState } from "react";
+import { toast } from "sonner";
+import { Check, RotateCcw } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomViews, useTaskView } from "../../stores/useViews";
-import { Sheet, SheetHeader, VeldInput, DubbelKnop, VerwijderKnop } from "../components/shared";
+import { Sheet, SheetHeader, VeldInput, DubbelKnop, VerwijderKnop, PrimaryButton } from "../components/shared";
+import { SAGE } from "../lib/constants";
 import { TaskFormFields, buildDueDate, extractTijd, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
 
+const DAY_MS = 86_400_000;
+
 export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
   const task = useTaskView(taskId);
+  const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
   const deleteTask = useCuraStore((s) => s.deleteTask);
   const rooms = useRoomViews();
@@ -64,11 +70,45 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
     onClose();
   }
 
+  async function toggleDone() {
+    await toggleTask(taskId, !task!.done);
+    onClose();
+  }
+
+  // Only a one-off task with a concrete deadline has a meaningful "morgen" to move
+  // to — a recurring wekker only encodes a time-of-day, not a specific date
+  // (src/data/reminders.ts), so bumping its dueDate by a day wouldn't change anything.
+  const postponable = !task.done && !task.intervalDays && !!task.dueDate;
+
+  async function postpone() {
+    const nextDueDate = new Date(new Date(task!.dueDate!).getTime() + DAY_MS).toISOString();
+    await updateTask(taskId, { dueDate: nextDueDate });
+    toast("Verplaatst naar morgen.", { description: `${task!.title} staat morgen weer klaar.` });
+    onClose();
+  }
+
   return (
     <Sheet onClose={onClose} tall>
       <SheetHeader title="Taak bewerken" onClose={onClose} />
       <VeldInput value={title} onChange={setTitle} onEnter={save} placeholder="Wat moet er gebeuren?" />
       <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">Pas de taak aan en sla op.</p>
+
+      <div className="mb-5 space-y-1.5">
+        <PrimaryButton
+          icon={task.done ? <RotateCcw size={16} aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
+          onClick={toggleDone}>
+          {task.done ? "Terugzetten" : "Afvinken"}
+        </PrimaryButton>
+        {postponable && (
+          <button
+            type="button"
+            onClick={postpone}
+            className="w-full py-2.5 text-center text-sm font-medium rounded-lg focus-ring"
+            style={{ color: SAGE }}>
+            Uitstellen naar morgen
+          </button>
+        )}
+      </div>
 
       <TaskFormFields
         rooms={rooms}
