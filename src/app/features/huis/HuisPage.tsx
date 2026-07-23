@@ -2,12 +2,12 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { ChevronDown, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
-import { roomIcon } from "../../lib/constants";
+import { roomIcon, SAGE } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { PageHeader, HintBanner, Card, IconBadge, KeuzeChip, StatusBadge, Kop } from "../../components/shared";
+import { PageHeader, HintBanner, Card, IconBadge, KeuzeChip, StatusBadge, Kop, CollapsibleSection } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { RoomHero } from "../../components/RoomThumb";
@@ -55,6 +55,7 @@ export function HuisPage() {
   const [roomFilter, setRoomFilter] = useState("alles");
   const [durationFilter, setDurationFilter] = useState<DurationFilter>("alles");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [afgerondOpen, setAfgerondOpen] = useState(false);
 
   // Room detail is a real route (/huis/:roomId) so the OS/browser back gesture
   // returns to this page instead of leaving Huis entirely.
@@ -237,18 +238,31 @@ export function HuisPage() {
               </div>
             </Card>
           ) : (
-            <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
-              {openTasks.map((t) => (
-                <motion.div key={t.id} variants={fadeUp}>
-                  <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onPlan={() => planTask(t)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
+            <>
+              {openTasks.length > 0 && (
+                <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
+                  {openTasks.map((t) => (
+                    <motion.div key={t.id} variants={fadeUp}>
+                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onPlan={() => planTask(t)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-              {doneTasks.map((t) => (
-                <motion.div key={t.id} variants={fadeUp}>
-                  <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
-                </motion.div>
-              ))}
-            </motion.div>
+              )}
+              {doneTasks.length > 0 && (
+                <CollapsibleSection
+                  title="Afgerond"
+                  count={doneTasks.length}
+                  icon={<Check size={13} style={{ color: SAGE }} aria-hidden="true" />}
+                  open={afgerondOpen}
+                  onToggle={() => setAfgerondOpen((v) => !v)}>
+                  <div className="space-y-3">
+                    {doneTasks.map((t) => (
+                      <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
+                    ))}
+                  </div>
+                </CollapsibleSection>
+              )}
+            </>
           )}
         </div>
       </section>
