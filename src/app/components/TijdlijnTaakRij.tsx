@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { motion, useTransform } from "motion/react";
+import { memo, useEffect } from "react";
+import { animate, motion, useTransform } from "motion/react";
 import { Bell, Check, ListChecks, RefreshCw, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE } from "../lib/constants";
@@ -17,15 +17,25 @@ import { Checkbox } from "./shared";
  * thing across Vandaag/Huis/Taken; only the visual shell differs here.
  */
 export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
-  task, onToggle, onEdit, onDismiss,
+  task, onToggle, onEdit, onDismiss, peek,
 }: {
   task: TaskView;
   onToggle: () => void;
   onEdit?: () => void;
   onDismiss?: () => void;
+  /** One-time "peek" nudge (22px right and back) to hint that the row is swipeable — first row only, until the swipe hint is dismissed. */
+  peek?: boolean;
 }) {
   const claimed = !!task.claimedBy;
-  const { x, dragProps } = useSwipeRow({ onToggle, onDismiss });
+  const { x, dragProps, reduceMotion } = useSwipeRow({ onToggle, onDismiss });
+
+  useEffect(() => {
+    if (!peek || reduceMotion) return;
+    const controls = animate(x, [0, 22, 0], { duration: 0.7, ease: "easeInOut" });
+    return () => controls.stop();
+    // Intentionally mount-only: a one-time nudge, not a reaction to prop changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const revealOpacityRight = useTransform(x, [10, 48], [0, 1]);
   const revealScaleRight = useTransform(x, [10, 60], [0.6, 1]);
   const revealOpacityLeft = useTransform(x, [-48, -10], [1, 0]);
