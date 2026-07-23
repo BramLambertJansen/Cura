@@ -70,7 +70,11 @@ export function RoutineSessionPage() {
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
   const openTasks = routine.tasks.filter((t) => !t.done);
-  const currentTask = openTasks.find((t) => !skipped.has(t.id)) ?? openTasks[0] ?? null;
+  // No `?? openTasks[0]` fallback here: once every remaining open task has
+  // been skipped, there is no current task left to show — the session ends,
+  // same as when everything's been checked off. Skipping the last task must
+  // advance to the "klaar"-screen, not loop back onto an already-skipped card.
+  const currentTask = openTasks.find((t) => !skipped.has(t.id)) ?? null;
   const position = currentTask ? routine.tasks.findIndex((t) => t.id === currentTask.id) + 1 : 0;
 
   return (
