@@ -323,6 +323,31 @@ export function toDagdelen(tasks: TaskView[]): DagdeelGroup[] {
     .filter((g) => g.tasks.length > 0);
 }
 
+const DAGDEEL_ORDER: Record<"ochtend" | "middag" | "avond", number> = { ochtend: 0, middag: 1, avond: 2 };
+
+/**
+ * Splits `toDagdelen`'s groups around the current dagdeel so Vandaag can keep
+ * only what's relevant to now front and center, tucking dagdelen that are
+ * still ahead of us behind a "Later vandaag" toggle. `overig` carries no time
+ * signal (no dueDate at all), so it never counts as "later" — it always stays
+ * in `dagdelenNow`.
+ */
+export function splitDagdelen(
+  dagdelen: DagdeelGroup[],
+  nuDagdeel: "ochtend" | "middag" | "avond",
+): { dagdelenNow: DagdeelGroup[]; dagdelenLater: DagdeelGroup[] } {
+  const dagdelenNow: DagdeelGroup[] = [];
+  const dagdelenLater: DagdeelGroup[] = [];
+  for (const g of dagdelen) {
+    if (g.key !== "overig" && DAGDEEL_ORDER[g.key] > DAGDEEL_ORDER[nuDagdeel]) {
+      dagdelenLater.push(g);
+    } else {
+      dagdelenNow.push(g);
+    }
+  }
+  return { dagdelenNow, dagdelenLater };
+}
+
 // ─── Shopping list ────────────────────────────────────────────────────────────
 
 const SHOPPING_CATEGORIES: { key: ShoppingCategoryKey; label: string; matches: string[] }[] = [
