@@ -107,6 +107,7 @@ export function toTaskView(
     planned: task.planned,
     done,
     doneBy: done ? memberName(members, latest?.completedById) : undefined,
+    doneById: done ? latest?.completedById : undefined,
     doneAt: done && latest ? formatTime(latest.completedAt) : undefined,
     claimedBy: memberName(members, task.claimedById),
     pickedUpAt: task.pickedUpAt,
