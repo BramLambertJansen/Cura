@@ -12,7 +12,6 @@ export interface SheetActions {
   openEditRoutine: (bundleId: string) => void;
   openHousehold: () => void;
   openProfiel: () => void;
-  openTemplates: (roomId: string, roomIconKey: string) => void;
 }
 
 export const SheetContext = createContext<SheetActions | null>(null);

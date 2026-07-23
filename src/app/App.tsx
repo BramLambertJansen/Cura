@@ -49,7 +49,6 @@ const EditRoutineSheet = lazy(() => import("./sheets/EditRoutineSheet").then((m)
 const HouseholdSheet = lazy(() => import("./sheets/HouseholdSheet").then((m) => ({ default: m.HouseholdSheet })));
 const ProfielSheet = lazy(() => import("./sheets/ProfielSheet").then((m) => ({ default: m.ProfielSheet })));
 const WachtwoordSheet = lazy(() => import("./sheets/WachtwoordSheet").then((m) => ({ default: m.WachtwoordSheet })));
-const TemplatesSheet = lazy(() => import("./sheets/TemplatesSheet").then((m) => ({ default: m.TemplatesSheet })));
 
 function LazyOverlay({ children }: { children: ReactNode }) {
   return <Suspense fallback={null}>{children}</Suspense>;
@@ -113,7 +112,6 @@ function MainShell() {
   const [showHousehold, setShowHousehold] = useState(false);
   const [showProfiel, setShowProfiel] = useState(false);
   const [showWachtwoord, setShowWachtwoord] = useState(false);
-  const [templatesFor, setTemplatesFor] = useState<{ roomId: string; roomIconKey: string } | null>(null);
 
   const sheetActions: SheetActions = useMemo(
     () => ({
@@ -126,7 +124,6 @@ function MainShell() {
       openEditRoutine: (bundleId) => setEditingRoutineId(bundleId),
       openHousehold: () => setShowHousehold(true),
       openProfiel: () => setShowProfiel(true),
-      openTemplates: (roomId, roomIconKey) => setTemplatesFor({ roomId, roomIconKey }),
     }),
     [],
   );
@@ -189,15 +186,6 @@ function MainShell() {
           {editingRoutineId && <LazyOverlay key="er"><EditRoutineSheet bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} /></LazyOverlay>}
           {showNewRoom && <LazyOverlay key="room"><NewRoomSheet onClose={() => setShowNewRoom(false)} /></LazyOverlay>}
           {editingRoomId && <LazyOverlay key="edit"><EditRoomSheet roomId={editingRoomId} onClose={() => setEditingRoomId(null)} /></LazyOverlay>}
-          {templatesFor && (
-            <LazyOverlay key="templates">
-              <TemplatesSheet
-                roomId={templatesFor.roomId}
-                roomIconKey={templatesFor.roomIconKey}
-                onClose={() => setTemplatesFor(null)}
-              />
-            </LazyOverlay>
-          )}
           {showHousehold && <LazyOverlay key="hs"><HouseholdSheet onClose={() => setShowHousehold(false)} /></LazyOverlay>}
           {showProfiel && (
             <LazyOverlay key="prof">
