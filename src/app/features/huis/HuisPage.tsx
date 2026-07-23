@@ -78,6 +78,12 @@ export function HuisPage() {
   // Total across every room, unfiltered — a stable at-a-glance household load,
   // not the (room/duration-)filtered subset currently shown in the list below.
   const totalOpenCount = useMemo(() => visibleTasks.filter((t) => !t.done).length, [visibleTasks]);
+  // Most-neglected room first, so the grid surfaces what needs attention instead
+  // of reading every room as equally important. openCount alone (no fabricated
+  // "days since" claim — CLAUDE.md §2 honesty-over-precision) is a real, already-
+  // derived signal; a room only gets featured if it actually has open tasks.
+  const sortedRooms = useMemo(() => [...rooms].sort((a, b) => b.openCount - a.openCount), [rooms]);
+  const featuredRoomId = sortedRooms[0]?.openCount > 0 ? sortedRooms[0].id : undefined;
   const activeFilterCount = (roomFilter !== "alles" ? 1 : 0) + (durationFilter !== "alles" ? 1 : 0);
   const filterSummary = activeFilterCount === 0
     ? "Filter op kamer en duur"
@@ -279,9 +285,9 @@ export function HuisPage() {
           </div>
         )}
         <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
-          {rooms.map((r) => (
+          {sortedRooms.map((r) => (
             <motion.div key={r.id} variants={fadeUp}>
-              <KamerKaart room={r} onClick={() => navigate(`/huis/${r.id}`)} />
+              <KamerKaart room={r} featured={r.id === featuredRoomId} onClick={() => navigate(`/huis/${r.id}`)} />
             </motion.div>
           ))}
           <motion.div variants={fadeUp}>

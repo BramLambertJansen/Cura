@@ -357,9 +357,9 @@ export function DesignSystemPage() {
           </div>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Kamerkaart — full-bleed aquarel links die naar de kaart vervaagt; valt terug op een getinte wash met lijn-icoon als er geen kunst is</p>
+          <p className="text-xs text-muted-foreground mb-2">Kamerkaart — full-bleed aquarel links die naar de kaart vervaagt; valt terug op een getinte wash met lijn-icoon als er geen kunst is. De `featured`-variant markeert de kamer die op Huis het meest aandacht verdient met een badge + sterkere rand/schaduw</p>
           <div className="space-y-3">
-            <KamerKaart room={demoRoom} onClick={() => {}} />
+            <KamerKaart room={demoRoom} featured onClick={() => {}} />
             <KamerKaart room={demoRoomNoArt} onClick={() => {}} />
           </div>
         </div>
