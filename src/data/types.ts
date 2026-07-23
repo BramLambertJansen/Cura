@@ -63,6 +63,7 @@ export interface TaskView {
   planned: boolean;
   done: boolean; // derived: completed within the current cycle
   doneBy?: string; // resolved member display name
+  doneById?: string; // raw member id, for "is this mine?" checks — never displayed
   doneAt?: string; // formatted time of the completion, e.g. "08:42"
   claimedBy?: string; // resolved member display name ("ik pak dit")
   pickedUpAt?: string; // raw ISO, set only by the Huis pool-claim action — for splitPickedUpToday's "Vandaag opgepakt" grouping, not for display

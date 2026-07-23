@@ -260,27 +260,35 @@ export function VandaagPage() {
               open={afgerondOpen}
               onToggle={() => setAfgerondOpen((v) => !v)}>
               <div className="space-y-1.5">
-                {plannedDone.map((task) => (
-                  <div key={task.id} className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => toggleTask(task.id, false)}
-                      aria-label={`${task.title} als niet gedaan markeren`}
-                      className="flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-card text-left focus-ring">
-                      <span className="w-[19px] h-[19px] rounded-full flex items-center justify-center flex-shrink-0" style={{ background: SAGE }} aria-hidden="true">
-                        <Check size={10} strokeWidth={3.4} className="text-white" />
-                      </span>
-                      <span className="flex-1 min-w-0 text-sm text-muted-foreground line-through truncate">{task.title}</span>
-                      <span className="text-[0.66rem] flex-shrink-0" style={{ color: "color-mix(in srgb, var(--muted-foreground) 60%, transparent)" }}>terug</span>
-                    </button>
-                    <IconButton
-                      size={8}
-                      tone="card"
-                      onClick={() => openEditTask(task.id)}
-                      label={`${task.title} bewerken`}
-                      icon={<Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
-                    />
-                  </div>
-                ))}
+                {plannedDone.map((task) => {
+                  const mine = !!task.doneById && task.doneById === me?.id;
+                  return (
+                    <div key={task.id} className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => toggleTask(task.id, false)}
+                        aria-label={`${task.title} als niet gedaan markeren`}
+                        className="flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-card text-left focus-ring">
+                        <Avatar name={mine ? "Jij" : task.doneBy ?? "?"} size={28} tone={mine ? "solid" : "soft"} serif />
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-sm text-muted-foreground line-through truncate">{task.title}</span>
+                          {task.doneBy && task.doneAt && (
+                            <span className="block text-[0.68rem] text-muted-foreground/80 truncate">
+                              {mine ? "Jij" : task.doneBy} · {task.doneAt}
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-[0.66rem] flex-shrink-0 self-start" style={{ color: "color-mix(in srgb, var(--muted-foreground) 60%, transparent)" }}>terug</span>
+                      </button>
+                      <IconButton
+                        size={8}
+                        tone="card"
+                        onClick={() => openEditTask(task.id)}
+                        label={`${task.title} bewerken`}
+                        icon={<Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </CollapsibleSection>
           </section>
