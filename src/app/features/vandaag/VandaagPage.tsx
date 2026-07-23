@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { Check, Moon, Pencil, Plus, Sun, Sunrise, X } from "lucide-react";
+import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sun, Sunrise, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen, splitPickedUpToday } from "../../../data/selectors";
@@ -12,7 +13,7 @@ import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
 import { useSwipeHint } from "../../lib/useSwipeHint";
 import { SAGE } from "../../lib/constants";
-import { Avatar, CARD_CHROME, CollapsibleSection, IconButton, Kop, Leeg } from "../../components/shared";
+import { Avatar, Card, CARD_CHROME, CollapsibleSection, IconBadge, IconButton, Kop, Leeg } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
 import { TijdlijnTaakRij } from "../../components/TijdlijnTaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
@@ -28,6 +29,7 @@ const DAGDEEL_ICON: Record<DagdeelGroup["key"], typeof Sunrise> = {
 };
 
 export function VandaagPage() {
+  const navigate = useNavigate();
   const { openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
@@ -40,12 +42,11 @@ export function VandaagPage() {
   const swipeHint = useSwipeHint();
   // The suggestions section collapses behind a chevron; open by default (an
   // established choice, unrelated to this restyle) so it reads as a calm,
-  // glanceable list rather than a hidden peek. The two NEW collapsible
-  // sections below (afgerond, logboek) start closed — secondary information
-  // with no prior default to preserve.
+  // glanceable list rather than a hidden peek. The collapsible section below
+  // (afgerond) starts closed — secondary information with no prior default
+  // to preserve.
   const [suggestiesOpen, setSuggestiesOpen] = useState(false);
   const [afgerondOpen, setAfgerondOpen] = useState(false);
-  const [logboekOpen, setLogboekOpen] = useState(false);
   const [laterOpen, setLaterOpen] = useState(false);
 
   // Re-render roughly once a minute so `nuDagdeel` below (derived from
@@ -74,9 +75,9 @@ export function VandaagPage() {
   const firstTaskId = dagdelenNow[0]?.tasks[0]?.id;
 
   const me = members.find((m) => m.userId === currentUserId);
-  // "Logboek" — vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag
-  // (zodat een taak die dagen geleden binnen zijn interval is afgevinkt niet
-  // leest alsof die vanochtend gebeurde), nieuwste eerst.
+  // Vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag (zodat een
+  // taak die dagen geleden binnen zijn interval is afgevinkt niet leest alsof die
+  // vanochtend gebeurde), nieuwste eerst — feeds the Samen preview card below.
   const sinceIso = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -84,6 +85,13 @@ export function VandaagPage() {
   }, []);
   // toActivityFeed (selectors.ts) already sorts newest-first by completedAt — no re-sort needed here.
   const logboek = useActivityFeed(sinceIso);
+  // The Samen preview card's live signal: the first (newest) completion today
+  // that wasn't the current user's own — a confirmed housemate id, not just
+  // "not mine", so an unresolved/unknown doer never counts as a housemate.
+  const housemateActivity = logboek.find((a) => !!a.doneById && a.doneById !== me?.id);
+  const samenSubtitle = housemateActivity
+    ? `${housemateActivity.doneBy} rondde ${housemateActivity.title.toLowerCase()} af`
+    : "Zie wat huisgenoten vandaag deden";
 
   const renderDagdeelGroep = (groep: DagdeelGroup) => {
     const Icon = DAGDEEL_ICON[groep.key];
@@ -331,30 +339,21 @@ export function VandaagPage() {
           </motion.div>
         </section>
 
-        {logboek.length > 0 && (
-          <section>
-            <CollapsibleSection title="Logboek" count={logboek.length} open={logboekOpen} onToggle={() => setLogboekOpen((v) => !v)}>
-              <div className="space-y-2" aria-live="polite">
-                {logboek.map((a) => {
-                  const mine = !!a.doneById && a.doneById === me?.id;
-                  return (
-                    <div key={`${a.taskId}-${a.doneAt}`} className="flex items-start gap-2.5 px-2.5 py-2 rounded-xl bg-card">
-                      <Avatar name={mine ? "Jij" : a.doneBy} size={28} tone={mine ? "solid" : "soft"} serif />
-                      <div className="min-w-0">
-                        <p className="text-sm text-foreground leading-snug">
-                          <span className="font-semibold">{mine ? "Jij" : a.doneBy}</span> {mine ? "hebt" : "heeft"} {a.title.toLowerCase()} gedaan
-                        </p>
-                        <p className="text-[0.68rem] text-muted-foreground mt-0.5">
-                          {new Date(a.doneAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CollapsibleSection>
-          </section>
-        )}
+        <section>
+          <Card onClick={() => navigate("/samen", { state: { from: "vandaag" } })} className="flex items-center gap-3.5 px-4 py-4" ariaLabel="Samen — wat huisgenoten vandaag deden">
+            <IconBadge icon={<Heart size={16} />} size={36} />
+            <span className="flex-1 min-w-0 text-left">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-sm font-semibold text-foreground">Samen</span>
+                {!!housemateActivity && (
+                  <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: SAGE }} />
+                )}
+              </span>
+              <span className="block text-xs text-muted-foreground mt-0.5 truncate">{samenSubtitle}</span>
+            </span>
+            <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
+          </Card>
+        </section>
       </div>
     </div>
   );
