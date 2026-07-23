@@ -32,6 +32,7 @@ interface TaskRow {
   bundle_id: string | null; claimed_by_id: string | null; planned: boolean;
   started_at: string | null;
   checklist_items: { id: string; title: string; checked: boolean }[];
+  claimed_at: string | null;
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
 interface ShoppingItemRow {
@@ -87,6 +88,7 @@ function mapTask(r: TaskRow): Task {
     durationMin: r.duration_min ?? undefined, intervalDays: r.interval_days ?? undefined,
     dueDate: r.due_date ?? undefined, bundleId: r.bundle_id ?? undefined,
     claimedById: r.claimed_by_id ?? undefined, planned: r.planned,
+    claimedAt: r.claimed_at ?? undefined,
     startedAt: r.started_at ?? undefined,
     checklistItems: r.checklist_items ?? [],
   });
@@ -123,11 +125,11 @@ function withoutNewShoppingColumns<T extends Partial<Record<(typeof NEW_SHOPPING
 }
 
 // Optional tasks columns added after the initial table (started_at,
-// checklist_items) — since migrations apply manually and can lag behind
-// deployed code, a request touching a not-yet-migrated column must degrade
-// instead of throwing (same reasoning/pattern as the shopping_items columns
-// above — kept as a second, table-scoped trio rather than a shared helper).
-const NEW_TASK_COLUMNS = ["started_at", "checklist_items"] as const;
+// checklist_items, claimed_at) — since migrations apply manually and can lag
+// behind deployed code, a request touching a not-yet-migrated column must
+// degrade instead of throwing (same reasoning/pattern as the shopping_items
+// columns above — kept as a second, table-scoped trio rather than a shared helper).
+const NEW_TASK_COLUMNS = ["started_at", "checklist_items", "claimed_at"] as const;
 
 export function isMissingTaskColumn(error: unknown): boolean {
   const err = error as { code?: string; message?: string } | null | undefined;
@@ -354,13 +356,14 @@ export class SupabaseStore implements DataStore {
       claimed_by_id: null, planned: input.planned ?? false,
       started_at: input.startedAt ?? null,
       checklist_items: input.checklistItems ?? [],
+      claimed_at: null,
     };
     const { error } = await supabase.from("tasks").insert(row);
     if (error) {
       if (!isMissingTaskColumn(error)) throw new Error(error.message);
       const { error: retryError } = await supabase.from("tasks").insert(withoutNewTaskColumns(row));
       if (retryError) throw new Error(retryError.message);
-      return mapTask({ ...row, started_at: null, checklist_items: [] });
+      return mapTask({ ...row, started_at: null, checklist_items: [], claimed_at: null });
     }
     return mapTask(row);
   }
@@ -408,8 +411,16 @@ export class SupabaseStore implements DataStore {
       if (taskError || !taskData) throw new Error(`Task not found: ${taskId}`);
       claimedById = await this.memberIdFor(userId, (taskData as { household_id: string }).household_id);
     }
-    const { data, error } = await supabase.from("tasks").update({ claimed_by_id: claimedById }).eq("id", taskId).select().single();
-    if (error || !data) throw new Error(error?.message ?? `Task not found: ${taskId}`);
+    const update = { claimed_by_id: claimedById, claimed_at: claimedById ? new Date().toISOString() : null };
+    const { data, error } = await supabase.from("tasks").update(update).eq("id", taskId).select().single();
+    if (error) {
+      if (!isMissingTaskColumn(error)) throw new Error(error.message);
+      const { data: retryData, error: retryError } = await supabase
+        .from("tasks").update(withoutNewTaskColumns(update)).eq("id", taskId).select().single();
+      if (retryError || !retryData) throw new Error(retryError?.message ?? `Task not found: ${taskId}`);
+      return mapTask(retryData as TaskRow);
+    }
+    if (!data) throw new Error(`Task not found: ${taskId}`);
     return mapTask(data as TaskRow);
   }
 

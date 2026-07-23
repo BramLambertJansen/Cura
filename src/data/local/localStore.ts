@@ -161,6 +161,7 @@ export class LocalStore implements DataStore {
     const task = this.db.tasks.find((t) => t.id === taskId);
     if (!task) throw new Error(`Task not found: ${taskId}`);
     task.claimedById = userId ?? undefined;
+    task.claimedAt = userId ? new Date().toISOString() : undefined;
     this.persist();
     return task;
   }

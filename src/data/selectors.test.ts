@@ -11,6 +11,7 @@ import {
   toShoppingList,
   toDagdelen,
   dagdeelForHour,
+  splitPickedUpToday,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -523,5 +524,48 @@ describe("Vandaag timeline — dagdeel grouping", () => {
     expect(dagdeelForHour(17)).toBe("middag");
     expect(dagdeelForHour(18)).toBe("avond");
     expect(dagdeelForHour(23)).toBe("avond");
+  });
+});
+
+describe("Vandaag opgepakt — same-day Huis-pool claims, split from the timeline", () => {
+  const taskView = (overrides: Partial<TaskView> = {}): TaskView => ({
+    id: "t1",
+    title: "Was ophangen",
+    planned: true,
+    done: false,
+    status: "open",
+    checklistItems: [],
+    ...overrides,
+  });
+  const now = new Date(2024, 0, 2, 12, 0, 0).getTime(); // 2 jan 2024, 12:00
+  const todayEarlier = new Date(2024, 0, 2, 8, 0, 0).toISOString();
+  const yesterday = new Date(2024, 0, 1, 20, 0, 0).toISOString();
+
+  it("pulls out a room task claimed today", () => {
+    const picked = taskView({ id: "t1", roomId: "r1", claimedBy: "Bram", claimedAt: todayEarlier });
+    const { pickedUpToday, rest } = splitPickedUpToday([picked], now);
+    expect(pickedUpToday.map((t) => t.id)).toEqual(["t1"]);
+    expect(rest).toEqual([]);
+  });
+
+  it("leaves a room task claimed on an earlier day in rest", () => {
+    const oldClaim = taskView({ id: "t1", roomId: "r1", claimedBy: "Bram", claimedAt: yesterday });
+    const { pickedUpToday, rest } = splitPickedUpToday([oldClaim], now);
+    expect(pickedUpToday).toEqual([]);
+    expect(rest.map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("never treats a hand-added task (no roomId) as picked up, even if claimed today", () => {
+    const noRoom = taskView({ id: "t1", claimedBy: "Bram", claimedAt: todayEarlier });
+    const { pickedUpToday, rest } = splitPickedUpToday([noRoom], now);
+    expect(pickedUpToday).toEqual([]);
+    expect(rest.map((t) => t.id)).toEqual(["t1"]);
+  });
+
+  it("leaves an unclaimed room task in rest", () => {
+    const unclaimed = taskView({ id: "t1", roomId: "r1" });
+    const { pickedUpToday, rest } = splitPickedUpToday([unclaimed], now);
+    expect(pickedUpToday).toEqual([]);
+    expect(rest.map((t) => t.id)).toEqual(["t1"]);
   });
 });
