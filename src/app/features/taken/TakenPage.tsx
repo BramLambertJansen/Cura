@@ -10,6 +10,7 @@ import { stagger, fadeUp } from "../../lib/motion";
 import { Kop, Leeg, PageHeader, KeuzeChip, IconButton } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { useSheets } from "../../sheetContext";
+import { useStartFocus } from "../../lib/useStartFocus";
 
 const ALL = "all";
 const NONE = "none";
@@ -24,6 +25,7 @@ const NONE = "none";
 export function TakenPage() {
   const navigate = useNavigate();
   const { openEditTask } = useSheets();
+  const startFocus = useStartFocus();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const createTask = useCuraStore((s) => s.createTask);
   const deleteTask = useCuraStore((s) => s.deleteTask);
@@ -109,6 +111,7 @@ export function TakenPage() {
                         task={task}
                         onToggle={() => toggleTask(task.id, !task.done)}
                         onEdit={() => openEditTask(task.id)}
+                        onStartFocus={() => startFocus(task)}
                       />
                       {group.renew && !task.intervalDays && (
                         <div className="flex justify-end">

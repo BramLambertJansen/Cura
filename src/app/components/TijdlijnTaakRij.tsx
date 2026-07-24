@@ -1,11 +1,11 @@
 import { memo, useEffect } from "react";
 import { animate, motion, useTransform } from "motion/react";
-import { Bell, Check, ListChecks, RefreshCw, RotateCcw, X } from "lucide-react";
+import { Bell, Check, ListChecks, RefreshCw, RotateCcw, Timer, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
 import { useSwipeRow } from "../lib/useSwipeRow";
-import { Checkbox } from "./shared";
+import { Checkbox, IconButton } from "./shared";
 
 /**
  * A single task row inside Vandaag's dagdeel-tijdlijn — the timeline variant of
@@ -17,12 +17,13 @@ import { Checkbox } from "./shared";
  * thing across Vandaag/Huis/Taken; only the visual shell differs here.
  */
 export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
-  task, onToggle, onEdit, onDismiss, peek,
+  task, onToggle, onEdit, onDismiss, onStartFocus, peek,
 }: {
   task: TaskView;
   onToggle: () => void;
   onEdit?: () => void;
   onDismiss?: () => void;
+  onStartFocus?: () => void;
   /** One-time "peek" nudge (22px right and back) to hint that the row is swipeable — first row only, until the swipe hint is dismissed. */
   peek?: boolean;
 }) {
@@ -119,6 +120,16 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
           </button>
         ) : (
           <div className="flex-1 min-w-0 self-center">{content}</div>
+        )}
+        {onStartFocus && !task.done && (
+          <div className="flex-shrink-0 self-center">
+            <IconButton
+              size={8}
+              onClick={onStartFocus}
+              label={`Focus starten op ${task.title}`}
+              icon={<Timer size={14} aria-hidden="true" />}
+            />
+          </div>
         )}
       </motion.div>
     </motion.div>

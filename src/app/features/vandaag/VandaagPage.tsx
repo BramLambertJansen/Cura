@@ -12,6 +12,7 @@ import { stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
 import { useSwipeHint } from "../../lib/useSwipeHint";
+import { useStartFocus } from "../../lib/useStartFocus";
 import { SAGE } from "../../lib/constants";
 import { Avatar, Card, CARD_CHROME, CollapsibleSection, IconBadge, IconButton, Kop, Leeg } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
@@ -40,6 +41,7 @@ export function VandaagPage() {
   const { isDismissed, dismiss, restore } = useNietVandaag();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
   const swipeHint = useSwipeHint();
+  const startFocus = useStartFocus();
   // The suggestions section collapses behind a chevron; open by default (an
   // established choice, unrelated to this restyle) so it reads as a calm,
   // glanceable list rather than a hidden peek. The collapsible section below
@@ -126,6 +128,7 @@ export function VandaagPage() {
                     action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) },
                   });
                 }}
+                onStartFocus={() => startFocus(task)}
                 peek={!swipeHint.seen && task.id === firstTaskId}
               />
             ))}
@@ -229,6 +232,7 @@ export function VandaagPage() {
                         task={task}
                         onToggle={() => toggleTask(task.id, !task.done)}
                         onEdit={() => openEditTask(task.id)}
+                        onStartFocus={() => startFocus(task)}
                         peek={!swipeHint.seen && task.id === firstTaskId}
                       />
                     ))}
