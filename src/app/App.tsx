@@ -249,14 +249,32 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
-        <Toaster position="top-center" toastOptions={{
-          style: {
-            background: "var(--card)", color: "var(--foreground)",
-            border: "1px solid var(--border)", borderRadius: "0.875rem",
-            fontSize: "0.875rem", fontFamily: "'Plus Jakarta Sans',sans-serif",
-            boxShadow: SHADOW_LG,
-          },
-        }} />
+        {/* Bottom-anchored, just above BottomNav (same offset as FocusMiniPill,
+            forced via the `[data-sonner-toaster]` rule in theme.css — Sonner's
+            own `offset` prop does its positioning math in JS and can't parse a
+            safe-area-aware calc() string, so a plain CSS override is the only
+            way to get an env()-aware bottom offset) — every other bit of
+            transient/floating shell chrome (nav, mini-pill, the Sheet itself)
+            already lives at the bottom; a confirmation for an action that just
+            happened low on the screen (swipe, FAB, a sheet save) shouldn't send
+            the eye all the way back up top. Deliberately near-black/light-text,
+            distinct from the app's light card surfaces — a toast is transient
+            chrome, not another card. */}
+        <Toaster
+          position="bottom-center"
+          toastOptions={{
+            style: {
+              background: "color-mix(in srgb, var(--overlay-color) 92%, transparent)",
+              color: "var(--primary-foreground)",
+              border: "none", borderRadius: "1.5rem",
+              fontSize: "0.875rem", fontFamily: "'Plus Jakarta Sans',sans-serif",
+              boxShadow: SHADOW_LG,
+            },
+            // Sonner's default description color assumes a light toast surface —
+            // unreadable dark-on-dark against this deliberately near-black pill.
+            descriptionClassName: "!text-white/80",
+          }}
+        />
         <ConnectivityBanner />
         <UpdatePrompt />
         <ErrorBoundary>

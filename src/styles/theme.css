@@ -222,6 +222,19 @@
   }
 }
 
+/* Sonner's own `offset` prop computes its container's position in JS (needed
+   for stacking multiple toasts) and can't parse a safe-area-aware calc()
+   string — passing one there silently breaks its top/bottom math (the
+   container collapses to zero height and the toast overflows past the
+   viewport edge). A plain CSS override on its stable data-attribute, with
+   !important to beat the inline style Sonner sets, is the only reliable way
+   to anchor it just above BottomNav (same offset as FocusMiniPill) while
+   still respecting env(safe-area-inset-bottom) on notched devices. */
+[data-sonner-toaster] {
+  top: auto !important;
+  bottom: calc(var(--safe-bottom) + 5.75rem) !important;
+}
+
 /* Calm skeleton loading — a slow, low-amplitude "breathing" fade instead of
    Tailwind's animate-pulse (fast 100%→50% blink, too alarming for Cura's tone).
    The opacity range is overridable per use via the two custom properties
