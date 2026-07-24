@@ -151,6 +151,16 @@ export interface DataStore {
    * SuggestieRij) never misreads as "picked up from Huis".
    */
   claimTask(taskId: string, userId: string | null, trackPickup?: boolean): Promise<Task>;
+  /**
+   * Assign a task directly to a household member by their `members.id` (or
+   * null to clear) — the "Wie pakt dit op?"-picker's counterpart to claimTask.
+   * Unlike claimTask, `memberId` is already a members.id, not an auth uid, so
+   * it can target ANY member — including one without a linked auth account
+   * (e.g. local mode's second, demo-only housemate) — and either housemate
+   * can assign the task to the other, not just to themselves. Never stamps
+   * pickedUpAt (that's reserved for the explicit Huis pool-claim action).
+   */
+  assignTask(taskId: string, memberId: string | null): Promise<Task>;
 
   // ── Completions (the core interaction + the event layer) ─────────────────────
   /** One tap to complete. Writes an event; done/visibility/density derive from it. */

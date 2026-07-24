@@ -49,6 +49,8 @@ interface CuraState {
   reset: () => void;
   toggleTask: (taskId: string, done: boolean) => Promise<void>;
   claimTask: (taskId: string, claimed: boolean) => Promise<void>;
+  /** "Wie pakt dit op?" — assign to any household member by their member id (or null for "Niemand"), not just the acting user. */
+  assignTask: (taskId: string, memberId: string | null) => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<void>;
   createTasksFromTemplates: (roomId: string, templates: Omit<CreateTaskInput, "roomId">[]) => Promise<void>;
   updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<void>;
@@ -329,6 +331,26 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Claimen lukte niet");
+    }
+  },
+
+  async assignTask(taskId, memberId) {
+    try {
+      const store = await getDataStore();
+      const { tasks, members, currentUserId } = get();
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      const updated = await store.assignTask(taskId, memberId);
+      if (memberId) {
+        const me = members.find((m) => m.userId === currentUserId);
+        const name = memberId === me?.id ? "Jij" : members.find((m) => m.id === memberId)?.displayName ?? "Iemand";
+        toast(`${name} pakt "${task.title}"`, { description: name === "Jij" ? "Anderen zien dat jij dit doet." : undefined });
+      } else {
+        toast(`"${task.title}" vrijgegeven`);
+      }
+      set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Toewijzen lukte niet");
     }
   },
 

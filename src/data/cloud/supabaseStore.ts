@@ -455,6 +455,23 @@ export class SupabaseStore implements DataStore {
     throw new Error("Taak claimen mislukt: onverwacht veel ontbrekende kolommen op 'tasks'.");
   }
 
+  async assignTask(taskId: string, memberId: string | null): Promise<Task> {
+    let update: Partial<TaskRow> = { claimed_by_id: memberId };
+    if (!memberId) update.picked_up_at = null;
+
+    for (let attempt = 0; attempt <= NEW_TASK_COLUMNS.length; attempt++) {
+      const { data, error } = await supabase.from("tasks").update(update).eq("id", taskId).select().single();
+      if (!error) {
+        if (!data) throw new Error(`Task not found: ${taskId}`);
+        return mapTask(data as TaskRow);
+      }
+      const missing = missingTaskColumns(error);
+      if (missing.length === 0) throw new Error(error.message);
+      update = withoutTaskColumns(update, missing);
+    }
+    throw new Error("Taak toewijzen mislukt: onverwacht veel ontbrekende kolommen op 'tasks'.");
+  }
+
   // ── Completions ──────────────────────────────────────────────────────────
   async completeTask(taskId: string, userId: string): Promise<TaskCompletion> {
     const { data: taskData, error: taskError } = await supabase.from("tasks").select("household_id").eq("id", taskId).single();
