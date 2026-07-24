@@ -4,6 +4,7 @@ import {
   BookOpen, Shirt, Coffee, Wind, ShoppingBasket, Dumbbell, Baby, Sparkles,
   Toilet,
 } from "lucide-react";
+import type { Daypart } from "./format";
 
 /** Reads a CSS custom property from :root so JS-side color constants stay tied to theme.css instead of duplicating its values. */
 function cssVar(name: string, fallback: string): string {
@@ -21,6 +22,19 @@ export const SHADOW = "var(--shadow-card)";
 export const SHADOW_LG = "var(--shadow-card-lg)";
 /** The soft press-wash for whileTap on card-like rows — one constant instead of scattered rgba literals. */
 export const PRESS_TINT = "rgba(0, 0, 0, 0.03)";
+
+/** Per-daypart shell tint tokens (theme.css) — AppBackground's soft-light overlay wash. */
+export const DAYPART_BG: Record<Daypart, string> = {
+  ochtend: "var(--daypart-ochtend-bg)",
+  middag: "var(--daypart-middag-bg)",
+  avond: "var(--daypart-avond-bg)",
+};
+/** Per-daypart flat tint the bottom-nav fade scrim blends toward, instead of the plain --background. */
+export const DAYPART_NAV: Record<Daypart, string> = {
+  ochtend: "var(--daypart-ochtend-nav)",
+  middag: "var(--daypart-middag-nav)",
+  avond: "var(--daypart-avond-nav)",
+};
 
 export interface IconOption {
   key: string;

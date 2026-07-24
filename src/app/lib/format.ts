@@ -14,6 +14,22 @@ export function getGreeting() {
   return { text: "Goedenacht", sub: "Stil in huis.", date };
 }
 
+export type Daypart = "ochtend" | "middag" | "avond";
+
+/**
+ * Which of the app shell's three visual dayparts the given hour falls in —
+ * the same ochtend/middag/avond boundaries getGreeting() already uses for its
+ * greeting text. The quiet overnight stretch (21:00–6:00, getGreeting's
+ * separate "Goedenacht" copy) folds into "avond" here: the shell only has
+ * three tinted variants, not a fourth night-only one, and evening's dimmer
+ * tone reads fine straight through the night.
+ */
+export function getDaypart(hour: number = new Date().getHours()): Daypart {
+  if (hour >= 6 && hour < 12) return "ochtend";
+  if (hour >= 12 && hour < 17) return "middag";
+  return "avond";
+}
+
 export function intervalLabel(days: number): string {
   if (days === 1) return "Dagelijks";
   if (days === 2) return "Om de dag";
