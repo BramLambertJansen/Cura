@@ -14,6 +14,7 @@ import { RoomHero } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
+import { useStartFocus } from "../../lib/useStartFocus";
 import { ROOM_TEMPLATES, categoryForIconKey } from "../../lib/templates";
 
 type DurationFilter = "alles" | "kort" | "middel" | "lang";
@@ -52,6 +53,7 @@ export function HuisPage() {
   const rooms = useRoomViews();
   const tasks = useTaskViews();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
+  const startFocus = useStartFocus();
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
   const [roomFilter, setRoomFilter] = useState("alles");
@@ -143,6 +145,7 @@ export function HuisPage() {
                       onUnclaim={() => claimTask(t.id, false)}
                       onEdit={() => openEditTask(t.id)}
                       onDismiss={() => dismissWithUndo(t, "deze lijst")}
+                      onStartFocus={() => startFocus(t)}
                     />
                   </motion.div>
                 ))}
@@ -270,7 +273,7 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
                   {openTasks.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onPlan={() => planTask(t)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
+                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onPlan={() => planTask(t)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} onStartFocus={() => startFocus(t)} />
                     </motion.div>
                   ))}
                 </motion.div>

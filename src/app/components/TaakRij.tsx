@@ -1,14 +1,14 @@
 import { memo } from "react";
 import { motion, useTransform } from "motion/react";
-import { Bell, CalendarPlus, Check, ListChecks, RefreshCw, RotateCcw, X } from "lucide-react";
+import { Bell, CalendarPlus, Check, ListChecks, RefreshCw, RotateCcw, Timer, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
 import { useSwipeRow } from "../lib/useSwipeRow";
-import { CARD_BORDER, Checkbox } from "./shared";
+import { CARD_BORDER, Checkbox, IconButton } from "./shared";
 
 export const TaakRij = memo(function TaakRij({
-  task, onToggle, showClaim = false, onUnclaim, onPlan, onEdit, onDismiss,
+  task, onToggle, showClaim = false, onUnclaim, onPlan, onEdit, onDismiss, onStartFocus,
 }: {
   task: TaskView;
   onToggle: () => void;
@@ -17,6 +17,7 @@ export const TaakRij = memo(function TaakRij({
   onPlan?: () => void;
   onEdit?: () => void;
   onDismiss?: () => void;
+  onStartFocus?: () => void;
 }) {
   const claimed = !!task.claimedBy;
   // Swipe-right normally toggles done, but on an unclaimed pool row (onPlan
@@ -134,6 +135,14 @@ export const TaakRij = memo(function TaakRij({
           </button>
         ) : (
           <div className="flex-1 min-w-0">{content}</div>
+        )}
+        {onStartFocus && !task.done && (
+          <IconButton
+            size={8}
+            onClick={onStartFocus}
+            label={`Focus starten op ${task.title}`}
+            icon={<Timer size={14} aria-hidden="true" />}
+          />
         )}
         {showClaim && !task.done && claimed && onUnclaim && (
           <motion.button whileTap={{ scale: 0.9 }}
