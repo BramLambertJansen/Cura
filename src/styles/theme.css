@@ -68,6 +68,23 @@
   --progress-near: #7DA87A;
 
   /*
+   * Per-daypart shell tint (driven by getDaypart() in src/app/lib/format.ts,
+   * NOT prefers-color-scheme — this tracks time of day, not device theme).
+   * Ochtend leans into the room illustrations' own peachy cream (--card-art);
+   * avond deepens toward the shadow tone; middag is the plain --background so
+   * today's midday look is unchanged. Two forms per daypart: a soft-light
+   * overlay gradient for AppBackground (layered over the watercolor art) and
+   * a flat solid for the bottom-nav fade scrim (color-mix() can't blend a
+   * gradient).
+   */
+  --daypart-ochtend-bg: linear-gradient(180deg, color-mix(in srgb, var(--card-art) 55%, transparent) 0%, transparent 60%);
+  --daypart-middag-bg: transparent;
+  --daypart-avond-bg: linear-gradient(180deg, color-mix(in srgb, var(--shadow-color) 12%, transparent) 0%, color-mix(in srgb, var(--shadow-color) 18%, transparent) 100%);
+  --daypart-ochtend-nav: color-mix(in srgb, var(--card-art) 45%, var(--background));
+  --daypart-middag-nav: var(--background);
+  --daypart-avond-nav: color-mix(in srgb, var(--shadow-color) 13%, var(--background));
+
+  /*
    * Device safe-area insets (notch, status bar, home indicator). Fall back to
    * 0px on devices/browsers without them. index.html sets viewport-fit=cover
    * so these env() values actually resolve instead of always reading 0.

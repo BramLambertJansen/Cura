@@ -9,7 +9,8 @@ import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
 import { useCuraStore } from "../stores/useCuraStore";
 import { useOnboardingSeen } from "./lib/useOnboardingSeen";
-import { SHADOW_LG } from "./lib/constants";
+import { useDaypart } from "./lib/useDaypart";
+import { SHADOW_LG, DAYPART_NAV } from "./lib/constants";
 import { pageIn, pageTx } from "./lib/motion";
 import { BottomNav } from "./layout/BottomNav";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -96,6 +97,7 @@ function MainShell() {
   // eronder, minder scroll-bottom-padding omdat er geen navbar te vrijwaren is.
   const { pathname } = useLocation();
   const isRoutineSession = Boolean(matchPath("/routines/:bundleId/starten", pathname));
+  const navTint = DAYPART_NAV[useDaypart()];
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const refresh = useCuraStore((s) => s.refresh);
@@ -142,7 +144,7 @@ function MainShell() {
         {!isRoutineSession && (
           <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-30" style={{
             height: "calc(6rem + var(--safe-bottom))",
-            background: "linear-gradient(to top,color-mix(in srgb, var(--background) 96%, transparent) 0%,color-mix(in srgb, var(--background) 60%, transparent) 45%,transparent 100%)",
+            background: `linear-gradient(to top,color-mix(in srgb, ${navTint} 96%, transparent) 0%,color-mix(in srgb, ${navTint} 60%, transparent) 45%,transparent 100%)`,
           }} />
         )}
 

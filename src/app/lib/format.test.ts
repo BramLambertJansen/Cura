@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCountdown } from "./format";
+import { formatCountdown, getDaypart } from "./format";
 
 describe("formatCountdown", () => {
   it("formats minutes and zero-padded seconds", () => {
@@ -15,5 +15,22 @@ describe("formatCountdown", () => {
 
   it("floors fractional seconds", () => {
     expect(formatCountdown(90.9)).toBe("1:30");
+  });
+});
+
+describe("getDaypart", () => {
+  it("splits at the same boundaries as getGreeting's ochtend/middag/avond copy", () => {
+    expect(getDaypart(6)).toBe("ochtend");
+    expect(getDaypart(11)).toBe("ochtend");
+    expect(getDaypart(12)).toBe("middag");
+    expect(getDaypart(16)).toBe("middag");
+    expect(getDaypart(17)).toBe("avond");
+    expect(getDaypart(20)).toBe("avond");
+  });
+
+  it("folds the overnight stretch into avond — no separate night variant", () => {
+    expect(getDaypart(23)).toBe("avond");
+    expect(getDaypart(0)).toBe("avond");
+    expect(getDaypart(5)).toBe("avond");
   });
 });
