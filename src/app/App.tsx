@@ -186,11 +186,18 @@ function MainShell() {
           {editingRoutineId && <LazyOverlay key="er"><EditRoutineSheet bundleId={editingRoutineId} onClose={() => setEditingRoutineId(null)} /></LazyOverlay>}
           {showNewRoom && <LazyOverlay key="room"><NewRoomSheet onClose={() => setShowNewRoom(false)} /></LazyOverlay>}
           {editingRoomId && <LazyOverlay key="edit"><EditRoomSheet roomId={editingRoomId} onClose={() => setEditingRoomId(null)} /></LazyOverlay>}
-          {showHousehold && <LazyOverlay key="hs"><HouseholdSheet onClose={() => setShowHousehold(false)} /></LazyOverlay>}
+          {showHousehold && (
+            <LazyOverlay key="hs">
+              <HouseholdSheet
+                onClose={() => setShowHousehold(false)}
+                onOpenProfiel={() => { setShowHousehold(false); setShowProfiel(true); }}
+              />
+            </LazyOverlay>
+          )}
           {showProfiel && (
             <LazyOverlay key="prof">
               <ProfielSheet
-                onOpenHousehold={() => { setShowProfiel(false); setTimeout(() => setShowHousehold(true), 160); }}
+                onOpenHousehold={() => { setShowProfiel(false); setShowHousehold(true); }}
                 onOpenWachtwoord={() => { setShowProfiel(false); setTimeout(() => setShowWachtwoord(true), 160); }}
                 onClose={() => setShowProfiel(false)}
               />
