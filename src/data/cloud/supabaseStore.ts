@@ -33,6 +33,7 @@ interface TaskRow {
   started_at: string | null;
   checklist_items: { id: string; title: string; checked: boolean }[];
   picked_up_at: string | null;
+  dagdeel: string | null;
 }
 interface CompletionRow { id: string; task_id: string; completed_by_id: string; completed_at: string }
 interface ShoppingItemRow {
@@ -91,6 +92,7 @@ function mapTask(r: TaskRow): Task {
     pickedUpAt: r.picked_up_at ?? undefined,
     startedAt: r.started_at ?? undefined,
     checklistItems: r.checklist_items ?? [],
+    dagdeel: (r.dagdeel as "ochtend" | "middag" | "avond" | null) ?? undefined,
   });
 }
 function mapCompletion(r: CompletionRow): TaskCompletion {
@@ -129,7 +131,7 @@ function withoutNewShoppingColumns<T extends Partial<Record<(typeof NEW_SHOPPING
 // behind deployed code, a request touching a not-yet-migrated column must
 // degrade instead of throwing (same reasoning/pattern as the shopping_items
 // columns above — kept as a second, table-scoped trio rather than a shared helper).
-const NEW_TASK_COLUMNS = ["started_at", "checklist_items", "picked_up_at"] as const;
+const NEW_TASK_COLUMNS = ["started_at", "checklist_items", "picked_up_at", "dagdeel"] as const;
 
 /**
  * Which of NEW_TASK_COLUMNS a PGRST204 "column not found" error is actually
@@ -374,6 +376,7 @@ export class SupabaseStore implements DataStore {
       started_at: input.startedAt ?? null,
       checklist_items: input.checklistItems ?? [],
       picked_up_at: null,
+      dagdeel: input.dagdeel ?? null,
     };
     // Each retry drops only the column(s) THIS error actually named — never
     // the whole NEW_TASK_COLUMNS trio — so a lone still-missing column never
@@ -406,6 +409,7 @@ export class SupabaseStore implements DataStore {
     // skip that clear.
     if ("startedAt" in patch) update.started_at = patch.startedAt ?? null;
     if ("checklistItems" in patch) update.checklist_items = patch.checklistItems ?? [];
+    if ("dagdeel" in patch) update.dagdeel = patch.dagdeel ?? null;
     for (let attempt = 0; attempt <= NEW_TASK_COLUMNS.length; attempt++) {
       const query = Object.keys(update).length > 0
         ? supabase.from("tasks").update(update).eq("id", taskId).select().single()

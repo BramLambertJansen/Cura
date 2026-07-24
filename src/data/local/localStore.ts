@@ -133,6 +133,7 @@ export class LocalStore implements DataStore {
       durationMin: input.durationMin,
       intervalDays: input.intervalDays,
       dueDate: input.dueDate,
+      dagdeel: input.dagdeel,
       bundleId: input.bundleId,
       planned: input.planned ?? false,
       startedAt: input.startedAt,

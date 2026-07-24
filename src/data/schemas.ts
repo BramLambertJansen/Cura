@@ -103,6 +103,11 @@ export const TaskSchema = z.object({
   durationMin: z.number().int().positive().optional(), // view formats as "10 min"
   intervalDays: z.number().int().positive().optional(), // recurring rhythm; absent = one-off
   dueDate: Iso.optional(), // "wekker": one-off = exact deadline (date+time); recurring = only HH:mm is read (daily reminder time)
+  // Optional, user-chosen "Wanneer"-tag for Vandaag's tijdlijn — fully
+  // independent of dueDate/wekker (§2: the user states their own intent,
+  // never a fabricated precision). toDagdelen (selectors.ts) prefers this
+  // over the dueDate-hour derivation when both are present.
+  dagdeel: z.enum(["ochtend", "middag", "avond"]).optional(),
   bundleId: Id.optional(), // belongs to a routine bundle (a grouping, see below)
   claimedById: Id.optional(), // "ik pak dit" — optional, never required
   // Set ONLY by the explicit Huis pool-claim/unclaim action (useCuraStore's

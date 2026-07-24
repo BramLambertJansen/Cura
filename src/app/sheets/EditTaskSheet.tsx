@@ -40,6 +40,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       beschrijving: task?.description ?? "",
       gestartAan: !!task?.startedAt,
       checklistItems: task?.checklistItems ?? [],
+      dagdeel: task?.dagdeel,
     };
   });
 
@@ -65,6 +66,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       roomId: formState.selectedRoomId ?? undefined,
       intervalDays: formState.herhalenAan ? formState.intervalDagen : undefined,
       dueDate,
+      dagdeel: formState.dagdeel,
       durationMin: formState.duurMin,
       planned: formState.opMijnDag,
       startedAt,
@@ -147,6 +149,7 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
         onBeschrijvingChange={(v) => setFormState((s) => ({ ...s, beschrijving: v }))}
         onGestartChange={(v) => setFormState((s) => ({ ...s, gestartAan: v }))}
         onChecklistItemsChange={(items) => setFormState((s) => ({ ...s, checklistItems: items }))}
+        onDagdeelChange={(v) => setFormState((s) => ({ ...s, dagdeel: v }))}
       />
 
       <div className="mt-2 mb-4">

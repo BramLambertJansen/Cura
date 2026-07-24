@@ -510,6 +510,18 @@ describe("Vandaag timeline — dagdeel grouping", () => {
     expect(groups[0].tasks.map((t) => t.id)).toEqual(["t1"]);
   });
 
+  it("prefers a task's own explicit dagdeel tag over its wekker-derived hour", () => {
+    const tagged = taskView({ id: "t1", dagdeel: "avond", dueDate: atHour(8) });
+    const groups = toDagdelen([tagged]);
+    expect(groups.map((g) => g.key)).toEqual(["avond"]);
+  });
+
+  it("assigns a dagdeel from an explicit tag alone, with no wekker at all", () => {
+    const tagged = taskView({ id: "t1", dagdeel: "middag" });
+    const groups = toDagdelen([tagged]);
+    expect(groups.map((g) => g.key)).toEqual(["middag"]);
+  });
+
   it("never invents a dagdeel for a task without a wekker — it lands in overig", () => {
     const noWekker = taskView({ id: "t1" });
     const groups = toDagdelen([noWekker]);
