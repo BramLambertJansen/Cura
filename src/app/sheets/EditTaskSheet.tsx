@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Check, RotateCcw } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomViews, useTaskView } from "../../stores/useViews";
-import { Sheet, SheetHeader, VeldInput, DubbelKnop, VerwijderKnop, PrimaryButton } from "../components/shared";
+import { Sheet, SheetHeader, VeldInput, DubbelKnop, VerwijderKnop, PrimaryButton, Kop, KeuzeChip } from "../components/shared";
 import { SAGE } from "../lib/constants";
 import { TaskFormFields, buildDueDate, extractTijd, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
@@ -15,7 +15,15 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
   const deleteTask = useCuraStore((s) => s.deleteTask);
+  const assignTask = useCuraStore((s) => s.assignTask);
+  const members = useCuraStore((s) => s.members);
+  const currentUserId = useCuraStore((s) => s.currentUserId);
   const rooms = useRoomViews();
+  const me = members.find((m) => m.userId === currentUserId);
+  // Only offered in an actual two-person household — a single-member household
+  // has no one else to hand a task to, so a "Niemand/Jij"-only picker would be
+  // a meaningless stand-in for the existing claim toggle.
+  const partner = members.find((m) => m.id !== me?.id);
 
   const [title, setTitle] = useState(task?.title ?? "");
   const [formState, setFormState] = useState<TaskFormState>(() => {
@@ -109,6 +117,21 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
           </button>
         )}
       </div>
+
+      {partner && (
+        <div className="mb-5">
+          <Kop>Wie pakt dit op?</Kop>
+          <div role="group" aria-label="Wie pakt dit op?" className="flex gap-2 mt-3">
+            <KeuzeChip selected={!task.claimedById} onClick={() => assignTask(taskId, null)}>Niemand</KeuzeChip>
+            {me && (
+              <KeuzeChip selected={task.claimedById === me.id} onClick={() => assignTask(taskId, me.id)}>Jij</KeuzeChip>
+            )}
+            <KeuzeChip selected={task.claimedById === partner.id} onClick={() => assignTask(taskId, partner.id)}>
+              {partner.displayName}
+            </KeuzeChip>
+          </div>
+        </div>
+      )}
 
       <TaskFormFields
         rooms={rooms}

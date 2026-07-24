@@ -66,6 +66,7 @@ export interface TaskView {
   doneById?: string; // raw member id, for "is this mine?" checks — never displayed
   doneAt?: string; // formatted time of the completion, e.g. "08:42"
   claimedBy?: string; // resolved member display name ("ik pak dit")
+  claimedById?: string; // raw member id, for the "wie pakt dit op?"-picker and "is this mine?" checks — never displayed
   pickedUpAt?: string; // raw ISO, set only by the Huis pool-claim action — for splitPickedUpToday's "Vandaag opgepakt" grouping, not for display
   dueHint?: string; // soft: "Waarschijnlijk weer toe" / "Nog even goed"
   dueDate?: string; // raw ISO, for the reminder engine — not for display

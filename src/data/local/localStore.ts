@@ -167,6 +167,15 @@ export class LocalStore implements DataStore {
     return task;
   }
 
+  async assignTask(taskId: string, memberId: string | null): Promise<Task> {
+    const task = this.db.tasks.find((t) => t.id === taskId);
+    if (!task) throw new Error(`Task not found: ${taskId}`);
+    task.claimedById = memberId ?? undefined;
+    if (!memberId) task.pickedUpAt = undefined;
+    this.persist();
+    return task;
+  }
+
   async completeTask(taskId: string, userId: string): Promise<TaskCompletion> {
     const completion: TaskCompletion = {
       id: uid(),
