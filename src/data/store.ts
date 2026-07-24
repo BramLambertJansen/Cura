@@ -37,6 +37,7 @@ export interface CreateTaskInput {
   durationMin?: number;
   intervalDays?: number;
   dueDate?: string; // ISO; one-off = full deadline (date+time); recurring = only HH:mm is read
+  dagdeel?: "ochtend" | "middag" | "avond"; // optional "Wanneer"-tag, independent of dueDate/wekker
   bundleId?: string;
   planned?: boolean;
   startedAt?: string; // manual "Gestart" toggle; ISO or undefined-to-clear

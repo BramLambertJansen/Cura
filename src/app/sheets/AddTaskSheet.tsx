@@ -25,6 +25,7 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
     beschrijving: "",
     gestartAan: false,
     checklistItems: [],
+    dagdeel: undefined,
   });
 
   const selectedRoom = rooms.find((r) => r.id === formState.selectedRoomId);
@@ -32,6 +33,7 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
     selectedRoom?.name,
     formState.herhalenAan ? "Herhalen" : null,
     formState.wekkerAan ? "Wekker" : null,
+    formState.dagdeel ? formState.dagdeel.charAt(0).toUpperCase() + formState.dagdeel.slice(1) : null,
     formState.duurMin ? `${formState.duurMin} min` : null,
     formState.gestartAan ? "Gestart" : null,
     formState.checklistItems.length ? `${formState.checklistItems.length} subtaken` : null,
@@ -52,6 +54,7 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
       roomId: formState.selectedRoomId ?? undefined,
       intervalDays: formState.herhalenAan ? formState.intervalDagen : undefined,
       dueDate,
+      dagdeel: formState.dagdeel,
       durationMin: formState.duurMin,
       planned: formState.opMijnDag,
       startedAt: formState.gestartAan ? new Date().toISOString() : undefined,
@@ -124,6 +127,7 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
                   onBeschrijvingChange={(v) => setFormState((s) => ({ ...s, beschrijving: v }))}
                   onGestartChange={(v) => setFormState((s) => ({ ...s, gestartAan: v }))}
                   onChecklistItemsChange={(items) => setFormState((s) => ({ ...s, checklistItems: items }))}
+                  onDagdeelChange={(v) => setFormState((s) => ({ ...s, dagdeel: v }))}
                 />
               </div>
             </motion.div>

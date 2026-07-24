@@ -114,6 +114,7 @@ export function toTaskView(
     pickedUpAt: task.pickedUpAt,
     dueHint: done ? undefined : dueHint(task, latest, now),
     dueDate: task.dueDate,
+    dagdeel: task.dagdeel,
     wekkerLabel: wekkerLabel(task),
     startedAt: task.startedAt,
     status: done ? "klaar" : task.startedAt ? "bezig" : "open",
@@ -309,16 +310,17 @@ export function dagdeelForHour(hour: number): "ochtend" | "middag" | "avond" {
 }
 
 /**
- * Groups open tasks into Ochtend/Middag/Avond for Vandaag's timeline layout —
- * but only a task with a real wekker/dueDate gets a dagdeel, derived from that
- * exact time. Everything else lands in `overig` instead of being falsely
- * assigned a moment the data has no signal for. Empty groups are omitted;
- * order is always ochtend → middag → avond → overig.
+ * Groups open tasks into Ochtend/Middag/Avond for Vandaag's timeline layout.
+ * A task's own explicit `dagdeel` tag (user-chosen, independent of the
+ * wekker) wins when present; otherwise a real wekker/dueDate derives it from
+ * that exact time. Everything else lands in `overig` instead of being
+ * falsely assigned a moment the data has no signal for. Empty groups are
+ * omitted; order is always ochtend → middag → avond → overig.
  */
 export function toDagdelen(tasks: TaskView[]): DagdeelGroup[] {
   const buckets: Record<DagdeelGroup["key"], TaskView[]> = { ochtend: [], middag: [], avond: [], overig: [] };
   for (const t of tasks) {
-    const key = t.dueDate ? dagdeelForHour(new Date(t.dueDate).getHours()) : "overig";
+    const key = t.dagdeel ?? (t.dueDate ? dagdeelForHour(new Date(t.dueDate).getHours()) : "overig");
     buckets[key].push(t);
   }
   return (["ochtend", "middag", "avond", "overig"] as const)

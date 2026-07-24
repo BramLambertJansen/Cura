@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { Kop, Toggle, VeldTextarea, FieldShell, StatusBadge, OptieKaart, TaakToevoegRij, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { Kop, Toggle, VeldTextarea, FieldShell, StatusBadge, OptieKaart, TaakToevoegRij, KeuzeChip, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { IntervalKiezer } from "./IntervalKiezer";
 import { ChecklistItemRij } from "./ChecklistItemRij";
 import { Calendar } from "../components/ui/calendar";
@@ -24,6 +24,7 @@ export interface TaskFormState {
   beschrijving: string;
   gestartAan: boolean;
   checklistItems: ChecklistItem[];
+  dagdeel: "ochtend" | "middag" | "avond" | undefined;
 }
 
 export interface TaskFormFieldsProps extends TaskFormState {
@@ -40,6 +41,7 @@ export interface TaskFormFieldsProps extends TaskFormState {
   onBeschrijvingChange: (v: string) => void;
   onGestartChange: (v: boolean) => void;
   onChecklistItemsChange: (items: ChecklistItem[]) => void;
+  onDagdeelChange: (v: "ochtend" | "middag" | "avond" | undefined) => void;
 }
 
 /** Combines a selected date and HH:mm string into a full ISO timestamp. */
@@ -75,6 +77,7 @@ export function TaskFormFields({
   beschrijving, onBeschrijvingChange,
   gestartAan, onGestartChange,
   checklistItems, onChecklistItemsChange,
+  dagdeel, onDagdeelChange,
 }: TaskFormFieldsProps) {
   const [calOpen, setCalOpen] = useState(false);
   const [tijdActive, setTijdActive] = useState(false);
@@ -136,6 +139,22 @@ export function TaskFormFields({
             </OptieKaart>
           );
         })}
+      </div>
+
+      {/* Wanneer — los, optioneel dagdeel-label; volledig onafhankelijk van de
+          Wekker hieronder. De gebruiker spreekt hier zijn eigen intentie uit
+          ("dit is ruwweg een ochtend-dingetje"), de app verzint niets (§2:
+          eerlijkheid boven precisie) — vandaar geen verplichte keuze en geen
+          default: tikken op een al geselecteerd segment deselecteert het weer. */}
+      <div className="mb-6">
+        <Kop>Wanneer <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
+        <div role="group" aria-label="Wanneer" className="flex gap-2">
+          {(["ochtend", "middag", "avond"] as const).map((key) => (
+            <KeuzeChip key={key} selected={dagdeel === key} onClick={() => onDagdeelChange(dagdeel === key ? undefined : key)}>
+              {key.charAt(0).toUpperCase() + key.slice(1)}
+            </KeuzeChip>
+          ))}
+        </div>
       </div>
 
       {/* Herhalen */}
