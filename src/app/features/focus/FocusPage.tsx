@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Coffee, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
+import { ArrowLeft, Check, Coffee, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
 import { useTaskViews } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
@@ -18,6 +19,7 @@ import { Card, DubbelKnop, IconBadge, IconButton, Kop, OptieKaart, PillButton, P
  * de bestaande primitieven (CLAUDE.md §7).
  */
 export function FocusPage() {
+  const navigate = useNavigate();
   const status = usePomodoroStore((s) => s.status);
   const phase = usePomodoroStore((s) => s.phase);
   const remainingSec = usePomodoroStore((s) => s.remainingSec);
@@ -55,6 +57,11 @@ export function FocusPage() {
       <PageBanner src="/landing-header.webp" className="h-44" position="72% 35%" />
 
       <div className="relative px-5 pt-14 pb-10">
+        <IconButton
+          onClick={() => navigate("/meer")}
+          label="Terug naar Meer"
+          tone="card" className="mb-4"
+          icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
         <div className="mb-2">
           <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">Focustimer</p>
           <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display">
