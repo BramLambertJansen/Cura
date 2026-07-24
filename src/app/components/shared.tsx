@@ -559,15 +559,18 @@ export function PrimaryButton({
 }
 
 /**
- * Destructive "X verwijderen" button that flips to an inline "Toch niet / Ja,
- * verwijder" confirm row — the delete affordance shared by every edit sheet.
- * Owns its own confirm toggle so the sheets don't each carry the state. Pass a
- * distinct `ariaLabel` (e.g. "Keuken verwijderen") when the visible label is
- * generic.
+ * Destructive/irreversible-feeling action button that flips to an inline
+ * "Toch niet / Ja, ..." confirm row — the shared ask-then-inline-confirm
+ * pattern used by every edit sheet's delete action, and by anything else that
+ * wants the same in-context confirm instead of a dismissible toast (e.g.
+ * "Uitloggen"). Owns its own confirm toggle so callers don't each carry the
+ * state. Pass a distinct `ariaLabel` (e.g. "Keuken verwijderen") when the
+ * visible label is generic, and `icon` to override the default trash icon for
+ * actions that aren't actually a delete.
  */
 export function VerwijderKnop({
-  label, ariaLabel, confirmLabel = "Ja, verwijder", onConfirm,
-}: { label: string; ariaLabel?: string; confirmLabel?: string; onConfirm: () => void }) {
+  label, ariaLabel, confirmLabel = "Ja, verwijder", icon, onConfirm,
+}: { label: string; ariaLabel?: string; confirmLabel?: string; icon?: ReactNode; onConfirm: () => void }) {
   const [confirm, setConfirm] = useState(false);
   return (
     <AnimatePresence>
@@ -576,7 +579,7 @@ export function VerwijderKnop({
             aria-label={ariaLabel ?? label}
             className="w-full py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
             style={{ color: "var(--destructive)" }}>
-            <Trash2 size={14} aria-hidden="true" /> {label}
+            {icon ?? <Trash2 size={14} aria-hidden="true" />} {label}
           </motion.button>
         : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
             <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}
