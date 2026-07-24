@@ -8,7 +8,7 @@ import { useNotificationPreference } from "../lib/useTaskReminders";
 import { usePushSubscription, isIOS } from "../lib/usePushSubscription";
 import { resolveDataMode } from "../../data/store";
 import { PRESS_TINT, SAGE } from "../lib/constants";
-import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard } from "../components/shared";
+import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard, VerwijderKnop } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { onOpenHousehold: () => void; onOpenWachtwoord: () => void; onClose: () => void }) {
   const { signOut, status, userId, email } = useAuth();
@@ -189,15 +189,20 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
 
       <Kop>Meer</Kop>
       <GroupCard>
-        <InstRij icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={openHelp} />
-        <InstRij icon={<LogOut size={15} style={{ color: "var(--destructive)" }} />}
-          label={<span style={{ color: "var(--destructive)" }}>Uitloggen</span>} right={null}
-          onClick={() => toast("Uitloggen?", { description: "Je kunt altijd terugkomen.", action: { label: "Uitloggen", onClick: () => {
+        {[<InstRij key="help" icon={<HelpCircle size={15} />} label="Help & feedback" right={<ChevronRight size={14} className="text-muted-foreground" aria-hidden="true" />} onClick={openHelp} />]}
+      </GroupCard>
+      <div className="mt-2.5">
+        <VerwijderKnop
+          label="Uitloggen"
+          confirmLabel="Ja, uitloggen"
+          icon={<LogOut size={14} aria-hidden="true" />}
+          onConfirm={() => {
             void signOut()
               .then(() => toast("Tot de volgende keer."))
               .catch((e) => toast.error(e instanceof Error ? e.message : "Uitloggen lukte niet"));
-          } } })} />
-      </GroupCard>
+          }}
+        />
+      </div>
       <p className="text-center text-xs text-muted-foreground mt-7">Cura · versie 0.1</p>
     </Sheet>
   );
