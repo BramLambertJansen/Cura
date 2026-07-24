@@ -1,12 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { Copy } from "lucide-react";
+import { ArrowLeft, Copy } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useTaskViews } from "../../../stores/useViews";
 import { toTaskOverview } from "../../../data/selectors";
 import type { TaskView } from "../../../data/types";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Kop, Leeg, PageHeader, KeuzeChip } from "../../components/shared";
+import { Kop, Leeg, PageHeader, KeuzeChip, IconButton } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { useSheets } from "../../sheetContext";
 
@@ -21,6 +22,7 @@ const NONE = "none";
  * drops a fresh copy in the pool (without the stale deadline).
  */
 export function TakenPage() {
+  const navigate = useNavigate();
   const { openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const createTask = useCuraStore((s) => s.createTask);
@@ -77,6 +79,11 @@ export function TakenPage() {
 
   return (
     <div className="px-5 pt-14 pb-8">
+      <IconButton
+        onClick={() => navigate("/meer")}
+        label="Terug naar Meer"
+        tone="card" className="mb-4"
+        icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
       <PageHeader title="Takenoverzicht" subtitle="Alles op een rij, geordend op datum." />
 
       {showFilters && (

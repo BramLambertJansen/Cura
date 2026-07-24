@@ -1,15 +1,17 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, CheckCircle2, ChevronDown, Plus, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, ChevronDown, Plus, ShoppingCart } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useShoppingList, useTaskViews } from "../../../stores/useViews";
 import { useSheets } from "../../sheetContext";
 import { stagger, fadeUp } from "../../lib/motion";
 import { SAGE, SHADOW } from "../../lib/constants";
-import { PageHeader, PillButton, VerwijderKnop } from "../../components/shared";
+import { PageHeader, PillButton, VerwijderKnop, IconButton } from "../../components/shared";
 import { BoodschapRij } from "../../components/BoodschapRij";
 
 export function BoodschappenPage() {
+  const navigate = useNavigate();
   const { open, checked, openGroups } = useShoppingList();
   const [wagentjeOpen, setWagentjeOpen] = useState(false);
   const toggleShoppingItem = useCuraStore((s) => s.toggleShoppingItem);
@@ -47,6 +49,11 @@ export function BoodschappenPage() {
       </div>
 
       <div className="relative px-5 pt-14 pb-8">
+        <IconButton
+          onClick={() => navigate("/meer")}
+          label="Terug naar Meer"
+          tone="card" className="mb-4"
+          icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
         <PageHeader
           title="Boodschappen"
           subtitle="Wat moet er nog gehaald worden?"
