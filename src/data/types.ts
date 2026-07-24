@@ -148,7 +148,7 @@ export interface ShoppingItemView {
   title: string;
   amount?: number;
   unit?: ShoppingUnitKey;
-  /** Compact display label ("500ml", "1kg", "3") — derived from amount+unit, or the legacy free-text quantity for older rows. */
+  /** Compact display label ("500ml", "1kg", "3x") — derived from amount+unit, or the legacy free-text quantity for older rows. Absent for a bare single "stuks" item. */
   quantity?: string;
   description?: string;
   checked: boolean;
