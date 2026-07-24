@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Check, Pencil, Copy, Share2, Sparkles } from "lucide-react";
+import { Check, ChevronRight, Pencil, Copy, Share2, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { resolveDataMode } from "../../data/store";
-import { SAGE } from "../lib/constants";
+import { SAGE, PRESS_TINT } from "../lib/constants";
 import { spring } from "../lib/motion";
-import { Sheet, SheetHeader, Kop, Avatar, GroupCard, PrimaryButton } from "../components/shared";
+import { Sheet, SheetHeader, Kop, Avatar, GroupCard, PrimaryButton, IconBadge } from "../components/shared";
 
-export function HouseholdSheet({ onClose }: { onClose: () => void }) {
+export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void; onOpenProfiel?: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const createInvite = useCuraStore((s) => s.createInvite);
   const updateHousehold = useCuraStore((s) => s.updateHousehold);
   const revokeInvite = useCuraStore((s) => s.revokeInvite);
+  const me = members.find((m) => m.userId === currentUserId);
 
   const [naam, setNaam] = useState(household?.name ?? "");
   // Guard: if household hadn't resolved yet at mount, sync the name when it arrives.
@@ -75,6 +76,17 @@ export function HouseholdSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet onClose={onClose} tall>
       <SheetHeader title="Huishouden" onClose={onClose} />
+      {onOpenProfiel && (
+        <motion.button whileTap={{ backgroundColor: PRESS_TINT }} onClick={onOpenProfiel}
+          className="w-full flex items-center gap-3.5 bg-secondary rounded-2xl px-4 py-3.5 mb-7 transition-colors">
+          <IconBadge icon={<UserRound size={16} />} />
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-foreground">Profiel</p>
+            <p className="text-xs text-muted-foreground">{me?.displayName ?? "Jij"}</p>
+          </div>
+          <ChevronRight size={15} className="text-muted-foreground" aria-hidden="true" />
+        </motion.button>
+      )}
       <Kop>Naam</Kop>
       <div className="flex gap-2 mb-7">
         <input value={naam} onChange={(e) => setNaam(e.target.value)} disabled={!editing}
