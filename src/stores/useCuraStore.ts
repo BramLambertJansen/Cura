@@ -52,7 +52,7 @@ interface CuraState {
   /** "Wie pakt dit op?" — assign to any household member by their member id (or null for "Niemand"), not just the acting user. */
   assignTask: (taskId: string, memberId: string | null) => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<void>;
-  createTasksFromTemplates: (roomId: string, templates: Omit<CreateTaskInput, "roomId">[]) => Promise<void>;
+  createTasksFromTemplates: (roomId: string | undefined, templates: Omit<CreateTaskInput, "roomId">[]) => Promise<void>;
   updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 
