@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, SlidersHorizontal, Sun } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
@@ -8,7 +8,7 @@ import { TaskFormFields, buildDueDate, type TaskFormState } from "./TaskFormFiel
 import { requestNotificationPermission } from "../lib/useTaskReminders";
 import { SAGE } from "../lib/constants";
 
-export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onClose: () => void }) {
+export function AddTaskSheet({ roomId, onClose, headerExtra }: { roomId?: string | null; onClose: () => void; headerExtra?: ReactNode }) {
   const createTask = useCuraStore((s) => s.createTask);
   const rooms = useRoomViews();
   const [title, setTitle] = useState("");
@@ -66,6 +66,7 @@ export function AddTaskSheet({ roomId, onClose }: { roomId?: string | null; onCl
   return (
     <Sheet onClose={onClose}>
       <SheetHeader title="Taak toevoegen" onClose={onClose} />
+      {headerExtra}
       <VeldInput value={title} onChange={setTitle} onEnter={handleAdd} placeholder="Wat moet er gebeuren?" />
       <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">
         {formState.opMijnDag ? "De taak komt op je dag en in de gedeelde pool." : "De taak komt in de gedeelde pool. Meer hoeft niet."}
