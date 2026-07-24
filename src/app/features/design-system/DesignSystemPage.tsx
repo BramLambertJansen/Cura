@@ -4,7 +4,7 @@ import { AnimatePresence } from "motion/react";
 import { Plus, Link2, Home, Bell, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton,
+  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, CompletionBloom, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton,
   InstRij, KeuzeChip, Leeg, OptieKaart, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge,
   TaakToevoegRij, Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
@@ -246,6 +246,11 @@ export function DesignSystemPage() {
           <RingProgress value={0.75} />
           <RingProgress value={1} />
         </div>
+      </Section>
+
+      <Section title="Completion bloom">
+        <p className="text-sm text-muted-foreground -mt-1">Scale-overshoot "we zijn klaar"-viering — gereserveerd voor een echt sessie-afronding-moment (bv. een hele routine), nooit taak-naar-taak-voortgang. Zie <span className="font-mono">/routines/:bundleId/starten</span>'s afgeronde staat.</p>
+        <CompletionBloom />
       </Section>
 
       <Section title="Focustimer">

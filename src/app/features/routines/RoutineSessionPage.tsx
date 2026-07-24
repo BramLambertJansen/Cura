@@ -7,7 +7,7 @@ import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoutineView } from "../../../stores/useViews";
 import { fadeUp } from "../../lib/motion";
 import { SAGE } from "../../lib/constants";
-import { Card, IconButton, PillButton, PrimaryButton, RingProgress } from "../../components/shared";
+import { Card, CompletionBloom, IconButton, PillButton, PrimaryButton, RingProgress } from "../../components/shared";
 
 type DotState = "done" | "current" | "skipped" | "upcoming";
 
@@ -159,9 +159,12 @@ export function RoutineSessionPage() {
               animate="animate"
               role="status"
               aria-live="polite"
-              className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
-              <p className="text-lg font-medium text-foreground font-display">Routine gedaan voor nu.</p>
-              <p className="text-sm text-muted-foreground italic font-display max-w-[240px]">{routine.hint}</p>
+              className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
+              <CompletionBloom />
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-lg font-medium text-foreground font-display">Routine gedaan voor nu.</p>
+                <p className="text-sm text-muted-foreground italic font-display max-w-[240px]">{routine.hint}</p>
+              </div>
               <div className="w-full max-w-xs mt-3">
                 <PrimaryButton onClick={() => navigate("/routines")}>Terug naar Routines</PrimaryButton>
               </div>
