@@ -450,7 +450,14 @@ describe("shopping list", () => {
     const kg = item({ id: "s2", amount: 1, unit: "kg" });
     const stuks = item({ id: "s3", amount: 3, unit: "stuks" });
     const { open } = toShoppingList([ml, kg, stuks]);
-    expect(open.map((i) => i.quantity)).toEqual(["500ml", "1kg", "3"]);
+    expect(open.map((i) => i.quantity)).toEqual(["500ml", "1kg", "3x"]);
+  });
+
+  it("suppresses the label for a bare single stuks item", () => {
+    const single = item({ id: "s1", amount: 1, unit: "stuks" });
+    const noUnit = item({ id: "s2", amount: 1 });
+    const { open } = toShoppingList([single, noUnit]);
+    expect(open.map((i) => i.quantity)).toEqual([undefined, undefined]);
   });
 
   it("prefers amount/unit over a legacy quantity when both are present", () => {

@@ -476,15 +476,16 @@ export function shoppingAmountOptions(unit: ShoppingUnitKey, current?: number): 
 }
 
 /**
- * Compact display label for a shopping item's amount ("500ml", "1kg", "3" for
+ * Compact display label for a shopping item's amount ("500ml", "1kg", "3x" for
  * a bare/"stuks" count) — falls back to the legacy free-text `quantity` for
- * rows created before amount/unit existed.
+ * rows created before amount/unit existed. A bare single "stuks" item (the
+ * default for most quick-add/manual entries) shows no label at all — a redundant
+ * "1" next to nearly every plain item would be visual noise, not information.
  */
 export function formatShoppingQuantity(item: Pick<ShoppingItem, "amount" | "unit" | "quantity">): string | undefined {
   if (item.amount === undefined) return item.quantity;
-  const amount = formatShoppingAmount(item.amount);
-  if (!item.unit || item.unit === "stuks") return amount;
-  return `${amount}${item.unit}`;
+  if (!item.unit || item.unit === "stuks") return item.amount === 1 ? undefined : `${formatShoppingAmount(item.amount)}x`;
+  return `${formatShoppingAmount(item.amount)}${item.unit}`;
 }
 
 /** Split the shopping list into open vs checked, each oldest-added first. */
