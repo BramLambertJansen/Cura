@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, Minus, Plus, X } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
@@ -32,7 +32,7 @@ function fieldStyle(active: boolean, hasValue: boolean) {
  *    Adding keeps the sheet open and refocuses, so several items go in a row.
  *  - "beheren": manage the snel-toevoegen shortcuts (remove / add new).
  */
-export function BoodschapToevoegSheet({ onClose }: { onClose: () => void }) {
+export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () => void; headerExtra?: ReactNode }) {
   const createShoppingItem = useCuraStore((s) => s.createShoppingItem);
   const { items: quickItems, addQuickItem, removeQuickItem } = useQuickShoppingItems();
 
@@ -189,6 +189,7 @@ export function BoodschapToevoegSheet({ onClose }: { onClose: () => void }) {
       ) : (
         <>
           <SheetHeader title="Item toevoegen" onClose={onClose} />
+          {headerExtra}
 
           <input
             ref={titleRef}

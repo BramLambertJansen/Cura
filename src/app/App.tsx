@@ -23,6 +23,7 @@ import { PullToRefreshIndicator } from "./components/PullToRefreshIndicator";
 import { FocusMiniPill } from "./components/FocusMiniPill";
 import { usePullToRefresh } from "./lib/usePullToRefresh";
 import { SheetContext, type SheetActions } from "./sheetContext";
+import { KeuzeChip } from "./components/shared";
 
 // Route-level code splitting — each tab/screen becomes its own chunk instead
 // of shipping in the single main bundle (CLAUDE.md §9 build verification).
@@ -53,6 +54,22 @@ const WachtwoordSheet = lazy(() => import("./sheets/WachtwoordSheet").then((m) =
 
 function LazyOverlay({ children }: { children: ReactNode }) {
   return <Suspense fallback={null}>{children}</Suspense>;
+}
+
+/**
+ * FAB entry-point chooser: one universal "+" opens either sheet, this decides
+ * which. Kept out of AddTaskSheet/BoodschapToevoegSheet themselves — both stay
+ * mountable standalone (BoodschappenPage's own add-pill still opens
+ * BoodschapToevoegSheet directly, no toggle) — this is purely the FAB's own
+ * add-flow layered on top via each sheet's optional `headerExtra` slot.
+ */
+function AddModeToggle({ mode, onChange }: { mode: "taak" | "boodschap"; onChange: (m: "taak" | "boodschap") => void }) {
+  return (
+    <div role="group" aria-label="Wat wil je toevoegen?" className="flex gap-2 mb-5">
+      <KeuzeChip selected={mode === "taak"} onClick={() => onChange("taak")}>Taak</KeuzeChip>
+      <KeuzeChip selected={mode === "boodschap"} onClick={() => onChange("boodschap")}>Boodschap</KeuzeChip>
+    </div>
+  );
 }
 
 function AnimatedRoutes() {
@@ -104,6 +121,7 @@ function MainShell() {
   const { pull, state: pullState } = usePullToRefresh(scrollRef, refresh);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [addMode, setAddMode] = useState<"taak" | "boodschap">("taak");
   const [showAddBoodschap, setShowAddBoodschap] = useState(false);
   const [addRoomId, setAddRoomId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -177,11 +195,39 @@ function MainShell() {
         <FocusMiniPill />
 
         {!isRoutineSession && (
-          <BottomNav showAdd={showAdd} onAdd={() => { setAddRoomId(null); setShowAdd((s) => !s); }} />
+          <BottomNav
+            showAdd={showAdd}
+            onAdd={() => {
+              setAddRoomId(null);
+              // Default to whichever type you're most likely reaching for on this
+              // page — Boodschappen's own FAB used to open the task sheet by
+              // mistake (App.tsx used to hardcode AddTaskSheet); every other
+              // page still defaults to Taak, matching prior behavior.
+              setAddMode(pathname.startsWith("/boodschappen") ? "boodschap" : "taak");
+              setShowAdd((s) => !s);
+            }}
+          />
         )}
 
         <AnimatePresence>
-          {showAdd && <LazyOverlay key="add"><AddTaskSheet roomId={addRoomId} onClose={() => setShowAdd(false)} /></LazyOverlay>}
+          {showAdd && (
+            <LazyOverlay key="add">
+              {addMode === "taak"
+                ? (
+                  <AddTaskSheet
+                    roomId={addRoomId}
+                    onClose={() => setShowAdd(false)}
+                    headerExtra={<AddModeToggle mode={addMode} onChange={setAddMode} />}
+                  />
+                )
+                : (
+                  <BoodschapToevoegSheet
+                    onClose={() => setShowAdd(false)}
+                    headerExtra={<AddModeToggle mode={addMode} onChange={setAddMode} />}
+                  />
+                )}
+            </LazyOverlay>
+          )}
           {showAddBoodschap && <LazyOverlay key="add-boodschap"><BoodschapToevoegSheet onClose={() => setShowAddBoodschap(false)} /></LazyOverlay>}
           {editingTaskId && <LazyOverlay key="edit-task"><EditTaskSheet taskId={editingTaskId} onClose={() => setEditingTaskId(null)} /></LazyOverlay>}
           {showNewRoutine && <LazyOverlay key="nr"><NewRoutineSheet onClose={() => setShowNewRoutine(false)} /></LazyOverlay>}
