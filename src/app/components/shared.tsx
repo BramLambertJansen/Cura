@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
 import { Check, ChevronDown, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
+import { bloom } from "../lib/motion";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
 
 // How far (as a fraction of the sheet's own height) or how fast (px/s) a
@@ -782,6 +783,29 @@ export function StatusBadge({
       style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
       {children}
     </motion.span>
+  );
+}
+
+/**
+ * A big sage-gradient checkmark badge that scales in with a soft overshoot
+ * (the `bloom` variant, `src/app/lib/motion.ts`) — a distinct "we're done"
+ * celebration for a genuine session-completion moment (finishing a whole
+ * routine), never for task-to-task progress or a single checkbox tick. A
+ * shared primitive so any other real "goed gedaan"-moment can reuse it
+ * instead of a one-off inline animation.
+ */
+export function CompletionBloom({ size = 88 }: { size?: number }) {
+  return (
+    <motion.div
+      variants={bloom} initial="initial" animate="animate"
+      className="rounded-full flex items-center justify-center flex-shrink-0"
+      style={{
+        width: size, height: size,
+        background: "var(--gradient-primary)",
+        boxShadow: "var(--shadow-cta), 0 8px 28px color-mix(in srgb, var(--primary) 35%, transparent)",
+      }}>
+      <Check size={size * 0.42} strokeWidth={3} className="text-white" aria-hidden="true" />
+    </motion.div>
   );
 }
 
