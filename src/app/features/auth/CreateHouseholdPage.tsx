@@ -4,6 +4,8 @@ import { Check } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { Logo } from "../../components/Logo";
 import { AppBackground } from "../../components/AppBackground";
+import { RoomThumb } from "../../components/RoomThumb";
+import { ICONS } from "../../lib/constants";
 import { PrimaryButton, VeldInput, OptieKaart } from "../../components/shared";
 
 interface StarterTask {
@@ -14,9 +16,12 @@ interface StarterTask {
 
 /**
  * A handful of generic, universally-applicable starter tasks — not tied to
- * any room (a brand new household has none yet). Two are preselected so
- * onboarding ends with real, visible content on Vandaag instead of a
- * completely empty app — the cold-start moment where new users drop off.
+ * any room the user just picked in the "kamers" step: STARTER_TASKS predate
+ * that step and are meant to work whether or not a matching room exists, so
+ * they stay unlinked rather than guessing a roomId from a title match. Two
+ * are preselected so onboarding ends with real, visible content on Vandaag
+ * instead of a completely empty app — the cold-start moment where new users
+ * drop off.
  */
 const STARTER_TASKS: StarterTask[] = [
   { title: "Afwas doen", durationMin: 10, dagdeel: "ochtend" },
@@ -26,13 +31,21 @@ const STARTER_TASKS: StarterTask[] = [
 ];
 const PRESELECTED = [0, 1];
 
+// Only the room types with a real watercolor illustration (public/rooms/*) —
+// the same six KamerKunstKiezer leads with — so the picker never mixes art
+// tiles with tinted line-icon fallbacks on this first-impression screen.
+const STARTER_ROOMS = ICONS.slice(0, 6);
+const PRESELECTED_ROOMS = new Set(["utensils", "droplets", "sofa", "bed"]);
+
 /** "Create your first household" onboarding — for a signed-in user with zero households. */
 export function CreateHouseholdPage() {
   const createHousehold = useCuraStore((s) => s.createHousehold);
+  const createRoom = useCuraStore((s) => s.createRoom);
   const createTasksFromTemplates = useCuraStore((s) => s.createTasksFromTemplates);
-  const [step, setStep] = useState<"naam" | "taken">("naam");
+  const [step, setStep] = useState<"naam" | "kamers" | "taken">("naam");
   const [naam, setNaam] = useState("");
   const [busy, setBusy] = useState(false);
+  const [selectedRooms, setSelectedRooms] = useState<Set<string>>(() => new Set(PRESELECTED_ROOMS));
   const [selected, setSelected] = useState<Set<number>>(() => new Set(PRESELECTED));
 
   function toggle(i: number) {
@@ -43,11 +56,23 @@ export function CreateHouseholdPage() {
     });
   }
 
+  function toggleRoom(key: string) {
+    setSelectedRooms((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
+
   async function finish(indices: number[]) {
     if (busy) return;
     setBusy(true);
     try {
       await createHousehold(naam.trim());
+      for (const key of selectedRooms) {
+        const ic = STARTER_ROOMS.find((r) => r.key === key);
+        if (ic) await createRoom({ name: ic.defaultName, iconKey: ic.key, color: ic.color });
+      }
       if (indices.length > 0) {
         await createTasksFromTemplates(
           undefined,
@@ -83,14 +108,60 @@ export function CreateHouseholdPage() {
             <div className="space-y-3 text-left">
               <VeldInput
                 value={naam} onChange={setNaam} placeholder="Bijv. Thuis" ariaLabel="Naam van je huishouden" autoFocus
-                onEnter={() => naam.trim() && setStep("taken")}
+                onEnter={() => naam.trim() && setStep("kamers")}
               />
-              <PrimaryButton onClick={() => setStep("taken")} disabled={!naam.trim()}>Volgende</PrimaryButton>
+              <PrimaryButton onClick={() => setStep("kamers")} disabled={!naam.trim()}>Volgende</PrimaryButton>
               {/* An invited user shouldn't create a household here — that would strand
                   their invite (one huishouden per account). Point them at their link. */}
               <p className="text-xs text-muted-foreground leading-relaxed pt-2 text-center">
                 Ben je uitgenodigd door iemand? Open dan de uitnodigingslink die je hebt gekregen — zo sluit je je bij hún huishouden aan.
               </p>
+            </div>
+          </>
+        ) : step === "kamers" ? (
+          <>
+            <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Welke kamers zijn er?</h1>
+            <p className="text-sm text-muted-foreground mb-8">Optioneel — je kunt er later altijd meer toevoegen.</p>
+            <div className="grid grid-cols-3 gap-2.5 mb-6" role="group" aria-label="Kamers selecteren">
+              {STARTER_ROOMS.map((ic) => {
+                const active = selectedRooms.has(ic.key);
+                return (
+                  <button
+                    key={ic.key}
+                    type="button"
+                    onClick={() => toggleRoom(ic.key)}
+                    aria-pressed={active}
+                    aria-label={active ? `${ic.label} deselecteren` : `${ic.label} selecteren`}
+                    className="flex flex-col items-center gap-1.5 rounded-2xl focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
+                    <div className="relative w-full aspect-square rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-input)" }}>
+                      <RoomThumb ic={ic} color={ic.color} className="w-full h-full" rounded="rounded-2xl" large scaleImage={false} />
+                      <div
+                        className="absolute inset-0 rounded-2xl pointer-events-none"
+                        style={{ boxShadow: active ? `inset 0 0 0 2.5px ${ic.color}` : `inset 0 0 0 0px ${ic.color}00` }}
+                      />
+                      {active && (
+                        <span
+                          className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow-sm"
+                          style={{ background: ic.color }}>
+                          <Check size={12} strokeWidth={3} className="text-white" aria-hidden="true" />
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-medium text-center leading-tight" style={{ color: active ? ic.color : "var(--muted-foreground)" }}>{ic.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="space-y-2">
+              <PrimaryButton onClick={() => setStep("taken")}>Volgende</PrimaryButton>
+              <button
+                type="button"
+                onClick={() => { setSelectedRooms(new Set()); setStep("taken"); }}
+                className="w-full py-2.5 text-center text-sm font-medium text-muted-foreground rounded-lg focus-ring"
+              >
+                Overslaan
+              </button>
             </div>
           </>
         ) : (

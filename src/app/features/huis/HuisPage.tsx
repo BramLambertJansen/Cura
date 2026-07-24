@@ -175,7 +175,7 @@ export function HuisPage() {
                   onClick={() => createTasksFromTemplates(room.id, [t])}
                   className="w-full flex items-center gap-3 bg-card rounded-2xl px-4 py-3 border border-border/60 focus-ring text-left"
                   style={{ boxShadow: SHADOW }}>
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-secondary">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-secondary">
                     <Plus size={15} strokeWidth={2} aria-hidden="true" />
                   </div>
                   <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">{t.title}</span>
@@ -269,7 +269,7 @@ export function HuisPage() {
             </Card>
           ) : (
             <>
-              {openTasks.length > 0 && (
+              {openTasks.length > 0 ? (
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
                   {openTasks.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
@@ -277,6 +277,8 @@ export function HuisPage() {
                     </motion.div>
                   ))}
                 </motion.div>
+              ) : (
+                <p className="text-center text-xs text-muted-foreground/60 italic py-2" style={{ fontStyle: "italic" }}>Geen taken binnen dit filter.</p>
               )}
               {doneTasks.length > 0 && (
                 <CollapsibleSection
@@ -298,6 +300,11 @@ export function HuisPage() {
       </section>
 
       <section>
+        {/* A vertical KamerKaart list, not the 3-column image-tile grid the frozen
+            Claude-Design mockup shows — deliberate: a full-bleed photo grid can't
+            carry the featured-badge/owner/count text at WCAG AA contrast the way
+            an inset-art card can (CLAUDE.md §6), and rooms without art would need
+            a second, inconsistent tile treatment. */}
         <Kop>Kamers</Kop>
         {rooms.length === 0 && (
           <div className="text-center pt-4 pb-6">
