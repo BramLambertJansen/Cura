@@ -69,6 +69,7 @@ export function VandaagPage() {
   const { pickedUpToday, rest } = splitPickedUpToday(plannedOpen);
   const dagdelen = toDagdelen(rest);
   const nuDagdeel = dagdeelForHour(new Date().getHours());
+  const DateIcon = DAGDEEL_ICON[nuDagdeel];
   const { dagdelenNow, dagdelenLater } = splitDagdelen(dagdelen, nuDagdeel);
   const laterCount = dagdelenLater.reduce((n, g) => n + g.tasks.length, 0);
   // Never the first "Vandaag opgepakt" row: those rows get no onDismiss (no
@@ -156,8 +157,13 @@ export function VandaagPage() {
       <PageBanner src="/landing-header.webp" className="h-48" position="72% 35%" />
       <div className="relative px-5 pt-14 pb-6">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">{greeting.date}</p>
-          <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display">
+          <span
+            className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
+            style={{ background: "color-mix(in srgb, var(--card) 85%, transparent)", backdropFilter: "blur(8px)" }}>
+            <DateIcon size={12} aria-hidden="true" style={{ color: SAGE }} />
+            <span className="text-[0.66rem] font-semibold tracking-wide" style={{ color: "var(--muted-foreground)" }}>{greeting.date}</span>
+          </span>
+          <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display mt-2">
             {greeting.text}
           </h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
@@ -170,12 +176,26 @@ export function VandaagPage() {
           <div className="mb-3">
             <p className="font-display text-[1.2rem] leading-tight text-foreground">{heroTitle}</p>
           </div>
-          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "color-mix(in srgb, var(--muted-foreground) 14%, transparent)" }}>
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: "var(--gradient-primary)" }}
-              initial={{ width: 0 }}
-              animate={{ width: `${pct * 100}%` }}
+          <div className="relative h-2.5">
+            <div className="absolute inset-x-0 top-0 h-2.5 rounded-full overflow-hidden" style={{ background: "color-mix(in srgb, var(--muted-foreground) 14%, transparent)" }}>
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: "var(--gradient-primary)" }}
+                initial={{ width: 0 }}
+                animate={{ width: `${pct * 100}%` }}
+                transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
+              />
+            </div>
+            <motion.span
+              aria-hidden="true"
+              className="absolute top-1/2 w-3 h-3 rounded-full"
+              style={{
+                background: "radial-gradient(circle at 38% 35%, color-mix(in srgb, var(--primary) 40%, white), var(--primary))",
+                boxShadow: "0 2px 8px color-mix(in srgb, var(--primary) 55%, transparent)",
+                transform: "translate(-50%, -50%)",
+              }}
+              initial={{ left: 0 }}
+              animate={{ left: `${pct * 100}%` }}
               transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
             />
           </div>
@@ -306,6 +326,22 @@ export function VandaagPage() {
           </section>
         )}
 
+        <section>
+          <Card onClick={() => navigate("/samen", { state: { from: "vandaag" } })} className="flex items-center gap-3.5 px-4 py-4" ariaLabel="Samen — wat huisgenoten vandaag deden">
+            <IconBadge icon={<Heart size={16} />} size={36} />
+            <span className="flex-1 min-w-0 text-left">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="text-sm font-semibold text-foreground">Samen</span>
+                {!!housemateActivity && (
+                  <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: SAGE }} />
+                )}
+              </span>
+              <span className="block text-xs text-muted-foreground mt-0.5 truncate">{samenSubtitle}</span>
+            </span>
+            <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
+          </Card>
+        </section>
+
         {suggestions.length > 0 && (
           <section>
             <CollapsibleSection
@@ -341,22 +377,6 @@ export function VandaagPage() {
               </motion.div>
             ))}
           </motion.div>
-        </section>
-
-        <section>
-          <Card onClick={() => navigate("/samen", { state: { from: "vandaag" } })} className="flex items-center gap-3.5 px-4 py-4" ariaLabel="Samen — wat huisgenoten vandaag deden">
-            <IconBadge icon={<Heart size={16} />} size={36} />
-            <span className="flex-1 min-w-0 text-left">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="text-sm font-semibold text-foreground">Samen</span>
-                {!!housemateActivity && (
-                  <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: SAGE }} />
-                )}
-              </span>
-              <span className="block text-xs text-muted-foreground mt-0.5 truncate">{samenSubtitle}</span>
-            </span>
-            <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
-          </Card>
         </section>
       </div>
     </div>
