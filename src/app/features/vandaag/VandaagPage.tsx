@@ -53,10 +53,11 @@ export function VandaagPage() {
 
   // Re-render roughly once a minute so `nuDagdeel` below (derived from
   // `new Date()`) doesn't stay stuck on the previous dagdeel after 12:00/18:00
-  // while the page stays open with no other state change to trigger a render.
-  const [, tick] = useState(0);
+  // while the page stays open with no other state change to trigger a render —
+  // also drives sinceIso's recompute below, for the same reason.
+  const [minuteTick, setMinuteTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 60_000);
+    const id = setInterval(() => setMinuteTick((n) => n + 1), 60_000);
     return () => clearInterval(id);
   }, []);
 
@@ -81,11 +82,16 @@ export function VandaagPage() {
   // Vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag (zodat een
   // taak die dagen geleden binnen zijn interval is afgevinkt niet leest alsof die
   // vanochtend gebeurde), nieuwste eerst — feeds the Samen preview card below.
+  // Re-derived on the same minute-tick as nuDagdeel above, so this doesn't stay
+  // pinned to the moment the page first mounted — without it, a tab left open
+  // overnight would still use yesterday's midnight until some unrelated data
+  // change or navigation happened to force a recompute.
   const sinceIso = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d.toISOString();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minuteTick]);
   // toActivityFeed (selectors.ts) already sorts newest-first by completedAt — no re-sort needed here.
   const logboek = useActivityFeed(sinceIso);
   // The Samen preview card's live signal: the first (newest) completion today
