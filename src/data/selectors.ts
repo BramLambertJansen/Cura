@@ -91,6 +91,11 @@ export function toTaskView(
 ): TaskView {
   const latest = latestByTask.get(task.id);
   const done = isDone(task, latest, now);
+  // A recurring task's startedAt otherwise survives every interval reset, so
+  // without this check a task "bezig" two cycles ago would show "bezig" again
+  // the moment it becomes due, despite never having been (re)started this cycle.
+  const startedThisCycle = !!task.startedAt
+    && (!latest || new Date(task.startedAt).getTime() > new Date(latest.completedAt).getTime());
   const checklistItems = task.checklistItems ?? [];
   const checklistProgress = checklistItems.length > 0
     ? { done: checklistItems.filter((i) => i.checked).length, total: checklistItems.length }
@@ -117,7 +122,7 @@ export function toTaskView(
     dagdeel: task.dagdeel,
     wekkerLabel: wekkerLabel(task),
     startedAt: task.startedAt,
-    status: done ? "klaar" : task.startedAt ? "bezig" : "open",
+    status: done ? "klaar" : startedThisCycle ? "bezig" : "open",
     checklistItems,
     checklistProgress,
   };

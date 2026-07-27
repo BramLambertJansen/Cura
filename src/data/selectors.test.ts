@@ -139,6 +139,34 @@ describe("task status — derived, never stored", () => {
     const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
     expect(view.status).toBe("klaar");
   });
+
+  it("is 'open', not 'bezig', for a recurring task once a stale startedAt from a prior cycle is left behind", () => {
+    const now = Date.now();
+    const t = task({
+      intervalDays: 7,
+      startedAt: new Date(now - 20 * DAY_MS).toISOString(), // started during the PREVIOUS cycle
+    });
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: t.id, completedById: "m1", completedAt: new Date(now - 15 * DAY_MS).toISOString() },
+    ];
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    expect(view.done).toBe(false); // 15 days > the 7-day interval, so due again
+    expect(view.status).toBe("open");
+  });
+
+  it("is 'bezig' for a recurring task started after its latest completion, in the current cycle", () => {
+    const now = Date.now();
+    const t = task({
+      intervalDays: 7,
+      startedAt: new Date(now - 2 * DAY_MS).toISOString(), // started AFTER the last completion
+    });
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: t.id, completedById: "m1", completedAt: new Date(now - 10 * DAY_MS).toISOString() },
+    ];
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    expect(view.done).toBe(false);
+    expect(view.status).toBe("bezig");
+  });
 });
 
 describe("checklist progress — derived, independent of the task's own done-flag", () => {
