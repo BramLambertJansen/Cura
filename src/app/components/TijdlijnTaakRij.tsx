@@ -1,4 +1,4 @@
-import { memo, useEffect } from "react";
+import { forwardRef, memo, useEffect } from "react";
 import { animate, motion, useTransform } from "motion/react";
 import { Bell, Check, ListChecks, RefreshCw, RotateCcw, Timer, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
@@ -16,9 +16,7 @@ import { Checkbox, IconButton } from "./shared";
  * drag mechanics via `useSwipeRow` — so the interaction language stays one
  * thing across Vandaag/Huis/Taken; only the visual shell differs here.
  */
-export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
-  task, onToggle, onEdit, onDismiss, onStartFocus, peek,
-}: {
+export const TijdlijnTaakRij = memo(forwardRef<HTMLDivElement, {
   task: TaskView;
   onToggle: () => void;
   onEdit?: () => void;
@@ -26,7 +24,9 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
   onStartFocus?: () => void;
   /** One-time "peek" nudge (22px right and back) to hint that the row is swipeable — first row only, until the swipe hint is dismissed. */
   peek?: boolean;
-}) {
+}>(function TijdlijnTaakRij({
+  task, onToggle, onEdit, onDismiss, onStartFocus, peek,
+}, ref) {
   const claimed = !!task.claimedBy;
   const { x, dragProps, reduceMotion } = useSwipeRow({ onToggle, onDismiss });
 
@@ -83,7 +83,7 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
   );
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: task.done ? 0.48 : 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.28 }} className="relative">
+    <motion.div ref={ref} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: task.done ? 0.48 : 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.28 }} className="relative">
       {/* Unlike TaakRij's own card, this row has no opaque background of its own
           (it sits directly on the shared white group-card) — so the reveal tint
           must fade in/out with the drag too, not just the circle inside it, or
@@ -134,4 +134,4 @@ export const TijdlijnTaakRij = memo(function TijdlijnTaakRij({
       </motion.div>
     </motion.div>
   );
-});
+}));
