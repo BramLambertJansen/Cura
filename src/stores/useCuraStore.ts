@@ -53,7 +53,8 @@ interface CuraState {
   assignTask: (taskId: string, memberId: string | null) => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<void>;
   createTasksFromTemplates: (roomId: string | undefined, templates: Omit<CreateTaskInput, "roomId">[]) => Promise<void>;
-  updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<void>;
+  /** Resolves `true` on success, `false` on failure (already toasted) — check it before assuming the patch landed. */
+  updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<boolean>;
   deleteTask: (taskId: string) => Promise<void>;
 
   createRoom: (room: Omit<Room, "id" | "householdId">) => Promise<void>;
@@ -431,8 +432,10 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         updated = await store.claimTask(taskId, currentUserId);
       }
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
+      return true;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
+      return false;
     }
   },
 

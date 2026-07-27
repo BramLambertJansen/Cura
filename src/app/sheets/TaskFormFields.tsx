@@ -57,6 +57,12 @@ export function buildDueDate(
   return new Date(base.getFullYear(), base.getMonth(), base.getDate(), h, m, 0, 0).toISOString();
 }
 
+/** Adds one calendar day while preserving local wall-clock time — DST-safe, unlike a raw +24h ms add. */
+export function addLocalDay(iso: string): string {
+  const d = new Date(iso);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()).toISOString();
+}
+
 /** Extracts "HH:mm" from an ISO date string. */
 export function extractTijd(iso: string): string {
   const d = new Date(iso);

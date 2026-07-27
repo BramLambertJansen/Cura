@@ -5,10 +5,8 @@ import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomViews, useTaskView } from "../../stores/useViews";
 import { Sheet, SheetHeader, VeldInput, DubbelKnop, VerwijderKnop, PrimaryButton, Kop, KeuzeChip } from "../components/shared";
 import { SAGE } from "../lib/constants";
-import { TaskFormFields, buildDueDate, extractTijd, type TaskFormState } from "./TaskFormFields";
+import { TaskFormFields, buildDueDate, addLocalDay, extractTijd, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
-
-const DAY_MS = 86_400_000;
 
 export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
   const task = useTaskView(taskId);
@@ -91,8 +89,9 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
   const postponable = !task.done && !task.intervalDays && !!task.dueDate;
 
   async function postpone() {
-    const nextDueDate = new Date(new Date(task!.dueDate!).getTime() + DAY_MS).toISOString();
-    await updateTask(taskId, { dueDate: nextDueDate });
+    const nextDueDate = addLocalDay(task!.dueDate!);
+    const ok = await updateTask(taskId, { dueDate: nextDueDate });
+    if (!ok) return;
     toast("Verplaatst naar morgen.", { description: `${task!.title} staat morgen weer klaar.` });
     onClose();
   }
