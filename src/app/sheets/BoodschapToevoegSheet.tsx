@@ -47,6 +47,8 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
   const [unit, setUnit] = useState<ShoppingUnitKey>("stuks");
   const [category, setCategory] = useState<ShoppingCategoryKey>("other");
   const [categoryTouched, setCategoryTouched] = useState(false);
+  const [description, setDescription] = useState("");
+  const [descriptionActive, setDescriptionActive] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const justAddedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -104,12 +106,13 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
     setUnit("stuks");
     setCategory("other");
     setCategoryTouched(false);
+    setDescription("");
   }
 
   function handleAdd() {
     const name = title.trim();
     if (!name || amount === null) return;
-    void createShoppingItem({ title: name, amount, unit, category });
+    void createShoppingItem({ title: name, amount, unit, category, description: description.trim() || undefined });
     resetDraft();
     flashMessage(`${name} toegevoegd`);
     titleRef.current?.focus();
@@ -323,6 +326,23 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
                 </KeuzeChip>
               ))}
             </div>
+          </div>
+
+          <div className="mt-5">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+              Beschrijving <span className="normal-case font-medium opacity-70">(optioneel)</span>
+            </p>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onFocus={() => setDescriptionActive(true)}
+              onBlur={() => setDescriptionActive(false)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+              placeholder="Bijv. merk of smaak"
+              aria-label="Beschrijving"
+              className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-all"
+              style={fieldStyle(descriptionActive, !!description)}
+            />
           </div>
 
           <div className="mt-6">

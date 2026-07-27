@@ -9,11 +9,12 @@ import { useSwipeRow } from "../lib/useSwipeRow";
 /**
  * One open boodschappenlijst row inside a category card. An animated Checkbox
  * (the keyboard/screen-reader route, with its own "just checked" ripple) plus a
- * tappable title+aantal that also toggles, and swipe-right-to-check-off /
- * swipe-left-to-delete via the shared useSwipeRow mechanics — same two-directional
- * reveal language as TaakRij (sage check right, red trash left). Amount/unit/
- * category are set in the add sheet, not here — on a shopping trip the row stays
- * calm and easy to hit (CLAUDE.md §6).
+ * tappable title+aantal (+ optional description, a second muted line) that also
+ * toggles, and swipe-right-to-check-off / swipe-left-to-delete via the shared
+ * useSwipeRow mechanics — same two-directional reveal language as TaakRij (sage
+ * check right, red trash left). Amount/unit/category/description are set in the
+ * add sheet, not here — on a shopping trip the row stays calm and easy to hit
+ * (CLAUDE.md §6).
  *
  * Rows carry no card chrome of their own: the parent category card supplies the
  * rounded border + shadow, and `isLast` drops the hairline divider on the final
@@ -66,13 +67,20 @@ export const BoodschapRij = memo(function BoodschapRij({
           onClick={onToggle}
           aria-label={item.checked ? `${item.title} terugzetten` : `${item.title} afvinken`}
           animate={{ color: item.checked ? "var(--muted-foreground)" : "var(--foreground)" }}
-          className="flex-1 min-w-0 flex items-center gap-2 text-left focus-ring rounded-lg -my-1 py-1">
-          <span className={`flex-1 min-w-0 truncate text-[0.9375rem] font-medium leading-snug ${item.checked ? "line-through" : ""}`}>
-            {item.title}
+          className="flex-1 min-w-0 flex flex-col items-start text-left focus-ring rounded-lg -my-1 py-1">
+          <span className="w-full flex items-center gap-2">
+            <span className={`flex-1 min-w-0 truncate text-[0.9375rem] font-medium leading-snug ${item.checked ? "line-through" : ""}`}>
+              {item.title}
+            </span>
+            {item.quantity && (
+              <span className={`flex-shrink-0 text-xs text-muted-foreground ${item.checked ? "line-through" : ""}`}>
+                {item.quantity}
+              </span>
+            )}
           </span>
-          {item.quantity && (
-            <span className={`flex-shrink-0 text-xs text-muted-foreground ${item.checked ? "line-through" : ""}`}>
-              {item.quantity}
+          {item.description && (
+            <span className={`w-full truncate text-xs text-muted-foreground/80 ${item.checked ? "line-through" : ""}`}>
+              {item.description}
             </span>
           )}
         </motion.button>
