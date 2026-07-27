@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, Check, Coffee, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
@@ -20,6 +20,10 @@ import { Card, DubbelKnop, IconBadge, IconButton, Kop, OptieKaart, PillButton, P
  */
 export function FocusPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Origin-aware back, same pattern as Samen: fall back to Meer for a direct
+  // link/refresh, where there's no navigation state to read.
+  const cameFrom = (location.state as { from?: string } | null)?.from || "/meer";
   const status = usePomodoroStore((s) => s.status);
   const phase = usePomodoroStore((s) => s.phase);
   const remainingSec = usePomodoroStore((s) => s.remainingSec);
@@ -58,8 +62,13 @@ export function FocusPage() {
 
       <div className="relative px-5 pt-14 pb-10">
         <IconButton
-          onClick={() => navigate("/meer")}
-          label="Terug naar Meer"
+          onClick={() => navigate(cameFrom, { replace: true })}
+          label={
+            cameFrom.startsWith("/vandaag") ? "Terug naar Vandaag"
+              : cameFrom.startsWith("/huis") ? "Terug naar Huis"
+                : cameFrom.startsWith("/taken") ? "Terug naar Takenoverzicht"
+                  : "Terug naar Meer"
+          }
           tone="card" className="mb-4"
           icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
         <div className="mb-2">
