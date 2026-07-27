@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sun, Sunrise, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
-import { useActivityFeed, useRoutineViews, useTaskViews } from "../../../stores/useViews";
+import { useActivityFeed, useCurrentMember, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen, splitPickedUpToday } from "../../../data/selectors";
 import type { DagdeelGroup } from "../../../data/types";
 import { getGreeting } from "../../lib/format";
@@ -34,8 +34,7 @@ export function VandaagPage() {
   const { openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
-  const members = useCuraStore((s) => s.members);
-  const currentUserId = useCuraStore((s) => s.currentUserId);
+  const me = useCurrentMember();
   const tasks = useTaskViews();
   const routines = useRoutineViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
@@ -78,7 +77,6 @@ export function VandaagPage() {
   // gesture that then does nothing on that exact row.
   const firstTaskId = dagdelenNow[0]?.tasks[0]?.id;
 
-  const me = members.find((m) => m.userId === currentUserId);
   // Vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag (zodat een
   // taak die dagen geleden binnen zijn interval is afgevinkt niet leest alsof die
   // vanochtend gebeurde), nieuwste eerst — feeds the Samen preview card below.

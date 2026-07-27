@@ -2,7 +2,21 @@ import { useMemo } from "react";
 import { useCuraStore } from "./useCuraStore";
 import { buildLatestCompletionMap, toActivityFeed, toRoomView, toRoutineView, toShoppingList, toTaskView } from "../data/selectors";
 import { useMinuteTick } from "../app/lib/useMinuteTick";
-import type { ActivityView, RoomView, RoutineView, ShoppingListView, TaskView } from "../data/types";
+import type { ActivityView, Member, RoomView, RoutineView, ShoppingListView, TaskView } from "../data/types";
+
+/**
+ * The acting user's own Member row, resolved via currentUserId — the "who am
+ * I" lookup (`members.find((m) => m.userId === currentUserId)`) that used to
+ * be duplicated across 6 feature files (#157). Member has no derived fields
+ * (unlike Task/Room), so returning the raw entity here isn't a view-model
+ * violation — it's the same entity screens already pass around elsewhere
+ * (e.g. HouseholdSheet's member list).
+ */
+export function useCurrentMember(): Member | undefined {
+  const members = useCuraStore((s) => s.members);
+  const currentUserId = useCuraStore((s) => s.currentUserId);
+  return useMemo(() => members.find((m) => m.userId === currentUserId), [members, currentUserId]);
+}
 
 /** Every task as a view-model — done/dueHint/claimedBy resolved, never stored. */
 export function useTaskViews(): TaskView[] {

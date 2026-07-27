@@ -53,6 +53,7 @@ src/
 - The store holds normalized **domain entities** in memory; screens render **view-models** (`TaskView`, `RoomView`, `RoutineView`, `ActivityView` in `src/data/types.ts`) produced by `src/data/selectors.ts`.
 - **No derived state in domain schemas** (`src/data/schemas.ts`): no `done`, no density ratios, no hint text. Everything a screen needs that looks computed (a task's done/doneBy, a room's "waarschijnlijk weer toe" hint, a routine's "11 of 14") is derived by selectors from entities + completions.
 - That split is what lets the app degrade gracefully with partial data and keeps the local/cloud swap a backend change, not a feature rewrite.
+- **"Who am I"** (the acting user's own `Member` row) is `useCurrentMember()` (`src/stores/useViews.ts`, next to the view-model hooks) — `members.find((m) => m.userId === currentUserId)`, used to be duplicated across 6 feature files (VandaagPage, SamenPage, HouseholdSheet, ProfielSheet, EditTaskSheet, useTaskReminders — #157). `Member` has no derived fields, so returning the raw entity here isn't a view-model violation. The same lookup still appears 3x inside `useCuraStore.ts` itself (`updateMember`/`updateQuietHours`/`assignTask`) — those are plain store-action code reading via zustand's `get()`, not component/hook context, so they can't call a React hook and are deliberately left as-is.
 
 ### One-household cap
 - `getHouseholdsForUser` always returns a list, even though it's length 1 today.

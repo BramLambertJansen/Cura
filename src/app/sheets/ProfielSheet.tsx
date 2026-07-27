@@ -4,6 +4,7 @@ import { Bell, Check, ChevronRight, HelpCircle, Home, KeyRound, LogOut, Moon, Pe
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { useCurrentMember } from "../../stores/useViews";
 import { useNotificationPreference } from "../lib/useTaskReminders";
 import { usePushSubscription, isIOS } from "../lib/usePushSubscription";
 import { resolveDataMode } from "../../data/store";
@@ -14,10 +15,9 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
   const { signOut, status, userId, email } = useAuth();
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
-  const currentUserId = useCuraStore((s) => s.currentUserId);
   const updateMember = useCuraStore((s) => s.updateMember);
   const updateQuietHours = useCuraStore((s) => s.updateQuietHours);
-  const me = members.find((m) => m.userId === currentUserId);
+  const me = useCurrentMember();
   const quietEnabled = !!(me?.quietHoursStart && me?.quietHoursEnd);
 
   const { enabled: notif, toggle: toggleNotif } = useNotificationPreference();
