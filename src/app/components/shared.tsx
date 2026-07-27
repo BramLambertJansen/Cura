@@ -74,7 +74,16 @@ export function Sheet({
     node.addEventListener("keydown", onKeyDown);
     return () => {
       node.removeEventListener("keydown", onKeyDown);
-      if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus();
+      // Only restore focus if it's still where this sheet left it. A sheet-swap
+      // (close this one, open another in the same tick — e.g. Profiel ⇄
+      // Huishouden) mounts the new sheet's own focus trap well before
+      // AnimatePresence finishes this one's exit animation and actually
+      // unmounts it, so by the time this cleanup runs the new sheet may already
+      // hold focus — blindly restoring here would yank it back behind the new
+      // dialog instead of leaving it there.
+      if (previouslyFocused && document.contains(previouslyFocused) && node.contains(document.activeElement)) {
+        previouslyFocused.focus();
+      }
     };
   }, []);
 
