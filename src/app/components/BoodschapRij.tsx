@@ -2,8 +2,7 @@ import { memo } from "react";
 import { motion, useTransform } from "motion/react";
 import { Check, Trash2 } from "lucide-react";
 import type { ShoppingItemView } from "../../data/types";
-import { SAGE } from "../lib/constants";
-import { Checkbox, IconButton } from "./shared";
+import { Checkbox, IconButton, SwipeReveal } from "./shared";
 import { useSwipeRow } from "../lib/useSwipeRow";
 
 /**
@@ -24,23 +23,15 @@ export const BoodschapRij = memo(function BoodschapRij({
   item, onToggle, onDelete, isLast = false,
 }: { item: ShoppingItemView; onToggle: () => void; onDelete: () => void; isLast?: boolean }) {
   const { x, dragProps } = useSwipeRow({ onToggle, onDismiss: onDelete });
-  // The sage "afvinken" reveal fades in behind the row as it slides right...
-  const checkRevealOpacity = useTransform(x, [10, 48], [0, 1]);
-  const checkRevealScale = useTransform(x, [10, 60], [0.6, 1]);
-  // ...and the red "Verwijderen" reveal fades in as it slides left.
+  // The red "Verwijderen" reveal fades in as the row slides left — a label,
+  // not the icon-in-circle badge SwipeReveal covers for the check side above,
+  // so it stays its own bespoke JSX (see SwipeReveal's doc comment).
   const deleteRevealOpacity = useTransform(x, [-96, -24], [1, 0]);
 
   return (
     <div className="relative overflow-hidden">
-      <div aria-hidden="true" className="absolute inset-0 flex items-center pl-1 pointer-events-none">
-        <motion.div
-          style={{ opacity: checkRevealOpacity, scale: checkRevealScale }}
-          className="w-7 h-7 rounded-full flex items-center justify-center">
-          <span className="w-full h-full rounded-full flex items-center justify-center" style={{ background: SAGE }}>
-            <Check size={13} strokeWidth={3} className="text-white" aria-hidden="true" />
-          </span>
-        </motion.div>
-      </div>
+      {/* The sage "afvinken" reveal fades in behind the row as it slides right. */}
+      <SwipeReveal x={x} side="right" tone="primary" padding="pl-1" icon={<Check size={13} strokeWidth={3} className="text-white" aria-hidden="true" />} />
 
       <motion.div
         aria-hidden="true"

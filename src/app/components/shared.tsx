@@ -1,6 +1,6 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
+import { motion, AnimatePresence, useDragControls, useReducedMotion, useTransform, type MotionValue, type PanInfo } from "motion/react";
 import { Check, ChevronDown, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
 import { bloom } from "../lib/motion";
@@ -213,6 +213,78 @@ export function Checkbox({
         )}
       </AnimatePresence>
     </motion.button>
+  );
+}
+
+const SWIPE_REVEAL_RANGE: Record<"left" | "right", [number, number]> = { right: [10, 48], left: [-48, -10] };
+const SWIPE_REVEAL_SCALE_RANGE: Record<"left" | "right", [number, number]> = { right: [10, 60], left: [-60, -10] };
+
+/**
+ * Shared swipe-reveal chrome behind a swipeable row: an optional tinted wash
+ * plus a fading, scaling icon-in-circle badge, driven by the drag `x`
+ * MotionValue from useSwipeRow. Consolidates what TaakRij, TijdlijnTaakRij and
+ * BoodschapRij's check-side reveal each hand-rolled separately with slightly
+ * different paddings/radii/tint percentages (CLAUDE.md Swipe & verversen).
+ *
+ * `fadeBackground` exists because TijdlijnTaakRij's rows have no opaque
+ * background of their own — its wash has to fade in with the drag (an
+ * `opacity`-bound `motion.div` wrapping a static-tint inner layer) or it would
+ * show through at rest; TaakRij/BoodschapRij's rows sit on their own opaque
+ * card, so their wash can stay a plain, always-rendered background that the
+ * card simply hides until the row slides off it.
+ *
+ * BoodschapRij's delete-side reveal (an inline label + icon, not a circle) is
+ * deliberately NOT modeled here — forcing that different shape through this
+ * badge-shaped primitive would cost more than the ~10 duplicated lines it'd save.
+ */
+export function SwipeReveal({
+  x, side, tone, icon, padding = "", rounded,
+  fadeBackground = false,
+  range = SWIPE_REVEAL_RANGE[side],
+  scaleRange = SWIPE_REVEAL_SCALE_RANGE[side],
+}: {
+  x: MotionValue<number>;
+  side: "left" | "right";
+  tone: "primary" | "destructive";
+  icon: ReactNode;
+  /** Tailwind padding utility pushing the badge in from the row's edge, e.g. "pl-5" / "pr-4". */
+  padding?: string;
+  /** Tailwind rounding utility for the background wash, matching the row's own corners. Omit to skip the wash entirely (BoodschapRij's check side has none). */
+  rounded?: string;
+  fadeBackground?: boolean;
+  /** useTransform domain for the badge's opacity+scale. Defaults to the shared check/plan/dismiss reveal's curve — every current row uses it. */
+  range?: [number, number];
+  scaleRange?: [number, number];
+}) {
+  const opacity = useTransform(x, range, side === "right" ? [0, 1] : [1, 0]);
+  const scale = useTransform(x, scaleRange, side === "right" ? [0.6, 1] : [1, 0.6]);
+  const tint = `color-mix(in srgb, var(--${tone}) 10%, transparent)`;
+  const accent = tone === "primary" ? SAGE : "var(--destructive)";
+  const hasWash = Boolean(rounded);
+  const wrapperClassName = `absolute inset-0 flex items-center ${side === "left" ? "justify-end " : ""}${padding} pointer-events-none`;
+
+  const badge = (
+    <motion.div
+      style={fadeBackground ? { scale } : { opacity, scale }}
+      className={`${hasWash && fadeBackground ? "relative " : ""}w-7 h-7 rounded-full flex items-center justify-center`}>
+      <span className="w-full h-full rounded-full flex items-center justify-center" style={{ background: accent }}>
+        {icon}
+      </span>
+    </motion.div>
+  );
+
+  if (fadeBackground) {
+    return (
+      <motion.div aria-hidden="true" style={{ opacity }} className={wrapperClassName}>
+        {hasWash && <div className={`absolute inset-0 ${rounded}`} style={{ background: tint }} />}
+        {badge}
+      </motion.div>
+    );
+  }
+  return (
+    <div aria-hidden="true" className={`${wrapperClassName} ${rounded ?? ""}`.trim()} style={hasWash ? { background: tint } : undefined}>
+      {badge}
+    </div>
   );
 }
 
