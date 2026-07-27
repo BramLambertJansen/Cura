@@ -100,6 +100,14 @@ const getDataStore = (): Promise<DataStore> => {
 // Tasks currently mid-toggle — prevents a rapid double-tap from writing two completions.
 const toggling = new Set<string>();
 
+// Per-task assignTask call counter — unlike `toggling` above, rapid re-assigns
+// are a legitimate change of mind (tap "Jij", then quickly tap a housemate
+// instead), not a double-tap to ignore. Each call claims the next number, and
+// only the response matching the LATEST number for that task gets applied —
+// an earlier call resolving late (out of network-timing order) can no longer
+// overwrite a more recent selection.
+const assignSeq = new Map<string, number>();
+
 // Realtime (Phase 3+, cloud mode only — a no-op subscription in local mode).
 // A burst of remote postgres_changes events collapses into one refetch instead
 // of one per row (someone completing several tasks shouldn't fire N refetches).
@@ -336,6 +344,8 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async assignTask(taskId, memberId) {
+    const seq = (assignSeq.get(taskId) ?? 0) + 1;
+    assignSeq.set(taskId, seq);
     try {
       const store = await getDataStore();
       const { tasks, members, currentUserId } = get();
@@ -345,6 +355,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         throw new Error("Dit huisgenootschap kent dit lid niet.");
       }
       const updated = await store.assignTask(taskId, memberId);
+      if (assignSeq.get(taskId) !== seq) return; // a newer assign call already superseded this one
       if (memberId) {
         const me = members.find((m) => m.userId === currentUserId);
         const name = memberId === me?.id ? "Jij" : members.find((m) => m.id === memberId)?.displayName ?? "Iemand";
@@ -354,6 +365,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       }
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
+      if (assignSeq.get(taskId) !== seq) return;
       toast.error(e instanceof Error ? e.message : "Toewijzen lukte niet");
     }
   },

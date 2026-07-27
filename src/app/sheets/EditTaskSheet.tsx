@@ -18,10 +18,12 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
   const currentUserId = useCuraStore((s) => s.currentUserId);
   const rooms = useRoomViews();
   const me = members.find((m) => m.userId === currentUserId);
-  // Only offered in an actual two-person household — a single-member household
-  // has no one else to hand a task to, so a "Niemand/Jij"-only picker would be
-  // a meaningless stand-in for the existing claim toggle.
-  const partner = members.find((m) => m.id !== me?.id);
+  // Only offered when there's actually someone else to hand a task to — a
+  // single-member household has no one, so a "Niemand/Jij"-only picker would
+  // be a meaningless stand-in for the existing claim toggle. Every OTHER
+  // member gets its own chip, not just the first one found, so this doesn't
+  // silently break for a household with a 3rd (or more) member.
+  const others = members.filter((m) => m.id !== me?.id);
 
   const [title, setTitle] = useState(task?.title ?? "");
   const [formState, setFormState] = useState<TaskFormState>(() => {
@@ -119,17 +121,19 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
         )}
       </div>
 
-      {partner && (
+      {others.length > 0 && (
         <div className="mb-5">
           <Kop>Wie pakt dit op?</Kop>
-          <div role="group" aria-label="Wie pakt dit op?" className="flex gap-2 mt-3">
+          <div role="group" aria-label="Wie pakt dit op?" className="flex gap-2 mt-3 flex-wrap">
             <KeuzeChip selected={!task.claimedById} onClick={() => assignTask(taskId, null)}>Niemand</KeuzeChip>
             {me && (
               <KeuzeChip selected={task.claimedById === me.id} onClick={() => assignTask(taskId, me.id)}>Jij</KeuzeChip>
             )}
-            <KeuzeChip selected={task.claimedById === partner.id} onClick={() => assignTask(taskId, partner.id)}>
-              {partner.displayName}
-            </KeuzeChip>
+            {others.map((member) => (
+              <KeuzeChip key={member.id} selected={task.claimedById === member.id} onClick={() => assignTask(taskId, member.id)}>
+                {member.displayName}
+              </KeuzeChip>
+            ))}
           </div>
         </div>
       )}
