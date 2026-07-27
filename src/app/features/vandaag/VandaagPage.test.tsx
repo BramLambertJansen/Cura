@@ -92,6 +92,7 @@ describe("VandaagPage", () => {
 
     expect(screen.getByText("Afwas doen")).toBeInTheDocument();
     expect(screen.queryByText("Vuilnis buiten zetten")).not.toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Voortgang van vandaag" })).toHaveAttribute("aria-valuetext", "0 van 2 taken afgerond");
 
     const laterToggle = screen.getByRole("button", { name: /later vandaag/i });
     expect(laterToggle).toHaveAttribute("aria-expanded", "false");
@@ -110,6 +111,17 @@ describe("VandaagPage", () => {
 
     expect(screen.getByText(/niets op de planning\. geniet ervan/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /later vandaag/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps useful suggestions glanceable by default", () => {
+    setTasks([
+      { id: "t-short", householdId: "h1", title: "Planten water geven", planned: false, durationMin: 5, checklistItems: [] },
+    ]);
+
+    renderVandaag();
+
+    expect(screen.getByRole("button", { name: /misschien handig/i })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Planten water geven")).toBeInTheDocument();
   });
 
   it("calls toggleTask with the task id when its checkbox is ticked", async () => {

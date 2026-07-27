@@ -59,7 +59,7 @@ function NavTab({ tab, active }: { tab: Tab; active: boolean }) {
       {/* Weight switches via class (one repaint), not via animation — tweening font-weight makes the label wobble. */}
       <motion.span
         animate={{ color: active ? SAGE : MUTED_FG }}
-        className={`text-[10px] leading-none relative z-10 ${active ? "font-semibold" : "font-medium"}`}
+        className={`text-xs leading-none relative z-10 ${active ? "font-semibold" : "font-medium"}`}
       >
         {tab.label}
       </motion.span>
