@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useCuraStore } from "./useCuraStore";
 import { buildLatestCompletionMap, toActivityFeed, toRoomView, toRoutineView, toShoppingList, toTaskView } from "../data/selectors";
+import { useMinuteTick } from "../app/lib/useMinuteTick";
 import type { ActivityView, RoomView, RoutineView, ShoppingListView, TaskView } from "../data/types";
 
 /** Every task as a view-model — done/dueHint/claimedBy resolved, never stored. */
@@ -13,10 +14,13 @@ export function useTaskViews(): TaskView[] {
   // dueHint can disagree between two housemates' phones, and disagree with the
   // household-timezone-aware push reminders (useTaskReminders).
   const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
+  // Re-derive once a minute so a daily task's done-flip at local midnight shows
+  // up while the page stays mounted, not only after the next data mutation.
+  const tick = useMinuteTick();
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
     () => tasks.map((t) => toTaskView(t, latestByTask, rooms, members, undefined, timeZone)),
-    [tasks, latestByTask, rooms, members, timeZone],
+    [tasks, latestByTask, rooms, members, timeZone, tick],
   );
 }
 
@@ -27,10 +31,11 @@ export function useRoomViews(): RoomView[] {
   const completions = useCuraStore((s) => s.completions);
   const members = useCuraStore((s) => s.members);
   const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
+  const tick = useMinuteTick();
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
     () => rooms.map((r) => toRoomView(r, tasks, latestByTask, members, undefined, timeZone)),
-    [rooms, tasks, latestByTask, members, timeZone],
+    [rooms, tasks, latestByTask, members, timeZone, tick],
   );
 }
 
@@ -41,10 +46,11 @@ export function useRoutineViews(): RoutineView[] {
   const completions = useCuraStore((s) => s.completions);
   const members = useCuraStore((s) => s.members);
   const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
+  const tick = useMinuteTick();
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
     () => bundles.map((b) => toRoutineView(b, tasks, completions, latestByTask, members, undefined, timeZone)),
-    [bundles, tasks, completions, latestByTask, members, timeZone],
+    [bundles, tasks, completions, latestByTask, members, timeZone, tick],
   );
 }
 
