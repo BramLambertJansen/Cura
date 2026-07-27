@@ -113,16 +113,34 @@ function mapShoppingItem(r: ShoppingItemRow): ShoppingItem {
 // degrade instead of throwing (same reasoning as the category column before it).
 const NEW_SHOPPING_COLUMNS = ["category", "amount", "unit", "description"] as const;
 
-export function isMissingShoppingColumn(error: unknown): boolean {
+/**
+ * Which of NEW_SHOPPING_COLUMNS a PGRST204 "column not found" error is
+ * actually naming — PostgREST reports one missing column per error, so this
+ * is never more than one entry, but callers must re-check after each retry (a
+ * second column can still be missing behind the first). NEVER used to justify
+ * dropping the whole quartet for one column's absence — an earlier version of
+ * this fallback did exactly that and would silently discard an already-set
+ * category/amount/unit on an insert whose only real problem was a
+ * still-missing description column (a deployment mid-migration-rollout). Same
+ * pattern as missingTaskColumns below.
+ */
+export function missingShoppingColumns(error: unknown): (typeof NEW_SHOPPING_COLUMNS)[number][] {
   const err = error as { code?: string; message?: string } | null | undefined;
-  if (err?.code !== "PGRST204" || typeof err.message !== "string") return false;
+  if (err?.code !== "PGRST204" || typeof err.message !== "string" || !err.message.includes("'shopping_items'")) return [];
   const message = err.message;
-  return NEW_SHOPPING_COLUMNS.some((col) => message.includes(`'${col}'`)) && message.includes("'shopping_items'");
+  return NEW_SHOPPING_COLUMNS.filter((col) => message.includes(`'${col}'`));
 }
 
-function withoutNewShoppingColumns<T extends Partial<Record<(typeof NEW_SHOPPING_COLUMNS)[number], unknown>>>(row: T): T {
+export function isMissingShoppingColumn(error: unknown): boolean {
+  return missingShoppingColumns(error).length > 0;
+}
+
+function withoutShoppingColumns<T extends Partial<Record<(typeof NEW_SHOPPING_COLUMNS)[number], unknown>>>(
+  row: T,
+  cols: readonly (typeof NEW_SHOPPING_COLUMNS)[number][],
+): T {
   const clone = { ...row };
-  for (const col of NEW_SHOPPING_COLUMNS) delete clone[col];
+  for (const col of cols) delete clone[col];
   return clone;
 }
 
@@ -557,37 +575,43 @@ export class SupabaseStore implements DataStore {
   }
 
   async createShoppingItem(householdId: string, input: CreateShoppingItemInput): Promise<ShoppingItem> {
-    const row: ShoppingItemRow = {
+    let row: ShoppingItemRow = {
       id: uid(), household_id: householdId, title: input.title,
       quantity: null,
       amount: input.amount ?? null, unit: input.unit ?? null, description: input.description ?? null,
       category: input.category ?? null, checked: false, created_at: new Date().toISOString(),
     };
-    const { error } = await supabase.from("shopping_items").insert(row);
-    if (error) {
-      if (!isMissingShoppingColumn(error)) throw new Error(error.message);
-      const { error: retryError } = await supabase.from("shopping_items").insert(withoutNewShoppingColumns(row));
-      if (retryError) throw new Error(retryError.message);
-      return mapShoppingItem({ ...row, category: null, amount: null, unit: null, description: null });
+    // Each retry drops only the column(s) THIS error actually named — never
+    // the whole NEW_SHOPPING_COLUMNS quartet — so a lone still-missing column
+    // never takes an already-migrated sibling with it. Bounded by
+    // NEW_SHOPPING_COLUMNS.length since a retry can reveal at most one new
+    // missing column per attempt.
+    for (let attempt = 0; attempt <= NEW_SHOPPING_COLUMNS.length; attempt++) {
+      const { error } = await supabase.from("shopping_items").insert(row);
+      if (!error) return mapShoppingItem(row);
+      const missing = missingShoppingColumns(error);
+      if (missing.length === 0) throw new Error(error.message);
+      row = withoutShoppingColumns(row, missing);
     }
-    return mapShoppingItem(row);
+    throw new Error("Boodschap aanmaken mislukt: onverwacht veel ontbrekende kolommen op 'shopping_items'.");
   }
 
   async updateShoppingItem(itemId: string, patch: UpdateShoppingItemInput): Promise<ShoppingItem> {
-    const update = shoppingItemUpdateRow(patch);
-    const { data, error } = await supabase.from("shopping_items").update(update).eq("id", itemId).select().single();
-    if (error) {
-      if (!isMissingShoppingColumn(error)) throw new Error(error.message);
-      const retryUpdate = withoutNewShoppingColumns(update);
-      const retryQuery = Object.keys(retryUpdate).length > 0
-        ? supabase.from("shopping_items").update(retryUpdate).eq("id", itemId).select().single()
+    let update = shoppingItemUpdateRow(patch);
+    for (let attempt = 0; attempt <= NEW_SHOPPING_COLUMNS.length; attempt++) {
+      const query = Object.keys(update).length > 0
+        ? supabase.from("shopping_items").update(update).eq("id", itemId).select().single()
         : supabase.from("shopping_items").select("*").eq("id", itemId).single();
-      const { data: retryData, error: retryError } = await retryQuery;
-      if (retryError || !retryData) throw new Error(retryError?.message ?? `Shopping item not found: ${itemId}`);
-      return mapShoppingItem(retryData as ShoppingItemRow);
+      const { data, error } = await query;
+      if (!error) {
+        if (!data) throw new Error(`Shopping item not found: ${itemId}`);
+        return mapShoppingItem(data as ShoppingItemRow);
+      }
+      const missing = missingShoppingColumns(error);
+      if (missing.length === 0) throw new Error(error.message);
+      update = withoutShoppingColumns(update, missing);
     }
-    if (!data) throw new Error(`Shopping item not found: ${itemId}`);
-    return mapShoppingItem(data as ShoppingItemRow);
+    throw new Error("Boodschap bijwerken mislukt: onverwacht veel ontbrekende kolommen op 'shopping_items'.");
   }
 
   async toggleShoppingItem(itemId: string, checked: boolean): Promise<ShoppingItem> {
