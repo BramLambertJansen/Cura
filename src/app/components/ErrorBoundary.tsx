@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { EmptyIllustration } from "./EmptyIllustration";
+import { PrimaryButton } from "./shared";
 
 type State = { hasError: boolean; error: Error | null };
 
@@ -41,12 +42,9 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           <p className="text-sm text-muted-foreground max-w-xs mb-6 leading-relaxed">
             Geen zorgen, je gegevens zijn veilig. Probeer de pagina opnieuw te laden.
           </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-5 py-2.5 rounded-full text-sm font-semibold text-white"
-            style={{ background: "var(--gradient-primary)" }}>
+          <PrimaryButton onClick={() => window.location.reload()} fullWidth={false}>
             Opnieuw laden
-          </button>
+          </PrimaryButton>
           {details && (
             // Tucked away so the screen stays calm (§2), but reachable when a
             // reload keeps landing back here — this is what tells you the cause.

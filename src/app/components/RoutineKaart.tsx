@@ -77,7 +77,7 @@ export const RoutineKaart = memo(function RoutineKaart({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-label={`${routine.name} ${open ? "inklappen" : "uitklappen"}`}
-        className="w-full flex items-center gap-4 text-left transition-colors px-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--primary)_40%,transparent)]"
+        className="w-full flex items-center gap-4 text-left transition-colors px-5 focus-ring focus-visible:ring-inset"
         style={{ paddingTop: "1.1rem", paddingBottom: "1.1rem" }}>
         <RingProgress value={total > 0 ? done / total : 0} size={44} stroke={3.5} />
         <div className="flex-1 min-w-0">

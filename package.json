@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.worker.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "1.2.3",
@@ -63,9 +64,14 @@
   "devDependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.62.2",
     "@tailwindcss/vite": "4.1.12",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
     "@vitejs/plugin-react": "4.7.0",
+    "@vitest/coverage-v8": "4.1.9",
+    "jsdom": "^30.0.0",
     "lightningcss-win32-x64-msvc": "^1.32.0",
     "tailwindcss": "4.1.12",
     "typescript": "5.7.3",
