@@ -159,16 +159,24 @@ enabled = true
 site_url = "http://127.0.0.1:5173"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
-# A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-# Keep these aligned with AuthProvider's `emailRedirectTo: window.location.href`.
+# URLs that auth providers are permitted to redirect to post authentication.
+# Keep these aligned with AuthProvider's `emailRedirectTo: window.location.href`,
+# which sends the FULL current path (e.g. a magic link requested from
+# /uitnodiging/:token) — a bare-origin entry only matches an exact redirect to
+# that origin's root, so each origin also needs its `/**` wildcard form or a
+# magic link sent from any routed path fails to redirect back to it.
 # Production/staging origins still need to be allow-listed in the hosted
 # project's Auth settings, e.g. https://your-domain.example and
-# https://your-domain.example/uitnodiging/*.
+# https://your-domain.example/**.
 additional_redirect_urls = [
   "http://127.0.0.1:5173",
+  "http://127.0.0.1:5173/**",
   "http://localhost:5173",
+  "http://localhost:5173/**",
   "https://127.0.0.1:5173",
-  "https://localhost:5173"
+  "https://127.0.0.1:5173/**",
+  "https://localhost:5173",
+  "https://localhost:5173/**"
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
