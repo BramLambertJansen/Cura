@@ -75,6 +75,10 @@ export function RoutineSessionPage() {
   // same as when everything's been checked off. Skipping the last task must
   // advance to the "klaar"-screen, not loop back onto an already-skipped card.
   const currentTask = openTasks.find((t) => !skipped.has(t.id)) ?? null;
+  // The session can also end because every remaining task was skipped, not
+  // completed — that's not the same thing as "klaar" and shouldn't get the
+  // celebratory bloom CLAUDE.md reserves for an actual finish.
+  const allDone = total > 0 && done === total;
   // Scoped to this session's own remaining tasks, not the whole routine — the
   // hero ring above already shows the whole-routine "{done}/{total} gedaan"
   // ratio, so repeating that same total here would be redundant and, for a
@@ -160,9 +164,18 @@ export function RoutineSessionPage() {
               role="status"
               aria-live="polite"
               className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-              <CompletionBloom />
+              {allDone
+                ? <CompletionBloom />
+                : (
+                  <div aria-hidden="true" className="rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{ width: 88, height: 88, background: "var(--secondary)" }}>
+                    <SkipForward size={32} strokeWidth={2} className="text-muted-foreground" />
+                  </div>
+                )}
               <div className="flex flex-col items-center gap-3">
-                <p className="text-lg font-medium text-foreground font-display">Routine gedaan voor nu.</p>
+                <p className="text-lg font-medium text-foreground font-display">
+                  {allDone ? "Routine gedaan voor nu." : "Voor deze sessie klaar."}
+                </p>
                 <p className="text-sm text-muted-foreground italic font-display max-w-[240px]">{routine.hint}</p>
               </div>
               <div className="w-full max-w-xs mt-3">
