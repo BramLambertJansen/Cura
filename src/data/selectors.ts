@@ -472,33 +472,9 @@ export const SHOPPING_UNIT_LABELS: Record<ShoppingUnitKey, string> = {
   l: "l",
 };
 
-/** Realistic boodschappen amounts per eenheid, for the hoeveelheid-dropdown — not an arbitrary 1..N range, since "500g" and "6 stuks" are both common but "6g" or "500 stuks" rarely are. */
-export const SHOPPING_AMOUNT_PRESETS: Record<ShoppingUnitKey, number[]> = {
-  stuks: [1, 2, 3, 4, 5, 6, 8, 10, 12],
-  g: [100, 250, 500, 750, 1000],
-  kg: [0.5, 1, 1.5, 2, 3, 5],
-  ml: [100, 250, 500, 750, 1000],
-  l: [0.5, 1, 1.5, 2, 3, 5],
-};
-
-/** "1.5" -> "1,5", "3" -> "3" — the NL decimal-comma display form shared by formatShoppingQuantity and the hoeveelheid-dropdown labels. */
+/** "1.5" -> "1,5", "3" -> "3" — the NL decimal-comma display form for a shopping amount, used by formatShoppingQuantity below. */
 export function formatShoppingAmount(amount: number): string {
   return Number.isInteger(amount) ? String(amount) : String(amount).replace(".", ",");
-}
-
-/**
- * Options for the hoeveelheid-dropdown: "geen aantal" plus the presets for the
- * given eenheid. `current` folds in an already-set amount that isn't one of
- * the presets (e.g. an older item saved before presets existed) so editing
- * never silently blanks out a real value.
- */
-export function shoppingAmountOptions(unit: ShoppingUnitKey, current?: number): { value: string; label: string }[] {
-  const presets = SHOPPING_AMOUNT_PRESETS[unit];
-  const amounts = current !== undefined && !presets.includes(current) ? [current, ...presets].sort((a, b) => a - b) : presets;
-  return [
-    { value: "", label: "Geen aantal" },
-    ...amounts.map((amount) => ({ value: String(amount), label: formatShoppingAmount(amount) })),
-  ];
 }
 
 /**
