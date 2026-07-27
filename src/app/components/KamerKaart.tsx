@@ -45,10 +45,10 @@ export const KamerKaart = memo(function KamerKaart({
         )}
         <p className="font-semibold text-foreground leading-snug font-display"
           style={{ fontSize: "0.9375rem" }}>{room.name}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug truncate"
+        <p className="text-xs text-muted-foreground mt-0.5 leading-snug truncate"
           style={{ fontStyle: "italic" }}>{room.hint}</p>
         {room.owner && (
-          <p className="text-[10px] mt-1 leading-none" style={{ color: c, opacity: 0.75 }}>
+          <p className="text-xs mt-1 leading-none" style={{ color: c, opacity: 0.82 }}>
             Meestal {room.owner}
           </p>
         )}
@@ -58,7 +58,7 @@ export const KamerKaart = memo(function KamerKaart({
         {openCount > 0 ? (
           <div className="flex flex-col items-center min-w-[1.75rem]">
             <span className="text-xl font-bold leading-none tabular-nums" style={{ color: c }}>{openCount}</span>
-            <span className="text-[9px] text-muted-foreground leading-none mt-0.5 font-medium">
+            <span className="text-xs text-muted-foreground leading-none mt-1 font-medium">
               {openCount === 1 ? "taak" : "taken"}
             </span>
           </div>
