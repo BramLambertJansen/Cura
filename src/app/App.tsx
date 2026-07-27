@@ -29,6 +29,7 @@ import { KeuzeChip } from "./components/shared";
 // of shipping in the single main bundle (CLAUDE.md §9 build verification).
 const VandaagPage = lazy(() => import("./features/vandaag/VandaagPage").then((m) => ({ default: m.VandaagPage })));
 const HuisPage = lazy(() => import("./features/huis/HuisPage").then((m) => ({ default: m.HuisPage })));
+const RoomDetailPage = lazy(() => import("./features/huis/RoomDetailPage").then((m) => ({ default: m.RoomDetailPage })));
 const RoutinesPage = lazy(() => import("./features/routines/RoutinesPage").then((m) => ({ default: m.RoutinesPage })));
 const RoutineSessionPage = lazy(() => import("./features/routines/RoutineSessionPage").then((m) => ({ default: m.RoutineSessionPage })));
 const SamenPage = lazy(() => import("./features/samen/SamenPage").then((m) => ({ default: m.SamenPage })));
@@ -80,7 +81,7 @@ function AnimatedRoutes() {
         <Route path="/" element={<Navigate to="/vandaag" replace />} />
         <Route path="/vandaag" element={<PageTx><VandaagPage /></PageTx>} />
         <Route path="/huis" element={<PageTx><HuisPage /></PageTx>} />
-        <Route path="/huis/:roomId" element={<PageTx><HuisPage /></PageTx>} />
+        <Route path="/huis/:roomId" element={<PageTx><RoomDetailPage /></PageTx>} />
         <Route path="/routines" element={<PageTx><RoutinesPage /></PageTx>} />
         <Route path="/routines/:bundleId/starten" element={<PageTx><RoutineSessionPage /></PageTx>} />
         <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />

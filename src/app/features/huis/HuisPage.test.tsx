@@ -2,16 +2,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { MemoryRouter } from "react-router";
 import { HuisPage } from "./HuisPage";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { SheetContext, type SheetActions } from "../../sheetContext";
 import type { Household, Member, Room, Task } from "../../../data/types";
 
 /**
- * Smoke tests for CLAUDE.md §5 Huis: the merged "Alle taken" + "Kamers" list
- * page vs. the room-detail branch (both live in HuisPage, keyed off the
- * :roomId route param), and the room/duration filters.
+ * Smoke tests for CLAUDE.md §5 Huis's list view: the merged "Alle taken" +
+ * "Kamers" home and the room/duration filters. Room detail (`/huis/:roomId`)
+ * is its own page, RoomDetailPage — see RoomDetailPage.test.tsx (#156 split
+ * the old dual-purpose HuisPage in two).
  */
 
 const HOUSEHOLD: Household = { id: "h1", name: "Thuis", timeZone: "Europe/Amsterdam" };
@@ -34,15 +35,12 @@ function sheetActions(): SheetActions {
   };
 }
 
-function renderHuis(initialPath: string) {
+function renderHuis() {
   const sheets = sheetActions();
   render(
-    <MemoryRouter initialEntries={[initialPath]}>
+    <MemoryRouter initialEntries={["/huis"]}>
       <SheetContext.Provider value={sheets}>
-        <Routes>
-          <Route path="/huis" element={<HuisPage />} />
-          <Route path="/huis/:roomId" element={<HuisPage />} />
-        </Routes>
+        <HuisPage />
       </SheetContext.Provider>
     </MemoryRouter>,
   );
@@ -72,7 +70,6 @@ function setFixture(rooms: Room[], tasks: Task[]) {
     toggleTask: vi.fn().mockResolvedValue(undefined),
     updateTask: vi.fn().mockResolvedValue(true),
     claimTask: vi.fn().mockResolvedValue(undefined),
-    createTasksFromTemplates: vi.fn().mockResolvedValue(undefined),
   });
 }
 
@@ -86,7 +83,7 @@ describe("HuisPage — list view", () => {
       ],
     );
 
-    renderHuis("/huis");
+    renderHuis();
 
     expect(screen.getByText("Alle taken")).toBeInTheDocument();
     expect(screen.getByText("2 open")).toBeInTheDocument();
@@ -109,7 +106,7 @@ describe("HuisPage — list view", () => {
       ],
     );
 
-    renderHuis("/huis");
+    renderHuis();
     await user.click(screen.getByRole("button", { name: /filters/i }));
     // Two "Badkamer" chips exist once filters are open (the filter chip and the
     // Kamers grid card) — the filter row is the one inside the filter chip list.
@@ -126,39 +123,11 @@ describe("HuisPage — list view", () => {
       [{ id: "t1", householdId: "h1", title: "Afwassen", roomId: "r-keuken", durationMin: 5, planned: false, checklistItems: [] }],
     );
 
-    renderHuis("/huis");
+    renderHuis();
     await user.click(screen.getByRole("button", { name: /filters/i }));
     await user.click(screen.getByText("45+ min"));
 
     expect(screen.getByText("Geen taken gevonden")).toBeInTheDocument();
     expect(screen.queryByText("Afwassen")).not.toBeInTheDocument();
-  });
-});
-
-describe("HuisPage — room detail view", () => {
-  it("renders the room's own tasks plus quick-add rows for templates not yet used", () => {
-    setFixture(
-      [KEUKEN],
-      [{ id: "t1", householdId: "h1", title: "Afwassen", roomId: "r-keuken", planned: false, checklistItems: [] }],
-    );
-
-    renderHuis("/huis/r-keuken");
-
-    expect(screen.getByRole("heading", { name: "Keuken" })).toBeInTheDocument();
-    expect(screen.getByText("Afwassen")).toBeInTheDocument();
-    // "Afwassen" is already a task in this room, so it must not also be offered
-    // as a quick-add suggestion — only still-unused keuken templates should show.
-    expect(screen.getByText("Snel toevoegen")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Afwassen" })).not.toBeInTheDocument();
-    expect(screen.getByText("Aanrecht schoonvegen")).toBeInTheDocument();
-  });
-
-  it("shows the empty illustration when a room has no tasks yet", () => {
-    setFixture([BADKAMER], []);
-
-    renderHuis("/huis/r-badkamer");
-
-    expect(screen.getByRole("heading", { name: "Badkamer" })).toBeInTheDocument();
-    expect(screen.getByText("Nog geen taken in deze kamer.")).toBeInTheDocument();
   });
 });

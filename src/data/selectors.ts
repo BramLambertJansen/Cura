@@ -42,6 +42,16 @@ export type { DueReminder } from "./reminders";
 
 const DAY_MS = 86_400_000;
 
+/**
+ * The longest interval a recurring task can be given (IntervalKiezer's own
+ * input clamp — kept here, not duplicated, so the two can't drift). Anything
+ * that needs "far enough back to still find a task's last completion" — e.g.
+ * useCuraStore's bounded `since` fetch (#154) — must look back at least this
+ * far, or a legitimately once-a-year task would read as never-done the
+ * moment its one completion ages past a shorter window.
+ */
+export const MAX_TASK_INTERVAL_DAYS = 365;
+
 const memberName = (members: Member[], id?: string): string | undefined =>
   id ? members.find((m) => m.id === id)?.displayName : undefined;
 
@@ -540,15 +550,20 @@ export function toActivityFeed(
   members: Member[],
   sinceIso?: string,
 ): ActivityView[] {
+  // Index once instead of a tasks.find()/rooms.find() per completion inside
+  // the .map() below (O(completions × tasks) -> O(tasks + rooms + completions)) —
+  // same Map-indexing pattern as buildLatestCompletionMap (reminders.ts).
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
+  const roomById = new Map(rooms.map((r) => [r.id, r]));
   return completions
     .filter((c) => !sinceIso || c.completedAt >= sinceIso)
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
     .map((c) => {
-      const task = tasks.find((t) => t.id === c.taskId);
+      const task = taskById.get(c.taskId);
       return {
         taskId: c.taskId,
         title: task?.title ?? "Onbekende taak",
-        room: rooms.find((r) => r.id === task?.roomId)?.name,
+        room: task?.roomId ? roomById.get(task.roomId)?.name : undefined,
         doneBy: memberName(members, c.completedById) ?? "Iemand",
         doneById: c.completedById,
         doneAt: c.completedAt,
