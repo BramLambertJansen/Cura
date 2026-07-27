@@ -4,7 +4,7 @@ import { ChevronDown, SlidersHorizontal, Sun } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomViews } from "../../stores/useViews";
 import { FieldShell, Sheet, SheetHeader, Toggle, VeldInput, DubbelKnop } from "../components/shared";
-import { TaskFormFields, buildDueDate, type TaskFormState } from "./TaskFormFields";
+import { TaskFormFields, DagdeelKiezer, buildDueDate, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
 import { SAGE } from "../lib/constants";
 
@@ -82,6 +82,10 @@ export function AddTaskSheet({ roomId, onClose, headerExtra }: { roomId?: string
         </FieldShell>
       </div>
 
+      {/* Always visible, same as EditTaskSheet — not buried behind "Meer
+          opties" like the rest of the (genuinely optional-by-default) form. */}
+      <DagdeelKiezer dagdeel={formState.dagdeel} onDagdeelChange={(v) => setFormState((s) => ({ ...s, dagdeel: v }))} />
+
       <div className="mb-6 rounded-2xl overflow-hidden" style={{ background: "color-mix(in srgb, var(--card) 68%, transparent)", border: "1px solid var(--border)" }}>
         <motion.button
           type="button"
@@ -116,6 +120,7 @@ export function AddTaskSheet({ roomId, onClose, headerExtra }: { roomId?: string
                 <TaskFormFields
                   rooms={rooms}
                   showDayToggle={false}
+                  showDagdeel={false}
                   {...formState}
                   onRoomChange={(id) => setFormState((s) => ({ ...s, selectedRoomId: id }))}
                   onOpMijnDagChange={(v) => setFormState((s) => ({ ...s, opMijnDag: v }))}
