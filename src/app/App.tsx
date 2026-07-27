@@ -106,6 +106,22 @@ function PageTx({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * The bottom-nav fade scrim, tinted by the current daypart. Its own leaf so
+ * useDaypart()'s once-a-minute tick only re-renders this one node instead of
+ * reconciling MainShell's whole tree (routes, sheets, ~12 sheet-open states) —
+ * #158.
+ */
+function NavTintScrim() {
+  const navTint = DAYPART_NAV[useDaypart()];
+  return (
+    <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-30" style={{
+      height: "calc(6rem + var(--safe-bottom))",
+      background: `linear-gradient(to top,color-mix(in srgb, ${navTint} 96%, transparent) 0%,color-mix(in srgb, ${navTint} 60%, transparent) 45%,transparent 100%)`,
+    }} />
+  );
+}
+
 /** The existing app shell — tabs, sheets, FAB. Assumes useCuraStore is already ready. */
 function MainShell() {
   useFocusTimer();
@@ -115,7 +131,6 @@ function MainShell() {
   // eronder, minder scroll-bottom-padding omdat er geen navbar te vrijwaren is.
   const { pathname } = useLocation();
   const isRoutineSession = Boolean(matchPath("/routines/:bundleId/starten", pathname));
-  const navTint = DAYPART_NAV[useDaypart()];
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const refresh = useCuraStore((s) => s.refresh);
@@ -163,12 +178,7 @@ function MainShell() {
       <div className="fixed inset-0 flex flex-col bg-background overflow-hidden">
         <AppBackground />
 
-        {!isRoutineSession && (
-          <div className="absolute bottom-0 left-0 right-0 pointer-events-none z-30" style={{
-            height: "calc(6rem + var(--safe-bottom))",
-            background: `linear-gradient(to top,color-mix(in srgb, ${navTint} 96%, transparent) 0%,color-mix(in srgb, ${navTint} 60%, transparent) 45%,transparent 100%)`,
-          }} />
-        )}
+        {!isRoutineSession && <NavTintScrim />}
 
         <div
           ref={scrollRef}

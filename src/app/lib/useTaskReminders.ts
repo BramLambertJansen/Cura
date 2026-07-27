@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { useCurrentMember } from "../../stores/useViews";
 import { buildLatestCompletionMap, getDueReminders, isWithinQuietHours } from "../../data/reminders";
 import { showLocalNotification } from "./showNotification";
 
@@ -74,9 +75,7 @@ export function useTaskReminders(openTask?: (taskId: string) => void): void {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
   const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
-  const currentUserId = useCuraStore((s) => s.currentUserId);
-  const members = useCuraStore((s) => s.members);
-  const me = members.find((m) => m.userId === currentUserId);
+  const me = useCurrentMember();
   const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
