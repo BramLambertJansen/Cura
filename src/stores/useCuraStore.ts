@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../data/store";
 import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, ShoppingItem } from "../data/types";
+import { MAX_TASK_INTERVAL_DAYS } from "../data/selectors";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
@@ -97,6 +98,17 @@ const getDataStore = (): Promise<DataStore> => {
   return dataStorePromise;
 };
 
+// Bounding the completions fetch instead of loading a household's entire
+// lifetime history on every init()/refresh() (#154). isDone/dueHint only ever
+// need a task's LATEST completion, and MAX_TASK_INTERVAL_DAYS is the longest
+// a task's own interval can be (IntervalKiezer's input clamp) — so nothing
+// legitimately recurring can have its most recent completion fall outside
+// this window while still reading as "done". The Samen activity feed asks for
+// far less than this (today only, via its own sinceIso), so one shared bound
+// comfortably covers every current consumer of `completions`.
+const COMPLETIONS_LOOKBACK_MS = MAX_TASK_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+const completionsSince = (): string => new Date(Date.now() - COMPLETIONS_LOOKBACK_MS).toISOString();
+
 // Tasks currently mid-toggle — prevents a rapid double-tap from writing two completions.
 const toggling = new Set<string>();
 
@@ -145,7 +157,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         store.listMembers(household.id),
         store.listRooms(household.id),
         store.listTasks(household.id),
-        store.listCompletions(household.id),
+        store.listCompletions(household.id, completionsSince()),
         store.listBundles(household.id),
         store.listShoppingItems(household.id),
       ]);
@@ -189,7 +201,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         store.listMembers(householdId),
         store.listRooms(householdId),
         store.listTasks(householdId),
-        store.listCompletions(householdId),
+        store.listCompletions(householdId, completionsSince()),
         store.listBundles(householdId),
         store.listShoppingItems(householdId),
       ]);

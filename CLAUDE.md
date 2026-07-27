@@ -99,6 +99,12 @@ Phase 1–2 work with zero backend (`VITE_DATA_MODE=local`, seeded via `src/data
 - `useCuraStore.init()` subscribes after the initial load and debounces `onChange` (`REALTIME_DEBOUNCE_MS` = 400ms in `src/stores/useCuraStore.ts`) into a single re-fetch of members/rooms/tasks/completions/bundles, so a burst of remote writes causes one refresh, not one per row; `reset()` tears the subscription down.
 - `LocalStore.subscribeToChanges()` is a no-op returning an empty unsubscribe, so `local` mode is untouched and callers never branch on `store.mode`. Refetching (pure `SELECT`s) can't itself trigger new `postgres_changes` events, so there's no feedback loop by construction.
 
+### Bounded completions fetch
+- `useCuraStore.init()`/`refresh()` fetch `completions` with a `since` bound (`completionsSince()`, `src/stores/useCuraStore.ts`) instead of a household's entire lifetime history — cost now scales with `MAX_TASK_INTERVAL_DAYS` (`src/data/selectors.ts`, 365 days), not with how long the household has existed.
+- That bound is exactly `MAX_TASK_INTERVAL_DAYS`, not the (much shorter) routine density window, because `isDone`/`dueHint` need a task's own latest completion to compute correctly for **any** recurring task, not just bundle/routine ones — and `Task.intervalDays` can be set as high as `IntervalKiezer`'s own input clamp allows. `IntervalKiezer.tsx` imports the same constant (rather than a second hardcoded `365`) so the UI's interval cap and the fetch window can't drift apart — see #154, the same drift class as #152/#153.
+- The Samen activity feed asks for far less than this window (its own `sinceIso`, typically "today"), so no separate/paginated fetch is needed for it.
+- `toActivityFeed` (`selectors.ts`) indexes `tasks`/`rooms` into `Map`s once instead of a `.find()` per completion inside its `.map()` — same O(1)-lookup pattern as `buildLatestCompletionMap`.
+
 ## 5. Features
 
 Houd deze lijst bij wanneer je een feature toevoegt, verwijdert, of van fase verandert — dit is de bron van waarheid voor "wat zit erin", niet alleen de phasing-tabel in §4.
