@@ -340,6 +340,9 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const { tasks, members, currentUserId } = get();
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
+      if (memberId && !members.some((m) => m.id === memberId)) {
+        throw new Error("Dit huisgenootschap kent dit lid niet.");
+      }
       const updated = await store.assignTask(taskId, memberId);
       if (memberId) {
         const me = members.find((m) => m.userId === currentUserId);
