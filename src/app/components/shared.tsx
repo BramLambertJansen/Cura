@@ -612,17 +612,22 @@ export function DubbelKnop({
 }
 
 /**
- * Full-width primary call-to-action — the gradient button every auth/onboarding
- * screen and the invite sheet used to re-author inline. The sage glow is the
- * shared --shadow-cta token and hides itself while disabled/busy. Pass `icon`
- * for a leading glyph; the busy *label* stays at the call site (each screen
- * phrases its own "Even geduld…").
+ * Primary gradient call-to-action — the button every auth/onboarding screen
+ * and the invite sheet used to re-author inline. The sage glow is the shared
+ * --shadow-cta token and hides itself while disabled/busy. Pass `icon` for a
+ * leading glyph; the busy *label* stays at the call site (each screen phrases
+ * its own "Even geduld…").
+ *
+ * `fullWidth` (default) is the standard full-bleed CTA; pass `fullWidth={false}`
+ * for a compact inline pill — e.g. ErrorBoundary/FullScreenError's "opnieuw
+ * (proberen)" retry button, so both share one gradient-CTA implementation
+ * instead of each hand-rolling the look (CLAUDE.md §7).
  */
 export function PrimaryButton({
-  children, onClick, disabled = false, busy = false, icon, type = "button", ariaLabel,
+  children, onClick, disabled = false, busy = false, icon, type = "button", ariaLabel, fullWidth = true,
 }: {
   children: ReactNode; onClick?: () => void; disabled?: boolean; busy?: boolean;
-  icon?: ReactNode; type?: "button" | "submit"; ariaLabel?: string;
+  icon?: ReactNode; type?: "button" | "submit"; ariaLabel?: string; fullWidth?: boolean;
 }) {
   const isDisabled = disabled || busy;
   return (
@@ -633,7 +638,7 @@ export function PrimaryButton({
       disabled={isDisabled}
       aria-busy={busy || undefined}
       aria-label={ariaLabel}
-      className="w-full py-4 rounded-2xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-[opacity,transform] focus-ring focus-visible:ring-offset-2"
+      className={`${fullWidth ? "w-full py-4 rounded-2xl" : "px-5 py-2.5 rounded-full"} text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-[opacity,transform] focus-ring focus-visible:ring-offset-2`}
       style={{ background: "var(--gradient-primary)", boxShadow: isDisabled ? "none" : "var(--shadow-cta)" }}>
       {icon}{children}
     </motion.button>
@@ -761,7 +766,7 @@ export function Avatar({
 }) {
   const toneStyle: CSSProperties =
     tone === "solid"
-      ? { background: "var(--gradient-primary)", color: "#fff", boxShadow: `0 4px 16px color-mix(in srgb, var(--primary) 30%, transparent)` }
+      ? { background: "var(--gradient-primary)", color: PRIMARY_FG, boxShadow: `0 4px 16px color-mix(in srgb, var(--primary) 30%, transparent)` }
       : tone === "softStrong"
       ? { background: "color-mix(in srgb, var(--primary) 18%, transparent)", color: SAGE }
       : { background: "color-mix(in srgb, var(--accent) 45%, transparent)", color: SAGE };

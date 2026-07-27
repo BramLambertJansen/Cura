@@ -276,7 +276,7 @@ We bouwen component-based: nieuwe UI is samengesteld uit herbruikbare, uniforme 
 
 ### Varianten & focus/typografie
 - Nieuwe visuele varianten gaan eerst als variant/prop op een bestaand component (cva-variants, zoals in `button.tsx`), niet als losse component met bijna-dezelfde stijl.
-- De standaard toetsenbord-focusring is de `focus-ring` Tailwind-utility (`@utility` in `src/styles/theme.css`), niet een handgetypte `focus-visible:ring-[color-mix(...)]`-keten. `Card` blijft bewust op de `outline-*`-variant (zodat de ring z'n eigen rust-schaduw niet overschrijft).
+- De standaard toetsenbord-focusring is de `focus-ring` Tailwind-utility (`@utility` in `src/styles/theme.css`), niet een handgetypte `focus-visible:ring-[color-mix(...)]`-keten. `Card` blijft bewust op de `outline-*`-variant (zodat de ring z'n eigen rust-schaduw niet overschrijft). `RoutineKaart`'s expand/collapse-knop combineert `focus-ring` met `focus-visible:ring-inset` — een ingeklapte routine-kaart heeft geen andere content, dus de knop vult de hele `overflow-hidden`-kaart; een naar buiten vallende ring zou daar volledig wegvallen (bevestigd door 'm daadwerkelijk met het toetsenbord te focussen en te screenshotten, niet er alleen naar te kijken in de code) — `ring-inset` blijft daarom bewust de uitzondering, alleen de tint/breedte komt nu uit de gedeelde utility in plaats van een losse hex.
 - De Lora-koptekst-stijl loopt via de `font-display`-utility (token `--font-display`), niet via inline `fontFamily`.
 
 ## 8. Conventions
