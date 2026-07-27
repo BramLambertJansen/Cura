@@ -151,6 +151,15 @@ export const TaakRij = memo(function TaakRij({
             className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border"
             style={{ borderColor: "color-mix(in srgb, var(--outline-color) 24%, transparent)", color: "var(--muted-foreground)" }}>Laat los</motion.button>
         )}
+        {/* Keyboard/reduced-motion fallback for the swipe-right "op mijn dag
+            zetten" gesture above — canPlan rows had no non-drag way to claim. */}
+        {showClaim && canPlan && onPlan && (
+          <motion.button whileTap={{ scale: 0.9 }}
+            onClick={onPlan}
+            aria-label={`${task.title} op mijn dag zetten`}
+            className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border"
+            style={{ borderColor: "color-mix(in srgb, var(--primary) 28%, transparent)", color: SAGE }}>Pak dit op</motion.button>
+        )}
       </motion.div>
     </motion.div>
   );

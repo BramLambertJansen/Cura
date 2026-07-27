@@ -233,6 +233,13 @@
 [data-sonner-toaster] {
   top: auto !important;
   bottom: calc(var(--safe-bottom) + 5.75rem) !important;
+  /* Sonner's own stylesheet sets an enormous z-index (999999999), well above
+     everything else in the app — including the FocusMiniPill (z-40) it shares
+     a bottom offset with, and an open Sheet's backdrop/content (z-40/z-50).
+     Capped here so a toast never covers the pill or blocks taps on sheet
+     controls; it stays above ordinary page content (z-10/z-30), which is the
+     common case when no sheet or pill is on screen. */
+  z-index: 35 !important;
 }
 
 /* Calm skeleton loading — a slow, low-amplitude "breathing" fade instead of

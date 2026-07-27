@@ -41,7 +41,11 @@ export function SamenPage() {
   return (
     <div className="px-5 pt-14 pb-8">
       <IconButton
-        onClick={() => navigate(cameFrom === "vandaag" ? "/vandaag" : "/meer")}
+        // replace, not push — Samen itself was reached with a push (from Vandaag's
+        // preview card or Meer's list item), so pushing again here would leave a
+        // stale /samen entry in history and turn the OS/browser back gesture into
+        // a Vandaag/Meer ⇄ Samen loop.
+        onClick={() => navigate(cameFrom === "vandaag" ? "/vandaag" : "/meer", { replace: true })}
         label={cameFrom === "vandaag" ? "Terug naar Vandaag" : "Terug naar Meer"}
         tone="card" className="mb-4"
         icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />

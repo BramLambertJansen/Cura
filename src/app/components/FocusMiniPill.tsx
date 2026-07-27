@@ -30,7 +30,7 @@ export function FocusMiniPill() {
       {visible && (
         <motion.button
           key="focus-mini-pill"
-          onClick={() => navigate("/focus")}
+          onClick={() => navigate("/focus", { state: { from: pathname } })}
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reduce ? { opacity: 0 } : { opacity: 0, y: 14 }}

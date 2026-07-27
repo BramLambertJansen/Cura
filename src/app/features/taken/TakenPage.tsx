@@ -75,6 +75,7 @@ export function TakenPage() {
       roomId: task.roomId,
       durationMin: task.durationMin,
       description: task.description,
+      dagdeel: task.dagdeel,
     });
     await deleteTask(task.id);
   }

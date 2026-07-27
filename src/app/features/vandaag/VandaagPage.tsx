@@ -53,10 +53,11 @@ export function VandaagPage() {
 
   // Re-render roughly once a minute so `nuDagdeel` below (derived from
   // `new Date()`) doesn't stay stuck on the previous dagdeel after 12:00/18:00
-  // while the page stays open with no other state change to trigger a render.
-  const [, tick] = useState(0);
+  // while the page stays open with no other state change to trigger a render —
+  // also drives sinceIso's recompute below, for the same reason.
+  const [minuteTick, setMinuteTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => tick((n) => n + 1), 60_000);
+    const id = setInterval(() => setMinuteTick((n) => n + 1), 60_000);
     return () => clearInterval(id);
   }, []);
 
@@ -81,11 +82,16 @@ export function VandaagPage() {
   // Vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag (zodat een
   // taak die dagen geleden binnen zijn interval is afgevinkt niet leest alsof die
   // vanochtend gebeurde), nieuwste eerst — feeds the Samen preview card below.
+  // Re-derived on the same minute-tick as nuDagdeel above, so this doesn't stay
+  // pinned to the moment the page first mounted — without it, a tab left open
+  // overnight would still use yesterday's midnight until some unrelated data
+  // change or navigation happened to force a recompute.
   const sinceIso = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d.toISOString();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minuteTick]);
   // toActivityFeed (selectors.ts) already sorts newest-first by completedAt — no re-sort needed here.
   const logboek = useActivityFeed(sinceIso);
   // The Samen preview card's live signal: the first (newest) completion today
@@ -298,7 +304,7 @@ export function VandaagPage() {
                     <div key={task.id} className="flex items-center gap-1.5">
                       <button
                         onClick={() => toggleTask(task.id, false)}
-                        aria-label={`${task.title} als niet gedaan markeren`}
+                        aria-label={`${task.title}${task.doneBy && task.doneAt ? `, gedaan door ${mine ? "jij" : task.doneBy} om ${task.doneAt}` : ""} — als niet gedaan markeren`}
                         className="flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-card text-left focus-ring">
                         <Avatar name={mine ? "Jij" : task.doneBy ?? "?"} size={28} tone={mine ? "solid" : "soft"} serif />
                         <span className="flex-1 min-w-0">

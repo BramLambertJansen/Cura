@@ -135,7 +135,10 @@ function MainShell() {
 
   const sheetActions: SheetActions = useMemo(
     () => ({
-      openAddTask: (roomId?: string) => { setAddRoomId(roomId ?? null); setShowAdd(true); },
+      // Always the task sheet, regardless of whatever addMode a prior FAB press
+      // on /boodschappen left behind — this entry point (Huis' room "+") only
+      // ever means "add a task to this room".
+      openAddTask: (roomId?: string) => { setAddRoomId(roomId ?? null); setAddMode("taak"); setShowAdd(true); },
       openAddBoodschap: () => setShowAddBoodschap(true),
       openEditTask: (taskId) => setEditingTaskId(taskId),
       openNewRoom: () => setShowNewRoom(true),

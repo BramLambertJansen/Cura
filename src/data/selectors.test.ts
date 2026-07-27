@@ -75,6 +75,19 @@ describe("recurring task done-state", () => {
     expect(view.dueHint).toBe("Waarschijnlijk weer toe");
   });
 
+  it("daily task: hints 'Waarschijnlijk weer toe' right after its local-midnight reset, not 'Nog even goed'", () => {
+    // Completed 23:55 yesterday, now 00:05 today — 10 minutes of rolling-window
+    // "fraction", but a NEW calendar day, so isDone() already says not-done.
+    const t = task({ intervalDays: 1 });
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: t.id, completedById: "m1", completedAt: new Date(2026, 0, 1, 23, 55, 0).toISOString() },
+    ];
+    const now = new Date(2026, 0, 2, 0, 5, 0).getTime();
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    expect(view.done).toBe(false);
+    expect(view.dueHint).toBe("Waarschijnlijk weer toe");
+  });
+
   it("has never been done and is not marked done", () => {
     const now = Date.now();
     const t = task({ intervalDays: 7 });
@@ -138,6 +151,34 @@ describe("task status — derived, never stored", () => {
     ];
     const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
     expect(view.status).toBe("klaar");
+  });
+
+  it("is 'open', not 'bezig', for a recurring task once a stale startedAt from a prior cycle is left behind", () => {
+    const now = Date.now();
+    const t = task({
+      intervalDays: 7,
+      startedAt: new Date(now - 20 * DAY_MS).toISOString(), // started during the PREVIOUS cycle
+    });
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: t.id, completedById: "m1", completedAt: new Date(now - 15 * DAY_MS).toISOString() },
+    ];
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    expect(view.done).toBe(false); // 15 days > the 7-day interval, so due again
+    expect(view.status).toBe("open");
+  });
+
+  it("is 'bezig' for a recurring task started after its latest completion, in the current cycle", () => {
+    const now = Date.now();
+    const t = task({
+      intervalDays: 7,
+      startedAt: new Date(now - 2 * DAY_MS).toISOString(), // started AFTER the last completion
+    });
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: t.id, completedById: "m1", completedAt: new Date(now - 10 * DAY_MS).toISOString() },
+    ];
+    const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
+    expect(view.done).toBe(false);
+    expect(view.status).toBe("bezig");
   });
 });
 

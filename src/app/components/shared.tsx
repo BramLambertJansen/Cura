@@ -74,7 +74,16 @@ export function Sheet({
     node.addEventListener("keydown", onKeyDown);
     return () => {
       node.removeEventListener("keydown", onKeyDown);
-      if (previouslyFocused && document.contains(previouslyFocused)) previouslyFocused.focus();
+      // Only restore focus if it's still where this sheet left it. A sheet-swap
+      // (close this one, open another in the same tick — e.g. Profiel ⇄
+      // Huishouden) mounts the new sheet's own focus trap well before
+      // AnimatePresence finishes this one's exit animation and actually
+      // unmounts it, so by the time this cleanup runs the new sheet may already
+      // hold focus — blindly restoring here would yank it back behind the new
+      // dialog instead of leaving it there.
+      if (previouslyFocused && document.contains(previouslyFocused) && node.contains(document.activeElement)) {
+        previouslyFocused.focus();
+      }
     };
   }, []);
 
@@ -573,6 +582,13 @@ export function VerwijderKnop({
   label, ariaLabel, confirmLabel = "Ja, verwijder", icon, onConfirm,
 }: { label: string; ariaLabel?: string; confirmLabel?: string; icon?: ReactNode; onConfirm: () => void }) {
   const [confirm, setConfirm] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  // The "del" button unmounts the instant the confirm row appears, so without
+  // this a keyboard/screen-reader user's focus silently falls back to
+  // document.body — move it onto the (safer, cancel) option instead.
+  useEffect(() => {
+    if (confirm) cancelRef.current?.focus();
+  }, [confirm]);
   return (
     <AnimatePresence>
       {!confirm
@@ -583,7 +599,7 @@ export function VerwijderKnop({
             {icon ?? <Trash2 size={14} aria-hidden="true" />} {label}
           </motion.button>
         : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-            <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}
+            <motion.button ref={cancelRef} whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}
               className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium focus-ring">Toch niet</motion.button>
             <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm}
               className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2"

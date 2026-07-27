@@ -30,6 +30,7 @@ export interface TaskFormState {
 export interface TaskFormFieldsProps extends TaskFormState {
   rooms: RoomView[];
   showDayToggle?: boolean;
+  showDagdeel?: boolean;
   onRoomChange: (id: string | null) => void;
   onOpMijnDagChange: (v: boolean) => void;
   onHerhalenChange: (v: boolean) => void;
@@ -57,15 +58,49 @@ export function buildDueDate(
   return new Date(base.getFullYear(), base.getMonth(), base.getDate(), h, m, 0, 0).toISOString();
 }
 
+/** Adds one calendar day while preserving local wall-clock time — DST-safe, unlike a raw +24h ms add. */
+export function addLocalDay(iso: string): string {
+  const d = new Date(iso);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()).toISOString();
+}
+
 /** Extracts "HH:mm" from an ISO date string. */
 export function extractTijd(iso: string): string {
   const d = new Date(iso);
   return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 }
 
+/**
+ * The "Wanneer" (Ochtend/Middag/Avond) picker, factored out of TaskFormFields
+ * so AddTaskSheet can render it always-visible above its collapsed "Meer
+ * opties" panel — same as EditTaskSheet, which shows the whole form
+ * unconditionally. Los, optioneel dagdeel-label; volledig onafhankelijk van
+ * de Wekker. De gebruiker spreekt hier zijn eigen intentie uit ("dit is
+ * ruwweg een ochtend-dingetje"), de app verzint niets (§2: eerlijkheid boven
+ * precisie) — vandaar geen verplichte keuze en geen default: tikken op een
+ * al geselecteerd segment deselecteert het weer.
+ */
+export function DagdeelKiezer({
+  dagdeel, onDagdeelChange,
+}: { dagdeel: "ochtend" | "middag" | "avond" | undefined; onDagdeelChange: (v: "ochtend" | "middag" | "avond" | undefined) => void }) {
+  return (
+    <div className="mb-6">
+      <Kop>Wanneer <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
+      <div role="group" aria-label="Wanneer" className="flex gap-2">
+        {(["ochtend", "middag", "avond"] as const).map((key) => (
+          <KeuzeChip key={key} selected={dagdeel === key} onClick={() => onDagdeelChange(dagdeel === key ? undefined : key)}>
+            {key.charAt(0).toUpperCase() + key.slice(1)}
+          </KeuzeChip>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function TaskFormFields({
   rooms,
   showDayToggle = true,
+  showDagdeel = true,
   selectedRoomId, onRoomChange,
   opMijnDag, onOpMijnDagChange,
   herhalenAan, onHerhalenChange,
@@ -141,21 +176,7 @@ export function TaskFormFields({
         })}
       </div>
 
-      {/* Wanneer — los, optioneel dagdeel-label; volledig onafhankelijk van de
-          Wekker hieronder. De gebruiker spreekt hier zijn eigen intentie uit
-          ("dit is ruwweg een ochtend-dingetje"), de app verzint niets (§2:
-          eerlijkheid boven precisie) — vandaar geen verplichte keuze en geen
-          default: tikken op een al geselecteerd segment deselecteert het weer. */}
-      <div className="mb-6">
-        <Kop>Wanneer <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
-        <div role="group" aria-label="Wanneer" className="flex gap-2">
-          {(["ochtend", "middag", "avond"] as const).map((key) => (
-            <KeuzeChip key={key} selected={dagdeel === key} onClick={() => onDagdeelChange(dagdeel === key ? undefined : key)}>
-              {key.charAt(0).toUpperCase() + key.slice(1)}
-            </KeuzeChip>
-          ))}
-        </div>
-      </div>
+      {showDagdeel && <DagdeelKiezer dagdeel={dagdeel} onDagdeelChange={onDagdeelChange} />}
 
       {/* Herhalen */}
       <div className="mb-4">

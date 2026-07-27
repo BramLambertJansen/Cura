@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import type { TaskView } from "../../data/types";
 import { usePomodoroStore } from "../../stores/usePomodoroStore";
 
@@ -14,14 +14,22 @@ const DEFAULT_FOCUS_MIN = 25;
  */
 export function useStartFocus(): (task: TaskView) => void {
   const navigate = useNavigate();
+  const location = useLocation();
   const start = usePomodoroStore((s) => s.start);
 
   return useCallback(
     (task: TaskView) => {
       const min = task.durationMin && task.durationMin > 0 ? task.durationMin : DEFAULT_FOCUS_MIN;
       start({ totalSec: min * 60, phase: "focus", taskId: task.id, taskTitle: task.title });
-      navigate("/focus");
+      // Remember where this was started from so FocusPage's back button can
+      // return there — unless we're already on /focus itself (its own
+      // "Volgende op je dag" idle-state card), in which case carry the
+      // existing origin forward instead of pointing back at /focus.
+      const from = location.pathname === "/focus"
+        ? (location.state as { from?: string } | null)?.from
+        : location.pathname;
+      navigate("/focus", { state: { from } });
     },
-    [navigate, start],
+    [navigate, start, location],
   );
 }

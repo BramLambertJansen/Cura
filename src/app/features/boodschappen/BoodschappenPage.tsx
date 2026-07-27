@@ -165,7 +165,17 @@ export function BoodschappenPage() {
                             <span className="w-[19px] h-[19px] rounded-full flex items-center justify-center flex-shrink-0" style={{ background: SAGE }} aria-hidden="true">
                               <Check size={10} strokeWidth={3.4} className="text-white" />
                             </span>
-                            <span className="flex-1 min-w-0 truncate text-sm text-muted-foreground line-through">{item.title}</span>
+                            <span className="flex-1 min-w-0 flex flex-col items-start">
+                              <span className="w-full flex items-center gap-2">
+                                <span className="flex-1 min-w-0 truncate text-sm text-muted-foreground line-through">{item.title}</span>
+                                {item.quantity && (
+                                  <span className="flex-shrink-0 text-xs text-muted-foreground/80 line-through">{item.quantity}</span>
+                                )}
+                              </span>
+                              {item.description && (
+                                <span className="w-full truncate text-xs text-muted-foreground/60 line-through">{item.description}</span>
+                              )}
+                            </span>
                             <span className="flex-shrink-0 text-[0.66rem] text-muted-foreground/60">terug</span>
                           </motion.button>
                         ))}

@@ -34,6 +34,7 @@ function fieldStyle(active: boolean, hasValue: boolean) {
  */
 export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () => void; headerExtra?: ReactNode }) {
   const createShoppingItem = useCuraStore((s) => s.createShoppingItem);
+  const shoppingItems = useCuraStore((s) => s.shoppingItems);
   const { items: quickItems, addQuickItem, removeQuickItem } = useQuickShoppingItems();
 
   const [manageOpen, setManageOpen] = useState(false);
@@ -46,6 +47,8 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
   const [unit, setUnit] = useState<ShoppingUnitKey>("stuks");
   const [category, setCategory] = useState<ShoppingCategoryKey>("other");
   const [categoryTouched, setCategoryTouched] = useState(false);
+  const [description, setDescription] = useState("");
+  const [descriptionActive, setDescriptionActive] = useState(false);
   const [justAdded, setJustAdded] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const justAddedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -55,12 +58,13 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
   const [mTitleActive, setMTitleActive] = useState(false);
   const [mUnit, setMUnit] = useState<ShoppingUnitKey>("stuks");
   const [mCategory, setMCategory] = useState<ShoppingCategoryKey>("other");
+  const [mCategoryTouched, setMCategoryTouched] = useState(false);
 
   const amount = parseDraftAmount(unit, qty, qtyText);
   const canAdd = title.trim().length > 0 && amount !== null;
 
-  function flashAdded(name: string) {
-    setJustAdded(name);
+  function flashMessage(message: string) {
+    setJustAdded(message);
     clearTimeout(justAddedTimer.current);
     justAddedTimer.current = setTimeout(() => setJustAdded(null), 1600);
   }
@@ -70,14 +74,29 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
     if (!categoryTouched) setCategory(next.trim() ? shoppingCategory(next) : "other");
   }
 
+  function changeMTitle(next: string) {
+    setMTitle(next);
+    if (!mCategoryTouched) setMCategory(next.trim() ? shoppingCategory(next) : "other");
+  }
+
   function selectUnit(next: ShoppingUnitKey) {
     setUnit(next);
-    if (next !== "stuks") setQtyText((cur) => cur || String(FREE_UNIT_DEFAULT[next]));
+    // Only reset qtyText on an actual unit CHANGE — re-selecting the already
+    // active unit shouldn't wipe what's typed. Switching between two non-stuks
+    // units (e.g. g -> kg) must reset, not just fill-if-empty: the old number
+    // is meaningless under the new unit's scale (500 "g" is not 500 "kg").
+    if (next === unit) return;
+    setQtyText(next === "stuks" ? "" : String(FREE_UNIT_DEFAULT[next]));
   }
 
   function pickCategory(next: ShoppingCategoryKey) {
     setCategory(next);
     setCategoryTouched(true);
+  }
+
+  function pickMCategory(next: ShoppingCategoryKey) {
+    setMCategory(next);
+    setMCategoryTouched(true);
   }
 
   function resetDraft() {
@@ -87,21 +106,29 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
     setUnit("stuks");
     setCategory("other");
     setCategoryTouched(false);
+    setDescription("");
   }
 
   function handleAdd() {
     const name = title.trim();
     if (!name || amount === null) return;
-    void createShoppingItem({ title: name, amount, unit, category });
+    void createShoppingItem({ title: name, amount, unit, category, description: description.trim() || undefined });
     resetDraft();
-    flashAdded(name);
+    flashMessage(`${name} toegevoegd`);
     titleRef.current?.focus();
   }
 
   function handleQuickAdd(q: QuickShoppingItem) {
+    // A shortcut is meant for something you buy often — tapping it again once
+    // it's already open or checked on the list would silently duplicate it.
+    const alreadyOnList = shoppingItems.some((i) => i.title.trim().toLowerCase() === q.title.trim().toLowerCase());
+    if (alreadyOnList) {
+      flashMessage(`${q.title} staat al op de lijst`);
+      return;
+    }
     const amt = q.unit === "stuks" ? 1 : FREE_UNIT_DEFAULT[q.unit];
     void createShoppingItem({ title: q.title, amount: amt, unit: q.unit, category: q.category });
-    flashAdded(q.title);
+    flashMessage(`${q.title} toegevoegd`);
   }
 
   function handleAddShortcut() {
@@ -111,9 +138,13 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
     setMTitle("");
     setMUnit("stuks");
     setMCategory("other");
+    setMCategoryTouched(false);
   }
 
-  const showSuggestions = title.trim() === "" && quickItems.length > 0;
+  // "Beheren" must stay reachable even with zero shortcuts — it's the only
+  // entry point into managing them, so gating the whole block on
+  // quickItems.length > 0 would permanently lock it once the list is empty.
+  const showSuggestionsSection = title.trim() === "";
 
   return (
     <Sheet onClose={onClose} tall>
@@ -155,7 +186,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
             <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground">Nieuwe snelkoppeling</p>
             <input
               value={mTitle}
-              onChange={(e) => setMTitle(e.target.value)}
+              onChange={(e) => changeMTitle(e.target.value)}
               onFocus={() => setMTitleActive(true)}
               onBlur={() => setMTitleActive(false)}
               onKeyDown={(e) => { if (e.key === "Enter") handleAddShortcut(); }}
@@ -173,7 +204,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
             </div>
             <div className="flex flex-wrap gap-2" aria-label="Categorie kiezen">
               {SHOPPING_CATEGORY_ORDER.map((key) => (
-                <KeuzeChip key={key} selected={mCategory === key} onClick={() => setMCategory(key)}>
+                <KeuzeChip key={key} selected={mCategory === key} onClick={() => pickMCategory(key)}>
                   {SHOPPING_CATEGORY_LABELS[key]}
                 </KeuzeChip>
               ))}
@@ -205,7 +236,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
             style={fieldStyle(titleActive, !!title)}
           />
 
-          {showSuggestions && (
+          {showSuggestionsSection && (
             <div className="mt-5">
               <div className="flex items-center justify-between mb-2.5">
                 <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground">Snel toevoegen</p>
@@ -217,18 +248,22 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
                   Beheren
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {quickItems.map((q) => (
-                  <motion.button
-                    key={q.id}
-                    type="button"
-                    whileTap={{ scale: 0.93 }}
-                    onClick={() => handleQuickAdd(q)}
-                    className="rounded-full border border-border/60 bg-card px-3.5 py-2 text-[0.82rem] font-medium text-foreground focus-ring">
-                    {q.title}
-                  </motion.button>
-                ))}
-              </div>
+              {quickItems.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {quickItems.map((q) => (
+                    <motion.button
+                      key={q.id}
+                      type="button"
+                      whileTap={{ scale: 0.93 }}
+                      onClick={() => handleQuickAdd(q)}
+                      className="rounded-full border border-border/60 bg-card px-3.5 py-2 text-[0.82rem] font-medium text-foreground focus-ring">
+                      {q.title}
+                    </motion.button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Nog geen snelkoppelingen.</p>
+              )}
             </div>
           )}
 
@@ -293,6 +328,23 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
             </div>
           </div>
 
+          <div className="mt-5">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+              Beschrijving <span className="normal-case font-medium opacity-70">(optioneel)</span>
+            </p>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onFocus={() => setDescriptionActive(true)}
+              onBlur={() => setDescriptionActive(false)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+              placeholder="Bijv. merk of smaak"
+              aria-label="Beschrijving"
+              className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-all"
+              style={fieldStyle(descriptionActive, !!description)}
+            />
+          </div>
+
           <div className="mt-6">
             <PrimaryButton onClick={handleAdd} disabled={!canAdd} icon={<Plus size={16} aria-hidden="true" />}>
               Toevoegen
@@ -304,7 +356,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
                   animate={{ opacity: 1, y: 0 }}
                   className="text-xs font-semibold"
                   style={{ color: SAGE }}>
-                  {justAdded} toegevoegd
+                  {justAdded}
                 </motion.p>
               )}
             </div>

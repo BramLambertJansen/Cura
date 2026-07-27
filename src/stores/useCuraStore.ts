@@ -53,7 +53,8 @@ interface CuraState {
   assignTask: (taskId: string, memberId: string | null) => Promise<void>;
   createTask: (input: CreateTaskInput) => Promise<void>;
   createTasksFromTemplates: (roomId: string | undefined, templates: Omit<CreateTaskInput, "roomId">[]) => Promise<void>;
-  updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<void>;
+  /** Resolves `true` on success, `false` on failure (already toasted) — check it before assuming the patch landed. */
+  updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<boolean>;
   deleteTask: (taskId: string) => Promise<void>;
 
   createRoom: (room: Omit<Room, "id" | "householdId">) => Promise<void>;
@@ -98,6 +99,14 @@ const getDataStore = (): Promise<DataStore> => {
 
 // Tasks currently mid-toggle — prevents a rapid double-tap from writing two completions.
 const toggling = new Set<string>();
+
+// Per-task assignTask call counter — unlike `toggling` above, rapid re-assigns
+// are a legitimate change of mind (tap "Jij", then quickly tap a housemate
+// instead), not a double-tap to ignore. Each call claims the next number, and
+// only the response matching the LATEST number for that task gets applied —
+// an earlier call resolving late (out of network-timing order) can no longer
+// overwrite a more recent selection.
+const assignSeq = new Map<string, number>();
 
 // Realtime (Phase 3+, cloud mode only — a no-op subscription in local mode).
 // A burst of remote postgres_changes events collapses into one refetch instead
@@ -335,12 +344,18 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async assignTask(taskId, memberId) {
+    const seq = (assignSeq.get(taskId) ?? 0) + 1;
+    assignSeq.set(taskId, seq);
     try {
       const store = await getDataStore();
       const { tasks, members, currentUserId } = get();
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
+      if (memberId && !members.some((m) => m.id === memberId)) {
+        throw new Error("Dit huisgenootschap kent dit lid niet.");
+      }
       const updated = await store.assignTask(taskId, memberId);
+      if (assignSeq.get(taskId) !== seq) return; // a newer assign call already superseded this one
       if (memberId) {
         const me = members.find((m) => m.userId === currentUserId);
         const name = memberId === me?.id ? "Jij" : members.find((m) => m.id === memberId)?.displayName ?? "Iemand";
@@ -350,6 +365,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       }
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
+      if (assignSeq.get(taskId) !== seq) return;
       toast.error(e instanceof Error ? e.message : "Toewijzen lukte niet");
     }
   },
@@ -386,10 +402,16 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   async createTasksFromTemplates(roomId, templates) {
     try {
       const store = await getDataStore();
-      const { householdId } = get();
+      const { householdId, currentUserId } = get();
       if (!householdId) return;
       const created = await Promise.all(
-        templates.map((t) => store.createTask(householdId, { ...t, roomId })),
+        templates.map(async (t) => {
+          let task = await store.createTask(householdId, { ...t, roomId });
+          // Same soft "ik doe dit" auto-claim as createTask — planned:true starter
+          // tasks (CreateHouseholdPage) shouldn't land unclaimed in the pool.
+          if (t.planned && currentUserId) task = await store.claimTask(task.id, currentUserId);
+          return task;
+        }),
       );
       toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
       set({ tasks: [...get().tasks, ...created] });
@@ -422,8 +444,10 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         updated = await store.claimTask(taskId, currentUserId);
       }
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
+      return true;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
+      return false;
     }
   },
 

@@ -67,6 +67,11 @@ const formatTime = (iso: string): string =>
 function dueHint(task: Task, latest?: TaskCompletion, now = Date.now()): string | undefined {
   if (!task.intervalDays) return undefined;
   if (!latest) return "Waarschijnlijk weer toe"; // never done -> gently surface it
+  // Callers only ever call this once isDone() already said "not done", and for
+  // a daily task that resets at local midnight (reminders.ts), not-done means
+  // due right now regardless of how recently it was ticked off yesterday — the
+  // rolling-fraction gradient below only makes sense for a multi-day interval.
+  if (task.intervalDays === 1) return "Waarschijnlijk weer toe";
   const fraction = (now - new Date(latest.completedAt).getTime()) / (task.intervalDays * DAY_MS);
   if (fraction < 0.5) return "Nog even goed";
   if (fraction < 1) return "Bijna weer toe";
@@ -88,9 +93,15 @@ export function toTaskView(
   rooms: Room[],
   members: Member[],
   now = Date.now(),
+  timeZone?: string,
 ): TaskView {
   const latest = latestByTask.get(task.id);
-  const done = isDone(task, latest, now);
+  const done = isDone(task, latest, now, timeZone);
+  // A recurring task's startedAt otherwise survives every interval reset, so
+  // without this check a task "bezig" two cycles ago would show "bezig" again
+  // the moment it becomes due, despite never having been (re)started this cycle.
+  const startedThisCycle = !!task.startedAt
+    && (!latest || new Date(task.startedAt).getTime() > new Date(latest.completedAt).getTime());
   const checklistItems = task.checklistItems ?? [];
   const checklistProgress = checklistItems.length > 0
     ? { done: checklistItems.filter((i) => i.checked).length, total: checklistItems.length }
@@ -117,7 +128,7 @@ export function toTaskView(
     dagdeel: task.dagdeel,
     wekkerLabel: wekkerLabel(task),
     startedAt: task.startedAt,
-    status: done ? "klaar" : task.startedAt ? "bezig" : "open",
+    status: done ? "klaar" : startedThisCycle ? "bezig" : "open",
     checklistItems,
     checklistProgress,
   };
@@ -135,10 +146,11 @@ export function toRoomView(
   latestByTask: Map<string, TaskCompletion>,
   members: Member[],
   now = Date.now(),
+  timeZone?: string,
 ): RoomView {
   const roomTasks = tasks
     .filter((t) => t.roomId === room.id)
-    .map((t) => toTaskView(t, latestByTask, [room], members, now));
+    .map((t) => toTaskView(t, latestByTask, [room], members, now, timeZone));
   const openCount = roomTasks.filter((t) => !t.done).length;
   const anyDue = roomTasks.some((t) => t.dueHint === "Waarschijnlijk weer toe");
   return {
@@ -186,6 +198,7 @@ export function toRoutineView(
   latestByTask: Map<string, TaskCompletion>,
   members: Member[],
   now = Date.now(),
+  timeZone?: string,
 ): RoutineView {
   const bundleTaskIds = new Set(tasks.filter((t) => t.bundleId === bundle.id).map((t) => t.id));
   const windowSize = bundle.cadence === "daily" ? DAILY_WINDOW : WEEKLY_WINDOW;
@@ -220,7 +233,7 @@ export function toRoutineView(
     trigger: bundle.trigger,
     tasks: tasks
       .filter((t) => t.bundleId === bundle.id)
-      .map((t) => toTaskView(t, latestByTask, [], members, now)),
+      .map((t) => toTaskView(t, latestByTask, [], members, now, timeZone)),
     doneInWindow,
     windowSize: effectiveWindow,
     windowLabel: bundle.windowLabel,
