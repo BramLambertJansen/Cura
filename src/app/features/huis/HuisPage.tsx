@@ -81,7 +81,10 @@ export function HuisPage() {
   const doneTasks = filteredTasks.filter((t) => t.done);
   // Total across every room, unfiltered — a stable at-a-glance household load,
   // not the (room/duration-)filtered subset currently shown in the list below.
-  const totalOpenCount = useMemo(() => visibleTasks.filter((t) => !t.done).length, [visibleTasks]);
+  // Deliberately off `tasks`, not `visibleTasks`: a personal "niet vandaag"
+  // dismissal is device-local (useTaskDismissals) and shouldn't understate the
+  // shared household count for a housemate who hasn't dismissed anything.
+  const totalOpenCount = useMemo(() => tasks.filter((t) => !t.done).length, [tasks]);
   // Most-neglected room first, so the grid surfaces what needs attention instead
   // of reading every room as equally important. openCount alone (no fabricated
   // "days since" claim — CLAUDE.md §2 honesty-over-precision) is a real, already-
