@@ -60,6 +60,9 @@ export function HuisPage() {
   const [durationFilter, setDurationFilter] = useState<DurationFilter>("alles");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [afgerondOpen, setAfgerondOpen] = useState(false);
+  // Guards the room-detail quick-add buttons against a double-tap firing two
+  // create calls during the (usually brief, but non-zero in cloud mode) async gap.
+  const [quickAddBusy, setQuickAddBusy] = useState(false);
 
   // Room detail is a real route (/huis/:roomId) so the OS/browser back gesture
   // returns to this page instead of leaving Huis entirely.
@@ -100,13 +103,18 @@ export function HuisPage() {
 
   if (room) {
     const ic = roomIcon(room.iconKey);
-    const roomTasks = tasks.filter((t) => t.roomId === room.id && !isTaskDismissed(t.id));
+    const allRoomTasks = tasks.filter((t) => t.roomId === room.id);
+    const roomTasks = allRoomTasks.filter((t) => !isTaskDismissed(t.id));
     const open = roomTasks.filter((t) => !t.done);
     const done = roomTasks.filter((t) => t.done);
     // Up to 2 one-tap suggestions from this room's template category, skipping
     // anything already added (by title) so a suggestion disappears the moment
-    // it's used instead of staying around as a now-redundant offer.
-    const existingTitles = new Set(roomTasks.map((t) => t.title.trim().toLowerCase()));
+    // it's used instead of staying around as a now-redundant offer. Deliberately
+    // off allRoomTasks, not the dismissal-filtered roomTasks: a template task
+    // that's just dismissed ("niet vandaag") still exists, so it must still
+    // count as "already added" — otherwise dismissing it makes the same
+    // template reappear here as if it were new, and re-adding it duplicates it.
+    const existingTitles = new Set(allRoomTasks.map((t) => t.title.trim().toLowerCase()));
     const quickSuggestions = ROOM_TEMPLATES[categoryForIconKey(room.iconKey)]
       .filter((t) => !existingTitles.has(t.title.trim().toLowerCase()))
       .slice(0, 2);
@@ -175,8 +183,17 @@ export function HuisPage() {
               {quickSuggestions.map((t) => (
                 <button
                   key={t.title}
-                  onClick={() => createTasksFromTemplates(room.id, [t])}
-                  className="w-full flex items-center gap-3 bg-card rounded-2xl px-4 py-3 border border-border/60 focus-ring text-left"
+                  disabled={quickAddBusy}
+                  onClick={async () => {
+                    if (quickAddBusy) return;
+                    setQuickAddBusy(true);
+                    try {
+                      await createTasksFromTemplates(room.id, [t]);
+                    } finally {
+                      setQuickAddBusy(false);
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 bg-card rounded-2xl px-4 py-3 border border-border/60 focus-ring text-left disabled:opacity-50"
                   style={{ boxShadow: SHADOW }}>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-secondary">
                     <Plus size={15} strokeWidth={2} aria-hidden="true" />
