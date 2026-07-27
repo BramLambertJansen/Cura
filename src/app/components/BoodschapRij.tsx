@@ -3,7 +3,7 @@ import { motion, useTransform } from "motion/react";
 import { Check, Trash2 } from "lucide-react";
 import type { ShoppingItemView } from "../../data/types";
 import { SAGE } from "../lib/constants";
-import { Checkbox } from "./shared";
+import { Checkbox, IconButton } from "./shared";
 import { useSwipeRow } from "../lib/useSwipeRow";
 
 /**
@@ -76,6 +76,14 @@ export const BoodschapRij = memo(function BoodschapRij({
             </span>
           )}
         </motion.button>
+        {/* Swipe-left already does this — this is the keyboard/reduced-motion
+            fallback, since the gesture alone has no non-drag equivalent. */}
+        <IconButton
+          size={8}
+          onClick={onDelete}
+          label={`${item.title} verwijderen`}
+          icon={<Trash2 size={13} className="text-muted-foreground" aria-hidden="true" />}
+        />
       </motion.div>
     </div>
   );
