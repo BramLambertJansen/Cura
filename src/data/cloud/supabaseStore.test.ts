@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { isMissingShoppingColumn, mapList, missingTaskColumns, shoppingItemUpdateRow } from "./supabaseStore";
+import { isMissingShoppingColumn, mapList, missingShoppingColumns, missingTaskColumns, shoppingItemUpdateRow } from "./supabaseStore";
 import { TaskSchema } from "../schemas";
 
 /**
@@ -74,6 +74,39 @@ describe("isMissingShoppingColumn", () => {
       code: "PGRST204",
       message: "Could not find the 'title' column of 'shopping_items' in the schema cache",
     })).toBe(false);
+  });
+});
+
+/**
+ * Regression guard: an earlier version of this fallback dropped the WHOLE
+ * category/amount/unit/description quartet whenever any one of them was
+ * reported missing — so a household mid-migration (category already added,
+ * description not yet) would silently discard an already-set category on
+ * every insert/update, not just skip the genuinely-missing column.
+ */
+describe("missingShoppingColumns", () => {
+  it("names only the column the error actually reports, not its siblings", () => {
+    expect(missingShoppingColumns({
+      code: "PGRST204",
+      message: "Could not find the 'description' column of 'shopping_items' in the schema cache",
+    })).toEqual(["description"]);
+  });
+
+  it("recognizes each of the optional shopping_items columns", () => {
+    for (const column of ["category", "amount", "unit", "description"]) {
+      expect(missingShoppingColumns({
+        code: "PGRST204",
+        message: `Could not find the '${column}' column of 'shopping_items' in the schema cache`,
+      })).toEqual([column]);
+    }
+  });
+
+  it("returns nothing for an unrelated Supabase error", () => {
+    expect(missingShoppingColumns({
+      code: "PGRST204",
+      message: "Could not find the 'title' column of 'shopping_items' in the schema cache",
+    })).toEqual([]);
+    expect(missingShoppingColumns({ code: "23505", message: "duplicate key" })).toEqual([]);
   });
 });
 
