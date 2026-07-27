@@ -9,10 +9,14 @@ export function useTaskViews(): TaskView[] {
   const completions = useCuraStore((s) => s.completions);
   const rooms = useCuraStore((s) => s.rooms);
   const members = useCuraStore((s) => s.members);
+  // Household timezone, not the device's runtime one — otherwise done-state and
+  // dueHint can disagree between two housemates' phones, and disagree with the
+  // household-timezone-aware push reminders (useTaskReminders).
+  const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
-    () => tasks.map((t) => toTaskView(t, latestByTask, rooms, members)),
-    [tasks, latestByTask, rooms, members],
+    () => tasks.map((t) => toTaskView(t, latestByTask, rooms, members, undefined, timeZone)),
+    [tasks, latestByTask, rooms, members, timeZone],
   );
 }
 
@@ -22,10 +26,11 @@ export function useRoomViews(): RoomView[] {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
   const members = useCuraStore((s) => s.members);
+  const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
-    () => rooms.map((r) => toRoomView(r, tasks, latestByTask, members)),
-    [rooms, tasks, latestByTask, members],
+    () => rooms.map((r) => toRoomView(r, tasks, latestByTask, members, undefined, timeZone)),
+    [rooms, tasks, latestByTask, members, timeZone],
   );
 }
 
@@ -35,10 +40,11 @@ export function useRoutineViews(): RoutineView[] {
   const tasks = useCuraStore((s) => s.tasks);
   const completions = useCuraStore((s) => s.completions);
   const members = useCuraStore((s) => s.members);
+  const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
-    () => bundles.map((b) => toRoutineView(b, tasks, completions, latestByTask, members)),
-    [bundles, tasks, completions, latestByTask, members],
+    () => bundles.map((b) => toRoutineView(b, tasks, completions, latestByTask, members, undefined, timeZone)),
+    [bundles, tasks, completions, latestByTask, members, timeZone],
   );
 }
 

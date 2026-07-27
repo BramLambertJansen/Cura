@@ -93,9 +93,10 @@ export function toTaskView(
   rooms: Room[],
   members: Member[],
   now = Date.now(),
+  timeZone?: string,
 ): TaskView {
   const latest = latestByTask.get(task.id);
-  const done = isDone(task, latest, now);
+  const done = isDone(task, latest, now, timeZone);
   // A recurring task's startedAt otherwise survives every interval reset, so
   // without this check a task "bezig" two cycles ago would show "bezig" again
   // the moment it becomes due, despite never having been (re)started this cycle.
@@ -145,10 +146,11 @@ export function toRoomView(
   latestByTask: Map<string, TaskCompletion>,
   members: Member[],
   now = Date.now(),
+  timeZone?: string,
 ): RoomView {
   const roomTasks = tasks
     .filter((t) => t.roomId === room.id)
-    .map((t) => toTaskView(t, latestByTask, [room], members, now));
+    .map((t) => toTaskView(t, latestByTask, [room], members, now, timeZone));
   const openCount = roomTasks.filter((t) => !t.done).length;
   const anyDue = roomTasks.some((t) => t.dueHint === "Waarschijnlijk weer toe");
   return {
@@ -196,6 +198,7 @@ export function toRoutineView(
   latestByTask: Map<string, TaskCompletion>,
   members: Member[],
   now = Date.now(),
+  timeZone?: string,
 ): RoutineView {
   const bundleTaskIds = new Set(tasks.filter((t) => t.bundleId === bundle.id).map((t) => t.id));
   const windowSize = bundle.cadence === "daily" ? DAILY_WINDOW : WEEKLY_WINDOW;
@@ -230,7 +233,7 @@ export function toRoutineView(
     trigger: bundle.trigger,
     tasks: tasks
       .filter((t) => t.bundleId === bundle.id)
-      .map((t) => toTaskView(t, latestByTask, [], members, now)),
+      .map((t) => toTaskView(t, latestByTask, [], members, now, timeZone)),
     doneInWindow,
     windowSize: effectiveWindow,
     windowLabel: bundle.windowLabel,
