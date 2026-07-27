@@ -67,6 +67,11 @@ const formatTime = (iso: string): string =>
 function dueHint(task: Task, latest?: TaskCompletion, now = Date.now()): string | undefined {
   if (!task.intervalDays) return undefined;
   if (!latest) return "Waarschijnlijk weer toe"; // never done -> gently surface it
+  // Callers only ever call this once isDone() already said "not done", and for
+  // a daily task that resets at local midnight (reminders.ts), not-done means
+  // due right now regardless of how recently it was ticked off yesterday — the
+  // rolling-fraction gradient below only makes sense for a multi-day interval.
+  if (task.intervalDays === 1) return "Waarschijnlijk weer toe";
   const fraction = (now - new Date(latest.completedAt).getTime()) / (task.intervalDays * DAY_MS);
   if (fraction < 0.5) return "Nog even goed";
   if (fraction < 1) return "Bijna weer toe";
