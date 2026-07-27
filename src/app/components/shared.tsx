@@ -573,6 +573,13 @@ export function VerwijderKnop({
   label, ariaLabel, confirmLabel = "Ja, verwijder", icon, onConfirm,
 }: { label: string; ariaLabel?: string; confirmLabel?: string; icon?: ReactNode; onConfirm: () => void }) {
   const [confirm, setConfirm] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  // The "del" button unmounts the instant the confirm row appears, so without
+  // this a keyboard/screen-reader user's focus silently falls back to
+  // document.body — move it onto the (safer, cancel) option instead.
+  useEffect(() => {
+    if (confirm) cancelRef.current?.focus();
+  }, [confirm]);
   return (
     <AnimatePresence>
       {!confirm
@@ -583,7 +590,7 @@ export function VerwijderKnop({
             {icon ?? <Trash2 size={14} aria-hidden="true" />} {label}
           </motion.button>
         : <motion.div key="conf" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-            <motion.button whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}
+            <motion.button ref={cancelRef} whileTap={{ scale: 0.96 }} onClick={() => setConfirm(false)}
               className="flex-1 py-3 rounded-2xl border border-border text-foreground text-sm font-medium focus-ring">Toch niet</motion.button>
             <motion.button whileTap={{ scale: 0.96 }} onClick={onConfirm}
               className="flex-1 py-3 rounded-2xl text-white text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50 focus-visible:ring-offset-2"
