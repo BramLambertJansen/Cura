@@ -389,10 +389,16 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   async createTasksFromTemplates(roomId, templates) {
     try {
       const store = await getDataStore();
-      const { householdId } = get();
+      const { householdId, currentUserId } = get();
       if (!householdId) return;
       const created = await Promise.all(
-        templates.map((t) => store.createTask(householdId, { ...t, roomId })),
+        templates.map(async (t) => {
+          let task = await store.createTask(householdId, { ...t, roomId });
+          // Same soft "ik doe dit" auto-claim as createTask — planned:true starter
+          // tasks (CreateHouseholdPage) shouldn't land unclaimed in the pool.
+          if (t.planned && currentUserId) task = await store.claimTask(task.id, currentUserId);
+          return task;
+        }),
       );
       toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
       set({ tasks: [...get().tasks, ...created] });
