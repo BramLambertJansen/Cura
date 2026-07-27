@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // hourly is plenty for a household planner
@@ -11,15 +12,27 @@ const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000; // hourly is plenty for a house
  * out on the next natural reload.
  */
 export function useAppUpdate(): { needRefresh: boolean; updateServiceWorker: () => Promise<void> } {
+  // Stashed in a ref (not a plain local) because onRegisteredSW fires from the
+  // plugin's own registration flow, not from this render — the only reliable
+  // place left to clear it is an effect's unmount cleanup (#158: this used to
+  // leak, ticking forever across HMR reloads / StrictMode's double-invoke).
+  const updateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const {
     needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
       if (!registration) return;
-      setInterval(() => { void registration.update(); }, UPDATE_CHECK_INTERVAL_MS);
+      updateIntervalRef.current = setInterval(() => { void registration.update(); }, UPDATE_CHECK_INTERVAL_MS);
     },
   });
+
+  useEffect(() => {
+    return () => {
+      if (updateIntervalRef.current !== null) clearInterval(updateIntervalRef.current);
+    };
+  }, []);
 
   return { needRefresh, updateServiceWorker: () => updateServiceWorker(true) };
 }
