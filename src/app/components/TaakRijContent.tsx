@@ -10,7 +10,7 @@ import { intervalLabel } from "../lib/format";
  * Swipe & verversen used to warn "always update both"; this is the shared
  * source instead). Both wrap it in their own outer card chrome.
  */
-export function TaakRijContent({ task }: { task: TaskView }) {
+export function TaakRijContent({ task, hideClaimedLabel = false }: { task: TaskView; hideClaimedLabel?: boolean }) {
   const claimed = !!task.claimedBy;
   return (
     <>
@@ -46,7 +46,7 @@ export function TaakRijContent({ task }: { task: TaskView }) {
             Bezig
           </span>
         )}
-        {claimed && !task.done && <span className="text-xs font-semibold ml-0.5" style={{ color: SAGE }}>{task.claimedBy} pakt dit</span>}
+        {claimed && !task.done && !hideClaimedLabel && <span className="text-xs font-semibold ml-0.5" style={{ color: SAGE }}>{task.claimedBy} pakt dit</span>}
       </div>
     </>
   );

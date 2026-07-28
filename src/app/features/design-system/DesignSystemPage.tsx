@@ -300,7 +300,7 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Taakrij">
-        <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten), en naar links om te dismissen — de checkbox blijft de toetsenbord/screenreader-route. Op een ongeclaimde pool-rij (bv. Huis, <code>onPlan</code>) betekent veeg-rechts in plaats daarvan "op mijn dag zetten"; is de taak eenmaal geclaimd, dan geeft "Laat los" de claim terug.</p>
+        <p className="text-sm text-muted-foreground -mt-1">Veeg een rij naar rechts om af te vinken (of terug te zetten), en naar links om te dismissen — de checkbox blijft de toetsenbord/screenreader-route. Op een ongeclaimde pool-rij (bv. Huis, <code>onPlan</code>) betekent veeg-rechts in plaats daarvan "op mijn dag zetten"; het geclaimd-avatarknopje ernaast (in plaats van een tekst-pil) plant/laat los met dezelfde tik.</p>
         <div className="space-y-2.5">
           <TaakRij task={demoTaskOpen} onToggle={() => {}} />
           <TaakRij task={demoTaskPool} onToggle={() => {}} showClaim onPlan={() => {}} />

@@ -11,7 +11,6 @@ import { TaakRij } from "../../components/TaakRij";
 import { RoomHero } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
-import { useStartFocus } from "../../lib/useStartFocus";
 import { ROOM_TEMPLATES, categoryForIconKey } from "../../lib/templates";
 import { useHuisTaskActions } from "./useHuisTaskActions";
 
@@ -28,7 +27,6 @@ export function RoomDetailPage() {
   const rooms = useRoomViews();
   const tasks = useTaskViews();
   const { handleUnclaim, isTaskDismissed, planTask, dismissWithUndo } = useHuisTaskActions(tasks);
-  const startFocus = useStartFocus();
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
   const handleDismiss = useCallback((taskId: string) => dismissWithUndo(taskId, "deze lijst"), [dismissWithUndo]);
@@ -101,7 +99,6 @@ export function RoomDetailPage() {
                     onUnclaim={handleUnclaim}
                     onEdit={openEditTask}
                     onDismiss={handleDismiss}
-                    onStartFocus={startFocus}
                   />
                 </motion.div>
               ))}

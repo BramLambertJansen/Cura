@@ -11,7 +11,6 @@ import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
-import { useStartFocus } from "../../lib/useStartFocus";
 import { useHuisTaskActions } from "./useHuisTaskActions";
 
 type DurationFilter = "alles" | "kort" | "middel" | "lang";
@@ -43,7 +42,6 @@ export function HuisPage() {
   const rooms = useRoomViews();
   const tasks = useTaskViews();
   const { handleUnclaim, isTaskDismissed, planTask, dismissWithUndo } = useHuisTaskActions(tasks);
-  const startFocus = useStartFocus();
   const navigate = useNavigate();
   const [roomFilter, setRoomFilter] = useState("alles");
   const [durationFilter, setDurationFilter] = useState<DurationFilter>("alles");
@@ -167,7 +165,7 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
                   {openTasks.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={toggleTask} showClaim onPlan={planTask} onUnclaim={handleUnclaim} onEdit={openEditTask} onDismiss={handleDismissAllTasks} onStartFocus={startFocus} />
+                      <TaakRij task={t} onToggle={toggleTask} showClaim onPlan={planTask} onUnclaim={handleUnclaim} onEdit={openEditTask} onDismiss={handleDismissAllTasks} />
                     </motion.div>
                   ))}
                 </motion.div>
