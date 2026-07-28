@@ -6,9 +6,8 @@ import { toast } from "sonner";
 import { useActivityFeed, useCurrentMember } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { householdStatusLine } from "../../lib/format";
 import { useReacties, type ReactieKind } from "../../lib/useReacties";
-import { Leeg, PageHeader, Card, HintBanner, IconButton, Avatar } from "../../components/shared";
+import { Leeg, PageHeader, Card, IconButton, Avatar } from "../../components/shared";
 import { ActiviteitReacties } from "../../components/ActiviteitReacties";
 
 const REACTIE_TOAST: Record<ReactieKind, string> = {
@@ -48,12 +47,8 @@ export function SamenPage() {
         icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
       <PageHeader title="Samen" subtitle="Wat is er vandaag gedaan?" />
 
-      <div className="mb-6">
-        <HintBanner tone="muted">{householdStatusLine(completedToday.length)}</HintBanner>
-      </div>
-
       {completedToday.length === 0
-        ? <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag. De dag is jong." />
+        ? <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag." />
         : <motion.div variants={stagger} initial="initial" animate="animate" aria-live="polite" className="space-y-1.5 mb-8">
             {completedToday.map((activity, i) => {
               const activityKey = `${activity.taskId}-${activity.doneAt}`;

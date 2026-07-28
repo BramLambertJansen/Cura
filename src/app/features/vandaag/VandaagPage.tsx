@@ -149,11 +149,9 @@ export function VandaagPage() {
   const heroSub =
     totalPlanned === 0
       ? "Niets op de planning."
-      : allDone
-        ? "Mooi gedaan."
-        : doneCount === 0
-          ? `${totalPlanned} ${totalPlanned === 1 ? "ding staat" : "dingen staan"} rustig klaar.`
-          : `${doneCount} van ${totalPlanned} rustig afgerond.`;
+      : doneCount === 0
+        ? `${totalPlanned} ${totalPlanned === 1 ? "ding staat" : "dingen staan"} rustig klaar.`
+        : `${doneCount} van ${totalPlanned} rustig afgerond.`;
 
   return (
     <div className="relative">
@@ -170,7 +168,6 @@ export function VandaagPage() {
           <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display mt-2">
             {greeting.text}
           </h1>
-          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
         </div>
 
         <motion.div
@@ -243,7 +240,7 @@ export function VandaagPage() {
             <Leeg
               icon="🌿"
               image="/empty-plants.webp"
-              text={allDone ? "Alles rond voor vandaag. Geniet van de rust." : "Niets op de planning. Geniet ervan."}
+              text={allDone ? "Alles rond voor vandaag." : "Niets op de planning."}
             />
           ) : (
             <>

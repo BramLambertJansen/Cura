@@ -101,9 +101,8 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
     <Sheet onClose={onClose} tall>
       <SheetHeader title="Taak bewerken" onClose={onClose} />
       <VeldInput value={title} onChange={setTitle} onEnter={save} placeholder="Wat moet er gebeuren?" />
-      <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">Pas de taak aan en sla op.</p>
 
-      <div className="mb-5 space-y-1.5">
+      <div className="mt-4 mb-5 space-y-1.5">
         <PrimaryButton
           icon={task.done ? <RotateCcw size={16} aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
           onClick={toggleDone}>

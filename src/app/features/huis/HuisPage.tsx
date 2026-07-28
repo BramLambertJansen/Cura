@@ -217,7 +217,6 @@ export function HuisPage() {
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium text-muted-foreground">Kamer toevoegen</p>
-                <p className="text-[11px] text-muted-foreground/60 mt-0.5" style={{ fontStyle: "italic" }}>Geef elke ruimte een plek</p>
               </div>
             </motion.button>
           </motion.div>

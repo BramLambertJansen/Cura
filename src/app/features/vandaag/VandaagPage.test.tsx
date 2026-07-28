@@ -109,7 +109,8 @@ describe("VandaagPage", () => {
 
     renderVandaag();
 
-    expect(screen.getByText(/niets op de planning\. geniet ervan/i)).toBeInTheDocument();
+    // Appears twice now: once in the hero card's subtitle, once in the Leeg empty state.
+    expect(screen.getAllByText(/niets op de planning\./i)).toHaveLength(2);
     expect(screen.queryByRole("button", { name: /later vandaag/i })).not.toBeInTheDocument();
   });
 
