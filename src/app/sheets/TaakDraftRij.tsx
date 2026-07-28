@@ -46,7 +46,9 @@ export function TaakDraftRij({
           whileTap={{ scale: 0.85 }}
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           aria-label={`${draft.title} verwijderen`}
-          className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-ring">
+          className="relative w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 focus-ring">
+          {/* Invisible hit-area extension — the visible circle is 20px, under WCAG 2.5.8's 24px minimum (#179). Same trick as Checkbox. */}
+          <span className="absolute -inset-2 rounded-full" aria-hidden="true" />
           <X size={9} className="text-muted-foreground" aria-hidden="true" />
         </motion.button>
       </div>
