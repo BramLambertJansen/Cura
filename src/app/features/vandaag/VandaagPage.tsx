@@ -323,12 +323,12 @@ export function VandaagPage() {
                         <span className="flex-1 min-w-0">
                           <span className="block text-sm text-muted-foreground line-through truncate">{task.title}</span>
                           {task.doneBy && task.doneAt && (
-                            <span className="block text-[0.68rem] text-muted-foreground/80 truncate">
+                            <span className="block text-[0.68rem] text-muted-foreground truncate">
                               {mine ? "Jij" : task.doneBy} · {task.doneAt}
                             </span>
                           )}
                         </span>
-                        <span className="text-[0.66rem] flex-shrink-0 self-start" style={{ color: "color-mix(in srgb, var(--muted-foreground) 60%, transparent)" }}>terug</span>
+                        <span className="text-[0.66rem] flex-shrink-0 self-start" style={{ color: "var(--muted-foreground)" }}>terug</span>
                       </button>
                       <IconButton
                         size={8}

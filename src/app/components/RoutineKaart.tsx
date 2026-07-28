@@ -92,7 +92,7 @@ export const RoutineKaart = memo(function RoutineKaart({
             {routineTone(routine)}
           </p>
           {routineWindowLine(routine) && (
-            <p className="text-[0.68rem] text-muted-foreground/70 mt-1">{routineWindowLine(routine)}</p>
+            <p className="text-[0.68rem] text-muted-foreground mt-1">{routineWindowLine(routine)}</p>
           )}
         </div>
         <motion.div animate={{ rotate: open ? 90 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }}>
@@ -124,7 +124,7 @@ export const RoutineKaart = memo(function RoutineKaart({
                   <span className="flex-1 min-w-0">
                     <span className={`flex items-baseline gap-1.5 text-sm text-left ${t.done ? "line-through text-muted-foreground" : "text-foreground"}`}>
                       {t.title}
-                      {t.duration && <span className="text-xs text-muted-foreground opacity-50 flex-shrink-0">· {t.duration}</span>}
+                      {t.duration && <span className="text-xs text-muted-foreground flex-shrink-0">· {t.duration}</span>}
                     </span>
                     {t.description && (
                       <span className="block text-xs text-muted-foreground mt-0.5 truncate">{t.description}</span>

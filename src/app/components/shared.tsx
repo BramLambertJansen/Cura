@@ -423,7 +423,7 @@ export function VeldInput({
         aria-label={ariaLabel ?? placeholder}
         aria-invalid={invalid || undefined}
         disabled={disabled}
-        className={`w-full rounded-2xl px-4 py-[1rem] ${isPassword ? "pr-11" : ""} text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60`}
+        className={`w-full rounded-2xl px-4 py-[1rem] ${isPassword ? "pr-11" : ""} text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60`}
         style={{
           background: fieldBackground(state),
           borderColor: fieldBorderColor(state),
@@ -462,7 +462,7 @@ export function VeldTextarea({
       aria-invalid={invalid || undefined}
       disabled={disabled}
       rows={rows}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] resize-none border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: fieldBackground(state),
         borderColor: fieldBorderColor(state),
@@ -628,7 +628,7 @@ export function TaakToevoegRij({
         onKeyDown={(e) => { if (e.key === "Enter") add(); }}
         onFocus={() => setActive(true)} onBlur={() => setActive(false)}
         placeholder={placeholder} aria-label={ariaLabel ?? placeholder}
-        className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
+        className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm border transition-all"
         style={{
           background: "var(--input-background)",
           borderColor: fieldBorderColor({ active, hasValue: !!value }),

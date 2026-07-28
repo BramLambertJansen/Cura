@@ -319,7 +319,7 @@ export function HuisPage() {
                   ))}
                 </motion.div>
               ) : (
-                <p className="text-center text-xs text-muted-foreground/60 italic py-2" style={{ fontStyle: "italic" }}>Geen taken binnen dit filter.</p>
+                <p className="text-center text-xs text-muted-foreground italic py-2" style={{ fontStyle: "italic" }}>Geen taken binnen dit filter.</p>
               )}
               {doneTasks.length > 0 && (
                 <CollapsibleSection
@@ -368,7 +368,7 @@ export function HuisPage() {
               </div>
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium text-muted-foreground">Kamer toevoegen</p>
-                <p className="text-[11px] text-muted-foreground/60 mt-0.5" style={{ fontStyle: "italic" }}>Geef elke ruimte een plek</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5" style={{ fontStyle: "italic" }}>Geef elke ruimte een plek</p>
               </div>
             </motion.button>
           </motion.div>

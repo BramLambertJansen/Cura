@@ -192,7 +192,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
               onKeyDown={(e) => { if (e.key === "Enter") handleAddShortcut(); }}
               placeholder="Naam, bijv. Yoghurt"
               aria-label="Naam snelkoppeling"
-              className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-all"
+              className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
               style={fieldStyle(mTitleActive, !!mTitle)}
             />
             <div className="flex flex-wrap gap-2" aria-label="Eenheid kiezen">
@@ -232,7 +232,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
             onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
             placeholder="Bijv. melk of suiker"
             aria-label="Boodschap"
-            className="w-full rounded-2xl px-4 py-3.5 text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-all"
+            className="w-full rounded-2xl px-4 py-3.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
             style={fieldStyle(titleActive, !!title)}
           />
 
@@ -300,7 +300,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
                   inputMode="decimal"
                   placeholder={`bijv. ${FREE_UNIT_DEFAULT[unit]}`}
                   aria-label="Aantal"
-                  className="w-28 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-all"
+                  className="w-28 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
                   style={fieldStyle(false, !!qtyText)}
                 />
               )}
@@ -340,7 +340,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
               onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
               placeholder="Bijv. merk of smaak"
               aria-label="Beschrijving"
-              className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-all"
+              className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
               style={fieldStyle(descriptionActive, !!description)}
             />
           </div>

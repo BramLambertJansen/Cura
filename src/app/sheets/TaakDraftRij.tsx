@@ -65,7 +65,7 @@ export function TaakDraftRij({
                   }}
                   placeholder="Duur, bijv. 10"
                   aria-label={`Duur van ${draft.title} in minuten`}
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                 />
                 <span className="text-xs text-muted-foreground flex-shrink-0">min</span>
               </div>

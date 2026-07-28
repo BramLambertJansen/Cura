@@ -321,7 +321,7 @@ export function TaskFormFields({
             onBlur={() => setDuurActive(false)}
             placeholder="bijv. 10"
             aria-label="Duur in minuten"
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
           <span className="text-xs text-muted-foreground flex-shrink-0">min</span>
         </FieldShell>

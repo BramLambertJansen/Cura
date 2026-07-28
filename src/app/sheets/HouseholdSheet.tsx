@@ -145,7 +145,7 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
                   <motion.button whileTap={{ scale: 0.95 }} onClick={copy} className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}><Copy size={12} /> Kopieer</motion.button>
                   <motion.button whileTap={{ scale: 0.95 }} onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-1.5" style={{ background: "#25D366" }}><Share2 size={12} /> WhatsApp</motion.button>
                 </div>
-                <p className="text-xs text-center text-muted-foreground/80">Geldig tot 7 dagen na aanmaken, werkt één keer.</p>
+                <p className="text-xs text-center text-muted-foreground">Geldig tot 7 dagen na aanmaken, werkt één keer.</p>
                 <div className="flex items-center justify-center gap-4">
                   <motion.button whileTap={{ scale: 0.95 }} onClick={genLink} disabled={busy} className="text-xs text-center text-muted-foreground">Nieuwe link genereren</motion.button>
                   <motion.button whileTap={{ scale: 0.95 }} onClick={revokeLink} className="text-xs text-center" style={{ color: "var(--destructive)" }}>Intrekken</motion.button>
