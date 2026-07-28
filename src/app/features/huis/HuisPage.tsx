@@ -278,7 +278,7 @@ export function HuisPage() {
                   <div className="px-4 pb-4 space-y-3">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2">Kamer</p>
-                      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                      <div role="group" aria-label="Filter op kamer" className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
                         <KeuzeChip selected={roomFilter === "alles"} onClick={() => setRoomFilter("alles")}>Alles</KeuzeChip>
                         {rooms.map((r) => (
                           <KeuzeChip key={r.id} selected={roomFilter === r.id} onClick={() => setRoomFilter(r.id)}>{r.name}</KeuzeChip>
@@ -287,7 +287,7 @@ export function HuisPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2">Duur</p>
-                      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                      <div role="group" aria-label="Filter op duur" className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
                         <KeuzeChip selected={durationFilter === "alles"} onClick={() => setDurationFilter("alles")}>Alles</KeuzeChip>
                         <KeuzeChip selected={durationFilter === "kort"} onClick={() => setDurationFilter("kort")}>≤ 15 min</KeuzeChip>
                         <KeuzeChip selected={durationFilter === "middel"} onClick={() => setDurationFilter("middel")}>15–45 min</KeuzeChip>

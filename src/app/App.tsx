@@ -116,7 +116,7 @@ function MainShell() {
   const isRoutineSession = Boolean(matchPath("/routines/:bundleId/starten", pathname));
   const navTint = DAYPART_NAV[useDaypart()];
 
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLElement>(null);
   const refresh = useCuraStore((s) => s.refresh);
   const { pull, state: pullState } = usePullToRefresh(scrollRef, refresh);
 
@@ -181,7 +181,7 @@ function MainShell() {
           }} />
         )}
 
-        <div
+        <main
           ref={scrollRef}
           className="flex-1 overflow-y-auto scrollbar-hide relative z-10"
           style={{
@@ -204,7 +204,7 @@ function MainShell() {
               <AnimatedRoutes />
             </Suspense>
           </div>
-        </div>
+        </main>
         <PullToRefreshIndicator pull={pull} state={pullState} />
 
         <FocusMiniPill />

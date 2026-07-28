@@ -195,14 +195,14 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
               className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
               style={fieldStyle(mTitleActive, !!mTitle)}
             />
-            <div className="flex flex-wrap gap-2" aria-label="Eenheid kiezen">
+            <div role="group" className="flex flex-wrap gap-2" aria-label="Eenheid kiezen">
               {SHOPPING_UNIT_ORDER.map((key) => (
                 <KeuzeChip key={key} selected={mUnit === key} onClick={() => setMUnit(key)}>
                   {SHOPPING_UNIT_LABELS[key]}
                 </KeuzeChip>
               ))}
             </div>
-            <div className="flex flex-wrap gap-2" aria-label="Categorie kiezen">
+            <div role="group" className="flex flex-wrap gap-2" aria-label="Categorie kiezen">
               {SHOPPING_CATEGORY_ORDER.map((key) => (
                 <KeuzeChip key={key} selected={mCategory === key} onClick={() => pickMCategory(key)}>
                   {SHOPPING_CATEGORY_LABELS[key]}
@@ -307,7 +307,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Eenheid</p>
-              <div className="flex flex-wrap gap-2" aria-label="Eenheid kiezen">
+              <div role="group" className="flex flex-wrap gap-2" aria-label="Eenheid kiezen">
                 {SHOPPING_UNIT_ORDER.map((key) => (
                   <KeuzeChip key={key} selected={unit === key} onClick={() => selectUnit(key)}>
                     {SHOPPING_UNIT_LABELS[key]}
@@ -319,7 +319,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
 
           <div className="mt-5">
             <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Categorie</p>
-            <div className="flex flex-wrap gap-2" aria-label="Categorie kiezen">
+            <div role="group" className="flex flex-wrap gap-2" aria-label="Categorie kiezen">
               {SHOPPING_CATEGORY_ORDER.map((key) => (
                 <KeuzeChip key={key} selected={category === key} onClick={() => pickCategory(key)}>
                   {SHOPPING_CATEGORY_LABELS[key]}

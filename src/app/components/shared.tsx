@@ -1,5 +1,5 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, type PanInfo } from "motion/react";
 import { Check, ChevronDown, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
@@ -366,7 +366,7 @@ export function Leeg({
 
 /** Section heading — Lora italic, warm muted, sentence case */
 export function Kop({ children, id }: { children: ReactNode; id?: string }) {
-  return <p id={id} className="text-sm text-muted-foreground mb-2 ml-1 font-display italic" style={{ letterSpacing: "0.01em" }}>{children}</p>;
+  return <h2 id={id} className="text-sm text-muted-foreground mb-2 ml-1 font-display italic" style={{ letterSpacing: "0.01em" }}>{children}</h2>;
 }
 
 /** Shared visual state for every "field" surface (VeldInput, VeldTextarea, FieldShell) — active means real DOM focus, never just "has a value". */
@@ -841,6 +841,7 @@ export function CollapsibleSection({
   tone?: "muted" | "active"; children: ReactNode;
 }) {
   const chrome = tone === "active" ? "bg-card-active border border-border/60" : "border border-border";
+  const contentId = useId();
   return (
     <div
       className={`rounded-2xl overflow-hidden ${chrome}`}
@@ -849,10 +850,11 @@ export function CollapsibleSection({
         whileTap={{ scale: 0.99 }}
         onClick={onToggle}
         aria-expanded={open}
+        aria-controls={contentId}
         className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
         <span className="inline-flex items-center gap-2">
           {icon}
-          <span className="font-display font-semibold text-sm text-foreground">{title}</span>
+          <h3 className="font-display font-semibold text-sm text-foreground">{title}</h3>
           <StatusBadge enter="slide">{count}</StatusBadge>
         </span>
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
@@ -863,6 +865,7 @@ export function CollapsibleSection({
         {open && (
           <motion.div
             key="body"
+            id={contentId}
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.24 }} className="overflow-hidden">
             <div className="px-3 pb-3">{children}</div>

@@ -123,7 +123,7 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
         <>
           <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Genereer een link en deel hem via WhatsApp. De uitgenodigde tikt op accepteren.</p>
           {!link
-            ? <PrimaryButton onClick={genLink} busy={busy} icon={<Sparkles size={15} />}>
+            ? <PrimaryButton onClick={genLink} busy={busy} icon={<Sparkles size={15} aria-hidden="true" />}>
                 {busy ? "Even geduld…" : "Uitnodigingslink genereren"}
               </PrimaryButton>
             : <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}
@@ -142,8 +142,8 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
                   </motion.button>
                 </div>
                 <div className="flex gap-2">
-                  <motion.button whileTap={{ scale: 0.95 }} onClick={copy} className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}><Copy size={12} /> Kopieer</motion.button>
-                  <motion.button whileTap={{ scale: 0.95 }} onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-1.5" style={{ background: "#25D366" }}><Share2 size={12} /> WhatsApp</motion.button>
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={copy} className="flex-1 py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-1.5" style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}><Copy size={12} aria-hidden="true" /> Kopieer</motion.button>
+                  <motion.button whileTap={{ scale: 0.95 }} onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(link)}`, "_blank")} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-1.5" style={{ background: "#25D366" }}><Share2 size={12} aria-hidden="true" /> WhatsApp</motion.button>
                 </div>
                 <p className="text-xs text-center text-muted-foreground">Geldig tot 7 dagen na aanmaken, werkt één keer.</p>
                 <div className="flex items-center justify-center gap-4">

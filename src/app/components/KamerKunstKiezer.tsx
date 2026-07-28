@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { motion } from "motion/react";
 import { Check } from "lucide-react";
 import { ICONS } from "../lib/constants";
@@ -14,19 +15,45 @@ import { RoomThumb } from "./RoomThumb";
 export function KamerKunstKiezer({
   value, onChange,
 }: { value: string; onChange: (key: string) => void }) {
+  // Roving tabindex + arrow-key navigation, matching the native <input type="radio">
+  // group model this role="radiogroup" implies (Left/Up = previous, Right/Down =
+  // next, Home/End = first/last, wrapping at the ends) — Tab-through-every-tile
+  // still worked before, but arrow keys/Home/End did nothing (#181).
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const hasSelection = ICONS.some((ic) => ic.key === value);
+
+  const moveTo = (idx: number) => {
+    const key = ICONS[(idx + ICONS.length) % ICONS.length]?.key;
+    if (!key) return;
+    onChange(key);
+    refs.current[key]?.focus();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, idx: number) => {
+    switch (e.key) {
+      case "ArrowRight": case "ArrowDown": e.preventDefault(); moveTo(idx + 1); break;
+      case "ArrowLeft": case "ArrowUp": e.preventDefault(); moveTo(idx - 1); break;
+      case "Home": e.preventDefault(); moveTo(0); break;
+      case "End": e.preventDefault(); moveTo(ICONS.length - 1); break;
+    }
+  };
+
   return (
     <div className="grid grid-cols-3 gap-2.5" role="radiogroup" aria-label="Kies een kamer">
-      {ICONS.map((ic) => {
+      {ICONS.map((ic, idx) => {
         const selected = value === ic.key;
         return (
           <motion.button
             key={ic.key}
+            ref={(el) => { refs.current[ic.key] = el; }}
             type="button"
             whileTap={{ scale: 0.94 }}
             onClick={() => onChange(ic.key)}
+            onKeyDown={(e) => handleKeyDown(e, idx)}
             role="radio"
             aria-checked={selected}
             aria-label={ic.label}
+            tabIndex={selected || (!hasSelection && idx === 0) ? 0 : -1}
             className="flex flex-col items-center gap-1.5 rounded-2xl focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
             <div className="relative w-full aspect-square rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-input)" }}>
               <RoomThumb ic={ic} color={ic.color} className="w-full h-full" rounded="rounded-2xl" large scaleImage={false} />
