@@ -288,8 +288,8 @@ export function DesignSystemPage() {
 
       <Section title="Lege staat">
         <p className="text-sm text-muted-foreground -mt-1">Met illustratie (<code>image</code>-prop) waar er kunst voor bestaat; het emoji blijft de stille fallback als het bestand ontbreekt.</p>
-        <Leeg icon="🌿" image="/empty-plants.webp" text="Niets op de planning. Geniet ervan." />
-        <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag. De dag is jong." />
+        <Leeg icon="🌿" image="/empty-plants.webp" text="Niets op de planning." />
+        <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag." />
         <Leeg icon="🌿" text="Zonder illustratie — emoji-fallback." />
       </Section>
 
