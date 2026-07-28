@@ -22,10 +22,9 @@ function writeRaw(key: string, raw: string): void {
 
 /**
  * Day-scoped, JSON-backed React state in localStorage — the shared shape
- * behind useNietVandaag/useTaskDismissals (Set<string>) and useReacties
- * (Record<string, ReactieKind>) (#162). Each caller supplies its own
- * prefix/empty value and encode/decode, since a Set isn't JSON-native (needs
- * array round-tripping) while a plain Record already is.
+ * behind useNietVandaag/useTaskDismissals (both Set<string>) (#162). Each
+ * caller supplies its own prefix/empty value and encode/decode, since a Set
+ * isn't JSON-native and needs array round-tripping.
  *
  * The storage key is (re)computed from `prefix` at both initial-read and
  * every `update()` call, not memoized across the hook's lifetime — so a

@@ -100,7 +100,7 @@ must be re-applied or many components capture BLANK (false `[RENDER_BLANK]` +
    right after the render-check `page.goto(... 'networkidle' ...)` (before the
    `rootEmpty` evaluate), so the mount fade settles before the screenshot.
 Symptom if missing: PageHeader, Leeg, and every list-row/feed component
-(SuggestieRij, BoodschapRij, ActiviteitReacties, TijdlijnTaakRij) render blank.
+(SuggestieRij, BoodschapRij, TijdlijnTaakRij) render blank.
 
 ## public/ assets via absolute paths — NOT renderable in the sandbox (by design)
 The capture server and the DS upload serve only `ds-bundle/`, which has no
