@@ -6,12 +6,12 @@ import type { RoutineView } from "../../data/types";
 import { PRESS_TINT, SAGE, SHADOW } from "../lib/constants";
 import { CARD_CHROME, RingProgress, Card, PillButton, StatusBadge } from "./shared";
 
-function routineTone(routine: RoutineView): string {
+function routineTone(routine: RoutineView): string | null {
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
   if (total > 0 && done === total) return "Rond voor nu";
   if (routine.windowSize > 0) return routine.hint;
-  if (total > 0) return "Rustig op te pakken";
+  if (total > 0) return null;
   return "Nog leeg";
 }
 
@@ -45,7 +45,9 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({ routine }
       </div>
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground truncate">{routine.name}</p>
-        <p className="text-xs text-muted-foreground mt-0.5 font-display italic truncate">{routineTone(routine)}</p>
+        {routineTone(routine) && (
+          <p className="text-xs text-muted-foreground mt-0.5 font-display italic truncate">{routineTone(routine)}</p>
+        )}
       </div>
       {allDone ? (
         <StatusBadge>Klaar</StatusBadge>
@@ -88,9 +90,11 @@ export const RoutineKaart = memo(function RoutineKaart({
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{routine.trigger}</p>
-          <p className="text-xs mt-1 leading-snug font-display italic" style={{ color: "var(--muted-foreground)" }}>
-            {routineTone(routine)}
-          </p>
+          {routineTone(routine) && (
+            <p className="text-xs mt-1 leading-snug font-display italic" style={{ color: "var(--muted-foreground)" }}>
+              {routineTone(routine)}
+            </p>
+          )}
           {routineWindowLine(routine) && (
             <p className="text-[0.68rem] text-muted-foreground/70 mt-1">{routineWindowLine(routine)}</p>
           )}
