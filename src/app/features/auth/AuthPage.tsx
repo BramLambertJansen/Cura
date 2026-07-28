@@ -11,12 +11,13 @@ import { AuthForm, type AuthMode } from "./AuthForm";
 import { MagicLinkForm } from "./MagicLinkForm";
 
 export function AuthPage() {
-  const { signIn, signUp, signInWithMagicLink } = useAuth();
+  const { signIn, signUp, signInWithMagicLink, sendPasswordReset } = useAuth();
   const [mode, setMode] = useState<AuthMode>("signin");
   const [busy, setBusy] = useState(false);
   const [magicBusy, setMagicBusy] = useState(false);
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   async function handleSubmit(fields: { email: string; password: string; displayName: string }) {
     setBusy(true);
@@ -46,7 +47,17 @@ export function AuthPage() {
     }
   }
 
-  const sent = pendingConfirmation || magicLinkSent;
+  async function handleForgotPassword(email: string) {
+    if (!email) return;
+    try {
+      await sendPasswordReset(email);
+      setResetSent(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Link versturen lukte niet");
+    }
+  }
+
+  const sent = pendingConfirmation || magicLinkSent || resetSent;
   const subtitle = sent
     ? "Nog één stap."
     : mode === "signin"
@@ -80,7 +91,9 @@ export function AuthPage() {
               message={
                 pendingConfirmation
                   ? "We stuurden een bevestigingslink naar je inbox. Bevestig je account en log daarna hier in."
-                  : "We stuurden een inloglink naar je inbox. Tik erop om verder te gaan."
+                  : resetSent
+                    ? "We stuurden een link naar je inbox om een nieuw wachtwoord in te stellen."
+                    : "We stuurden een inloglink naar je inbox. Tik erop om verder te gaan."
               }
             />
           ) : (
@@ -94,6 +107,7 @@ export function AuthPage() {
               <AuthForm
                 mode={mode} busy={busy} onSubmit={handleSubmit}
                 submitLabel={mode === "signin" ? "Inloggen" : "Account aanmaken"}
+                onForgotPassword={handleForgotPassword}
               />
             </div>
           )}
@@ -102,7 +116,7 @@ export function AuthPage() {
         {sent ? (
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => { setMagicLinkSent(false); setPendingConfirmation(false); }}
+            onClick={() => { setMagicLinkSent(false); setPendingConfirmation(false); setResetSent(false); }}
             className="w-full text-center text-sm text-muted-foreground mt-5 focus-ring rounded-lg py-1.5">
             Ander e-mailadres gebruiken
           </motion.button>
