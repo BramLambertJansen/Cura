@@ -30,17 +30,44 @@ function hostOf(endpoint: string): string {
   }
 }
 
+/**
+ * Constant-time-ish string compare for the CRON_SECRET check below (#170) —
+ * hashing both sides first means the comparison always runs over two
+ * same-length digests with no early exit on a content/length mismatch,
+ * closing the theoretical timing side-channel of a plain `!==` compare.
+ */
+async function secretsMatch(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [da, db] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(a)),
+    crypto.subtle.digest("SHA-256", enc.encode(b)),
+  ]);
+  const bytesA = new Uint8Array(da);
+  const bytesB = new Uint8Array(db);
+  let diff = 0;
+  for (let i = 0; i < bytesA.length; i++) diff |= bytesA[i] ^ bytesB[i];
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   // This endpoint sends push, so it must not be publicly callable.
   const secret = Deno.env.get("CRON_SECRET");
-  if (!secret || req.headers.get("x-cron-secret") !== secret) {
+  const provided = req.headers.get("x-cron-secret");
+  if (!secret || !provided || !(await secretsMatch(provided, secret))) {
     return json({ error: "unauthorized" }, 401);
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  // Validate presence before createClient() — same guard the CRON_SECRET check
+  // above already gets. Without it a missing/rotated secret crashes every
+  // cron invocation with an unhandled exception instead of a diagnosable
+  // 500 (#194).
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("[send-reminders] misconfigured: SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY not set");
+    return json({ error: "misconfigured" }, 500);
+  }
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const now = Date.now();
   let claimed = 0;
@@ -57,11 +84,18 @@ Deno.serve(async (req) => {
     const timeZone = (h.time_zone as string) ?? "Europe/Amsterdam";
 
     // Only tasks carrying a wekker are reminder candidates.
-    const { data: taskRows } = await supabase
+    const { data: taskRows, error: taskErr } = await supabase
       .from("tasks")
       .select("id, title, interval_days, due_date")
       .eq("household_id", householdId)
       .not("due_date", "is", null);
+    if (taskErr) {
+      // A query failure must not read as "this household has nothing due" —
+      // that made a persistent per-household DB error indistinguishable from
+      // a quiet minute, with zero log output either way (#194).
+      console.error(`[send-reminders] tasks query failed for household ${householdId}: ${taskErr.message}`);
+      continue;
+    }
     const tasks: Task[] = (taskRows ?? []).map((r: any) => ({
       id: r.id,
       title: r.title,
@@ -70,10 +104,14 @@ Deno.serve(async (req) => {
     }));
     if (tasks.length === 0) continue;
 
-    const { data: compRows } = await supabase
+    const { data: compRows, error: compErr } = await supabase
       .from("task_completions")
       .select("task_id, completed_at, tasks!inner(household_id)")
       .eq("tasks.household_id", householdId);
+    if (compErr) {
+      console.error(`[send-reminders] completions query failed for household ${householdId}: ${compErr.message}`);
+      continue;
+    }
     const completions: TaskCompletion[] = (compRows ?? []).map((r: any) => ({
       taskId: r.task_id,
       completedAt: r.completed_at,
@@ -84,10 +122,14 @@ Deno.serve(async (req) => {
 
     // No one to notify → don't consume the dedup key (so a later subscribe today
     // can still receive it).
-    const { data: subs } = await supabase
+    const { data: subs, error: subsErr } = await supabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth, members(quiet_hours_start, quiet_hours_end)")
       .eq("household_id", householdId);
+    if (subsErr) {
+      console.error(`[send-reminders] subscriptions query failed for household ${householdId}: ${subsErr.message}`);
+      continue;
+    }
     if (!subs || subs.length === 0) continue;
 
     for (const r of due) {
@@ -104,11 +146,22 @@ Deno.serve(async (req) => {
       if (awake.length === 0) continue;
 
       // Atomic claim: insert-or-nothing, send only if WE inserted the row.
+      // Claiming before sending (rather than after) is deliberate: it's what
+      // stops two overlapping cron ticks from both sending the same wekker
+      // twice. The cost is that a claim now has to be compensated below if
+      // the send actually fails (#189) — otherwise a real send failure (a
+      // rotated/misconfigured VAPID secret, a transient network error) would
+      // burn the dedup key and the next tick would never retry, silently
+      // losing this wekker (permanently, for a one-off task).
       const { data: ins, error: insErr } = await supabase
         .from("reminder_dispatches")
         .upsert({ fired_for_key: r.firedForKey }, { onConflict: "fired_for_key", ignoreDuplicates: true })
         .select("fired_for_key");
-      if (insErr || !ins || ins.length === 0) continue;
+      if (insErr) {
+        console.error(`[send-reminders] dedup claim failed for key ${r.firedForKey}: ${insErr.message}`);
+        continue;
+      }
+      if (!ins || ins.length === 0) continue;
       claimed++;
 
       const payload = {
@@ -122,10 +175,13 @@ Deno.serve(async (req) => {
         taskId: r.taskId,
         url: `/vandaag?taak=${r.taskId}`,
       };
+      let anySent = false;
+      let anyHardFailure = false;
       for (const s of awake) {
         const res = await sendWebPush({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload);
         if (res.ok) {
           sent++;
+          anySent = true;
         } else if (res.gone) {
           await supabase.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
           pruned++;
@@ -133,12 +189,21 @@ Deno.serve(async (req) => {
           // A real send failure (bad/misquoted VAPID keys, payload encryption error,
           // or an FCM 4xx/5xx that isn't 404/410). Log it — otherwise it vanishes and
           // a broken push setup just looks like "sent: 0" with no clue why.
+          anyHardFailure = true;
           console.error(
             `[send-reminders] push failed for ${hostOf(s.endpoint)} ` +
               `(task ${r.taskId}, key ${r.firedForKey}): status=${res.status ?? "n/a"} ` +
               `error=${res.error ?? "unknown"}`,
           );
         }
+      }
+      // Nothing was actually delivered (every awake subscription hard-failed)
+      // — release the claim so next minute's tick retries instead of treating
+      // this as delivered. A partial success (some hard-failed, one landed)
+      // keeps the claim: the wekker DID reach someone, and "dubbel is minder
+      // erg dan gemist" doesn't apply to a housemate who already got it.
+      if (!anySent && anyHardFailure) {
+        await supabase.from("reminder_dispatches").delete().eq("fired_for_key", r.firedForKey);
       }
     }
   }

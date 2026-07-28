@@ -119,4 +119,18 @@ export function usePushReconcile(): void {
     if (enabled && supported) void subscribe().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    // The service worker posts this after re-subscribing on its own
+    // (pushsubscriptionchange, src/sw.ts) so a long-lived open tab persists
+    // the new endpoint right away instead of only on the next app open (#194)
+    // — until now nothing listened for it, so the nudge was dead code.
+    function onSwMessage(e: MessageEvent) {
+      const data = e.data as { type?: string } | null;
+      if (data?.type === "cura-pushchange" && enabled && supported) void subscribe().catch(() => {});
+    }
+    navigator.serviceWorker.addEventListener("message", onSwMessage);
+    return () => navigator.serviceWorker.removeEventListener("message", onSwMessage);
+  }, [enabled, supported, subscribe]);
 }

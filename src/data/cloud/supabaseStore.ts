@@ -1,3 +1,4 @@
+import { ZodError } from "zod";
 import { supabase } from "./supabaseClient";
 import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../store";
 import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
@@ -60,30 +61,48 @@ function metadataDisplayName(user: { user_metadata?: Record<string, unknown> }):
   );
 }
 
+/**
+ * Runs a Schema.parse() call, turning a ZodError into a calm Dutch message
+ * instead of letting its raw multi-line JSON issue dump reach a toast
+ * verbatim (#195) — ZodError extends Error, so `e instanceof Error` alone
+ * doesn't catch this upstream. Used by every mapXxx below, so it covers both
+ * the tolerant bulk-list path (mapList still logs-and-skips the row, just
+ * with a calmer message) and the strict single-row write path (the caller's
+ * catch surfaces this message directly).
+ */
+function parseRow<T>(parse: () => T, label: string): T {
+  try {
+    return parse();
+  } catch (e) {
+    if (e instanceof ZodError) throw new Error(`Onverwachte data ontvangen bij ${label} — probeer het opnieuw.`);
+    throw e;
+  }
+}
+
 function mapHousehold(r: HouseholdRow): Household {
-  return HouseholdSchema.parse({ id: r.id, name: r.name, timeZone: r.time_zone });
+  return parseRow(() => HouseholdSchema.parse({ id: r.id, name: r.name, timeZone: r.time_zone }), "huishouden");
 }
 function mapMember(r: MemberRow): Member {
-  return MemberSchema.parse({
+  return parseRow(() => MemberSchema.parse({
     id: r.id, householdId: r.household_id, displayName: r.display_name, userId: r.user_id ?? undefined,
     quietHoursStart: r.quiet_hours_start ?? undefined,
     quietHoursEnd: r.quiet_hours_end ?? undefined,
-  });
+  }), "lid");
 }
 function mapInvite(r: InviteRow): HouseholdInvite {
-  return HouseholdInviteSchema.parse({
+  return parseRow(() => HouseholdInviteSchema.parse({
     token: r.token, householdId: r.household_id, createdById: r.created_by_id,
     createdAt: r.created_at, expiresAt: r.expires_at ?? undefined,
-  });
+  }), "uitnodiging");
 }
 function mapRoom(r: RoomRow): Room {
-  return RoomSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, iconKey: r.icon_key, color: r.color, ownerId: r.owner_id ?? undefined });
+  return parseRow(() => RoomSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, iconKey: r.icon_key, color: r.color, ownerId: r.owner_id ?? undefined }), "kamer");
 }
 function mapBundle(r: BundleRow): Bundle {
-  return BundleSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, trigger: r.trigger, cadence: r.cadence, windowLabel: r.window_label });
+  return parseRow(() => BundleSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, trigger: r.trigger, cadence: r.cadence, windowLabel: r.window_label }), "routine");
 }
 function mapTask(r: TaskRow): Task {
-  return TaskSchema.parse({
+  return parseRow(() => TaskSchema.parse({
     id: r.id, householdId: r.household_id, roomId: r.room_id ?? undefined, title: r.title,
     description: r.description ?? undefined,
     durationMin: r.duration_min ?? undefined, intervalDays: r.interval_days ?? undefined,
@@ -93,18 +112,18 @@ function mapTask(r: TaskRow): Task {
     startedAt: r.started_at ?? undefined,
     checklistItems: r.checklist_items ?? [],
     dagdeel: (r.dagdeel as "ochtend" | "middag" | "avond" | null) ?? undefined,
-  });
+  }), "taak");
 }
 function mapCompletion(r: CompletionRow): TaskCompletion {
-  return TaskCompletionSchema.parse({ id: r.id, taskId: r.task_id, completedById: r.completed_by_id, completedAt: r.completed_at });
+  return parseRow(() => TaskCompletionSchema.parse({ id: r.id, taskId: r.task_id, completedById: r.completed_by_id, completedAt: r.completed_at }), "afronding");
 }
 function mapShoppingItem(r: ShoppingItemRow): ShoppingItem {
-  return ShoppingItemSchema.parse({
+  return parseRow(() => ShoppingItemSchema.parse({
     id: r.id, householdId: r.household_id, title: r.title,
     quantity: r.quantity ?? undefined,
     amount: r.amount ?? undefined, unit: r.unit ?? undefined, description: r.description ?? undefined,
     category: r.category ?? undefined, checked: r.checked, createdAt: r.created_at,
-  });
+  }), "boodschap");
 }
 
 // Optional shopping_items columns added after the initial table (category,
@@ -197,8 +216,12 @@ export function mapList<Row, T>(rows: readonly Row[], map: (r: Row) => T, label:
     try {
       out.push(map(row));
     } catch (e) {
+      // Log the row's id (if it has one) and the error, never the full row —
+      // it can carry real household PII (names, task titles/descriptions)
+      // that has no reason to sit in browser devtools console history (#170).
+      const id = (row as { id?: unknown } | null)?.id;
       // eslint-disable-next-line no-console
-      console.error(`Overslaan van onleesbare ${label}-rij bij het laden`, e, row);
+      console.error(`Overslaan van onleesbare ${label}-rij bij het laden`, id !== undefined ? { id } : "", e);
     }
   }
   return out;
@@ -447,9 +470,16 @@ export class SupabaseStore implements DataStore {
     else if (trackPickup) update.picked_up_at = new Date().toISOString();
 
     for (let attempt = 0; attempt <= NEW_TASK_COLUMNS.length; attempt++) {
-      const { data, error } = await supabase.from("tasks").update(update).eq("id", taskId).select().single();
+      let query = supabase.from("tasks").update(update).eq("id", taskId);
+      // Guard against a claim race (#191): only claim a task that's still
+      // unclaimed. Releasing (claimedById === null) always succeeds regardless
+      // of who currently holds it. `.maybeSingle()` (not `.single()`) so a
+      // race that matches zero rows comes back as `data: null` instead of a
+      // thrown PostgREST error we'd have to pattern-match.
+      if (claimedById) query = query.is("claimed_by_id", null);
+      const { data, error } = await query.select().maybeSingle();
       if (!error) {
-        if (!data) throw new Error(`Task not found: ${taskId}`);
+        if (!data) throw new Error(claimedById ? "Iemand anders pakte dit al op." : `Task not found: ${taskId}`);
         return mapTask(data as TaskRow);
       }
       const missing = missingTaskColumns(error);
@@ -479,11 +509,16 @@ export class SupabaseStore implements DataStore {
   // ── Completions ──────────────────────────────────────────────────────────
   async completeTask(taskId: string, userId: string): Promise<TaskCompletion> {
     const { data: taskData, error: taskError } = await supabase.from("tasks").select("household_id").eq("id", taskId).single();
-    if (taskError || !taskData) throw new Error(`Task not found: ${taskId}`);
+    if (taskError || !taskData) throw new Error("Deze taak bestaat niet meer.");
     const memberId = await this.memberIdFor(userId, (taskData as { household_id: string }).household_id);
     const row: CompletionRow = { id: uid(), task_id: taskId, completed_by_id: memberId, completed_at: new Date().toISOString() };
     const { error } = await supabase.from("task_completions").insert(row);
-    if (error) throw new Error(error.message);
+    if (error) {
+      // 23503 = FK violation: a housemate deleted this task in the window
+      // between our SELECT above and this INSERT. Same calm message as the
+      // not-found case above, not the raw Postgres constraint text (#195).
+      throw new Error(error.code === "23503" ? "Deze taak bestaat niet meer." : error.message);
+    }
     return mapCompletion(row);
   }
 
@@ -553,7 +588,10 @@ export class SupabaseStore implements DataStore {
   async listShoppingItems(householdId: string): Promise<ShoppingItem[]> {
     const { data, error } = await supabase.from("shopping_items").select("*").eq("household_id", householdId);
     if (error) throw new Error(error.message);
-    return ((data ?? []) as ShoppingItemRow[]).map(mapShoppingItem);
+    // mapList, not a raw .map — one shopping item with an unparseable row
+    // (e.g. a legacy timestamp format) must not brick init() for the whole
+    // household, same as every other bulk list here (#187, the #54 bugclass).
+    return mapList((data ?? []) as ShoppingItemRow[], mapShoppingItem, "boodschap");
   }
 
   async createShoppingItem(householdId: string, input: CreateShoppingItemInput): Promise<ShoppingItem> {
@@ -612,18 +650,42 @@ export class SupabaseStore implements DataStore {
   // caller (useCuraStore) debounces its own refetch, so a burst of remote
   // writes (e.g. someone completing several tasks) triggers one refresh, not
   // one per row.
-  subscribeToChanges(householdId: string, onChange: () => void): () => void {
-    const channel = supabase
-      .channel(`household-${householdId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter: `household_id=eq.${householdId}` }, onChange)
-      .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `household_id=eq.${householdId}` }, onChange)
-      .on("postgres_changes", { event: "*", schema: "public", table: "bundles", filter: `household_id=eq.${householdId}` }, onChange)
-      .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `household_id=eq.${householdId}` }, onChange)
-      .on("postgres_changes", { event: "*", schema: "public", table: "shopping_items", filter: `household_id=eq.${householdId}` }, onChange)
-      .on("postgres_changes", { event: "*", schema: "public", table: "task_completions" }, onChange)
-      .subscribe();
+  subscribeToChanges(householdId: string, onChange: (table: string) => void): () => void {
+    let stopped = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const connect = () => {
+      channel = supabase
+        .channel(`household-${householdId}`)
+        // Each handler names its own table (#174) so the caller can refetch
+        // only the affected list instead of all six on every remote write.
+        .on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter: `household_id=eq.${householdId}` }, () => onChange("tasks"))
+        .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `household_id=eq.${householdId}` }, () => onChange("rooms"))
+        .on("postgres_changes", { event: "*", schema: "public", table: "bundles", filter: `household_id=eq.${householdId}` }, () => onChange("bundles"))
+        .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `household_id=eq.${householdId}` }, () => onChange("members"))
+        .on("postgres_changes", { event: "*", schema: "public", table: "shopping_items", filter: `household_id=eq.${householdId}` }, () => onChange("shopping_items"))
+        .on("postgres_changes", { event: "*", schema: "public", table: "task_completions" }, () => onChange("task_completions"))
+        .subscribe((status) => {
+          // A channel that errors or times out would otherwise leave this
+          // household silently stuck on stale data until a manual
+          // pull-to-refresh or app reload (#197) — self-heal by reconnecting
+          // rather than relying only on realtime-js's own retry behaviour.
+          if (stopped || (status !== "CHANNEL_ERROR" && status !== "TIMED_OUT") || reconnectTimer) return;
+          reconnectTimer = setTimeout(() => {
+            reconnectTimer = null;
+            if (stopped) return;
+            if (channel) void supabase.removeChannel(channel);
+            connect();
+          }, 2000);
+        });
+    };
+    connect();
+
     return () => {
-      void supabase.removeChannel(channel);
+      stopped = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      if (channel) void supabase.removeChannel(channel);
     };
   }
 

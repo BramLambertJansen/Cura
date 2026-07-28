@@ -120,6 +120,18 @@ function MainShell() {
   const refresh = useCuraStore((s) => s.refresh);
   const { pull, state: pullState } = usePullToRefresh(scrollRef, refresh);
 
+  // A phone left locked for hours (or a long-throttled background tab) can
+  // leave the realtime channel stale even after it resumes — resync on
+  // return to the foreground instead of waiting for a lucky remote change or
+  // a manual pull-to-refresh (#197). Cheap no-op-ish in local mode too.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refresh]);
+
   const [showAdd, setShowAdd] = useState(false);
   const [addMode, setAddMode] = useState<"taak" | "boodschap">("taak");
   const [showAddBoodschap, setShowAddBoodschap] = useState(false);

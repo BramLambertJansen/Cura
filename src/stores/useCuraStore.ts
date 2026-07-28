@@ -5,6 +5,21 @@ import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskComple
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
+/** Keys of the six household-scoped lists this store fetches/refetches. */
+type ListKey = "members" | "rooms" | "tasks" | "completions" | "bundles" | "shoppingItems";
+
+// Supabase's realtime payload names which table changed; not every list needs
+// refetching on every remote write (#174) — a task_completions insert
+// shouldn't also re-fetch rooms/members/bundles.
+const TABLE_TO_LIST_KEY: Record<string, ListKey> = {
+  tasks: "tasks",
+  rooms: "rooms",
+  bundles: "bundles",
+  members: "members",
+  shopping_items: "shoppingItems",
+  task_completions: "completions",
+};
+
 /** A routine-taak zoals ingevoerd in NewRoutineSheet/EditRoutineSheet, vóór opslaan. */
 export interface TaakDraft {
   title: string;
@@ -35,8 +50,14 @@ interface CuraState {
   shoppingItems: ShoppingItem[];
 
   init: () => Promise<void>;
-  /** Re-fetch all lists for the current household (pull-to-refresh, realtime). Resolves silently on failure — a missed refresh isn't worth an alarm. */
-  refresh: () => Promise<void>;
+  /**
+   * Re-fetch lists for the current household (pull-to-refresh, realtime).
+   * Pass `only` to limit the refetch to specific lists (realtime uses this to
+   * avoid re-fetching all six on every remote write, #174); omit it to
+   * refresh everything. Resolves silently on failure — a missed refresh isn't
+   * worth an alarm.
+   */
+  refresh: (only?: ReadonlySet<ListKey>) => Promise<void>;
   createHousehold: (name: string) => Promise<void>;
   updateHousehold: (name: string) => Promise<void>;
   updateMember: (displayName: string) => Promise<void>;
@@ -107,6 +128,10 @@ const toggling = new Set<string>();
 // an earlier call resolving late (out of network-timing order) can no longer
 // overwrite a more recent selection.
 const assignSeq = new Map<string, number>();
+// Same out-of-order guard as assignSeq, for claimTask — it had none before,
+// unlike its toggleTask/assignTask neighbours, so a double-tap on "Pak dit
+// op"/"Laat los" could let a stale response win over a newer one.
+const claimSeq = new Map<string, number>();
 
 // Realtime (Phase 3+, cloud mode only — a no-op subscription in local mode).
 // A burst of remote postgres_changes events collapses into one refetch instead
@@ -114,6 +139,43 @@ const assignSeq = new Map<string, number>();
 const REALTIME_DEBOUNCE_MS = 400;
 let unsubscribeRealtime: (() => void) | null = null;
 let realtimeRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+// Which lists a burst of realtime events actually touched — flushed (and
+// cleared) into a single scoped refresh() call when the debounce fires (#174).
+const pendingListKeys = new Set<ListKey>();
+
+// Bounds how long a single list fetch may hang before init()/refresh() treat
+// it as failed — without this, a connection that never resolves (dead proxy,
+// server accepts but never answers) leaves the store on its startup skeleton
+// forever, since nothing ever rejects (see #188).
+const LIST_TIMEOUT_MS = 15000;
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Verbinden duurde te lang — probeer het opnieuw.")), ms);
+    }),
+  ]);
+}
+
+/**
+ * Turns a raw thrown error into a calm, Dutch, actionable toast message —
+ * recognizing the handful of error shapes that would otherwise leak raw
+ * technical text (an expired auth session, a full localStorage quota) past
+ * the app's otherwise-consistent tone (#193, #196).
+ */
+function friendlyMessage(e: unknown, fallback: string): string {
+  const name = e && typeof e === "object" && "name" in e ? (e as { name?: unknown }).name : undefined;
+  if (name === "QuotaExceededError") {
+    return "Opslag is vol — maak ruimte vrij (of verlaat privénavigatie) en probeer het opnieuw.";
+  }
+  if (e instanceof Error) {
+    if (/jwt expired|invalid claim|refresh_token_not_found|pgrst301/i.test(e.message)) {
+      return "Je sessie is verlopen — log opnieuw in.";
+    }
+    return e.message;
+  }
+  return fallback;
+}
 
 export const useCuraStore = create<CuraState>((set, get) => ({
   ready: false,
@@ -141,61 +203,85 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         set({ ready: true, currentUserId: userId, households: [] });
         return;
       }
-      const [members, rooms, tasks, completions, bundles, shoppingItems] = await Promise.all([
-        store.listMembers(household.id),
-        store.listRooms(household.id),
-        store.listTasks(household.id),
-        store.listCompletions(household.id),
-        store.listBundles(household.id),
-        store.listShoppingItems(household.id),
+      const results = await Promise.allSettled([
+        withTimeout(store.listMembers(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listRooms(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listTasks(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listCompletions(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listBundles(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listShoppingItems(household.id), LIST_TIMEOUT_MS),
       ]);
+      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR] = results;
+      // A total loss (every list failed — network down, dead proxy) is the one
+      // case worth surfacing as a retryable error; a partial loss degrades
+      // gracefully with empty slices for just the lists that failed, instead
+      // of blocking the whole household on one flaky endpoint (#188).
+      if (results.every((r) => r.status === "rejected")) throw (membersR as PromiseRejectedResult).reason;
       set({
         ready: true,
         householdId: household.id,
         currentUserId: userId,
         households,
-        members,
-        rooms,
-        tasks,
-        completions,
-        bundles,
-        shoppingItems,
+        members: membersR.status === "fulfilled" ? membersR.value : [],
+        rooms: roomsR.status === "fulfilled" ? roomsR.value : [],
+        tasks: tasksR.status === "fulfilled" ? tasksR.value : [],
+        completions: completionsR.status === "fulfilled" ? completionsR.value : [],
+        bundles: bundlesR.status === "fulfilled" ? bundlesR.value : [],
+        shoppingItems: shoppingItemsR.status === "fulfilled" ? shoppingItemsR.value : [],
       });
 
       // Re-init (e.g. after accepting an invite) replaces any earlier subscription.
       unsubscribeRealtime?.();
-      unsubscribeRealtime = store.subscribeToChanges(household.id, () => {
+      unsubscribeRealtime = store.subscribeToChanges(household.id, (table) => {
+        const key = TABLE_TO_LIST_KEY[table];
+        if (key) pendingListKeys.add(key);
         if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
         realtimeRefreshTimer = setTimeout(() => {
           // Guard against a change from a household we've since left (reset()/re-init raced this timer).
           if (get().householdId !== household.id) return;
-          void get().refresh();
+          const keys = pendingListKeys.size > 0 ? new Set(pendingListKeys) : undefined;
+          pendingListKeys.clear();
+          void get().refresh(keys);
         }, REALTIME_DEBOUNCE_MS);
       });
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Laden is niet gelukt";
+      const message = friendlyMessage(e, "Laden is niet gelukt");
       toast.error(message);
       // Surface a retryable error instead of leaving the Gate on an endless skeleton.
       set({ initError: message });
     }
   },
 
-  async refresh() {
+  async refresh(only) {
     try {
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
-      const [members, rooms, tasks, completions, bundles, shoppingItems] = await Promise.all([
-        store.listMembers(householdId),
-        store.listRooms(householdId),
-        store.listTasks(householdId),
-        store.listCompletions(householdId),
-        store.listBundles(householdId),
-        store.listShoppingItems(householdId),
+      const want = (key: ListKey) => !only || only.has(key);
+      const results = await Promise.allSettled([
+        want("members") ? withTimeout(store.listMembers(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("rooms") ? withTimeout(store.listRooms(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("tasks") ? withTimeout(store.listTasks(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("completions") ? withTimeout(store.listCompletions(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("bundles") ? withTimeout(store.listBundles(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("shoppingItems") ? withTimeout(store.listShoppingItems(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
       ]);
       // Household changed while the fetch was in flight (sign-out/re-init) — discard.
       if (get().householdId !== householdId) return;
-      set({ members, rooms, tasks, completions, bundles, shoppingItems });
+      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR] = results;
+      // Apply whichever lists succeeded and keep the previous value for
+      // whichever didn't — a flaky single endpoint must not throw away data
+      // that DID come back, especially since a realtime refetch relies on
+      // this running successfully on every remote change (#188).
+      const current = get();
+      set({
+        members: membersR.status === "fulfilled" && membersR.value !== null ? membersR.value : current.members,
+        rooms: roomsR.status === "fulfilled" && roomsR.value !== null ? roomsR.value : current.rooms,
+        tasks: tasksR.status === "fulfilled" && tasksR.value !== null ? tasksR.value : current.tasks,
+        completions: completionsR.status === "fulfilled" && completionsR.value !== null ? completionsR.value : current.completions,
+        bundles: bundlesR.status === "fulfilled" && bundlesR.value !== null ? bundlesR.value : current.bundles,
+        shoppingItems: shoppingItemsR.status === "fulfilled" && shoppingItemsR.value !== null ? shoppingItemsR.value : current.shoppingItems,
+      });
     } catch {
       // Silent — a transient refresh failure isn't worth interrupting the session over; the next refresh retries.
     }
@@ -216,7 +302,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       toast("Naam opgeslagen");
       set({ households: get().households.map((h) => (h.id === householdId ? updated : h)) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Opslaan lukte niet");
+      toast.error(friendlyMessage(e, "Opslaan lukte niet"));
     }
   },
 
@@ -229,7 +315,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       toast("Naam opgeslagen");
       set({ members: get().members.map((m) => (m.id === me.id ? updated : m)) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Opslaan lukte niet");
+      toast.error(friendlyMessage(e, "Opslaan lukte niet"));
     }
   },
 
@@ -242,7 +328,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       toast(start && end ? "Stille uren ingesteld" : "Stille uren uit");
       set({ members: get().members.map((m) => (m.id === me.id ? updated : m)) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Opslaan lukte niet");
+      toast.error(friendlyMessage(e, "Opslaan lukte niet"));
     }
   },
 
@@ -253,7 +339,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     try {
       return await store.createInvite(householdId);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Uitnodigen lukte niet");
+      toast.error(friendlyMessage(e, "Uitnodigen lukte niet"));
       return undefined;
     }
   },
@@ -271,7 +357,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       await store.revokeInvite(token);
       toast("Link ingetrokken");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Intrekken lukte niet");
+      toast.error(friendlyMessage(e, "Intrekken lukte niet"));
     }
   },
 
@@ -318,13 +404,15 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         if (latest) set({ completions: get().completions.filter((c) => c.id !== latest.id) });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Afvinken lukte niet");
+      toast.error(friendlyMessage(e, "Afvinken lukte niet"));
     } finally {
       toggling.delete(taskId);
     }
   },
 
   async claimTask(taskId, claimed) {
+    const seq = (claimSeq.get(taskId) ?? 0) + 1;
+    claimSeq.set(taskId, seq);
     try {
       const store = await getDataStore();
       const { currentUserId, tasks } = get();
@@ -335,11 +423,13 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       // los" flow (see HuisPage), never the generic planned-auto-claim below,
       // so it's the one true "picked up from Huis" signal for Vandaag.
       const updated = await store.claimTask(taskId, claimed ? currentUserId : null, true);
+      if (claimSeq.get(taskId) !== seq) return; // a newer claim/release call already superseded this one
       if (claimed) toast(`Jij pakt "${task.title}"`, { description: "Anderen zien dat jij dit doet." });
       else toast(`"${task.title}" vrijgegeven`);
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Claimen lukte niet");
+      if (claimSeq.get(taskId) !== seq) return;
+      toast.error(friendlyMessage(e, "Claimen lukte niet"));
     }
   },
 
@@ -366,7 +456,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
       if (assignSeq.get(taskId) !== seq) return;
-      toast.error(e instanceof Error ? e.message : "Toewijzen lukte niet");
+      toast.error(friendlyMessage(e, "Toewijzen lukte niet"));
     }
   },
 
@@ -395,7 +485,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       });
       set({ tasks: [...get().tasks, created] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+      toast.error(friendlyMessage(e, "Toevoegen lukte niet"));
     }
   },
 
@@ -404,7 +494,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const store = await getDataStore();
       const { householdId, currentUserId } = get();
       if (!householdId) return;
-      const created = await Promise.all(
+      // allSettled, not all: one template failing to create shouldn't discard
+      // the others that already landed server-side (#190) — that orphaned
+      // them from local state until a manual refresh, and a retry without an
+      // idempotency key could double-create the ones that DID succeed.
+      const results = await Promise.allSettled(
         templates.map(async (t) => {
           let task = await store.createTask(householdId, { ...t, roomId });
           // Same soft "ik doe dit" auto-claim as createTask — planned:true starter
@@ -413,10 +507,16 @@ export const useCuraStore = create<CuraState>((set, get) => ({
           return task;
         }),
       );
-      toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
-      set({ tasks: [...get().tasks, ...created] });
+      const created = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
+      if (created.length > 0) set({ tasks: [...get().tasks, ...created] });
+      const anyFailed = results.some((r) => r.status === "rejected");
+      if (anyFailed) {
+        toast.error(created.length > 0 ? `${created.length} van ${templates.length} taken toegevoegd — niet alles is gelukt` : "Toevoegen lukte niet");
+      } else {
+        toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
+      }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+      toast.error(friendlyMessage(e, "Toevoegen lukte niet"));
     }
   },
 
@@ -446,7 +546,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
       return true;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
+      toast.error(friendlyMessage(e, "Bijwerken lukte niet"));
       return false;
     }
   },
@@ -460,7 +560,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         completions: get().completions.filter((c) => c.taskId !== taskId),
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Verwijderen lukte niet");
+      toast.error(friendlyMessage(e, "Verwijderen lukte niet"));
     }
   },
 
@@ -473,7 +573,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       toast.success(`"${created.name}" toegevoegd`);
       set({ rooms: [...get().rooms, created] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+      toast.error(friendlyMessage(e, "Toevoegen lukte niet"));
     }
   },
 
@@ -484,7 +584,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       toast("Kamer bijgewerkt");
       set({ rooms: get().rooms.map((r) => (r.id === roomId ? updated : r)) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
+      toast.error(friendlyMessage(e, "Bijwerken lukte niet"));
     }
   },
 
@@ -495,7 +595,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       toast("Kamer verwijderd");
       set({ rooms: get().rooms.filter((r) => r.id !== roomId) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Verwijderen lukte niet");
+      toast.error(friendlyMessage(e, "Verwijderen lukte niet"));
     }
   },
 
@@ -505,7 +605,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const { householdId } = get();
       if (!householdId) return;
       const created = await store.createBundle(householdId, bundle);
-      const createdTasks = await Promise.all(
+      // allSettled: the bundle itself already exists server-side by this point,
+      // so one task draft failing to create must not hide the bundle (and the
+      // drafts that DID succeed) from local state (#190) — same reasoning as
+      // createTasksFromTemplates above.
+      const results = await Promise.allSettled(
         taskDrafts
           .filter((draft) => draft.title.trim())
           .map((draft) =>
@@ -518,10 +622,12 @@ export const useCuraStore = create<CuraState>((set, get) => ({
             }),
           ),
       );
-      toast.success(`"${created.name}" aangemaakt`);
+      const createdTasks = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
+      const anyFailed = results.some((r) => r.status === "rejected");
+      toast[anyFailed ? "error" : "success"](anyFailed ? `"${created.name}" aangemaakt — niet alle taken zijn gelukt` : `"${created.name}" aangemaakt`);
       set({ bundles: [...get().bundles, created], tasks: [...get().tasks, ...createdTasks] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Aanmaken lukte niet");
+      toast.error(friendlyMessage(e, "Aanmaken lukte niet"));
     }
   },
 
@@ -602,7 +708,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       toast("Routine bijgewerkt");
       set({ bundles: get().bundles.map((b) => (b.id === bundleId ? updated : b)), tasks });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
+      toast.error(friendlyMessage(e, "Bijwerken lukte niet"));
     }
   },
 
@@ -616,7 +722,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         tasks: get().tasks.filter((t) => t.bundleId !== bundleId),
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Verwijderen lukte niet");
+      toast.error(friendlyMessage(e, "Verwijderen lukte niet"));
     }
   },
 
@@ -628,7 +734,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const created = await store.createShoppingItem(householdId, input);
       set({ shoppingItems: [...get().shoppingItems, created] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Toevoegen lukte niet");
+      toast.error(friendlyMessage(e, "Toevoegen lukte niet"));
     }
   },
 
@@ -638,7 +744,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const updated = await store.updateShoppingItem(itemId, patch);
       set({ shoppingItems: get().shoppingItems.map((i) => (i.id === itemId ? updated : i)) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
+      toast.error(friendlyMessage(e, "Bijwerken lukte niet"));
     }
   },
 
@@ -648,7 +754,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const updated = await store.toggleShoppingItem(itemId, checked);
       set({ shoppingItems: get().shoppingItems.map((i) => (i.id === itemId ? updated : i)) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Afvinken lukte niet");
+      toast.error(friendlyMessage(e, "Afvinken lukte niet"));
     }
   },
 
@@ -658,7 +764,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       await store.deleteShoppingItem(itemId);
       set({ shoppingItems: get().shoppingItems.filter((i) => i.id !== itemId) });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Verwijderen lukte niet");
+      toast.error(friendlyMessage(e, "Verwijderen lukte niet"));
     }
   },
 
@@ -671,7 +777,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ shoppingItems: get().shoppingItems.filter((i) => !removedIds.has(i.id)) });
       toast("Afgevinkte items gewist");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Wissen lukte niet");
+      toast.error(friendlyMessage(e, "Wissen lukte niet"));
     }
   },
 
@@ -684,7 +790,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ shoppingItems: get().shoppingItems.filter((i) => !removedIds.has(i.id)) });
       toast("Boodschappenlijst geleegd");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Legen lukte niet");
+      toast.error(friendlyMessage(e, "Legen lukte niet"));
     }
   },
 
