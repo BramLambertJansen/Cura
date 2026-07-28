@@ -39,6 +39,7 @@ const BoodschappenPage = lazy(() => import("./features/boodschappen/Boodschappen
 const FocusPage = lazy(() => import("./features/focus/FocusPage").then((m) => ({ default: m.FocusPage })));
 const DesignSystemPage = lazy(() => import("./features/design-system/DesignSystemPage").then((m) => ({ default: m.DesignSystemPage })));
 const AuthPage = lazy(() => import("./features/auth/AuthPage").then((m) => ({ default: m.AuthPage })));
+const ResetPasswordPage = lazy(() => import("./features/auth/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })));
 const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPage").then((m) => ({ default: m.OnboardingIntroPage })));
 const CreateHouseholdPage = lazy(() => import("./features/auth/CreateHouseholdPage").then((m) => ({ default: m.CreateHouseholdPage })));
 const AcceptInvitePage = lazy(() => import("./features/invite/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
@@ -307,6 +308,7 @@ function Gate() {
   }, [status, reset]);
 
   if (status === "loading") return <FullScreenSkeleton />;
+  if (status === "passwordRecovery") return <Suspense fallback={<FullScreenSkeleton />}><ResetPasswordPage /></Suspense>;
   if (status === "signedOut") return <Suspense fallback={<FullScreenSkeleton />}><AuthPage /></Suspense>;
   if (initError) return <FullScreenError onRetry={() => void init()} />;
   if (!ready) return <FullScreenSkeleton />;

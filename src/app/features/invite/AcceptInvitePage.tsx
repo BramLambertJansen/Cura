@@ -21,7 +21,7 @@ const REASON_COPY: Record<Reason, string> = {
 export function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { status, signIn, signUp, signInWithMagicLink } = useAuth();
+  const { status, signIn, signUp, signInWithMagicLink, sendPasswordReset } = useAuth();
   const acceptInvite = useCuraStore((s) => s.acceptInvite);
 
   const [authMode, setAuthMode] = useState<AuthMode>("signup");
@@ -30,6 +30,7 @@ export function AcceptInvitePage() {
   const [result, setResult] = useState<Result | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const attempted = useRef(false);
 
   const runAccept = useCallback(() => {
@@ -81,6 +82,16 @@ export function AcceptInvitePage() {
     }
   }
 
+  async function handleForgotPassword(email: string) {
+    if (!email) return;
+    try {
+      await sendPasswordReset(email);
+      setResetSent(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Link versturen lukte niet");
+    }
+  }
+
   if (!token) return null;
 
   return (
@@ -112,15 +123,21 @@ export function AcceptInvitePage() {
           </p>
         )}
 
-        {status === "signedOut" && (pendingConfirmation || magicLinkSent) && (
+        {status === "signedOut" && resetSent && (
+          <p role="status" aria-live="polite" className="text-center text-sm text-muted-foreground leading-relaxed">
+            We stuurden een link naar je inbox om een nieuw wachtwoord in te stellen. Log daarna hier in om de uitnodiging te accepteren.
+          </p>
+        )}
+
+        {status === "signedOut" && (pendingConfirmation || magicLinkSent || resetSent) && (
           <button
-            onClick={() => { setPendingConfirmation(false); setMagicLinkSent(false); }}
+            onClick={() => { setPendingConfirmation(false); setMagicLinkSent(false); setResetSent(false); }}
             className="w-full text-center text-sm text-muted-foreground mt-6 focus-ring rounded-lg py-1">
             Ander e-mailadres gebruiken
           </button>
         )}
 
-        {status === "signedOut" && !pendingConfirmation && !magicLinkSent && (
+        {status === "signedOut" && !pendingConfirmation && !magicLinkSent && !resetSent && (
           <>
             <div className="space-y-4">
               <MagicLinkForm onSubmit={handleMagicLink} busy={magicBusy} submitLabel="Stuur inloglink & accepteer" />
@@ -132,6 +149,7 @@ export function AcceptInvitePage() {
               <AuthForm
                 mode={authMode} busy={busy} onSubmit={handleAuth}
                 submitLabel={authMode === "signup" ? "Account aanmaken & accepteren" : "Inloggen & accepteren"}
+                onForgotPassword={handleForgotPassword}
               />
             </div>
             <button

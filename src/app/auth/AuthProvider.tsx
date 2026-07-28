@@ -3,7 +3,11 @@ import { resolveDataMode } from "../../data/store";
 import type { CuraSupabaseClient } from "../../data/cloud/supabaseClient";
 import { LOCAL_USER_ID } from "../../data/local/seed";
 
-export type AuthStatus = "loading" | "signedOut" | "signedIn";
+/** "passwordRecovery" is a distinct signed-in-ish state: clicking a password-reset
+ *  email link lands with a real Supabase session (that's how updateUser() is
+ *  allowed to work), but the person hasn't chosen a new password yet — Gate must
+ *  show ResetPasswordPage instead of falling straight into the app. */
+export type AuthStatus = "loading" | "signedOut" | "signedIn" | "passwordRecovery";
 
 interface AuthContextValue {
   status: AuthStatus;
@@ -17,9 +21,15 @@ interface AuthContextValue {
    *  account on first use). Clicking it lands back on the current URL, so
    *  an invite token in the path survives the round trip. */
   signInWithMagicLink: (email: string) => Promise<void>;
+  /** Sends a "reset your password" e-mail. Clicking it lands back on the current
+   *  URL with a recovery session, which flips status to "passwordRecovery" (see
+   *  above) rather than signing the person straight in. No-op in local mode. */
+  sendPasswordReset: (email: string) => Promise<void>;
   /** Sets a new password for the signed-in user. The active session is the
    *  proof of identity, so no current-password re-entry is needed (Supabase's
-   *  default). No-op in local mode, which has no online account. */
+   *  default). No-op in local mode, which has no online account. Also completes
+   *  a pending password recovery: called while status is "passwordRecovery",
+   *  it flips status to "signedIn" afterwards so Gate moves on into the app. */
   changePassword: (newPassword: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -55,8 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserId(data.session?.user.id ?? null);
         setEmail(data.session?.user.email ?? null);
       });
-      const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-        setStatus(session ? "signedIn" : "signedOut");
+      const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+        // A password-recovery link establishes a real session (Supabase's own
+        // mechanism for letting the next updateUser() call succeed) — without
+        // this branch that session would read as an ordinary sign-in and Gate
+        // would skip straight past the "choose a new password" step.
+        setStatus(event === "PASSWORD_RECOVERY" ? "passwordRecovery" : session ? "signedIn" : "signedOut");
         setUserId(session?.user.id ?? null);
         setEmail(session?.user.email ?? null);
       });
@@ -97,11 +111,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (error) throw error;
     },
+    async sendPasswordReset(email) {
+      if (mode === "local") return;
+      const supabase = await getSupabase();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href,
+      });
+      if (error) throw error;
+    },
     async changePassword(newPassword) {
       if (mode === "local") return;
       const supabase = await getSupabase();
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
+      if (status === "passwordRecovery") setStatus("signedIn");
     },
     async signOut() {
       if (mode === "local") return;

@@ -46,6 +46,7 @@ Package manager: **pnpm**. Gebruik geen gemengde lockfiles; `pnpm-lock.yaml` is 
 - [Architectuur in het kort](#architectuur-in-het-kort)
 - [Data modes](#data-modes)
 - [Supabase-notities](#supabase-notities)
+- [Live zetten (productie)](#live-zetten-productie)
 - [Werken aan de app](#werken-aan-de-app)
 - [Teststrategie](#teststrategie)
 - [Productprincipes](#productprincipes)
@@ -158,6 +159,25 @@ Voor cloud mode is alleen het invullen van `.env` niet genoeg: de database moet 
 5. Start de app opnieuw met `pnpm dev`.
 
 Gebruik `local` mode voor snel product- en UI-werk wanneer Supabase niet nodig is.
+
+## Live zetten (productie)
+
+Cura draait in productie op Vercel (`vercel.json` regelt rewrites + CSP-headers) met `VITE_DATA_MODE=cloud`, gekoppeld aan de GitHub-repo zodat een merge naar `main` automatisch een nieuwe productie-deploy triggert. Er is geen apart CI-workflow-bestand — de build/typecheck/test-stap loopt via Vercel's eigen buildstap plus de handmatige validatie hierboven.
+
+**1. Client-env in Vercel** — zet dezelfde `VITE_`-variabelen als in [Omgevingsvariabelen](#omgevingsvariabelen) in het Vercel-project (Project Settings → Environment Variables), gericht op het productie-Supabase-project:
+
+```env
+VITE_DATA_MODE=cloud
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+VITE_VAPID_PUBLIC_KEY=...
+```
+
+**2. Server-secrets op Supabase** — deze horen nooit in Vercel of `.env`, alleen op het Supabase-project zelf via `supabase secrets set` (`VAPID_KEYS`, optioneel `VAPID_CONTACT`, `CRON_SECRET`) plus de Vault-secrets die de reminder-cron-migratie verwacht (`cura_cron_secret`, `cura_functions_base_url`). Volledige uitleg en de exacte commands staan in [`CLAUDE.md` §5, Push-notificaties](./CLAUDE.md).
+
+**3. Database in sync houden** — migraties in `supabase/migrations/` worden **niet automatisch toegepast**; elke nieuwe migratie moet je zelf via de Supabase Dashboard SQL-editor draaien op het productieproject nadat de PR gemerged is. Controleer na elke merge die een nieuw bestand in `supabase/migrations/` bevat of die stap ook echt is gebeurd — een migratie die alleen in de repo staat heeft in productie geen effect. Controleer daarbij ook dat de betrokken tabellen in de `supabase_realtime`-publicatie zitten als de migratie een nieuwe tabel toevoegt die live moet verversen (§3/§4 in `CLAUDE.md`).
+
+**4. Na een deploy** — een snelle rooktest: inloggen, een taak aanmaken/afvinken, en (in cloud mode) controleren dat Realtime tussen twee sessies werkt en dat een testmelding via de wekker-flow aankomt.
 
 ## Werken aan de app
 
