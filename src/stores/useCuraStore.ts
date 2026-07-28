@@ -268,6 +268,26 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         shoppingItems: shoppingItemsR.status === "fulfilled" ? shoppingItemsR.value : [],
       });
 
+      // A list that failed here has no "previous value" to fall back to the
+      // way refresh() can (this IS the first load) — completions is the
+      // sharpest edge: an established household's completions can take
+      // longer than LIST_TIMEOUT_MS even bounded by completionsSince(), and
+      // reading `[]` flips every recurring task to "not done" until
+      // something else happens to trigger a refresh, which can invite a
+      // duplicate completion (Codex review on #202). Rather than wait for an
+      // unrelated trigger (pull-to-refresh, a remote change, tab foreground),
+      // kick off a background retry of just the lists that failed, reusing
+      // the same fault-tolerant refresh() — it silently no-ops if this retry
+      // fails too, leaving the already-set empty slice exactly as before.
+      const failedKeys = new Set<ListKey>();
+      if (membersR.status === "rejected") failedKeys.add("members");
+      if (roomsR.status === "rejected") failedKeys.add("rooms");
+      if (tasksR.status === "rejected") failedKeys.add("tasks");
+      if (completionsR.status === "rejected") failedKeys.add("completions");
+      if (bundlesR.status === "rejected") failedKeys.add("bundles");
+      if (shoppingItemsR.status === "rejected") failedKeys.add("shoppingItems");
+      if (failedKeys.size > 0) void get().refresh(failedKeys);
+
       // Re-init (e.g. after accepting an invite) replaces any earlier subscription.
       unsubscribeRealtime?.();
       unsubscribeRealtime = store.subscribeToChanges(household.id, (table) => {

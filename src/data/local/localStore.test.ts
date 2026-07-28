@@ -143,6 +143,48 @@ describe("LocalStore CRUD (#155)", () => {
   });
 });
 
+describe("LocalStore write-time validation (Codex review on #202)", () => {
+  it("rejects updateTask when the patch would produce an empty title, leaving the task unchanged", async () => {
+    const store = new LocalStore();
+    const created = await store.createTask("h1", { title: "Afwas doen" });
+
+    await expect(store.updateTask(created.id, { title: "" })).rejects.toThrow();
+    await expect(store.listTasks("h1")).resolves.toMatchObject([{ title: "Afwas doen" }]);
+  });
+
+  it("rejects updateTask when a checklist item has an empty title", async () => {
+    const store = new LocalStore();
+    const created = await store.createTask("h1", { title: "Boodschappen doen" });
+
+    await expect(
+      store.updateTask(created.id, { checklistItems: [{ id: "c1", title: "", checked: false }] }),
+    ).rejects.toThrow();
+    await expect(store.listTasks("h1")).resolves.toMatchObject([{ checklistItems: [] }]);
+  });
+
+  it("rejects createRoom/updateRoom with an empty name", async () => {
+    const store = new LocalStore();
+    await expect(
+      store.createRoom("h1", { name: "", iconKey: "droplets", color: "#5A8FA8" }),
+    ).rejects.toThrow();
+
+    const room = await store.createRoom("h1", { name: "Badkamer", iconKey: "droplets", color: "#5A8FA8" });
+    await expect(store.updateRoom(room.id, { name: "" })).rejects.toThrow();
+    await expect(store.listRooms("h1")).resolves.toMatchObject([{ name: "Badkamer" }]);
+  });
+
+  it("rejects updateShoppingItem when the patch would produce an empty title", async () => {
+    const store = new LocalStore();
+    await expect(store.updateShoppingItem("s1", { title: "" })).rejects.toThrow();
+    await expect(store.listShoppingItems("h1")).resolves.toMatchObject([{ title: "Melk" }]);
+  });
+
+  it("rejects updateMember when quietHoursStart isn't HH:mm", async () => {
+    const store = new LocalStore();
+    await expect(store.updateMember("m1", { quietHoursStart: "not-a-time" })).rejects.toThrow();
+  });
+});
+
 describe("LocalStore loadDatabase resilience (#150)", () => {
   it("skips a single invalid row instead of reseeding the whole snapshot", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});

@@ -888,21 +888,27 @@ export function CollapsibleSection({
     <div
       className={`rounded-2xl overflow-hidden ${chrome}`}
       style={tone === "active" ? { boxShadow: "var(--shadow-card)" } : { background: "color-mix(in srgb, var(--card) 60%, transparent)" }}>
-      <motion.button
-        whileTap={{ scale: 0.99 }}
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={contentId}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
-        <span className="inline-flex items-center gap-2">
-          {icon}
-          <h3 className="font-display font-semibold text-sm text-foreground">{title}</h3>
-          <StatusBadge enter="slide">{count}</StatusBadge>
-        </span>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
-          <ChevronDown size={15} aria-hidden="true" />
-        </motion.span>
-      </motion.button>
+      {/* ARIA APG accordion pattern: the heading wraps the trigger button, not
+          the reverse — a <button>'s content model only permits phrasing
+          content, so nesting a heading inside it is invalid HTML5. `contents`
+          keeps the <h3> out of the box model so this stays layout-neutral. */}
+      <h3 className="contents">
+        <motion.button
+          whileTap={{ scale: 0.99 }}
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls={contentId}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
+          <span className="inline-flex items-center gap-2">
+            {icon}
+            <span className="font-display font-semibold text-sm text-foreground">{title}</span>
+            <StatusBadge enter="slide">{count}</StatusBadge>
+          </span>
+          <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
+            <ChevronDown size={15} aria-hidden="true" />
+          </motion.span>
+        </motion.button>
+      </h3>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div

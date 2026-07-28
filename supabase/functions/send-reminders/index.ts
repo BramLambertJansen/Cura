@@ -203,7 +203,18 @@ Deno.serve(async (req) => {
       // keeps the claim: the wekker DID reach someone, and "dubbel is minder
       // erg dan gemist" doesn't apply to a housemate who already got it.
       if (!anySent && anyHardFailure) {
-        await supabase.from("reminder_dispatches").delete().eq("fired_for_key", r.firedForKey);
+        const { error: delErr } = await supabase.from("reminder_dispatches").delete().eq("fired_for_key", r.firedForKey);
+        // If the compensating delete itself fails, the claim silently sticks and
+        // the original #189 bug recurs one layer deeper — this wekker is now
+        // lost for good instead of retried next tick. Log loudly so it's at
+        // least visible in the function logs rather than indistinguishable from
+        // "delivered".
+        if (delErr) {
+          console.error(
+            `[send-reminders] failed to release dedup claim for key ${r.firedForKey} after a failed send — ` +
+              `this reminder will NOT retry: ${delErr.message}`,
+          );
+        }
       }
     }
   }

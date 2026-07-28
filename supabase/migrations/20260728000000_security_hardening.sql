@@ -10,6 +10,27 @@
 -- (different tokens/households) can both pass an unlocked "already a
 -- member?" check before either INSERT commits. This constraint makes
 -- the second INSERT fail outright instead of silently succeeding.
+--
+-- PREFLIGHT (run this SELECT first, before the ALTER TABLE below): if the
+-- pre-fix race already let a user end up in more than one household, the
+-- ALTER TABLE fails outright with a duplicate-key error instead of applying.
+-- household_members has neither an id nor a created_at column (see init.sql),
+-- so there's no automatic, safe way to pick which membership to keep — that's
+-- a real decision about which household the affected person should stay in,
+-- not something this migration can guess. Run:
+--
+--   select user_id, array_agg(household_id) as household_ids
+--   from public.household_members
+--   group by user_id
+--   having count(*) > 1;
+--
+-- For every row this returns, manually decide (with the affected person, if
+-- needed) which household_id to keep, then for each one to drop:
+--
+--   delete from public.household_members where user_id = '<uid>' and household_id = '<id-to-drop>';
+--   delete from public.members where user_id = '<uid>' and household_id = '<id-to-drop>';
+--
+-- Only re-run/continue this migration once the preflight SELECT returns zero rows.
 alter table public.household_members
   add constraint household_members_user_id_unique unique (user_id);
 
