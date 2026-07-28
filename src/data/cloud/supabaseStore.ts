@@ -277,11 +277,19 @@ export class SupabaseStore implements DataStore {
     memberId: string,
     patch: { displayName?: string; quietHoursStart?: string | null; quietHoursEnd?: string | null },
   ): Promise<Member> {
-    const update: Record<string, unknown> = {};
-    if (patch.displayName !== undefined) update.display_name = patch.displayName;
-    if (patch.quietHoursStart !== undefined) update.quiet_hours_start = patch.quietHoursStart;
-    if (patch.quietHoursEnd !== undefined) update.quiet_hours_end = patch.quietHoursEnd;
-    const { data, error } = await supabase.from("members").update(update).eq("id", memberId).select().single();
+    // Routed through update_own_member (security definer), not a direct
+    // .update() — RLS has no column granularity, so a plain "update your own
+    // row" policy couldn't stop a caller also rewriting household_id on that
+    // same row (#165). The RPC only ever targets auth.uid()'s own row and
+    // only touches display_name/quiet_hours_*, so `memberId` (always the
+    // caller's own id at every call site) isn't even sent.
+    const setQuietHours = "quietHoursStart" in patch || "quietHoursEnd" in patch;
+    const { data, error } = await supabase.rpc("update_own_member", {
+      p_display_name: patch.displayName ?? null,
+      p_set_quiet_hours: setQuietHours,
+      p_quiet_hours_start: patch.quietHoursStart ?? null,
+      p_quiet_hours_end: patch.quietHoursEnd ?? null,
+    });
     if (error || !data) throw new Error(error?.message ?? `Member not found: ${memberId}`);
     return mapMember(data as MemberRow);
   }
@@ -314,20 +322,12 @@ export class SupabaseStore implements DataStore {
   // Invite links expire 7 days after creation and are single-use — accept_invite
   // deletes the row on successful redemption (see the migration).
   async createInvite(householdId: string): Promise<HouseholdInvite> {
-    const authUserId = await this.currentUserId();
-    const memberId = await this.memberIdFor(authUserId, householdId);
-    const createdAt = new Date();
-    const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const row: InviteRow = {
-      token: uid(),
-      household_id: householdId,
-      created_by_id: memberId,
-      created_at: createdAt.toISOString(),
-      expires_at: expiresAt.toISOString(),
-    };
-    const { error } = await supabase.from("household_invites").insert(row);
-    if (error) throw new Error(error.message);
-    return mapInvite(row);
+    // Routed through create_invite (security definer): created_at/expires_at
+    // are derived from now() server-side, not trusted from the client, so a
+    // direct insert can no longer set expires_at to null/years-out (#167).
+    const { data, error } = await supabase.rpc("create_invite", { p_token: uid(), p_household_id: householdId });
+    if (error || !data) throw new Error(error?.message ?? "Uitnodigen mislukt.");
+    return mapInvite(data as InviteRow);
   }
 
   async revokeInvite(token: string): Promise<void> {
