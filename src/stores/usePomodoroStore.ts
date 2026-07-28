@@ -9,7 +9,7 @@ import { showLocalNotification } from "../app/lib/showNotification";
  * Deze store staat bewust LOS van `useCuraStore`: dat is de ene store voor
  * domein-entiteiten (via de DataStore, gedeeld met het huishouden). Een lopende
  * timer is puur vluchtige, apparaat-lokale UI-state — verwant aan de
- * `useNietVandaag`/`useReacties`-hooks in `src/app/lib/`, maar hij moet door
+ * `useNietVandaag`-hook in `src/app/lib/`, maar hij moet door
  * meerdere componenten tegelijk gedeeld worden (het focus-scherm, de mini-pill
  * en de tick-hook), dus een kleine losse Zustand-store i.p.v. een per-component
  * `useState`-hook.
