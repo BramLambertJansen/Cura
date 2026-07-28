@@ -22,8 +22,6 @@ import { LandingHeader } from "../../components/LandingHeader";
 import { PageBanner } from "../../components/PageBanner";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
 import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
-import { ActiviteitReacties } from "../../components/ActiviteitReacties";
-import type { ReactieKind } from "../../lib/useReacties";
 
 /**
  * Living style guide — not a tab, no route in BottomNav. Visit /dev/design-system
@@ -95,7 +93,6 @@ export function DesignSystemPage() {
   const [veldWachtwoord, setVeldWachtwoord] = useState("");
   const [veldTextarea, setVeldTextarea] = useState("");
   const [showSheet, setShowSheet] = useState(false);
-  const [reactie, setReactie] = useState<ReactieKind | undefined>(undefined);
   const [optie, setOptie] = useState(true);
   const [taak, setTaak] = useState("");
   const [collapsibleOpen, setCollapsibleOpen] = useState(true);
@@ -291,8 +288,8 @@ export function DesignSystemPage() {
 
       <Section title="Lege staat">
         <p className="text-sm text-muted-foreground -mt-1">Met illustratie (<code>image</code>-prop) waar er kunst voor bestaat; het emoji blijft de stille fallback als het bestand ontbreekt.</p>
-        <Leeg icon="🌿" image="/empty-plants.webp" text="Niets op de planning. Geniet ervan." />
-        <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag. De dag is jong." />
+        <Leeg icon="🌿" image="/empty-plants.webp" text="Niets op de planning." />
+        <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag." />
         <Leeg icon="🌿" text="Zonder illustratie — emoji-fallback." />
       </Section>
 
@@ -334,19 +331,6 @@ export function DesignSystemPage() {
         <p className="text-sm text-muted-foreground -mt-1">Zit genest in de "Misschien handig"-kaart — een vlakke --card-rij binnen de warmere --card-active van de kaart, geen eigen schaduw.</p>
         <div className="rounded-2xl bg-card-active border border-border/60 p-3" style={{ boxShadow: "var(--shadow-card)" }}>
           <SuggestieRij task={{ ...demoTaskOpen, dueHint: "Waarschijnlijk weer toe" }} onPlan={() => {}} onNietVandaag={() => {}} />
-        </div>
-      </Section>
-
-      <Section title="Activiteit-reacties (Samen)">
-        <div className="space-y-2.5">
-          <Card>
-            <p className="text-sm font-semibold text-foreground">Onbeantwoord</p>
-            <ActiviteitReacties reacted={reactie} onReact={setReactie} />
-          </Card>
-          <Card>
-            <p className="text-sm font-semibold text-foreground">Beantwoord</p>
-            <ActiviteitReacties reacted="bedankt" onReact={() => {}} />
-          </Card>
         </div>
       </Section>
 

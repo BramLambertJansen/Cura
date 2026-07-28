@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LocalStore } from "./localStore";
+import { LOCAL_USER_ID } from "./seed";
 
 const STORAGE_KEY = "cura:db:v1";
 
@@ -56,5 +57,126 @@ describe("LocalStore shopping items", () => {
     const updated = await store.updateShoppingItem("s1", { title: "Melk", amount: undefined });
 
     expect(updated.amount).toBeUndefined();
+  });
+});
+
+describe("LocalStore CRUD (#155)", () => {
+  it("createRoom assigns an id/householdId and persists it", async () => {
+    const store = new LocalStore();
+    const created = await store.createRoom("h1", { name: "Badkamer", iconKey: "droplets", color: "#5A8FA8" });
+
+    expect(created.id).toBeTruthy();
+    expect(created.householdId).toBe("h1");
+    await expect(store.listRooms("h1")).resolves.toEqual([created]);
+    // A fresh instance re-reads from localStorage — confirms persist() actually wrote it.
+    await expect(new LocalStore().listRooms("h1")).resolves.toEqual([created]);
+  });
+
+  it("createTask fills in planned/checklistItems defaults", async () => {
+    const store = new LocalStore();
+    const created = await store.createTask("h1", { title: "Afwas doen" });
+
+    expect(created.planned).toBe(false);
+    expect(created.checklistItems).toEqual([]);
+    await expect(store.listTasks("h1")).resolves.toEqual([created]);
+  });
+
+  it("updateTask merges the patch onto the existing task", async () => {
+    const store = new LocalStore();
+    const created = await store.createTask("h1", { title: "Afwas doen", durationMin: 10 });
+
+    const updated = await store.updateTask(created.id, { title: "Afwas en droogrek", planned: true });
+
+    expect(updated).toMatchObject({ id: created.id, title: "Afwas en droogrek", planned: true, durationMin: 10 });
+  });
+
+  it("claimTask sets claimedById, only stamps pickedUpAt when trackPickup is true, and clears both on release", async () => {
+    const store = new LocalStore();
+    const created = await store.createTask("h1", { title: "Wasmachine aanzetten" });
+
+    const softClaimed = await store.claimTask(created.id, "m1");
+    expect(softClaimed.claimedById).toBe("m1");
+    expect(softClaimed.pickedUpAt).toBeUndefined();
+
+    const pickedUp = await store.claimTask(created.id, "m1", true);
+    expect(pickedUp.pickedUpAt).toBeTruthy();
+
+    const released = await store.claimTask(created.id, null);
+    expect(released.claimedById).toBeUndefined();
+    expect(released.pickedUpAt).toBeUndefined();
+  });
+
+  it("assignTask sets claimedById by member id directly, never stamping pickedUpAt", async () => {
+    const store = new LocalStore();
+    const created = await store.createTask("h1", { title: "Boodschappen doen" });
+
+    const assigned = await store.assignTask(created.id, "m1");
+    expect(assigned.claimedById).toBe("m1");
+    expect(assigned.pickedUpAt).toBeUndefined();
+
+    const cleared = await store.assignTask(created.id, null);
+    expect(cleared.claimedById).toBeUndefined();
+  });
+
+  it("completeTask records a completion for the acting user, retrievable via listCompletions", async () => {
+    const store = new LocalStore();
+    const created = await store.createTask("h1", { title: "Stofzuigen" });
+
+    const completion = await store.completeTask(created.id, "m1");
+
+    expect(completion).toMatchObject({ taskId: created.id, completedById: "m1" });
+    await expect(store.listCompletions("h1")).resolves.toEqual([completion]);
+  });
+
+  it("deleteBundle removes the bundle and cascades to its tasks", async () => {
+    const store = new LocalStore();
+    const bundle = await store.createBundle("h1", { name: "Ochtendroutine", trigger: "'s ochtends", cadence: "daily", windowLabel: "ochtenden" });
+    const bundleTask = await store.createTask("h1", { title: "Bed opmaken", bundleId: bundle.id, intervalDays: 1 });
+    const otherTask = await store.createTask("h1", { title: "Boodschappen doen" });
+
+    await store.deleteBundle(bundle.id);
+
+    await expect(store.listBundles("h1")).resolves.toEqual([]);
+    const remainingTasks = await store.listTasks("h1");
+    expect(remainingTasks.map((t) => t.id)).toEqual([otherTask.id]);
+    expect(remainingTasks.some((t) => t.id === bundleTask.id)).toBe(false);
+  });
+});
+
+describe("LocalStore loadDatabase resilience (#150)", () => {
+  it("skips a single invalid row instead of reseeding the whole snapshot", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const corrupted = {
+      ...baseDb,
+      tasks: [
+        { id: "t1", householdId: "h1", title: "Afwas doen", planned: false },
+        // Invalid: title is required and non-empty — this row should be skipped, not the rest.
+        { id: "t2", householdId: "h1", title: "" },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(corrupted));
+
+    const store = new LocalStore();
+
+    await expect(store.listTasks("h1")).resolves.toMatchObject([{ id: "t1", title: "Afwas doen" }]);
+    await expect(store.listShoppingItems("h1")).resolves.toMatchObject([{ id: "s1" }]);
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it("reseeds when the persisted value doesn't resemble a Database at all", async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ some: "unrelated blob" }));
+
+    const store = new LocalStore();
+
+    await expect(store.getHouseholdsForUser(LOCAL_USER_ID)).resolves.not.toHaveLength(0);
+  });
+
+  it("reseeds when the persisted value isn't valid JSON", async () => {
+    localStorage.setItem(STORAGE_KEY, "not json{{{");
+
+    const store = new LocalStore();
+
+    await expect(store.getHouseholdsForUser(LOCAL_USER_ID)).resolves.not.toHaveLength(0);
   });
 });

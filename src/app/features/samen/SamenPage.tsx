@@ -2,21 +2,10 @@ import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { ArrowLeft, Check } from "lucide-react";
-import { toast } from "sonner";
-import { useCuraStore } from "../../../stores/useCuraStore";
-import { useActivityFeed } from "../../../stores/useViews";
+import { useActivityFeed, useCurrentMember } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { householdStatusLine } from "../../lib/format";
-import { useReacties, type ReactieKind } from "../../lib/useReacties";
-import { Leeg, PageHeader, Card, HintBanner, IconButton, Avatar } from "../../components/shared";
-import { ActiviteitReacties } from "../../components/ActiviteitReacties";
-
-const REACTIE_TOAST: Record<ReactieKind, string> = {
-  bedankt: "Bedankje verstuurd",
-  mooi_gedaan: "Mooi gedaan verstuurd",
-  volgende: "Genoteerd — jij pakt de volgende",
-};
+import { Leeg, PageHeader, Card, IconButton, Avatar } from "../../components/shared";
 
 export function SamenPage() {
   const navigate = useNavigate();
@@ -26,10 +15,7 @@ export function SamenPage() {
   // came from instead of always assuming Meer. Falls back to Meer for a
   // direct link/refresh, where there's no navigation state to read.
   const cameFrom = (location.state as { from?: "vandaag" | "meer" } | null)?.from === "vandaag" ? "vandaag" : "meer";
-  const members = useCuraStore((s) => s.members);
-  const currentUserId = useCuraStore((s) => s.currentUserId);
-  const me = members.find((m) => m.userId === currentUserId);
-  const { reactionFor, react } = useReacties();
+  const me = useCurrentMember();
 
   const sinceIso = useMemo(() => {
     const d = new Date();
@@ -51,12 +37,8 @@ export function SamenPage() {
         icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
       <PageHeader title="Samen" subtitle="Wat is er vandaag gedaan?" />
 
-      <div className="mb-6">
-        <HintBanner tone="muted">{householdStatusLine(completedToday.length)}</HintBanner>
-      </div>
-
       {completedToday.length === 0
-        ? <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag. De dag is jong." />
+        ? <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag." />
         : <motion.div variants={stagger} initial="initial" animate="animate" aria-live="polite" className="space-y-1.5 mb-8">
             {completedToday.map((activity, i) => {
               const activityKey = `${activity.taskId}-${activity.doneAt}`;
@@ -84,10 +66,6 @@ export function SamenPage() {
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {activity.room}{activity.doneAt && ` · ${new Date(activity.doneAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}`}
                       </p>
-                      <ActiviteitReacties
-                        reacted={reactionFor(activityKey)}
-                        onReact={(kind) => { react(activityKey, kind); toast(REACTIE_TOAST[kind]); }}
-                      />
                     </Card>
                   </div>
                 </motion.div>

@@ -14,7 +14,6 @@ import {
   splitDagdelen,
   splitPickedUpToday,
   formatShoppingAmount,
-  shoppingAmountOptions,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -256,7 +255,7 @@ describe("wekkerLabel — the wekker badge on TaakRij", () => {
   });
 });
 
-describe("shoppingAmountOptions/formatShoppingAmount — the hoeveelheid-dropdown", () => {
+describe("formatShoppingAmount — NL decimal-comma formatting for a quantity label", () => {
   it("formats a whole number as-is", () => {
     expect(formatShoppingAmount(3)).toBe("3");
     expect(formatShoppingAmount(500)).toBe("500");
@@ -265,23 +264,6 @@ describe("shoppingAmountOptions/formatShoppingAmount — the hoeveelheid-dropdow
   it("formats a fractional amount with a NL decimal comma", () => {
     expect(formatShoppingAmount(1.5)).toBe("1,5");
     expect(formatShoppingAmount(0.5)).toBe("0,5");
-  });
-
-  it("leads with 'Geen aantal', then the unit's realistic presets in order", () => {
-    const options = shoppingAmountOptions("kg");
-    expect(options[0]).toEqual({ value: "", label: "Geen aantal" });
-    expect(options.slice(1).map((o) => o.label)).toEqual(["0,5", "1", "1,5", "2", "3", "5"]);
-  });
-
-  it("doesn't duplicate a current amount that's already one of the presets", () => {
-    const options = shoppingAmountOptions("stuks", 6);
-    expect(options.filter((o) => o.value === "6")).toHaveLength(1);
-  });
-
-  it("folds in a current amount that's NOT a preset, sorted into place — editing an older item never silently blanks a real value", () => {
-    const options = shoppingAmountOptions("g", 333);
-    expect(options.map((o) => o.value)).toEqual(["", "100", "250", "333", "500", "750", "1000"]);
-    expect(options.find((o) => o.value === "333")?.label).toBe("333");
   });
 });
 
@@ -374,6 +356,28 @@ describe("activity feed sorting", () => {
     const feed = toActivityFeed(completions, [t1], [], [member()], sinceIso);
     expect(feed).toHaveLength(2);
     expect(feed[0].doneAt >= feed[1].doneAt).toBe(true);
+  });
+
+  it("resolves each completion's task title and room name via the indexed lookup, not just the first match", () => {
+    const now = Date.now();
+    const keuken = room({ id: "r1", name: "Keuken" });
+    const badkamer = room({ id: "r2", name: "Badkamer" });
+    const t1 = task({ id: "t1", title: "Afwas", roomId: keuken.id });
+    const t2 = task({ id: "t2", title: "Douche", roomId: badkamer.id });
+    const t3 = task({ id: "t3", title: "Was vouwen" }); // no roomId
+    const completions: TaskCompletion[] = [
+      { id: "c1", taskId: "t2", completedById: "m1", completedAt: iso(0, now) },
+      { id: "c2", taskId: "t1", completedById: "m1", completedAt: iso(DAY_MS, now) },
+      { id: "c3", taskId: "t3", completedById: "m1", completedAt: iso(2 * DAY_MS, now) },
+      { id: "c4", taskId: "unknown-task", completedById: "m1", completedAt: iso(3 * DAY_MS, now) },
+    ];
+    const feed = toActivityFeed(completions, [t1, t2, t3], [keuken, badkamer], [member()]);
+    expect(feed).toMatchObject([
+      { taskId: "t2", title: "Douche", room: "Badkamer" },
+      { taskId: "t1", title: "Afwas", room: "Keuken" },
+      { taskId: "t3", title: "Was vouwen", room: undefined },
+      { taskId: "unknown-task", title: "Onbekende taak", room: undefined },
+    ]);
   });
 });
 

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../data/store";
 import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, ShoppingItem } from "../data/types";
+import { MAX_TASK_INTERVAL_DAYS } from "../data/selectors";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
@@ -118,6 +119,40 @@ const getDataStore = (): Promise<DataStore> => {
   return dataStorePromise;
 };
 
+/**
+ * Most actions share one shape: do the work, toast a fallback message if it
+ * throws (#155 — this used to be copy-pasted ~20 times). Resolves to
+ * `undefined` on failure, so an action that returns a value (createInvite)
+ * still gets a usable result instead of a rethrown error.
+ *
+ * A handful of actions keep their own try/catch instead of forcing a
+ * different shape through this: toggleTask/claimTask (double-tap guard +
+ * finally), assignTask (stale-response guard), updateBundle (its own
+ * success/partial-failure toast, plus an early `return` mid-body), updateTask
+ * (true/false contract, not undefined), and init/refresh (their own distinct
+ * failure handling). createBundle/createTasksFromTemplates have a similar
+ * partial-failure toast but no early return, so they still fit withToastOnError.
+ */
+async function withToastOnError<T>(action: () => Promise<T>, fallbackMessage: string): Promise<T | undefined> {
+  try {
+    return await action();
+  } catch (e) {
+    toast.error(friendlyMessage(e, fallbackMessage));
+    return undefined;
+  }
+}
+
+// Bounding the completions fetch instead of loading a household's entire
+// lifetime history on every init()/refresh() (#154). isDone/dueHint only ever
+// need a task's LATEST completion, and MAX_TASK_INTERVAL_DAYS is the longest
+// a task's own interval can be (IntervalKiezer's input clamp) — so nothing
+// legitimately recurring can have its most recent completion fall outside
+// this window while still reading as "done". The Samen activity feed asks for
+// far less than this (today only, via its own sinceIso), so one shared bound
+// comfortably covers every current consumer of `completions`.
+const COMPLETIONS_LOOKBACK_MS = MAX_TASK_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+const completionsSince = (): string => new Date(Date.now() - COMPLETIONS_LOOKBACK_MS).toISOString();
+
 // Tasks currently mid-toggle — prevents a rapid double-tap from writing two completions.
 const toggling = new Set<string>();
 
@@ -128,10 +163,13 @@ const toggling = new Set<string>();
 // an earlier call resolving late (out of network-timing order) can no longer
 // overwrite a more recent selection.
 const assignSeq = new Map<string, number>();
-// Same out-of-order guard as assignSeq, for claimTask — it had none before,
-// unlike its toggleTask/assignTask neighbours, so a double-tap on "Pak dit
-// op"/"Laat los" could let a stale response win over a newer one.
-const claimSeq = new Map<string, number>();
+// Tasks currently mid-claim — same "ignore a second tap while the first is
+// in flight" shape as `toggling`, not a seq-based "latest wins" guard like
+// assignSeq: a double-tap claim races the DB's own concurrency guard against
+// itself, so letting both requests through can surface a confusing "iemand
+// anders pakte dit al op" toast to the very person who tapped twice, while
+// discarding the first (successful) response as "stale".
+const claiming = new Set<string>();
 
 // Realtime (Phase 3+, cloud mode only — a no-op subscription in local mode).
 // A burst of remote postgres_changes events collapses into one refetch instead
@@ -207,7 +245,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         withTimeout(store.listMembers(household.id), LIST_TIMEOUT_MS),
         withTimeout(store.listRooms(household.id), LIST_TIMEOUT_MS),
         withTimeout(store.listTasks(household.id), LIST_TIMEOUT_MS),
-        withTimeout(store.listCompletions(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listCompletions(household.id, completionsSince()), LIST_TIMEOUT_MS),
         withTimeout(store.listBundles(household.id), LIST_TIMEOUT_MS),
         withTimeout(store.listShoppingItems(household.id), LIST_TIMEOUT_MS),
       ]);
@@ -262,7 +300,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         want("members") ? withTimeout(store.listMembers(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
         want("rooms") ? withTimeout(store.listRooms(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
         want("tasks") ? withTimeout(store.listTasks(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
-        want("completions") ? withTimeout(store.listCompletions(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("completions") ? withTimeout(store.listCompletions(householdId, completionsSince()), LIST_TIMEOUT_MS) : Promise.resolve(null),
         want("bundles") ? withTimeout(store.listBundles(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
         want("shoppingItems") ? withTimeout(store.listShoppingItems(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
       ]);
@@ -294,54 +332,43 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async updateHousehold(name) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
       const updated = await store.updateHousehold(householdId, name);
       toast("Naam opgeslagen");
       set({ households: get().households.map((h) => (h.id === householdId ? updated : h)) });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Opslaan lukte niet"));
-    }
+    }, "Opslaan lukte niet");
   },
 
   async updateMember(displayName) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const me = get().members.find((m) => m.userId === get().currentUserId);
       if (!me) return;
       const updated = await store.updateMember(me.id, { displayName });
       toast("Naam opgeslagen");
       set({ members: get().members.map((m) => (m.id === me.id ? updated : m)) });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Opslaan lukte niet"));
-    }
+    }, "Opslaan lukte niet");
   },
 
   async updateQuietHours(start, end) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const me = get().members.find((m) => m.userId === get().currentUserId);
       if (!me) return;
       const updated = await store.updateMember(me.id, { quietHoursStart: start, quietHoursEnd: end });
       toast(start && end ? "Stille uren ingesteld" : "Stille uren uit");
       set({ members: get().members.map((m) => (m.id === me.id ? updated : m)) });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Opslaan lukte niet"));
-    }
+    }, "Opslaan lukte niet");
   },
 
   async createInvite() {
     const store = await getDataStore();
     const { householdId } = get();
     if (!householdId) return undefined;
-    try {
-      return await store.createInvite(householdId);
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Uitnodigen lukte niet"));
-      return undefined;
-    }
+    return withToastOnError(() => store.createInvite(householdId), "Uitnodigen lukte niet");
   },
 
   async acceptInvite(token) {
@@ -352,13 +379,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async revokeInvite(token) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       await store.revokeInvite(token);
       toast("Link ingetrokken");
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Intrekken lukte niet"));
-    }
+    }, "Intrekken lukte niet");
   },
 
   reset() {
@@ -411,8 +436,16 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async claimTask(taskId, claimed) {
-    const seq = (claimSeq.get(taskId) ?? 0) + 1;
-    claimSeq.set(taskId, seq);
+    // Ignore a second tap while the first is still in flight — same shape as
+    // toggleTask's `toggling` guard. A seq-based "let the latest response
+    // win" model (like assignTask's) is wrong here: a double-tap claim races
+    // the DB's own "still unclaimed?" guard against itself, so the second
+    // call's request can come back as "iemand anders pakte dit al op" —
+    // confusingly, "iemand anders" being the same person — while the
+    // FIRST call's successful response gets discarded as stale. Dropping the
+    // duplicate call before it ever reaches the server avoids both.
+    if (claiming.has(taskId)) return;
+    claiming.add(taskId);
     try {
       const store = await getDataStore();
       const { currentUserId, tasks } = get();
@@ -420,16 +453,17 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
       // trackPickup: true — this action is exclusively Huis's pool-claim/"Laat
-      // los" flow (see HuisPage), never the generic planned-auto-claim below,
-      // so it's the one true "picked up from Huis" signal for Vandaag.
+      // los" flow (HuisPage/RoomDetailPage, via useHuisTaskActions), never the
+      // generic planned-auto-claim below, so it's the one true "picked up from
+      // Huis" signal for Vandaag.
       const updated = await store.claimTask(taskId, claimed ? currentUserId : null, true);
-      if (claimSeq.get(taskId) !== seq) return; // a newer claim/release call already superseded this one
       if (claimed) toast(`Jij pakt "${task.title}"`, { description: "Anderen zien dat jij dit doet." });
       else toast(`"${task.title}" vrijgegeven`);
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
-      if (claimSeq.get(taskId) !== seq) return;
       toast.error(friendlyMessage(e, "Claimen lukte niet"));
+    } finally {
+      claiming.delete(taskId);
     }
   },
 
@@ -461,7 +495,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async createTask(input) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const { householdId, currentUserId } = get();
       if (!householdId) return;
@@ -484,13 +518,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         description: input.planned ? "Op je dag gezet" : input.roomId ? undefined : "Gedeelde pool",
       });
       set({ tasks: [...get().tasks, created] });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Toevoegen lukte niet"));
-    }
+    }, "Toevoegen lukte niet");
   },
 
   async createTasksFromTemplates(roomId, templates) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const { householdId, currentUserId } = get();
       if (!householdId) return;
@@ -515,9 +547,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       } else {
         toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
       }
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Toevoegen lukte niet"));
-    }
+    }, "Toevoegen lukte niet");
   },
 
   async updateTask(taskId, patch) {
@@ -552,55 +582,47 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async deleteTask(taskId) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       await store.deleteTask(taskId);
       set({
         tasks: get().tasks.filter((t) => t.id !== taskId),
         completions: get().completions.filter((c) => c.taskId !== taskId),
       });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Verwijderen lukte niet"));
-    }
+    }, "Verwijderen lukte niet");
   },
 
   async createRoom(room) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
       const created = await store.createRoom(householdId, room);
       toast.success(`"${created.name}" toegevoegd`);
       set({ rooms: [...get().rooms, created] });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Toevoegen lukte niet"));
-    }
+    }, "Toevoegen lukte niet");
   },
 
   async updateRoom(roomId, patch) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const updated = await store.updateRoom(roomId, patch);
       toast("Kamer bijgewerkt");
       set({ rooms: get().rooms.map((r) => (r.id === roomId ? updated : r)) });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Bijwerken lukte niet"));
-    }
+    }, "Bijwerken lukte niet");
   },
 
   async deleteRoom(roomId) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       await store.deleteRoom(roomId);
       toast("Kamer verwijderd");
       set({ rooms: get().rooms.filter((r) => r.id !== roomId) });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Verwijderen lukte niet"));
-    }
+    }, "Verwijderen lukte niet");
   },
 
   async createBundle(bundle, taskDrafts) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
@@ -626,9 +648,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const anyFailed = results.some((r) => r.status === "rejected");
       toast[anyFailed ? "error" : "success"](anyFailed ? `"${created.name}" aangemaakt — niet alle taken zijn gelukt` : `"${created.name}" aangemaakt`);
       set({ bundles: [...get().bundles, created], tasks: [...get().tasks, ...createdTasks] });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Aanmaken lukte niet"));
-    }
+    }, "Aanmaken lukte niet");
   },
 
   async updateBundle(bundleId, patch, taskDrafts) {
@@ -713,7 +733,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async deleteBundle(bundleId) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       await store.deleteBundle(bundleId);
       toast("Routine verwijderd");
@@ -721,77 +741,63 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         bundles: get().bundles.filter((b) => b.id !== bundleId),
         tasks: get().tasks.filter((t) => t.bundleId !== bundleId),
       });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Verwijderen lukte niet"));
-    }
+    }, "Verwijderen lukte niet");
   },
 
   async createShoppingItem(input) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
       const created = await store.createShoppingItem(householdId, input);
       set({ shoppingItems: [...get().shoppingItems, created] });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Toevoegen lukte niet"));
-    }
+    }, "Toevoegen lukte niet");
   },
 
   async updateShoppingItem(itemId, patch) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const updated = await store.updateShoppingItem(itemId, patch);
       set({ shoppingItems: get().shoppingItems.map((i) => (i.id === itemId ? updated : i)) });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Bijwerken lukte niet"));
-    }
+    }, "Bijwerken lukte niet");
   },
 
   async toggleShoppingItem(itemId, checked) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const updated = await store.toggleShoppingItem(itemId, checked);
       set({ shoppingItems: get().shoppingItems.map((i) => (i.id === itemId ? updated : i)) });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Afvinken lukte niet"));
-    }
+    }, "Afvinken lukte niet");
   },
 
   async deleteShoppingItem(itemId) {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       await store.deleteShoppingItem(itemId);
       set({ shoppingItems: get().shoppingItems.filter((i) => i.id !== itemId) });
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Verwijderen lukte niet"));
-    }
+    }, "Verwijderen lukte niet");
   },
 
   async clearCheckedShoppingItems() {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const toRemove = get().shoppingItems.filter((i) => i.checked);
       const results = await Promise.allSettled(toRemove.map((i) => store.deleteShoppingItem(i.id)));
       const removedIds = new Set(toRemove.filter((_, idx) => results[idx].status === "fulfilled").map((i) => i.id));
       set({ shoppingItems: get().shoppingItems.filter((i) => !removedIds.has(i.id)) });
       toast("Afgevinkte items gewist");
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Wissen lukte niet"));
-    }
+    }, "Wissen lukte niet");
   },
 
   async clearShoppingList() {
-    try {
+    return withToastOnError(async () => {
       const store = await getDataStore();
       const toRemove = get().shoppingItems;
       const results = await Promise.allSettled(toRemove.map((i) => store.deleteShoppingItem(i.id)));
       const removedIds = new Set(toRemove.filter((_, idx) => results[idx].status === "fulfilled").map((i) => i.id));
       set({ shoppingItems: get().shoppingItems.filter((i) => !removedIds.has(i.id)) });
       toast("Boodschappenlijst geleegd");
-    } catch (e) {
-      toast.error(friendlyMessage(e, "Legen lukte niet"));
-    }
+    }, "Legen lukte niet");
   },
 
   async savePushSubscription(sub) {

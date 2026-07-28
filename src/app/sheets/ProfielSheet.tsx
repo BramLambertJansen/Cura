@@ -4,20 +4,20 @@ import { Bell, Check, ChevronRight, HelpCircle, Home, KeyRound, LogOut, Moon, Pe
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { useCurrentMember } from "../../stores/useViews";
 import { useNotificationPreference } from "../lib/useTaskReminders";
 import { usePushSubscription, isIOS } from "../lib/usePushSubscription";
 import { resolveDataMode } from "../../data/store";
 import { PRESS_TINT, SAGE } from "../lib/constants";
-import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, HintBanner, GroupCard, VerwijderKnop } from "../components/shared";
+import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, GroupCard, VerwijderKnop } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { onOpenHousehold: () => void; onOpenWachtwoord: () => void; onClose: () => void }) {
   const { signOut, status, userId, email } = useAuth();
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
-  const currentUserId = useCuraStore((s) => s.currentUserId);
   const updateMember = useCuraStore((s) => s.updateMember);
   const updateQuietHours = useCuraStore((s) => s.updateQuietHours);
-  const me = members.find((m) => m.userId === currentUserId);
+  const me = useCurrentMember();
   const quietEnabled = !!(me?.quietHoursStart && me?.quietHoursEnd);
 
   const { enabled: notif, toggle: toggleNotif } = useNotificationPreference();
@@ -127,10 +127,6 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
           style={{ background: editing ? SAGE : "var(--secondary)" }}>
           {editing ? <Check size={14} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
         </motion.button>
-      </div>
-
-      <div className="mb-7">
-        <HintBanner tone="muted">"Rustig en gestaag — dat is het ritme dat telt."</HintBanner>
       </div>
 
       <Kop>Huishouden</Kop>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Check, Coffee, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
+import { ArrowLeft, Check, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
 import { useTaskViews } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
@@ -78,7 +78,7 @@ export function FocusPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             {idle
-              ? "Kies een tijd en houd het rustig bij deze ene taak."
+              ? "Kies een tijd."
               : taskTitle
                 ? `Bezig met ${taskTitle}.`
                 : "Blijf even hier — de timer loopt door terwijl je rondkijkt."}
@@ -180,12 +180,6 @@ export function FocusPage() {
                 </AnimatePresence>
               )}
             </div>
-
-            {phase === "break" && (
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground -mt-4">
-                <Coffee size={12} aria-hidden="true" /> Even lucht happen — geen haast.
-              </p>
-            )}
           </div>
         )}
       </div>

@@ -1,11 +1,11 @@
 import { memo } from "react";
-import { motion, useTransform } from "motion/react";
-import { Bell, CalendarPlus, Check, ListChecks, RefreshCw, RotateCcw, Timer, X } from "lucide-react";
+import { motion } from "motion/react";
+import { CalendarPlus, Check, RotateCcw, Timer, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
-import { intervalLabel } from "../lib/format";
 import { useSwipeRow } from "../lib/useSwipeRow";
-import { CARD_BORDER, Checkbox, IconButton } from "./shared";
+import { CARD_BORDER, Checkbox, IconButton, SwipeReveal } from "./shared";
+import { TaakRijContent } from "./TaakRijContent";
 
 export const TaakRij = memo(function TaakRij({
   task, onToggle, showClaim = false, onUnclaim, onPlan, onEdit, onDismiss, onStartFocus,
@@ -36,87 +36,28 @@ export const TaakRij = memo(function TaakRij({
   const canPlan = Boolean(onPlan) && !claimed && !task.done;
   // Visual x of the card while swiping; the sage check behind it fades/grows in step.
   const { x, dragProps } = useSwipeRow({ onToggle: handleToggle, onDismiss: handleDismiss, onSwipeRight: canPlan ? handlePlan : undefined });
-  const revealOpacity = useTransform(x, [10, 48], [0, 1]);
-  const revealScale = useTransform(x, [10, 60], [0.6, 1]);
   // Gates the left-swipe reveal layer below — whatever the caller wires as
   // onDismiss (usually "niet vandaag") is what swiping left actually does.
   const canDismiss = Boolean(onDismiss);
 
-  const content = (
-    <>
-      <motion.p animate={{ color: task.done ? "var(--muted-foreground)" : "var(--foreground)" }}
-        className={`text-[0.9375rem] font-medium leading-snug ${task.done ? "line-through" : ""}`}>{task.title}</motion.p>
-      {task.description && (
-        <p className="text-xs text-muted-foreground mt-0.5 leading-snug truncate">{task.description}</p>
-      )}
-      <div className="flex items-center gap-1.5 mt-[0.3rem] flex-wrap">
-        {task.room && <span className="text-xs text-muted-foreground">{task.room}</span>}
-        {task.duration && <span className="text-xs text-muted-foreground">· {task.duration}</span>}
-        {task.intervalDays && (
-          <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-            style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)", color: SAGE }}>
-            <RefreshCw size={8} aria-hidden="true" /> {intervalLabel(task.intervalDays)}
-          </span>
-        )}
-        {task.wekkerLabel && (
-          <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-            style={{ background: "color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--muted-foreground)" }}>
-            <Bell size={8} aria-hidden="true" /> {task.wekkerLabel}
-          </span>
-        )}
-        {task.checklistProgress && (
-          <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-            style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)", color: SAGE }}>
-            <ListChecks size={8} aria-hidden="true" /> {task.checklistProgress.done}/{task.checklistProgress.total}
-          </span>
-        )}
-        {task.status === "bezig" && (
-          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
-            style={{ background: "color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--muted-foreground)" }}>
-            Bezig
-          </span>
-        )}
-        {claimed && !task.done && <span className="text-xs font-semibold ml-0.5" style={{ color: SAGE }}>{task.claimedBy} pakt dit</span>}
-      </div>
-    </>
-  );
+  const content = <TaakRijContent task={task} />;
   return (
     <motion.div layout animate={{ opacity: task.done ? 0.48 : 1 }} transition={{ duration: 0.28 }} className="relative">
       {/* Revealed behind the card while swiping right — the same visual language as the checked checkbox. */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 rounded-2xl flex items-center pl-5 pointer-events-none"
-        style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}
-      >
-        <motion.div
-          style={{ opacity: revealOpacity, scale: revealScale }}
-          className="w-7 h-7 rounded-full flex items-center justify-center"
-        >
-          <span className="w-full h-full rounded-full flex items-center justify-center" style={{ background: SAGE }}>
-            {canPlan
-              ? <CalendarPlus size={13} strokeWidth={2.5} className="text-white" />
-              : task.done
-                ? <RotateCcw size={13} strokeWidth={2.5} className="text-white" />
-                : <Check size={13} strokeWidth={3} className="text-white" />}
-          </span>
-        </motion.div>
-      </div>
+      <SwipeReveal
+        x={x}
+        side="right"
+        tone="primary"
+        padding="pl-5"
+        rounded="rounded-2xl"
+        icon={canPlan
+          ? <CalendarPlus size={13} strokeWidth={2.5} className="text-white" />
+          : task.done
+            ? <RotateCcw size={13} strokeWidth={2.5} className="text-white" />
+            : <Check size={13} strokeWidth={3} className="text-white" />}
+      />
       {canDismiss && (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 rounded-2xl flex items-center justify-end pr-5 pointer-events-none"
-          style={{ background: "color-mix(in srgb, var(--destructive) 12%, transparent)" }}
-        >
-          <motion.div
-            style={{ opacity: useTransform(x, [-48, -10], [1, 0]), scale: useTransform(x, [-60, -10], [1, 0.6]) }}
-            className="w-7 h-7 rounded-full flex items-center justify-center"
-          >
-            <span className="w-full h-full rounded-full flex items-center justify-center"
-              style={{ background: "var(--destructive)" }}>
-              <X size={13} strokeWidth={3} className="text-white" />
-            </span>
-          </motion.div>
-        </div>
+        <SwipeReveal x={x} side="left" tone="destructive" padding="pr-5" rounded="rounded-2xl" icon={<X size={13} strokeWidth={3} className="text-white" />} />
       )}
       <motion.div
         // Swipe right to toggle (or, on an unclaimed pool row, to plan) — an
@@ -158,7 +99,7 @@ export const TaakRij = memo(function TaakRij({
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={() => onUnclaim(task.id)}
             aria-label={`Claim van ${task.title} loslaten`}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border"
+            className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border focus-ring"
             style={{ borderColor: "color-mix(in srgb, var(--outline-color) 24%, transparent)", color: "var(--muted-foreground)" }}>Laat los</motion.button>
         )}
         {/* Keyboard/reduced-motion fallback for the swipe-right "op mijn dag
@@ -167,7 +108,7 @@ export const TaakRij = memo(function TaakRij({
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={handlePlan}
             aria-label={`${task.title} op mijn dag zetten`}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border"
+            className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border focus-ring"
             style={{ borderColor: "color-mix(in srgb, var(--primary) 28%, transparent)", color: SAGE }}>Pak dit op</motion.button>
         )}
         {/* Swipe-left already does this — this is the keyboard/reduced-motion

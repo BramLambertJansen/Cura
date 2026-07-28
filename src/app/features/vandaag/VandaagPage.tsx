@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sun, Sunrise, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
-import { useActivityFeed, useRoutineViews, useTaskViews } from "../../../stores/useViews";
+import { useActivityFeed, useCurrentMember, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen, splitPickedUpToday } from "../../../data/selectors";
 import type { DagdeelGroup } from "../../../data/types";
 import { getGreeting } from "../../lib/format";
@@ -34,8 +34,7 @@ export function VandaagPage() {
   const { openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
-  const members = useCuraStore((s) => s.members);
-  const currentUserId = useCuraStore((s) => s.currentUserId);
+  const me = useCurrentMember();
   const tasks = useTaskViews();
   const routines = useRoutineViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
@@ -66,7 +65,7 @@ export function VandaagPage() {
   // glanceable list rather than a hidden peek. The collapsible section below
   // (afgerond) starts closed — secondary information with no prior default
   // to preserve.
-  const [suggestiesOpen, setSuggestiesOpen] = useState(false);
+  const [suggestiesOpen, setSuggestiesOpen] = useState(true);
   const [afgerondOpen, setAfgerondOpen] = useState(false);
   const [laterOpen, setLaterOpen] = useState(false);
 
@@ -97,7 +96,6 @@ export function VandaagPage() {
   // gesture that then does nothing on that exact row.
   const firstTaskId = dagdelenNow[0]?.tasks[0]?.id;
 
-  const me = members.find((m) => m.userId === currentUserId);
   // Vandaag's eigen + huisgenoot-activiteit samen, alleen van vandaag (zodat een
   // taak die dagen geleden binnen zijn interval is afgevinkt niet leest alsof die
   // vanochtend gebeurde), nieuwste eerst — feeds the Samen preview card below.
@@ -164,11 +162,9 @@ export function VandaagPage() {
   const heroSub =
     totalPlanned === 0
       ? "Niets op de planning."
-      : allDone
-        ? "Mooi gedaan."
-        : doneCount === 0
-          ? `${totalPlanned} ${totalPlanned === 1 ? "ding staat" : "dingen staan"} rustig klaar.`
-          : `${doneCount} van ${totalPlanned} rustig afgerond.`;
+      : doneCount === 0
+        ? `${totalPlanned} ${totalPlanned === 1 ? "ding staat" : "dingen staan"} rustig klaar.`
+        : `${doneCount} van ${totalPlanned} rustig afgerond.`;
 
   return (
     <div className="relative">
@@ -180,12 +176,11 @@ export function VandaagPage() {
             className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
             style={{ background: "color-mix(in srgb, var(--card) 85%, transparent)", backdropFilter: "blur(8px)" }}>
             <DateIcon size={12} aria-hidden="true" style={{ color: SAGE }} />
-            <span className="text-[0.66rem] font-semibold tracking-wide" style={{ color: "var(--muted-foreground)" }}>{greeting.date}</span>
+            <span className="text-xs font-semibold tracking-wide" style={{ color: "var(--muted-foreground)" }}>{greeting.date}</span>
           </span>
           <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display mt-2">
             {greeting.text}
           </h1>
-          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{greeting.sub}</p>
         </div>
 
         <motion.div
@@ -195,7 +190,15 @@ export function VandaagPage() {
           <div className="mb-3">
             <p className="font-display text-[1.2rem] leading-tight text-foreground">{heroTitle}</p>
           </div>
-          <div className="relative h-2.5">
+          <div
+            className="relative h-2.5"
+            role="progressbar"
+            aria-label="Voortgang van vandaag"
+            aria-valuemin={0}
+            aria-valuemax={Math.max(totalPlanned, 1)}
+            aria-valuenow={doneCount}
+            aria-valuetext={totalPlanned === 0 ? "Geen taken gepland" : `${doneCount} van ${totalPlanned} taken afgerond`}
+          >
             <div className="absolute inset-x-0 top-0 h-2.5 rounded-full overflow-hidden" style={{ background: "color-mix(in srgb, var(--muted-foreground) 14%, transparent)" }}>
               <motion.div
                 className="h-full rounded-full"
@@ -250,7 +253,7 @@ export function VandaagPage() {
             <Leeg
               icon="🌿"
               image="/empty-plants.webp"
-              text={allDone ? "Alles rond voor vandaag. Geniet van de rust." : "Niets op de planning. Geniet ervan."}
+              text={allDone ? "Alles rond voor vandaag." : "Niets op de planning."}
             />
           ) : (
             <>
@@ -323,12 +326,12 @@ export function VandaagPage() {
                         <span className="flex-1 min-w-0">
                           <span className="block text-sm text-muted-foreground line-through truncate">{task.title}</span>
                           {task.doneBy && task.doneAt && (
-                            <span className="block text-[0.68rem] text-muted-foreground truncate">
+                            <span className="block text-xs text-muted-foreground truncate">
                               {mine ? "Jij" : task.doneBy} · {task.doneAt}
                             </span>
                           )}
                         </span>
-                        <span className="text-[0.66rem] flex-shrink-0 self-start" style={{ color: "var(--muted-foreground)" }}>terug</span>
+                        <span className="text-xs flex-shrink-0 self-start" style={{ color: "var(--muted-foreground)" }}>terug</span>
                       </button>
                       <IconButton
                         size={8}

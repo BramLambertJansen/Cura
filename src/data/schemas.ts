@@ -111,7 +111,8 @@ export const TaskSchema = z.object({
   bundleId: Id.optional(), // belongs to a routine bundle (a grouping, see below)
   claimedById: Id.optional(), // "ik pak dit" — optional, never required
   // Set ONLY by the explicit Huis pool-claim/unclaim action (useCuraStore's
-  // top-level `claimTask`, driven by HuisPage's plan/"Laat los" flow) — NOT by
+  // top-level `claimTask`, driven by HuisPage/RoomDetailPage's plan/"Laat
+  // los" flow) — NOT by
   // the generic planned-auto-claim inside createTask/updateTask (AddTaskSheet,
   // EditTaskSheet, SuggestieRij's "Zet op mijn dag" all go through that path
   // instead). That distinction is the whole point: without it, any roomId task

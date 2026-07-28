@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { Check, ChevronRight, Pencil, Copy, Share2, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
+import { useCurrentMember } from "../../stores/useViews";
 import { resolveDataMode } from "../../data/store";
 import { SAGE, PRESS_TINT } from "../lib/constants";
 import { spring } from "../lib/motion";
@@ -15,7 +16,7 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
   const createInvite = useCuraStore((s) => s.createInvite);
   const updateHousehold = useCuraStore((s) => s.updateHousehold);
   const revokeInvite = useCuraStore((s) => s.revokeInvite);
-  const me = members.find((m) => m.userId === currentUserId);
+  const me = useCurrentMember();
 
   const [naam, setNaam] = useState(household?.name ?? "");
   // Guard: if household hadn't resolved yet at mount, sync the name when it arrives.

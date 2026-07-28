@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { AppBackground } from "./AppBackground";
 import { EmptyIllustration } from "./EmptyIllustration";
+import { PrimaryButton } from "./shared";
 
 /**
  * Calm full-screen error for gates in front of the app shell — mirrors
@@ -30,13 +31,9 @@ export function FullScreenError({ onRetry }: { onRetry: () => void }) {
         <p className="text-sm text-muted-foreground max-w-xs mb-6 leading-relaxed">
           Geen zorgen, je gegevens zijn veilig. Controleer je verbinding en probeer het opnieuw.
         </p>
-        <button
-          onClick={onRetry}
-          className="px-5 py-2.5 rounded-full text-sm font-semibold text-white focus-ring"
-          style={{ background: "var(--gradient-primary)" }}
-        >
+        <PrimaryButton onClick={onRetry} fullWidth={false}>
           Opnieuw proberen
-        </button>
+        </PrimaryButton>
       </div>
     </div>
   );

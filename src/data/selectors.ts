@@ -42,6 +42,16 @@ export type { DueReminder } from "./reminders";
 
 const DAY_MS = 86_400_000;
 
+/**
+ * The longest interval a recurring task can be given (IntervalKiezer's own
+ * input clamp — kept here, not duplicated, so the two can't drift). Anything
+ * that needs "far enough back to still find a task's last completion" — e.g.
+ * useCuraStore's bounded `since` fetch (#154) — must look back at least this
+ * far, or a legitimately once-a-year task would read as never-done the
+ * moment its one completion ages past a shorter window.
+ */
+export const MAX_TASK_INTERVAL_DAYS = 365;
+
 const memberName = (members: Member[], id?: string): string | undefined =>
   id ? members.find((m) => m.id === id)?.displayName : undefined;
 
@@ -481,33 +491,9 @@ export const SHOPPING_UNIT_LABELS: Record<ShoppingUnitKey, string> = {
   l: "l",
 };
 
-/** Realistic boodschappen amounts per eenheid, for the hoeveelheid-dropdown — not an arbitrary 1..N range, since "500g" and "6 stuks" are both common but "6g" or "500 stuks" rarely are. */
-export const SHOPPING_AMOUNT_PRESETS: Record<ShoppingUnitKey, number[]> = {
-  stuks: [1, 2, 3, 4, 5, 6, 8, 10, 12],
-  g: [100, 250, 500, 750, 1000],
-  kg: [0.5, 1, 1.5, 2, 3, 5],
-  ml: [100, 250, 500, 750, 1000],
-  l: [0.5, 1, 1.5, 2, 3, 5],
-};
-
-/** "1.5" -> "1,5", "3" -> "3" — the NL decimal-comma display form shared by formatShoppingQuantity and the hoeveelheid-dropdown labels. */
+/** "1.5" -> "1,5", "3" -> "3" — the NL decimal-comma display form for a shopping amount, used by formatShoppingQuantity below. */
 export function formatShoppingAmount(amount: number): string {
   return Number.isInteger(amount) ? String(amount) : String(amount).replace(".", ",");
-}
-
-/**
- * Options for the hoeveelheid-dropdown: "geen aantal" plus the presets for the
- * given eenheid. `current` folds in an already-set amount that isn't one of
- * the presets (e.g. an older item saved before presets existed) so editing
- * never silently blanks out a real value.
- */
-export function shoppingAmountOptions(unit: ShoppingUnitKey, current?: number): { value: string; label: string }[] {
-  const presets = SHOPPING_AMOUNT_PRESETS[unit];
-  const amounts = current !== undefined && !presets.includes(current) ? [current, ...presets].sort((a, b) => a - b) : presets;
-  return [
-    { value: "", label: "Geen aantal" },
-    ...amounts.map((amount) => ({ value: String(amount), label: formatShoppingAmount(amount) })),
-  ];
 }
 
 /**
@@ -559,15 +545,20 @@ export function toActivityFeed(
   members: Member[],
   sinceIso?: string,
 ): ActivityView[] {
+  // Index once instead of a tasks.find()/rooms.find() per completion inside
+  // the .map() below (O(completions × tasks) -> O(tasks + rooms + completions)) —
+  // same Map-indexing pattern as buildLatestCompletionMap (reminders.ts).
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
+  const roomById = new Map(rooms.map((r) => [r.id, r]));
   return completions
     .filter((c) => !sinceIso || c.completedAt >= sinceIso)
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
     .map((c) => {
-      const task = tasks.find((t) => t.id === c.taskId);
+      const task = taskById.get(c.taskId);
       return {
         taskId: c.taskId,
         title: task?.title ?? "Onbekende taak",
-        room: rooms.find((r) => r.id === task?.roomId)?.name,
+        room: task?.roomId ? roomById.get(task.roomId)?.name : undefined,
         doneBy: memberName(members, c.completedById) ?? "Iemand",
         doneById: c.completedById,
         doneAt: c.completedAt,

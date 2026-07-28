@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Check, RotateCcw } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { useRoomViews, useTaskView } from "../../stores/useViews";
+import { useCurrentMember, useRoomViews, useTaskView } from "../../stores/useViews";
 import { Sheet, SheetHeader, VeldInput, DubbelKnop, VerwijderKnop, PrimaryButton, Kop, KeuzeChip } from "../components/shared";
 import { SAGE } from "../lib/constants";
 import { TaskFormFields, buildDueDate, addLocalDay, extractTijd, type TaskFormState } from "./TaskFormFields";
@@ -15,9 +15,8 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
   const deleteTask = useCuraStore((s) => s.deleteTask);
   const assignTask = useCuraStore((s) => s.assignTask);
   const members = useCuraStore((s) => s.members);
-  const currentUserId = useCuraStore((s) => s.currentUserId);
   const rooms = useRoomViews();
-  const me = members.find((m) => m.userId === currentUserId);
+  const me = useCurrentMember();
   // Only offered when there's actually someone else to hand a task to — a
   // single-member household has no one, so a "Niemand/Jij"-only picker would
   // be a meaningless stand-in for the existing claim toggle. Every OTHER
@@ -102,9 +101,8 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
     <Sheet onClose={onClose} tall>
       <SheetHeader title="Taak bewerken" onClose={onClose} />
       <VeldInput value={title} onChange={setTitle} onEnter={save} placeholder="Wat moet er gebeuren?" />
-      <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">Pas de taak aan en sla op.</p>
 
-      <div className="mb-5 space-y-1.5">
+      <div className="mt-4 mb-5 space-y-1.5">
         <PrimaryButton
           icon={task.done ? <RotateCcw size={16} aria-hidden="true" /> : <Check size={16} aria-hidden="true" />}
           onClick={toggleDone}>

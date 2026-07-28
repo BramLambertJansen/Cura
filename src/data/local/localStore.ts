@@ -1,4 +1,15 @@
-import { DatabaseSchema } from "../schemas";
+import { z } from "zod";
+import {
+  HouseholdSchema,
+  MemberSchema,
+  HouseholdMemberSchema,
+  HouseholdInviteSchema,
+  RoomSchema,
+  TaskSchema,
+  TaskCompletionSchema,
+  BundleSchema,
+  ShoppingItemSchema,
+} from "../schemas";
 import type { Database, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
 import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type UpdateShoppingItemInput } from "../store";
 import { seedDatabase, LOCAL_USER_ID } from "./seed";
@@ -7,21 +18,72 @@ const STORAGE_KEY = "cura:db:v1";
 
 const uid = (): string => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+/**
+ * Validate a persisted array entity-by-entity, tolerating a single bad row —
+ * the local-mode counterpart of `mapList` in supabaseStore.ts. One task with
+ * an unexpected shape (a stale field, a schema change between versions) must
+ * not take down the rest of the household's data (see #150 / the #54
+ * timestamptz-offset crash CLAUDE.md §3 references for the cloud-mode version
+ * of this same bug class).
+ */
+function parseList<S extends z.ZodTypeAny>(rows: unknown, schema: S, label: string): z.infer<S>[] {
+  if (!Array.isArray(rows)) return [];
+  const out: z.infer<S>[] = [];
+  for (const row of rows) {
+    const result = schema.safeParse(row);
+    if (result.success) out.push(result.data);
+    else console.error(`Overslaan van ongeldige ${label}-rij bij het laden`, result.error, row);
+  }
+  return out;
+}
+
+// At least one of these existing as an array is enough to tell "this is a
+// stale/partially-valid Database snapshot" apart from "this isn't our data at
+// all" (e.g. a different app's localStorage key, or garbage) — only the
+// latter warrants a full reseed.
+const DATABASE_LIST_KEYS = [
+  "households", "members", "householdMembers", "invites", "rooms", "tasks", "completions", "bundles", "shoppingItems",
+] as const;
+
+function looksLikeDatabase(source: Record<string, unknown>): boolean {
+  return DATABASE_LIST_KEYS.some((key) => Array.isArray(source[key]));
+}
+
+function seedAndPersist(): Database {
+  const seeded = seedDatabase();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
+  return seeded;
+}
+
 function loadDatabase(): Database {
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    const seeded = seedDatabase();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-    return seeded;
-  }
+  if (!raw) return seedAndPersist();
+
+  let parsed: unknown;
   try {
-    return DatabaseSchema.parse(JSON.parse(raw));
+    parsed = JSON.parse(raw);
   } catch {
-    // Corrupt or stale shape — degrade gracefully by reseeding rather than crashing.
-    const seeded = seedDatabase();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-    return seeded;
+    // Not even valid JSON — nothing to salvage.
+    return seedAndPersist();
   }
+
+  if (typeof parsed !== "object" || parsed === null || !looksLikeDatabase(parsed as Record<string, unknown>)) {
+    // Doesn't resemble a Database at all — reseed rather than crash.
+    return seedAndPersist();
+  }
+
+  const source = parsed as Record<string, unknown>;
+  return {
+    households: parseList(source.households, HouseholdSchema, "household"),
+    members: parseList(source.members, MemberSchema, "member"),
+    householdMembers: parseList(source.householdMembers, HouseholdMemberSchema, "household-member"),
+    invites: parseList(source.invites, HouseholdInviteSchema, "invite"),
+    rooms: parseList(source.rooms, RoomSchema, "room"),
+    tasks: parseList(source.tasks, TaskSchema, "task"),
+    completions: parseList(source.completions, TaskCompletionSchema, "completion"),
+    bundles: parseList(source.bundles, BundleSchema, "bundle"),
+    shoppingItems: parseList(source.shoppingItems, ShoppingItemSchema, "shopping item"),
+  };
 }
 
 /**
