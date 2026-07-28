@@ -1,6 +1,12 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
+import { useDailyLocalState } from "./useDailyLocalState";
 
 export type ReactieKind = "bedankt" | "mooi_gedaan" | "volgende";
+
+const PREFIX = "cura:reacties";
+const EMPTY: Record<string, ReactieKind> = {};
+const decode = (raw: string): Record<string, ReactieKind> => JSON.parse(raw);
+const encode = (value: Record<string, ReactieKind>): string => JSON.stringify(value);
 
 /**
  * Warm, one-tap reactions to a Samen activity ("Bedank" / "Mooi gedaan" /
@@ -10,33 +16,15 @@ export type ReactieKind = "bedankt" | "mooi_gedaan" | "volgende";
  * on this device, that you already acknowledged an activity so the row
  * doesn't invite repeat-tapping. One reaction per activity, easy to replace.
  */
-function storageKey(): string {
-  const today = new Date().toISOString().slice(0, 10);
-  return `cura:reacties:${today}`;
-}
-
-function readReacties(): Record<string, ReactieKind> {
-  try {
-    const raw = localStorage.getItem(storageKey());
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
 export function useReacties(): {
   reactionFor: (activityKey: string) => ReactieKind | undefined;
   react: (activityKey: string, kind: ReactieKind) => void;
 } {
-  const [reacties, setReacties] = useState<Record<string, ReactieKind>>(readReacties);
+  const [reacties, update] = useDailyLocalState(PREFIX, EMPTY, decode, encode);
 
   const react = useCallback((activityKey: string, kind: ReactieKind) => {
-    setReacties((prev) => {
-      const next = { ...prev, [activityKey]: kind };
-      localStorage.setItem(storageKey(), JSON.stringify(next));
-      return next;
-    });
-  }, []);
+    update((prev) => ({ ...prev, [activityKey]: kind }));
+  }, [update]);
 
   return { reactionFor: (activityKey: string) => reacties[activityKey], react };
 }

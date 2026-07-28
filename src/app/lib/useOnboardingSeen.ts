@@ -1,14 +1,6 @@
-import { useCallback, useState } from "react";
+import { useLocalFlag } from "./useLocalFlag";
 
 const STORAGE_KEY = "cura:onboarding-seen";
-
-function readSeen(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Whether this browser has already seen the three-pillars intro (design brief
@@ -16,16 +8,6 @@ function readSeen(): boolean {
  * across devices or the household.
  */
 export function useOnboardingSeen(): { seen: boolean; markSeen: () => void } {
-  const [seen, setSeen] = useState<boolean>(readSeen);
-
-  const markSeen = useCallback(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // Private browsing etc. — worst case the intro reappears next time.
-    }
-    setSeen(true);
-  }, []);
-
-  return { seen, markSeen };
+  const { seen, mark } = useLocalFlag(STORAGE_KEY);
+  return { seen, markSeen: mark };
 }
