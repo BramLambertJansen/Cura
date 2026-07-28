@@ -1,5 +1,5 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, useTransform, type MotionValue, type PanInfo } from "motion/react";
 import { Check, ChevronDown, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
@@ -438,7 +438,7 @@ export function Leeg({
 
 /** Section heading — Lora italic, warm muted, sentence case */
 export function Kop({ children, id }: { children: ReactNode; id?: string }) {
-  return <p id={id} className="text-sm text-muted-foreground mb-2 ml-1 font-display italic" style={{ letterSpacing: "0.01em" }}>{children}</p>;
+  return <h2 id={id} className="text-sm text-muted-foreground mb-2 ml-1 font-display italic" style={{ letterSpacing: "0.01em" }}>{children}</h2>;
 }
 
 /** Shared visual state for every "field" surface (VeldInput, VeldTextarea, FieldShell) — active means real DOM focus, never just "has a value". */
@@ -495,7 +495,7 @@ export function VeldInput({
         aria-label={ariaLabel ?? placeholder}
         aria-invalid={invalid || undefined}
         disabled={disabled}
-        className={`w-full rounded-2xl px-4 py-[1rem] ${isPassword ? "pr-11" : ""} text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60`}
+        className={`w-full rounded-2xl px-4 py-[1rem] ${isPassword ? "pr-11" : ""} text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60`}
         style={{
           background: fieldBackground(state),
           borderColor: fieldBorderColor(state),
@@ -534,7 +534,7 @@ export function VeldTextarea({
       aria-invalid={invalid || undefined}
       disabled={disabled}
       rows={rows}
-      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground/70 outline-none text-[0.9375rem] resize-none border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full rounded-2xl px-4 py-[1rem] text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] resize-none border transition-[box-shadow,border-color,background-color,opacity] disabled:cursor-not-allowed disabled:opacity-60"
       style={{
         background: fieldBackground(state),
         borderColor: fieldBorderColor(state),
@@ -670,7 +670,7 @@ export function TaakToevoegRij({
         onKeyDown={(e) => { if (e.key === "Enter") add(); }}
         onFocus={() => setActive(true)} onBlur={() => setActive(false)}
         placeholder={placeholder} aria-label={ariaLabel ?? placeholder}
-        className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none text-sm border transition-all"
+        className="flex-1 rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-sm border transition-all"
         style={{
           background: "var(--input-background)",
           borderColor: fieldBorderColor({ active, hasValue: !!value }),
@@ -883,28 +883,37 @@ export function CollapsibleSection({
   tone?: "muted" | "active"; children: ReactNode;
 }) {
   const chrome = tone === "active" ? "bg-card-active border border-border/60" : "border border-border";
+  const contentId = useId();
   return (
     <div
       className={`rounded-2xl overflow-hidden ${chrome}`}
       style={tone === "active" ? { boxShadow: "var(--shadow-card)" } : { background: "color-mix(in srgb, var(--card) 60%, transparent)" }}>
-      <motion.button
-        whileTap={{ scale: 0.99 }}
-        onClick={onToggle}
-        aria-expanded={open}
-        className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
-        <span className="inline-flex items-center gap-2">
-          {icon}
-          <span className="font-display font-semibold text-sm text-foreground">{title}</span>
-          <StatusBadge enter="slide">{count}</StatusBadge>
-        </span>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
-          <ChevronDown size={15} aria-hidden="true" />
-        </motion.span>
-      </motion.button>
+      {/* ARIA APG accordion pattern: the heading wraps the trigger button, not
+          the reverse — a <button>'s content model only permits phrasing
+          content, so nesting a heading inside it is invalid HTML5. `contents`
+          keeps the <h3> out of the box model so this stays layout-neutral. */}
+      <h3 className="contents">
+        <motion.button
+          whileTap={{ scale: 0.99 }}
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls={contentId}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 focus-ring">
+          <span className="inline-flex items-center gap-2">
+            {icon}
+            <span className="font-display font-semibold text-sm text-foreground">{title}</span>
+            <StatusBadge enter="slide">{count}</StatusBadge>
+          </span>
+          <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground">
+            <ChevronDown size={15} aria-hidden="true" />
+          </motion.span>
+        </motion.button>
+      </h3>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
             key="body"
+            id={contentId}
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.24 }} className="overflow-hidden">
             <div className="px-3 pb-3">{children}</div>

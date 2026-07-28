@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useCurrentMember } from "../../stores/useViews";
@@ -127,6 +127,57 @@ function getPermission(): PermissionState {
   return Notification.permission;
 }
 
+function readLocalEnabled(): boolean {
+  return localStorage.getItem(NOTIF_PREF_KEY) !== "disabled";
+}
+
+/**
+ * Module-level store, not per-instance useState: ProfielSheet's toggle() and
+ * MainShell's usePushReconcile each call useNotificationPreference()
+ * independently, and used to keep their own separate `localEnabled`/
+ * `permission` state — so opting out in ProfielSheet never reached
+ * usePushReconcile's copy, which kept reading its own stale `enabled` and
+ * would resubscribe right after the opt-out (Codex review on #202).
+ * useSyncExternalStore keeps every instance in lockstep without reaching for
+ * context or a new Zustand store for what's still a device-local UI flag.
+ */
+type Listener = () => void;
+const notifListeners = new Set<Listener>();
+// Lazily computed on first real access (inside the hook, i.e. only once a
+// component actually mounts in a browser) — not at module-eval time, so
+// importing this module from a plain Node test (no `localStorage` global)
+// stays side-effect-free, same as the useState(() => ...) initializer this
+// replaced.
+let permissionSnapshot: PermissionState | undefined;
+let localEnabledSnapshot: boolean | undefined;
+
+function getPermissionSnapshot(): PermissionState {
+  if (permissionSnapshot === undefined) permissionSnapshot = getPermission();
+  return permissionSnapshot;
+}
+
+function getLocalEnabledSnapshot(): boolean {
+  if (localEnabledSnapshot === undefined) localEnabledSnapshot = readLocalEnabled();
+  return localEnabledSnapshot;
+}
+
+function subscribeNotifPref(listener: Listener): () => void {
+  notifListeners.add(listener);
+  return () => notifListeners.delete(listener);
+}
+
+function setPermissionShared(p: PermissionState): void {
+  permissionSnapshot = p;
+  for (const l of notifListeners) l();
+}
+
+function setLocalEnabledShared(v: boolean): void {
+  if (v) localStorage.removeItem(NOTIF_PREF_KEY);
+  else localStorage.setItem(NOTIF_PREF_KEY, "disabled");
+  localEnabledSnapshot = v;
+  for (const l of notifListeners) l();
+}
+
 /**
  * Reads and controls the user's notification preference.
  *
@@ -139,10 +190,8 @@ function getPermission(): PermissionState {
  *   at the moment of action, not on app load.
  */
 export function useNotificationPreference() {
-  const [permission, setPermission] = useState<PermissionState>(getPermission);
-  const [localEnabled, setLocalEnabled] = useState(
-    () => localStorage.getItem(NOTIF_PREF_KEY) !== "disabled",
-  );
+  const permission = useSyncExternalStore(subscribeNotifPref, getPermissionSnapshot);
+  const localEnabled = useSyncExternalStore(subscribeNotifPref, getLocalEnabledSnapshot);
 
   const enabled = permission === "granted" && localEnabled;
 
@@ -159,10 +208,9 @@ export function useNotificationPreference() {
     }
     if (permission === "default") {
       const result = await Notification.requestPermission();
-      setPermission(result);
+      setPermissionShared(result);
       if (result === "granted") {
-        localStorage.removeItem(NOTIF_PREF_KEY);
-        setLocalEnabled(true);
+        setLocalEnabledShared(true);
         toast("Meldingen aan");
       } else {
         toast("Meldingen worden geblokkeerd door je browser.");
@@ -171,12 +219,10 @@ export function useNotificationPreference() {
     }
     // permission === "granted" — toggle the local preference
     if (localEnabled) {
-      localStorage.setItem(NOTIF_PREF_KEY, "disabled");
-      setLocalEnabled(false);
+      setLocalEnabledShared(false);
       toast("Meldingen uit");
     } else {
-      localStorage.removeItem(NOTIF_PREF_KEY);
-      setLocalEnabled(true);
+      setLocalEnabledShared(true);
       toast("Meldingen aan");
     }
   }

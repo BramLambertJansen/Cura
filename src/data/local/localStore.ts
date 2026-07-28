@@ -1,6 +1,5 @@
 import { z } from "zod";
 import {
-  DatabaseSchema,
   HouseholdSchema,
   MemberSchema,
   HouseholdMemberSchema,
@@ -36,6 +35,30 @@ function parseList<S extends z.ZodTypeAny>(rows: unknown, schema: S, label: stri
     else console.error(`Overslaan van ongeldige ${label}-rij bij het laden`, result.error, row);
   }
   return out;
+}
+
+/**
+ * Validates a single entity against its schema right before it's written —
+ * the write-time boundary check `persist()` deliberately stopped doing for
+ * the WHOLE snapshot (#171: re-parsing the unboundedly-growing completions
+ * array on every write was a real, scaling cost for zero benefit — see the
+ * comment on persist() below). Scoped to just the one entity being
+ * created/updated, this stays cheap while closing the gap that left: a
+ * type-valid-but-schema-invalid patch (e.g. an emptied checklist-item title
+ * slipping past a UI guard) used to write straight through and only surface
+ * on the NEXT loadDatabase() — where parseList drops the WHOLE entity, not
+ * just the bad field. Strict, not tolerant, like supabaseStore.ts's
+ * single-row write mappers (CLAUDE.md §3): an invalid write is a real error
+ * the caller's toast should show, not something to silently swallow. Called
+ * on a candidate BEFORE any mutation, so a rejected write leaves the
+ * in-memory entity untouched.
+ */
+function validateEntity<S extends z.ZodTypeAny>(schema: S, candidate: unknown, label: string): void {
+  const result = schema.safeParse(candidate);
+  if (!result.success) {
+    console.error(`Ongeldige ${label} bij opslaan`, result.error, candidate);
+    throw new Error(`Kon ${label} niet opslaan — controleer de invoer.`);
+  }
 }
 
 // At least one of these existing as an array is enough to tell "this is a
@@ -102,7 +125,13 @@ export class LocalStore implements DataStore {
   }
 
   private persist(): void {
-    DatabaseSchema.parse(this.db);
+    // No re-validation here (#171) — this.db is only ever mutated by this
+    // class's own typed methods, and the one real validation boundary is
+    // loadDatabase() on read. Re-parsing the FULL database (including the
+    // one entity that grows unbounded, completions) on every single write
+    // was a real, scaling cost with zero benefit: it can only catch a bug
+    // in this file, which typecheck already guards against structurally,
+    // and by the time it would catch one, the bad data is already in `this.db`.
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
   }
 
@@ -127,6 +156,13 @@ export class LocalStore implements DataStore {
   ): Promise<Member> {
     const member = this.db.members.find((m) => m.id === memberId);
     if (!member) throw new Error(`Member not found: ${memberId}`);
+    const candidate = {
+      ...member,
+      ...(patch.displayName !== undefined && { displayName: patch.displayName }),
+      ...(patch.quietHoursStart !== undefined && { quietHoursStart: patch.quietHoursStart ?? undefined }),
+      ...(patch.quietHoursEnd !== undefined && { quietHoursEnd: patch.quietHoursEnd ?? undefined }),
+    };
+    validateEntity(MemberSchema, candidate, "lid");
     if (patch.displayName !== undefined) member.displayName = patch.displayName;
     if (patch.quietHoursStart !== undefined) member.quietHoursStart = patch.quietHoursStart ?? undefined;
     if (patch.quietHoursEnd !== undefined) member.quietHoursEnd = patch.quietHoursEnd ?? undefined;
@@ -141,6 +177,7 @@ export class LocalStore implements DataStore {
   async updateHousehold(householdId: string, name: string): Promise<Household> {
     const household = this.db.households.find((h) => h.id === householdId);
     if (!household) throw new Error(`Household not found: ${householdId}`);
+    validateEntity(HouseholdSchema, { ...household, name }, "huishouden");
     household.name = name;
     this.persist();
     return household;
@@ -164,6 +201,7 @@ export class LocalStore implements DataStore {
 
   async createRoom(householdId: string, room: Omit<Room, "id" | "householdId">): Promise<Room> {
     const created: Room = { ...room, id: uid(), householdId };
+    validateEntity(RoomSchema, created, "kamer");
     this.db.rooms.push(created);
     this.persist();
     return created;
@@ -172,6 +210,7 @@ export class LocalStore implements DataStore {
   async updateRoom(roomId: string, patch: Partial<Omit<Room, "id" | "householdId">>): Promise<Room> {
     const room = this.db.rooms.find((r) => r.id === roomId);
     if (!room) throw new Error(`Room not found: ${roomId}`);
+    validateEntity(RoomSchema, { ...room, ...patch }, "kamer");
     Object.assign(room, patch);
     this.persist();
     return room;
@@ -202,6 +241,7 @@ export class LocalStore implements DataStore {
       startedAt: input.startedAt,
       checklistItems: input.checklistItems ?? [],
     };
+    validateEntity(TaskSchema, created, "taak");
     this.db.tasks.push(created);
     this.persist();
     return created;
@@ -210,6 +250,7 @@ export class LocalStore implements DataStore {
   async updateTask(taskId: string, patch: Partial<CreateTaskInput>): Promise<Task> {
     const task = this.db.tasks.find((t) => t.id === taskId);
     if (!task) throw new Error(`Task not found: ${taskId}`);
+    validateEntity(TaskSchema, { ...task, ...patch }, "taak");
     Object.assign(task, patch);
     this.persist();
     return task;
@@ -273,6 +314,7 @@ export class LocalStore implements DataStore {
 
   async createBundle(householdId: string, bundle: Omit<Bundle, "id" | "householdId">): Promise<Bundle> {
     const created: Bundle = { ...bundle, id: uid(), householdId };
+    validateEntity(BundleSchema, created, "routine");
     this.db.bundles.push(created);
     this.persist();
     return created;
@@ -281,6 +323,7 @@ export class LocalStore implements DataStore {
   async updateBundle(bundleId: string, patch: Partial<Omit<Bundle, "id" | "householdId">>): Promise<Bundle> {
     const bundle = this.db.bundles.find((b) => b.id === bundleId);
     if (!bundle) throw new Error(`Bundle not found: ${bundleId}`);
+    validateEntity(BundleSchema, { ...bundle, ...patch }, "routine");
     Object.assign(bundle, patch);
     this.persist();
     return bundle;
@@ -308,6 +351,7 @@ export class LocalStore implements DataStore {
       checked: false,
       createdAt: new Date().toISOString(),
     };
+    validateEntity(ShoppingItemSchema, created, "boodschap");
     this.db.shoppingItems.push(created);
     this.persist();
     return created;
@@ -317,6 +361,15 @@ export class LocalStore implements DataStore {
     const item = this.db.shoppingItems.find((i) => i.id === itemId);
     if (!item) throw new Error(`Shopping item not found: ${itemId}`);
     const normalized = normalizeShoppingItemPatch(patch);
+    const candidate = {
+      ...item,
+      ...(normalized.title !== undefined && { title: normalized.title }),
+      ...("amount" in normalized && { amount: normalized.amount }),
+      ...("unit" in normalized && { unit: normalized.unit }),
+      ...("description" in normalized && { description: normalized.description }),
+      ...(normalized.category !== undefined && { category: normalized.category }),
+    };
+    validateEntity(ShoppingItemSchema, candidate, "boodschap");
     if (normalized.title !== undefined) item.title = normalized.title;
     if ("amount" in normalized) item.amount = normalized.amount;
     if ("unit" in normalized) item.unit = normalized.unit;

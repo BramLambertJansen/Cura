@@ -70,7 +70,7 @@ export const BoodschapRij = memo(function BoodschapRij({
             )}
           </span>
           {item.description && (
-            <span className={`w-full truncate text-xs text-muted-foreground/80 ${item.checked ? "line-through" : ""}`}>
+            <span className={`w-full truncate text-xs text-muted-foreground ${item.checked ? "line-through" : ""}`}>
               {item.description}
             </span>
           )}

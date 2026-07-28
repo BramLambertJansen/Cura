@@ -102,7 +102,7 @@ export function BoodschappenPage() {
                   style={{ background: "color-mix(in srgb, var(--muted-foreground) 7%, transparent)" }}>
                   <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: SAGE }} aria-hidden="true" />
                   <span className="text-[0.66rem] font-semibold uppercase tracking-wider text-muted-foreground">{group.label}</span>
-                  <span className="text-[0.66rem] font-semibold text-muted-foreground/60">{group.items.length}</span>
+                  <span className="text-[0.66rem] font-semibold text-muted-foreground">{group.items.length}</span>
                 </div>
                 <motion.div
                   variants={stagger}
@@ -169,14 +169,14 @@ export function BoodschappenPage() {
                               <span className="w-full flex items-center gap-2">
                                 <span className="flex-1 min-w-0 truncate text-sm text-muted-foreground line-through">{item.title}</span>
                                 {item.quantity && (
-                                  <span className="flex-shrink-0 text-xs text-muted-foreground/80 line-through">{item.quantity}</span>
+                                  <span className="flex-shrink-0 text-xs text-muted-foreground line-through">{item.quantity}</span>
                                 )}
                               </span>
                               {item.description && (
-                                <span className="w-full truncate text-xs text-muted-foreground/60 line-through">{item.description}</span>
+                                <span className="w-full truncate text-xs text-muted-foreground line-through">{item.description}</span>
                               )}
                             </span>
-                            <span className="flex-shrink-0 text-[0.66rem] text-muted-foreground/60">terug</span>
+                            <span className="flex-shrink-0 text-[0.66rem] text-muted-foreground">terug</span>
                           </motion.button>
                         ))}
                         <div className="pt-2">

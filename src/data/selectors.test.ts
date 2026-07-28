@@ -11,7 +11,9 @@ import {
   toShoppingList,
   toDagdelen,
   dagdeelForHour,
+  splitDagdelen,
   splitPickedUpToday,
+  formatShoppingAmount,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -221,6 +223,47 @@ describe("due hints — soft language, never exact counts", () => {
     const view = toTaskView(t, buildLatestCompletionMap(completions), [], [member()], now);
     expect(view.dueHint).toBe("Waarschijnlijk weer toe");
     expect(view.dueHint).not.toMatch(/dag|geleden|\d/); // no exact day counts
+  });
+});
+
+describe("wekkerLabel — the wekker badge on TaakRij", () => {
+  const now = Date.now();
+  // 2024-01-15 14:30 local — a fixed, known moment so the expected label can
+  // be computed with the same Intl calls the selector itself uses, instead of
+  // a hardcoded string that could drift with the environment's ICU data.
+  const dueDate = new Date(2024, 0, 15, 14, 30, 0);
+
+  it("is undefined when the task has no wekker at all", () => {
+    const t = task({ dueDate: undefined });
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()], now);
+    expect(view.wekkerLabel).toBeUndefined();
+  });
+
+  it("shows just the time for a recurring task's daily wekker — no date, since it repeats", () => {
+    const t = task({ intervalDays: 1, dueDate: dueDate.toISOString() });
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()], now);
+    const expectedTime = dueDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    expect(view.wekkerLabel).toBe(`Wekker om ${expectedTime}`);
+  });
+
+  it("shows date + time for a one-off task's deadline", () => {
+    const t = task({ intervalDays: undefined, dueDate: dueDate.toISOString() });
+    const view = toTaskView(t, buildLatestCompletionMap([]), [], [member()], now);
+    const expectedDate = dueDate.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
+    const expectedTime = dueDate.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+    expect(view.wekkerLabel).toBe(`${expectedDate}, ${expectedTime}`);
+  });
+});
+
+describe("formatShoppingAmount — NL decimal-comma formatting for a quantity label", () => {
+  it("formats a whole number as-is", () => {
+    expect(formatShoppingAmount(3)).toBe("3");
+    expect(formatShoppingAmount(500)).toBe("500");
+  });
+
+  it("formats a fractional amount with a NL decimal comma", () => {
+    expect(formatShoppingAmount(1.5)).toBe("1,5");
+    expect(formatShoppingAmount(0.5)).toBe("0,5");
   });
 });
 
@@ -606,6 +649,35 @@ describe("Vandaag timeline — dagdeel grouping", () => {
     expect(dagdeelForHour(17)).toBe("middag");
     expect(dagdeelForHour(18)).toBe("avond");
     expect(dagdeelForHour(23)).toBe("avond");
+  });
+
+  it("splitDagdelen keeps the current dagdeel and everything before it in dagdelenNow, later ones in dagdelenLater", () => {
+    const ochtend = { key: "ochtend" as const, label: "Ochtend", tasks: [taskView({ id: "t1" })] };
+    const middag = { key: "middag" as const, label: "Middag", tasks: [taskView({ id: "t2" })] };
+    const avond = { key: "avond" as const, label: "Avond", tasks: [taskView({ id: "t3" })] };
+    const { dagdelenNow, dagdelenLater } = splitDagdelen([ochtend, middag, avond], "middag");
+    expect(dagdelenNow.map((g) => g.key)).toEqual(["ochtend", "middag"]);
+    expect(dagdelenLater.map((g) => g.key)).toEqual(["avond"]);
+  });
+
+  it("splitDagdelen never treats overig as 'later', even when nu is the last real dagdeel", () => {
+    const avond = { key: "avond" as const, label: "Avond", tasks: [taskView({ id: "t1" })] };
+    const overig = { key: "overig" as const, label: "Overig", tasks: [taskView({ id: "t2" })] };
+    const { dagdelenNow, dagdelenLater } = splitDagdelen([avond, overig], "avond");
+    expect(dagdelenNow.map((g) => g.key)).toEqual(["avond", "overig"]);
+    expect(dagdelenLater).toHaveLength(0);
+  });
+
+  it("an evening wekker from a different calendar day still counts as 'later vandaag' — dagdeel grouping compares hour-of-day only, never the date", () => {
+    // atHour(20) is 2024-01-01 20:00 — deliberately not "today" from nu's point
+    // of view. toDagdelen has no way to know that (and isn't supposed to,
+    // CLAUDE.md §Vandaag), so it still buckets this as "avond" purely from the hour.
+    const avondTask = taskView({ id: "t1", dueDate: atHour(20) });
+    const [avondGroup] = toDagdelen([avondTask]);
+    expect(avondGroup.key).toBe("avond");
+    const { dagdelenNow, dagdelenLater } = splitDagdelen([avondGroup], "ochtend");
+    expect(dagdelenLater.map((g) => g.key)).toEqual(["avond"]);
+    expect(dagdelenNow).toHaveLength(0);
   });
 });
 

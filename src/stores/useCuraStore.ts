@@ -6,6 +6,21 @@ import { MAX_TASK_INTERVAL_DAYS } from "../data/selectors";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
+/** Keys of the six household-scoped lists this store fetches/refetches. */
+type ListKey = "members" | "rooms" | "tasks" | "completions" | "bundles" | "shoppingItems";
+
+// Supabase's realtime payload names which table changed; not every list needs
+// refetching on every remote write (#174) — a task_completions insert
+// shouldn't also re-fetch rooms/members/bundles.
+const TABLE_TO_LIST_KEY: Record<string, ListKey> = {
+  tasks: "tasks",
+  rooms: "rooms",
+  bundles: "bundles",
+  members: "members",
+  shopping_items: "shoppingItems",
+  task_completions: "completions",
+};
+
 /** A routine-taak zoals ingevoerd in NewRoutineSheet/EditRoutineSheet, vóór opslaan. */
 export interface TaakDraft {
   title: string;
@@ -36,8 +51,14 @@ interface CuraState {
   shoppingItems: ShoppingItem[];
 
   init: () => Promise<void>;
-  /** Re-fetch all lists for the current household (pull-to-refresh, realtime). Resolves silently on failure — a missed refresh isn't worth an alarm. */
-  refresh: () => Promise<void>;
+  /**
+   * Re-fetch lists for the current household (pull-to-refresh, realtime).
+   * Pass `only` to limit the refetch to specific lists (realtime uses this to
+   * avoid re-fetching all six on every remote write, #174); omit it to
+   * refresh everything. Resolves silently on failure — a missed refresh isn't
+   * worth an alarm.
+   */
+  refresh: (only?: ReadonlySet<ListKey>) => Promise<void>;
   createHousehold: (name: string) => Promise<void>;
   updateHousehold: (name: string) => Promise<void>;
   updateMember: (displayName: string) => Promise<void>;
@@ -105,16 +126,18 @@ const getDataStore = (): Promise<DataStore> => {
  * still gets a usable result instead of a rethrown error.
  *
  * A handful of actions keep their own try/catch instead of forcing a
- * different shape through this: toggleTask (double-tap guard + finally),
- * assignTask (stale-response guard), updateBundle (its own success/partial-
- * failure toast), updateTask (true/false contract, not undefined), and
- * init/refresh (their own distinct failure handling).
+ * different shape through this: toggleTask/claimTask (double-tap guard +
+ * finally), assignTask (stale-response guard), updateBundle (its own
+ * success/partial-failure toast, plus an early `return` mid-body), updateTask
+ * (true/false contract, not undefined), and init/refresh (their own distinct
+ * failure handling). createBundle/createTasksFromTemplates have a similar
+ * partial-failure toast but no early return, so they still fit withToastOnError.
  */
 async function withToastOnError<T>(action: () => Promise<T>, fallbackMessage: string): Promise<T | undefined> {
   try {
     return await action();
   } catch (e) {
-    toast.error(e instanceof Error ? e.message : fallbackMessage);
+    toast.error(friendlyMessage(e, fallbackMessage));
     return undefined;
   }
 }
@@ -140,6 +163,13 @@ const toggling = new Set<string>();
 // an earlier call resolving late (out of network-timing order) can no longer
 // overwrite a more recent selection.
 const assignSeq = new Map<string, number>();
+// Tasks currently mid-claim — same "ignore a second tap while the first is
+// in flight" shape as `toggling`, not a seq-based "latest wins" guard like
+// assignSeq: a double-tap claim races the DB's own concurrency guard against
+// itself, so letting both requests through can surface a confusing "iemand
+// anders pakte dit al op" toast to the very person who tapped twice, while
+// discarding the first (successful) response as "stale".
+const claiming = new Set<string>();
 
 // Realtime (Phase 3+, cloud mode only — a no-op subscription in local mode).
 // A burst of remote postgres_changes events collapses into one refetch instead
@@ -147,6 +177,43 @@ const assignSeq = new Map<string, number>();
 const REALTIME_DEBOUNCE_MS = 400;
 let unsubscribeRealtime: (() => void) | null = null;
 let realtimeRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+// Which lists a burst of realtime events actually touched — flushed (and
+// cleared) into a single scoped refresh() call when the debounce fires (#174).
+const pendingListKeys = new Set<ListKey>();
+
+// Bounds how long a single list fetch may hang before init()/refresh() treat
+// it as failed — without this, a connection that never resolves (dead proxy,
+// server accepts but never answers) leaves the store on its startup skeleton
+// forever, since nothing ever rejects (see #188).
+const LIST_TIMEOUT_MS = 15000;
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Verbinden duurde te lang — probeer het opnieuw.")), ms);
+    }),
+  ]);
+}
+
+/**
+ * Turns a raw thrown error into a calm, Dutch, actionable toast message —
+ * recognizing the handful of error shapes that would otherwise leak raw
+ * technical text (an expired auth session, a full localStorage quota) past
+ * the app's otherwise-consistent tone (#193, #196).
+ */
+function friendlyMessage(e: unknown, fallback: string): string {
+  const name = e && typeof e === "object" && "name" in e ? (e as { name?: unknown }).name : undefined;
+  if (name === "QuotaExceededError") {
+    return "Opslag is vol — maak ruimte vrij (of verlaat privénavigatie) en probeer het opnieuw.";
+  }
+  if (e instanceof Error) {
+    if (/jwt expired|invalid claim|refresh_token_not_found|pgrst301/i.test(e.message)) {
+      return "Je sessie is verlopen — log opnieuw in.";
+    }
+    return e.message;
+  }
+  return fallback;
+}
 
 export const useCuraStore = create<CuraState>((set, get) => ({
   ready: false,
@@ -174,61 +241,105 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         set({ ready: true, currentUserId: userId, households: [] });
         return;
       }
-      const [members, rooms, tasks, completions, bundles, shoppingItems] = await Promise.all([
-        store.listMembers(household.id),
-        store.listRooms(household.id),
-        store.listTasks(household.id),
-        store.listCompletions(household.id, completionsSince()),
-        store.listBundles(household.id),
-        store.listShoppingItems(household.id),
+      const results = await Promise.allSettled([
+        withTimeout(store.listMembers(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listRooms(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listTasks(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listCompletions(household.id, completionsSince()), LIST_TIMEOUT_MS),
+        withTimeout(store.listBundles(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listShoppingItems(household.id), LIST_TIMEOUT_MS),
       ]);
+      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR] = results;
+      // A total loss (every list failed — network down, dead proxy) is the one
+      // case worth surfacing as a retryable error; a partial loss degrades
+      // gracefully with empty slices for just the lists that failed, instead
+      // of blocking the whole household on one flaky endpoint (#188).
+      if (results.every((r) => r.status === "rejected")) throw (membersR as PromiseRejectedResult).reason;
       set({
         ready: true,
         householdId: household.id,
         currentUserId: userId,
         households,
-        members,
-        rooms,
-        tasks,
-        completions,
-        bundles,
-        shoppingItems,
+        members: membersR.status === "fulfilled" ? membersR.value : [],
+        rooms: roomsR.status === "fulfilled" ? roomsR.value : [],
+        tasks: tasksR.status === "fulfilled" ? tasksR.value : [],
+        completions: completionsR.status === "fulfilled" ? completionsR.value : [],
+        bundles: bundlesR.status === "fulfilled" ? bundlesR.value : [],
+        shoppingItems: shoppingItemsR.status === "fulfilled" ? shoppingItemsR.value : [],
       });
+
+      // A list that failed here has no "previous value" to fall back to the
+      // way refresh() can (this IS the first load) — completions is the
+      // sharpest edge: an established household's completions can take
+      // longer than LIST_TIMEOUT_MS even bounded by completionsSince(), and
+      // reading `[]` flips every recurring task to "not done" until
+      // something else happens to trigger a refresh, which can invite a
+      // duplicate completion (Codex review on #202). Rather than wait for an
+      // unrelated trigger (pull-to-refresh, a remote change, tab foreground),
+      // kick off a background retry of just the lists that failed, reusing
+      // the same fault-tolerant refresh() — it silently no-ops if this retry
+      // fails too, leaving the already-set empty slice exactly as before.
+      const failedKeys = new Set<ListKey>();
+      if (membersR.status === "rejected") failedKeys.add("members");
+      if (roomsR.status === "rejected") failedKeys.add("rooms");
+      if (tasksR.status === "rejected") failedKeys.add("tasks");
+      if (completionsR.status === "rejected") failedKeys.add("completions");
+      if (bundlesR.status === "rejected") failedKeys.add("bundles");
+      if (shoppingItemsR.status === "rejected") failedKeys.add("shoppingItems");
+      if (failedKeys.size > 0) void get().refresh(failedKeys);
 
       // Re-init (e.g. after accepting an invite) replaces any earlier subscription.
       unsubscribeRealtime?.();
-      unsubscribeRealtime = store.subscribeToChanges(household.id, () => {
+      unsubscribeRealtime = store.subscribeToChanges(household.id, (table) => {
+        const key = TABLE_TO_LIST_KEY[table];
+        if (key) pendingListKeys.add(key);
         if (realtimeRefreshTimer) clearTimeout(realtimeRefreshTimer);
         realtimeRefreshTimer = setTimeout(() => {
           // Guard against a change from a household we've since left (reset()/re-init raced this timer).
           if (get().householdId !== household.id) return;
-          void get().refresh();
+          const keys = pendingListKeys.size > 0 ? new Set(pendingListKeys) : undefined;
+          pendingListKeys.clear();
+          void get().refresh(keys);
         }, REALTIME_DEBOUNCE_MS);
       });
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Laden is niet gelukt";
+      const message = friendlyMessage(e, "Laden is niet gelukt");
       toast.error(message);
       // Surface a retryable error instead of leaving the Gate on an endless skeleton.
       set({ initError: message });
     }
   },
 
-  async refresh() {
+  async refresh(only) {
     try {
       const store = await getDataStore();
       const { householdId } = get();
       if (!householdId) return;
-      const [members, rooms, tasks, completions, bundles, shoppingItems] = await Promise.all([
-        store.listMembers(householdId),
-        store.listRooms(householdId),
-        store.listTasks(householdId),
-        store.listCompletions(householdId, completionsSince()),
-        store.listBundles(householdId),
-        store.listShoppingItems(householdId),
+      const want = (key: ListKey) => !only || only.has(key);
+      const results = await Promise.allSettled([
+        want("members") ? withTimeout(store.listMembers(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("rooms") ? withTimeout(store.listRooms(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("tasks") ? withTimeout(store.listTasks(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("completions") ? withTimeout(store.listCompletions(householdId, completionsSince()), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("bundles") ? withTimeout(store.listBundles(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("shoppingItems") ? withTimeout(store.listShoppingItems(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
       ]);
       // Household changed while the fetch was in flight (sign-out/re-init) — discard.
       if (get().householdId !== householdId) return;
-      set({ members, rooms, tasks, completions, bundles, shoppingItems });
+      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR] = results;
+      // Apply whichever lists succeeded and keep the previous value for
+      // whichever didn't — a flaky single endpoint must not throw away data
+      // that DID come back, especially since a realtime refetch relies on
+      // this running successfully on every remote change (#188).
+      const current = get();
+      set({
+        members: membersR.status === "fulfilled" && membersR.value !== null ? membersR.value : current.members,
+        rooms: roomsR.status === "fulfilled" && roomsR.value !== null ? roomsR.value : current.rooms,
+        tasks: tasksR.status === "fulfilled" && tasksR.value !== null ? tasksR.value : current.tasks,
+        completions: completionsR.status === "fulfilled" && completionsR.value !== null ? completionsR.value : current.completions,
+        bundles: bundlesR.status === "fulfilled" && bundlesR.value !== null ? bundlesR.value : current.bundles,
+        shoppingItems: shoppingItemsR.status === "fulfilled" && shoppingItemsR.value !== null ? shoppingItemsR.value : current.shoppingItems,
+      });
     } catch {
       // Silent — a transient refresh failure isn't worth interrupting the session over; the next refresh retries.
     }
@@ -338,14 +449,24 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         if (latest) set({ completions: get().completions.filter((c) => c.id !== latest.id) });
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Afvinken lukte niet");
+      toast.error(friendlyMessage(e, "Afvinken lukte niet"));
     } finally {
       toggling.delete(taskId);
     }
   },
 
   async claimTask(taskId, claimed) {
-    return withToastOnError(async () => {
+    // Ignore a second tap while the first is still in flight — same shape as
+    // toggleTask's `toggling` guard. A seq-based "let the latest response
+    // win" model (like assignTask's) is wrong here: a double-tap claim races
+    // the DB's own "still unclaimed?" guard against itself, so the second
+    // call's request can come back as "iemand anders pakte dit al op" —
+    // confusingly, "iemand anders" being the same person — while the
+    // FIRST call's successful response gets discarded as stale. Dropping the
+    // duplicate call before it ever reaches the server avoids both.
+    if (claiming.has(taskId)) return;
+    claiming.add(taskId);
+    try {
       const store = await getDataStore();
       const { currentUserId, tasks } = get();
       if (!currentUserId) return;
@@ -359,7 +480,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       if (claimed) toast(`Jij pakt "${task.title}"`, { description: "Anderen zien dat jij dit doet." });
       else toast(`"${task.title}" vrijgegeven`);
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
-    }, "Claimen lukte niet");
+    } catch (e) {
+      toast.error(friendlyMessage(e, "Claimen lukte niet"));
+    } finally {
+      claiming.delete(taskId);
+    }
   },
 
   async assignTask(taskId, memberId) {
@@ -385,7 +510,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
       if (assignSeq.get(taskId) !== seq) return;
-      toast.error(e instanceof Error ? e.message : "Toewijzen lukte niet");
+      toast.error(friendlyMessage(e, "Toewijzen lukte niet"));
     }
   },
 
@@ -421,7 +546,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const store = await getDataStore();
       const { householdId, currentUserId } = get();
       if (!householdId) return;
-      const created = await Promise.all(
+      // allSettled, not all: one template failing to create shouldn't discard
+      // the others that already landed server-side (#190) — that orphaned
+      // them from local state until a manual refresh, and a retry without an
+      // idempotency key could double-create the ones that DID succeed.
+      const results = await Promise.allSettled(
         templates.map(async (t) => {
           let task = await store.createTask(householdId, { ...t, roomId });
           // Same soft "ik doe dit" auto-claim as createTask — planned:true starter
@@ -430,8 +559,14 @@ export const useCuraStore = create<CuraState>((set, get) => ({
           return task;
         }),
       );
-      toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
-      set({ tasks: [...get().tasks, ...created] });
+      const created = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
+      if (created.length > 0) set({ tasks: [...get().tasks, ...created] });
+      const anyFailed = results.some((r) => r.status === "rejected");
+      if (anyFailed) {
+        toast.error(created.length > 0 ? `${created.length} van ${templates.length} taken toegevoegd — niet alles is gelukt` : "Toevoegen lukte niet");
+      } else {
+        toast.success(created.length === 1 ? `"${created[0].title}" toegevoegd` : `${created.length} taken toegevoegd`);
+      }
     }, "Toevoegen lukte niet");
   },
 
@@ -461,7 +596,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
       return true;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
+      toast.error(friendlyMessage(e, "Bijwerken lukte niet"));
       return false;
     }
   },
@@ -512,7 +647,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const { householdId } = get();
       if (!householdId) return;
       const created = await store.createBundle(householdId, bundle);
-      const createdTasks = await Promise.all(
+      // allSettled: the bundle itself already exists server-side by this point,
+      // so one task draft failing to create must not hide the bundle (and the
+      // drafts that DID succeed) from local state (#190) — same reasoning as
+      // createTasksFromTemplates above.
+      const results = await Promise.allSettled(
         taskDrafts
           .filter((draft) => draft.title.trim())
           .map((draft) =>
@@ -525,7 +664,9 @@ export const useCuraStore = create<CuraState>((set, get) => ({
             }),
           ),
       );
-      toast.success(`"${created.name}" aangemaakt`);
+      const createdTasks = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
+      const anyFailed = results.some((r) => r.status === "rejected");
+      toast[anyFailed ? "error" : "success"](anyFailed ? `"${created.name}" aangemaakt — niet alle taken zijn gelukt` : `"${created.name}" aangemaakt`);
       set({ bundles: [...get().bundles, created], tasks: [...get().tasks, ...createdTasks] });
     }, "Aanmaken lukte niet");
   },
@@ -607,7 +748,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       toast("Routine bijgewerkt");
       set({ bundles: get().bundles.map((b) => (b.id === bundleId ? updated : b)), tasks });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bijwerken lukte niet");
+      toast.error(friendlyMessage(e, "Bijwerken lukte niet"));
     }
   },
 

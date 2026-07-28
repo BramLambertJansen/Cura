@@ -55,7 +55,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
             <SheetHeader title="Naam & moment" onClose={onClose} />
             <VeldInput autoFocus value={name} onChange={setName} placeholder="Bijv. Ochtendroutine" />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 mt-6">Wanneer</p>
-            <div className="flex flex-wrap gap-2 mb-8">
+            <div role="group" aria-label="Wanneer" className="flex flex-wrap gap-2 mb-8">
               {TRIGGER_OPTIONS.map((opt) => (
                 <KeuzeChip key={opt.id} selected={trigger === opt.id} onClick={() => setTrigger(opt.id)}>
                   {opt.label}

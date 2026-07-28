@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, SkipForward, X } from "lucide-react";
@@ -60,10 +60,22 @@ export function RoutineSessionPage() {
   const routine = useRoutineView(bundleId ?? "");
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const [skipped, setSkipped] = useState<Set<string>>(() => new Set());
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (!routine) navigate("/routines", { replace: true });
   }, [routine, navigate]);
+
+  // This route replaces the entire shell (no BottomNav, App.tsx's
+  // isRoutineSession check) but nothing moves focus into it — a keyboard/
+  // screenreader user who activated "Start" lands with focus on a button
+  // that's already gone, with no cue a full-screen session even started
+  // (#176). Mount-only: a session shouldn't re-steal focus on every
+  // task-to-task transition, just when it takes over the screen.
+  useEffect(() => {
+    headingRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!routine) return null;
 
@@ -107,7 +119,7 @@ export function RoutineSessionPage() {
               <span className="text-[0.65rem] text-muted-foreground mt-1 tracking-wide">gedaan</span>
             </div>
           </div>
-          <h1 className="mt-4 text-2xl leading-tight text-foreground font-medium font-display">{routine.name}</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="mt-4 text-2xl leading-tight text-foreground font-medium font-display focus:outline-none">{routine.name}</h1>
           <p className="text-xs font-medium text-muted-foreground mt-1.5 tracking-wide">{routine.trigger}</p>
         </div>
 

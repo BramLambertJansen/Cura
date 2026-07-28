@@ -53,7 +53,7 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
       <VeldInput autoFocus value={name} onChange={setName} placeholder="Naam van de routine" ariaLabel="Naam van de routine" />
 
       <Kop><span className="mt-5 block">Wanneer</span></Kop>
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div role="group" aria-label="Wanneer" className="flex flex-wrap gap-2 mb-6">
         {TRIGGER_OPTIONS.map((opt) => (
           <KeuzeChip key={opt.id} selected={trigger === opt.id} onClick={() => setTrigger(opt.id)}>
             {opt.label}

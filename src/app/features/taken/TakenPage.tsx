@@ -110,9 +110,9 @@ export function TakenPage() {
                     <motion.div key={task.id} variants={fadeUp} className="space-y-1.5">
                       <TaakRij
                         task={task}
-                        onToggle={() => toggleTask(task.id, !task.done)}
-                        onEdit={() => openEditTask(task.id)}
-                        onStartFocus={() => startFocus(task)}
+                        onToggle={toggleTask}
+                        onEdit={openEditTask}
+                        onStartFocus={startFocus}
                       />
                       {group.renew && !task.intervalDays && (
                         <div className="flex justify-end">

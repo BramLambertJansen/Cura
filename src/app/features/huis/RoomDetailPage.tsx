@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion } from "motion/react";
 import { Plus } from "lucide-react";
@@ -25,12 +25,13 @@ export function RoomDetailPage() {
   const { openEditRoom, openEditTask, openAddTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const createTasksFromTemplates = useCuraStore((s) => s.createTasksFromTemplates);
-  const { claimTask, isTaskDismissed, planTask, dismissWithUndo } = useHuisTaskActions();
   const rooms = useRoomViews();
   const tasks = useTaskViews();
+  const { handleUnclaim, isTaskDismissed, planTask, dismissWithUndo } = useHuisTaskActions(tasks);
   const startFocus = useStartFocus();
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
+  const handleDismiss = useCallback((taskId: string) => dismissWithUndo(taskId, "deze lijst"), [dismissWithUndo]);
   // Guards the quick-add buttons against a double-tap firing two create calls
   // during the (usually brief, but non-zero in cloud mode) async gap.
   const [quickAddBusy, setQuickAddBusy] = useState(false);
@@ -94,19 +95,19 @@ export function RoomDetailPage() {
                 <motion.div key={t.id} variants={fadeUp}>
                   <TaakRij
                     task={t}
-                    onToggle={() => toggleTask(t.id, !t.done)}
+                    onToggle={toggleTask}
                     showClaim
-                    onPlan={() => planTask(t)}
-                    onUnclaim={() => claimTask(t.id, false)}
-                    onEdit={() => openEditTask(t.id)}
-                    onDismiss={() => dismissWithUndo(t, "deze lijst")}
-                    onStartFocus={() => startFocus(t)}
+                    onPlan={planTask}
+                    onUnclaim={handleUnclaim}
+                    onEdit={openEditTask}
+                    onDismiss={handleDismiss}
+                    onStartFocus={startFocus}
                   />
                 </motion.div>
               ))}
             </motion.div>
             {done.map((t) => (
-              <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "deze lijst")} />
+              <TaakRij key={t.id} task={t} onToggle={toggleTask} onEdit={openEditTask} onDismiss={handleDismiss} />
             ))}
           </>
         )}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -41,6 +41,25 @@ export function VandaagPage() {
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
   const swipeHint = useSwipeHint();
   const startFocus = useStartFocus();
+  // A stable "dismiss this task" dispatcher for TijdlijnTaakRij's onDismiss
+  // (#173/#175): looks the task up fresh via a ref instead of closing over
+  // the `tasks` view-model array directly, which would make this callback's
+  // identity churn every minute (tasks is re-derived on every tick) and
+  // defeat TijdlijnTaakRij's memo() right back.
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
+  const handleDismissTask = useCallback(
+    (taskId: string) => {
+      const task = tasksRef.current.find((t) => t.id === taskId);
+      if (!task) return;
+      dismissTask(taskId);
+      toast("Even niet vandaag", {
+        description: `${task.title} staat even uit je dag.`,
+        action: { label: "Ongedaan maken", onClick: () => restoreTask(taskId) },
+      });
+    },
+    [dismissTask, restoreTask],
+  );
   // The suggestions section collapses behind a chevron; open by default (an
   // established choice, unrelated to this restyle) so it reads as a calm,
   // glanceable list rather than a hidden peek. The collapsible section below
@@ -124,16 +143,10 @@ export function VandaagPage() {
               <TijdlijnTaakRij
                 key={task.id}
                 task={task}
-                onToggle={() => toggleTask(task.id, !task.done)}
-                onEdit={() => openEditTask(task.id)}
-                onDismiss={() => {
-                  dismissTask(task.id);
-                  toast("Even niet vandaag", {
-                    description: `${task.title} staat even uit je dag.`,
-                    action: { label: "Ongedaan maken", onClick: () => restoreTask(task.id) },
-                  });
-                }}
-                onStartFocus={() => startFocus(task)}
+                onToggle={toggleTask}
+                onEdit={openEditTask}
+                onDismiss={handleDismissTask}
+                onStartFocus={startFocus}
                 peek={!swipeHint.seen && task.id === firstTaskId}
               />
             ))}
@@ -259,9 +272,9 @@ export function VandaagPage() {
                       <TijdlijnTaakRij
                         key={task.id}
                         task={task}
-                        onToggle={() => toggleTask(task.id, !task.done)}
-                        onEdit={() => openEditTask(task.id)}
-                        onStartFocus={() => startFocus(task)}
+                        onToggle={toggleTask}
+                        onEdit={openEditTask}
+                        onStartFocus={startFocus}
                         peek={!swipeHint.seen && task.id === firstTaskId}
                       />
                     ))}
@@ -313,12 +326,12 @@ export function VandaagPage() {
                         <span className="flex-1 min-w-0">
                           <span className="block text-sm text-muted-foreground line-through truncate">{task.title}</span>
                           {task.doneBy && task.doneAt && (
-                            <span className="block text-xs text-muted-foreground/80 truncate">
+                            <span className="block text-xs text-muted-foreground truncate">
                               {mine ? "Jij" : task.doneBy} · {task.doneAt}
                             </span>
                           )}
                         </span>
-                        <span className="text-xs flex-shrink-0 self-start" style={{ color: "color-mix(in srgb, var(--muted-foreground) 72%, transparent)" }}>terug</span>
+                        <span className="text-xs flex-shrink-0 self-start" style={{ color: "var(--muted-foreground)" }}>terug</span>
                       </button>
                       <IconButton
                         size={8}

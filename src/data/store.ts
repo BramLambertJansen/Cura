@@ -189,11 +189,13 @@ export interface DataStore {
   /**
    * Live updates for this household (tasks, task_completions, rooms, bundles,
    * members, shopping_items) — cloud-only (Phase 3+ Realtime). `onChange` fires
-   * once per burst of remote change events; the caller decides what to refetch.
-   * Returns an unsubscribe function. A no-op in local mode (single device,
-   * nothing to subscribe to) so callers never need to branch on `store.mode`.
+   * once per remote change event, naming the Postgres table that changed, so
+   * the caller can refetch only what's actually affected (#174) instead of
+   * every list on every write. Returns an unsubscribe function. A no-op in
+   * local mode (single device, nothing to subscribe to) so callers never need
+   * to branch on `store.mode`.
    */
-  subscribeToChanges(householdId: string, onChange: () => void): () => void;
+  subscribeToChanges(householdId: string, onChange: (table: string) => void): () => void;
 
   // ── Web Push subscriptions (cloud-only) ──────────────────────────────────
   // The server-side scheduler reads these to deliver wekker-reminders when the

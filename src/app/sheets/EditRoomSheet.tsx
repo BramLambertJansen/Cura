@@ -44,7 +44,7 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
       </div>
 
       <Kop><span className="normal-case">Voorkeur eigenaar <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></span></Kop>
-      <div className="flex flex-wrap gap-2 mt-3 mb-6">
+      <div role="group" aria-label="Voorkeur eigenaar" className="flex flex-wrap gap-2 mt-3 mb-6">
         {members.map((m) => (
           <KeuzeChip key={m.id} selected={ownerId === m.id} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}>
             {m.displayName}

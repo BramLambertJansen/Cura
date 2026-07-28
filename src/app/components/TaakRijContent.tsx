@@ -21,7 +21,7 @@ export function TaakRijContent({ task }: { task: TaskView }) {
       )}
       <div className="flex items-center gap-1.5 mt-[0.3rem] flex-wrap">
         {task.room && <span className="text-xs text-muted-foreground">{task.room}</span>}
-        {task.duration && <span className="text-xs text-muted-foreground opacity-50">· {task.duration}</span>}
+        {task.duration && <span className="text-xs text-muted-foreground">· {task.duration}</span>}
         {task.intervalDays && (
           <span className="flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
             style={{ background: "color-mix(in srgb, var(--primary) 9%, transparent)", color: SAGE }}>

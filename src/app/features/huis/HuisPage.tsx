@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Check, ChevronDown, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
@@ -40,15 +40,19 @@ const DURATION_LABELS: Record<DurationFilter, string> = {
 export function HuisPage() {
   const { openNewRoom, openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
-  const { claimTask, isTaskDismissed, planTask, dismissWithUndo } = useHuisTaskActions();
   const rooms = useRoomViews();
   const tasks = useTaskViews();
+  const { handleUnclaim, isTaskDismissed, planTask, dismissWithUndo } = useHuisTaskActions(tasks);
   const startFocus = useStartFocus();
   const navigate = useNavigate();
   const [roomFilter, setRoomFilter] = useState("alles");
   const [durationFilter, setDurationFilter] = useState<DurationFilter>("alles");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [afgerondOpen, setAfgerondOpen] = useState(false);
+  // Stable (id-based) dispatcher for TaakRij's onDismiss, scoped to this
+  // page's own "waar" label — dismissWithUndo itself is already stable
+  // (useHuisTaskActions), this just pins the second argument (#173).
+  const handleDismissAllTasks = useCallback((taskId: string) => dismissWithUndo(taskId, "alle taken"), [dismissWithUndo]);
 
   const visibleTasks = useMemo(() => tasks.filter((t) => !isTaskDismissed(t.id)), [tasks, isTaskDismissed]);
   const filteredTasks = useMemo(
@@ -127,7 +131,7 @@ export function HuisPage() {
                   <div className="px-4 pb-4 space-y-3">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2">Kamer</p>
-                      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                      <div role="group" aria-label="Filter op kamer" className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
                         <KeuzeChip selected={roomFilter === "alles"} onClick={() => setRoomFilter("alles")}>Alles</KeuzeChip>
                         {rooms.map((r) => (
                           <KeuzeChip key={r.id} selected={roomFilter === r.id} onClick={() => setRoomFilter(r.id)}>{r.name}</KeuzeChip>
@@ -136,7 +140,7 @@ export function HuisPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2">Duur</p>
-                      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                      <div role="group" aria-label="Filter op duur" className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
                         <KeuzeChip selected={durationFilter === "alles"} onClick={() => setDurationFilter("alles")}>Alles</KeuzeChip>
                         <KeuzeChip selected={durationFilter === "kort"} onClick={() => setDurationFilter("kort")}>≤ 15 min</KeuzeChip>
                         <KeuzeChip selected={durationFilter === "middel"} onClick={() => setDurationFilter("middel")}>15–45 min</KeuzeChip>
@@ -163,12 +167,12 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
                   {openTasks.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onPlan={() => planTask(t)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} onStartFocus={() => startFocus(t)} />
+                      <TaakRij task={t} onToggle={toggleTask} showClaim onPlan={planTask} onUnclaim={handleUnclaim} onEdit={openEditTask} onDismiss={handleDismissAllTasks} onStartFocus={startFocus} />
                     </motion.div>
                   ))}
                 </motion.div>
               ) : (
-                <p className="text-center text-xs text-muted-foreground/60 italic py-2" style={{ fontStyle: "italic" }}>Geen taken binnen dit filter.</p>
+                <p className="text-center text-xs text-muted-foreground italic py-2" style={{ fontStyle: "italic" }}>Geen taken binnen dit filter.</p>
               )}
               {doneTasks.length > 0 && (
                 <CollapsibleSection
@@ -179,7 +183,7 @@ export function HuisPage() {
                   onToggle={() => setAfgerondOpen((v) => !v)}>
                   <div className="space-y-3">
                     {doneTasks.map((t) => (
-                      <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
+                      <TaakRij key={t.id} task={t} onToggle={toggleTask} onEdit={openEditTask} onDismiss={handleDismissAllTasks} />
                     ))}
                   </div>
                 </CollapsibleSection>

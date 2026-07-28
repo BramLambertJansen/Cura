@@ -33,8 +33,22 @@ const sw = self as unknown as ServiceWorkerGlobalScope;
 // registerType:'prompt' — wait for the user's explicit "Vernieuwen" tap, which
 // workbox-window (useAppUpdate) turns into this SKIP_WAITING message. Without
 // this listener the in-app update toast would hang forever.
+//
+// No origin/source check here: postMessage to a service worker is only
+// reachable from a same-origin page in the first place (there is no cross-
+// origin postMessage path to a SW registration), so this assumes same-origin
+// by construction, not by omission — worth calling out explicitly since
+// there's no runtime check backing that assumption (#170).
 sw.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") void sw.skipWaiting();
+});
+
+// Without this, a newly-activated SW doesn't take control of an already-open
+// tab until that tab's next hard navigation/reload — so "Vernieuwen" (which
+// relies on the resulting `controllerchange` to actually reload) would
+// silently do nothing for a tab left open across the update (#192).
+sw.addEventListener("activate", (event) => {
+  event.waitUntil(sw.clients.claim());
 });
 
 interface ReminderPayload {
@@ -110,8 +124,15 @@ sw.addEventListener("notificationclick", (event) => {
         if (taskId) existing.postMessage({ type: "cura-open-task", taskId });
         return;
       }
-      // Cold start: the url carries ?taak=<id>, which useTaskDeepLink reads on mount.
-      await sw.clients.openWindow(url);
+      // Cold start: the url carries ?taak=<id>, which useTaskDeepLink reads on
+      // mount. `url` comes straight from the push payload (server-sent JSON,
+      // never validated) — Clients.openWindow() accepts cross-origin URLs per
+      // spec, so a forged/intercepted payload could otherwise send a
+      // notification tap to a phishing site. Resolve against our own origin
+      // and fall back to "/" for anything that isn't actually same-origin (#168).
+      const target = new URL(url, sw.location.origin);
+      const safeUrl = target.origin === sw.location.origin ? target.toString() : "/";
+      await sw.clients.openWindow(safeUrl);
     })(),
   );
 });

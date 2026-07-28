@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Droplets } from "lucide-react";
 import { SAGE } from "../lib/constants";
 import type { PullState } from "../lib/usePullToRefresh";
@@ -15,6 +15,12 @@ const ARM_AT = 58;
 export function PullToRefreshIndicator({ pull, state }: { pull: number; state: PullState }) {
   const progress = Math.min(1, pull / ARM_AT);
   const visible = state === "refreshing" || pull > 6;
+  // The `repeat: Infinity` rotation during a refresh is the one animation in
+  // this component that a global reducedMotion config can't be trusted to
+  // fully neutralize (#180) — every other animated component in the app that
+  // does something similarly continuous (Sheet's drag, TijdlijnTaakRij's
+  // peek) has its own explicit check, this one didn't.
+  const reduceMotion = useReducedMotion();
   return (
     <div
       className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center"
@@ -37,7 +43,9 @@ export function PullToRefreshIndicator({ pull, state }: { pull: number; state: P
             className={`w-10 h-10 rounded-full bg-card border border-border/60 flex items-center justify-center ${state === "refreshing" ? "skeleton-breathe" : ""}`}
             style={{ boxShadow: "var(--shadow-card-lg)", color: SAGE }}
           >
-            <motion.div animate={{ rotate: state === "refreshing" ? 360 : progress * 180 }} transition={state === "refreshing" ? { duration: 2.8, repeat: Infinity, ease: "linear" } : { duration: 0 }}>
+            <motion.div
+              animate={reduceMotion ? { rotate: 0 } : { rotate: state === "refreshing" ? 360 : progress * 180 }}
+              transition={reduceMotion || state !== "refreshing" ? { duration: 0 } : { duration: 2.8, repeat: Infinity, ease: "linear" }}>
               <Droplets size={18} aria-hidden="true" />
             </motion.div>
             <span className="sr-only">{state === "refreshing" ? "Bezig met verversen…" : "Trek omlaag om te verversen"}</span>
