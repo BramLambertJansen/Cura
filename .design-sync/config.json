@@ -19,7 +19,6 @@
     "TijdlijnTaakRij": { "cardMode": "column" },
     "SuggestieRij": { "cardMode": "column" },
     "BoodschapRij": { "cardMode": "column" },
-    "ActiviteitReacties": { "cardMode": "column" },
     "RoutineKaart": { "cardMode": "column" },
     "KamerKaart": { "cardMode": "column" },
     "KamerKunstKiezer": { "cardMode": "column" },
