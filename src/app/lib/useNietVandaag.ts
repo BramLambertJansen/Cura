@@ -1,4 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
+import { useDailyLocalState } from "./useDailyLocalState";
+
+const PREFIX = "cura:niet-vandaag";
+const EMPTY = new Set<string>();
+const decode = (raw: string): Set<string> => new Set(JSON.parse(raw));
+const encode = (value: Set<string>): string => JSON.stringify([...value]);
 
 /**
  * "Niet vandaag" is a soft, reversible dismissal of a suggestion — not a
@@ -6,42 +12,22 @@ import { useCallback, useState } from "react";
  * lives client-side only, scoped to today's date. Tomorrow the task is a
  * fresh candidate again; nothing is ever permanently hidden.
  */
-function storageKey(): string {
-  const today = new Date().toISOString().slice(0, 10);
-  return `cura:niet-vandaag:${today}`;
-}
-
-function readDismissed(): Set<string> {
-  try {
-    const raw = localStorage.getItem(storageKey());
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
 export function useNietVandaag(): { isDismissed: (taskId: string) => boolean; dismiss: (taskId: string) => void; restore: (taskId: string) => void } {
-  const [dismissed, setDismissed] = useState<Set<string>>(readDismissed);
+  const [dismissed, update] = useDailyLocalState(PREFIX, EMPTY, decode, encode);
 
   const dismiss = useCallback((taskId: string) => {
-    setDismissed((prev) => {
-      const next = new Set(prev);
-      next.add(taskId);
-      localStorage.setItem(storageKey(), JSON.stringify([...next]));
-      return next;
-    });
-  }, []);
+    update((prev) => new Set(prev).add(taskId));
+  }, [update]);
 
   // Undo — the "Ongedaan maken" toast action brings a suggestion straight back.
   const restore = useCallback((taskId: string) => {
-    setDismissed((prev) => {
+    update((prev) => {
       if (!prev.has(taskId)) return prev;
       const next = new Set(prev);
       next.delete(taskId);
-      localStorage.setItem(storageKey(), JSON.stringify([...next]));
       return next;
     });
-  }, []);
+  }, [update]);
 
   return { isDismissed: (taskId: string) => dismissed.has(taskId), dismiss, restore };
 }

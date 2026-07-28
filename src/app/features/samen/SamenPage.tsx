@@ -2,19 +2,10 @@ import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { ArrowLeft, Check } from "lucide-react";
-import { toast } from "sonner";
 import { useActivityFeed, useCurrentMember } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { useReacties, type ReactieKind } from "../../lib/useReacties";
 import { Leeg, PageHeader, Card, IconButton, Avatar } from "../../components/shared";
-import { ActiviteitReacties } from "../../components/ActiviteitReacties";
-
-const REACTIE_TOAST: Record<ReactieKind, string> = {
-  bedankt: "Bedankje verstuurd",
-  mooi_gedaan: "Mooi gedaan verstuurd",
-  volgende: "Genoteerd — jij pakt de volgende",
-};
 
 export function SamenPage() {
   const navigate = useNavigate();
@@ -25,7 +16,6 @@ export function SamenPage() {
   // direct link/refresh, where there's no navigation state to read.
   const cameFrom = (location.state as { from?: "vandaag" | "meer" } | null)?.from === "vandaag" ? "vandaag" : "meer";
   const me = useCurrentMember();
-  const { reactionFor, react } = useReacties();
 
   const sinceIso = useMemo(() => {
     const d = new Date();
@@ -76,10 +66,6 @@ export function SamenPage() {
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {activity.room}{activity.doneAt && ` · ${new Date(activity.doneAt).toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" })}`}
                       </p>
-                      <ActiviteitReacties
-                        reacted={reactionFor(activityKey)}
-                        onReact={(kind) => { react(activityKey, kind); toast(REACTIE_TOAST[kind]); }}
-                      />
                     </Card>
                   </div>
                 </motion.div>
