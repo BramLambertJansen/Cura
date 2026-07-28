@@ -33,6 +33,10 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({ routine }
   const done = routine.tasks.filter((t) => t.done).length;
   const total = routine.tasks.length;
   const allDone = total > 0 && done === total;
+  // No density hint here (unlike the full RoutineKaart below): this compact
+  // tile is a glanceable "start this" card, not the place for ratio-over-window
+  // feedback — that stays on the Routines page itself.
+  const tone = allDone ? "Rond voor nu" : total === 0 ? "Nog leeg" : null;
   return (
     <Card tone="active" className="px-3.5 py-4 flex flex-col items-start gap-2.5">
       <div className="relative">
@@ -45,8 +49,8 @@ export const RoutineKaartCompact = memo(function RoutineKaartCompact({ routine }
       </div>
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground truncate">{routine.name}</p>
-        {routineTone(routine) && (
-          <p className="text-xs text-muted-foreground mt-0.5 font-display italic truncate">{routineTone(routine)}</p>
+        {tone && (
+          <p className="text-xs text-muted-foreground mt-0.5 font-display italic truncate">{tone}</p>
         )}
       </div>
       {allDone ? (

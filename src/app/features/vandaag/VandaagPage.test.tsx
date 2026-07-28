@@ -92,7 +92,6 @@ describe("VandaagPage", () => {
 
     expect(screen.getByText("Afwas doen")).toBeInTheDocument();
     expect(screen.queryByText("Vuilnis buiten zetten")).not.toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Voortgang van vandaag" })).toHaveAttribute("aria-valuetext", "0 van 2 taken afgerond");
 
     const laterToggle = screen.getByRole("button", { name: /later vandaag/i });
     expect(laterToggle).toHaveAttribute("aria-expanded", "false");
@@ -109,8 +108,7 @@ describe("VandaagPage", () => {
 
     renderVandaag();
 
-    // Appears twice now: once in the hero card's subtitle, once in the Leeg empty state.
-    expect(screen.getAllByText(/niets op de planning\./i)).toHaveLength(2);
+    expect(screen.getByText(/niets op de planning\./i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /later vandaag/i })).not.toBeInTheDocument();
   });
 

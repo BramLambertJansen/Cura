@@ -156,15 +156,7 @@ export function VandaagPage() {
     );
   };
 
-  const pct = totalPlanned > 0 ? doneCount / totalPlanned : 0;
   const allDone = totalPlanned > 0 && doneCount === totalPlanned;
-  const heroTitle = totalPlanned === 0 ? "Rustige dag" : allDone ? "Alles rond" : doneCount === 0 ? "Klaar voor vandaag" : "Lekker op weg";
-  const heroSub =
-    totalPlanned === 0
-      ? "Niets op de planning."
-      : doneCount === 0
-        ? `${totalPlanned} ${totalPlanned === 1 ? "ding staat" : "dingen staan"} rustig klaar.`
-        : `${doneCount} van ${totalPlanned} rustig afgerond.`;
 
   return (
     <div className="relative">
@@ -182,47 +174,6 @@ export function VandaagPage() {
             {greeting.text}
           </h1>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, delay: 0.05 }}
-          className={`mt-5 rounded-[1.5rem] px-5 py-4 ${CARD_CHROME}`}
-          style={{ boxShadow: "var(--shadow-card)" }}>
-          <div className="mb-3">
-            <p className="font-display text-[1.2rem] leading-tight text-foreground">{heroTitle}</p>
-          </div>
-          <div
-            className="relative h-2.5"
-            role="progressbar"
-            aria-label="Voortgang van vandaag"
-            aria-valuemin={0}
-            aria-valuemax={Math.max(totalPlanned, 1)}
-            aria-valuenow={doneCount}
-            aria-valuetext={totalPlanned === 0 ? "Geen taken gepland" : `${doneCount} van ${totalPlanned} taken afgerond`}
-          >
-            <div className="absolute inset-x-0 top-0 h-2.5 rounded-full overflow-hidden" style={{ background: "color-mix(in srgb, var(--muted-foreground) 14%, transparent)" }}>
-              <motion.div
-                className="h-full rounded-full"
-                style={{ background: "var(--gradient-primary)" }}
-                initial={{ width: 0 }}
-                animate={{ width: `${pct * 100}%` }}
-                transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
-              />
-            </div>
-            <motion.span
-              aria-hidden="true"
-              className="absolute top-1/2 w-3 h-3 rounded-full"
-              style={{
-                background: "radial-gradient(circle at 38% 35%, color-mix(in srgb, var(--primary) 40%, white), var(--primary))",
-                boxShadow: "0 2px 8px color-mix(in srgb, var(--primary) 55%, transparent)",
-                transform: "translate(-50%, -50%)",
-              }}
-              initial={{ left: 0 }}
-              animate={{ left: `${pct * 100}%` }}
-              transition={{ duration: 0.6, ease: [0.22, 0.61, 0.36, 1] }}
-            />
-          </div>
-          <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{heroSub}</p>
-        </motion.div>
       </div>
 
       <div className="relative px-5 pb-8 space-y-8">

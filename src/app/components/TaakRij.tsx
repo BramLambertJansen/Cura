@@ -1,10 +1,10 @@
 import { memo } from "react";
 import { motion } from "motion/react";
-import { CalendarPlus, Check, RotateCcw, Timer, X } from "lucide-react";
+import { CalendarPlus, Check, Plus, RotateCcw, Timer, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { SAGE, SHADOW } from "../lib/constants";
 import { useSwipeRow } from "../lib/useSwipeRow";
-import { CARD_BORDER, Checkbox, IconButton, SwipeReveal } from "./shared";
+import { Avatar, CARD_BORDER, Checkbox, IconButton, SwipeReveal } from "./shared";
 import { TaakRijContent } from "./TaakRijContent";
 
 export const TaakRij = memo(function TaakRij({
@@ -40,7 +40,10 @@ export const TaakRij = memo(function TaakRij({
   // onDismiss (usually "niet vandaag") is what swiping left actually does.
   const canDismiss = Boolean(onDismiss);
 
-  const content = <TaakRijContent task={task} />;
+  // showClaim rows carry their own avatar claim/unclaim affordance below, so
+  // TaakRijContent's "{name} pakt dit" text badge would just repeat it —
+  // suppressed here; TijdlijnTaakRij (no claim button of its own) still needs it.
+  const content = <TaakRijContent task={task} hideClaimedLabel={showClaim} />;
   return (
     <motion.div layout animate={{ opacity: task.done ? 0.48 : 1 }} transition={{ duration: 0.28 }} className="relative">
       {/* Revealed behind the card while swiping right — the same visual language as the checked checkbox. */}
@@ -95,12 +98,17 @@ export const TaakRij = memo(function TaakRij({
             icon={<Timer size={14} aria-hidden="true" />}
           />
         )}
+        {/* Claim state as one small avatar, not a text pill: an empty dashed
+            "seat" (unclaimed, tap to plan) fills in with the claimer's initial
+            once claimed (tap to release) — replaces the old "Pak dit
+            op"/"Laat los" pills with a single, quieter affordance. */}
         {showClaim && !task.done && claimed && onUnclaim && (
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={() => onUnclaim(task.id)}
             aria-label={`Claim van ${task.title} loslaten`}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border focus-ring"
-            style={{ borderColor: "color-mix(in srgb, var(--outline-color) 24%, transparent)", color: "var(--muted-foreground)" }}>Laat los</motion.button>
+            className="flex-shrink-0 rounded-full focus-ring">
+            <Avatar name={task.claimedBy ?? "?"} size={28} />
+          </motion.button>
         )}
         {/* Keyboard/reduced-motion fallback for the swipe-right "op mijn dag
             zetten" gesture above — canPlan rows had no non-drag way to claim. */}
@@ -108,8 +116,10 @@ export const TaakRij = memo(function TaakRij({
           <motion.button whileTap={{ scale: 0.9 }}
             onClick={handlePlan}
             aria-label={`${task.title} op mijn dag zetten`}
-            className="text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 leading-none border focus-ring"
-            style={{ borderColor: "color-mix(in srgb, var(--primary) 28%, transparent)", color: SAGE }}>Pak dit op</motion.button>
+            className="flex items-center justify-center flex-shrink-0 w-7 h-7 rounded-full border-[1.5px] border-dashed focus-ring"
+            style={{ borderColor: "color-mix(in srgb, var(--primary) 38%, transparent)" }}>
+            <Plus size={13} strokeWidth={2.5} style={{ color: SAGE }} aria-hidden="true" />
+          </motion.button>
         )}
         {/* Swipe-left already does this — this is the keyboard/reduced-motion
             fallback, since the gesture alone has no non-drag equivalent (#175). */}
