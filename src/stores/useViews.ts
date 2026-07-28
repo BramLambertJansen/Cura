@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useCuraStore } from "./useCuraStore";
-import { buildLatestCompletionMap, toActivityFeed, toRoomView, toRoutineView, toShoppingList, toTaskView } from "../data/selectors";
+import { buildLatestCompletionMap, groupCompletionsByBundle, toActivityFeed, toRoomView, toRoutineView, toShoppingList, toTaskView } from "../data/selectors";
 import { useMinuteTick } from "../app/lib/useMinuteTick";
 import type { ActivityView, RoomView, RoutineView, ShoppingListView, TaskView } from "../data/types";
 
@@ -48,9 +48,12 @@ export function useRoutineViews(): RoutineView[] {
   const timeZone = useCuraStore((s) => s.households[0]?.timeZone);
   const tick = useMinuteTick();
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
+  // Indexed once per tasks/completions change instead of toRoutineView
+  // re-scanning the full completions array once PER bundle (#172).
+  const completionsByBundle = useMemo(() => groupCompletionsByBundle(tasks, completions), [tasks, completions]);
   return useMemo(
-    () => bundles.map((b) => toRoutineView(b, tasks, completions, latestByTask, members, undefined, timeZone)),
-    [bundles, tasks, completions, latestByTask, members, timeZone, tick],
+    () => bundles.map((b) => toRoutineView(b, tasks, completionsByBundle.get(b.id) ?? [], latestByTask, members, undefined, timeZone)),
+    [bundles, tasks, completionsByBundle, latestByTask, members, timeZone, tick],
   );
 }
 

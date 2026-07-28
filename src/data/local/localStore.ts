@@ -39,7 +39,13 @@ export class LocalStore implements DataStore {
   }
 
   private persist(): void {
-    DatabaseSchema.parse(this.db);
+    // No re-validation here (#171) — this.db is only ever mutated by this
+    // class's own typed methods, and the one real validation boundary is
+    // loadDatabase() on read. Re-parsing the FULL database (including the
+    // one entity that grows unbounded, completions) on every single write
+    // was a real, scaling cost with zero benefit: it can only catch a bug
+    // in this file, which typecheck already guards against structurally,
+    // and by the time it would catch one, the bad data is already in `this.db`.
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
   }
 

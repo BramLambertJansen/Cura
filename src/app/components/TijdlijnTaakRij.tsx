@@ -18,17 +18,21 @@ import { Checkbox, IconButton } from "./shared";
  */
 export const TijdlijnTaakRij = memo(forwardRef<HTMLDivElement, {
   task: TaskView;
-  onToggle: () => void;
-  onEdit?: () => void;
-  onDismiss?: () => void;
-  onStartFocus?: () => void;
+  // Id/task-based (not a per-row closure) for the same reason as TaakRij's
+  // matching prop docs — a fresh closure per render defeats memo() (#173).
+  onToggle: (taskId: string, done: boolean) => void;
+  onEdit?: (taskId: string) => void;
+  onDismiss?: (taskId: string) => void;
+  onStartFocus?: (task: TaskView) => void;
   /** One-time "peek" nudge (22px right and back) to hint that the row is swipeable — first row only, until the swipe hint is dismissed. */
   peek?: boolean;
 }>(function TijdlijnTaakRij({
   task, onToggle, onEdit, onDismiss, onStartFocus, peek,
 }, ref) {
   const claimed = !!task.claimedBy;
-  const { x, dragProps, reduceMotion } = useSwipeRow({ onToggle, onDismiss });
+  const handleToggle = () => onToggle(task.id, !task.done);
+  const handleDismiss = onDismiss ? () => onDismiss(task.id) : undefined;
+  const { x, dragProps, reduceMotion } = useSwipeRow({ onToggle: handleToggle, onDismiss: handleDismiss });
 
   useEffect(() => {
     if (!peek || reduceMotion) return;
@@ -112,10 +116,10 @@ export const TijdlijnTaakRij = memo(forwardRef<HTMLDivElement, {
         className="relative z-10 flex items-stretch gap-3 py-[0.65rem]"
         style={{ x, touchAction: "pan-y" }}>
         <div className="flex-shrink-0 flex items-center justify-center">
-          <Checkbox checked={task.done} onToggle={onToggle} label={task.done ? `${task.title} als niet gedaan markeren` : `${task.title} afvinken`} />
+          <Checkbox checked={task.done} onToggle={handleToggle} label={task.done ? `${task.title} als niet gedaan markeren` : `${task.title} afvinken`} />
         </div>
         {onEdit ? (
-          <button onClick={onEdit} aria-label={`${task.title} bewerken`} className="flex-1 min-w-0 text-left self-center cursor-pointer focus-ring rounded-lg">
+          <button onClick={() => onEdit(task.id)} aria-label={`${task.title} bewerken`} className="flex-1 min-w-0 text-left self-center cursor-pointer focus-ring rounded-lg">
             {content}
           </button>
         ) : (
@@ -125,9 +129,21 @@ export const TijdlijnTaakRij = memo(forwardRef<HTMLDivElement, {
           <div className="flex-shrink-0 self-center">
             <IconButton
               size={8}
-              onClick={onStartFocus}
+              onClick={() => onStartFocus(task)}
               label={`Focus starten op ${task.title}`}
               icon={<Timer size={14} aria-hidden="true" />}
+            />
+          </div>
+        )}
+        {/* Swipe-left already does this — this is the keyboard/reduced-motion
+            fallback, since the gesture alone has no non-drag equivalent (#175). */}
+        {canDismiss && handleDismiss && (
+          <div className="flex-shrink-0 self-center">
+            <IconButton
+              size={8}
+              onClick={handleDismiss}
+              label={`${task.title} niet vandaag`}
+              icon={<X size={13} className="text-muted-foreground" aria-hidden="true" />}
             />
           </div>
         )}

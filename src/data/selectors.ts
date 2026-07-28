@@ -191,16 +191,36 @@ function periodKey(iso: string, cadence: "daily" | "weekly"): string {
  * (soft) threshold? Partial progress counts; a missed period is just a lower
  * ratio, never a reset. Returns the numbers behind "11 van de 14 ochtenden".
  */
+/**
+ * Groups completions by the bundle their task belongs to, one pass over
+ * tasks + completions — so toRoutineView (below) can be handed just its own
+ * bundle's completions instead of re-scanning the full, unboundedly-growing
+ * completions array once per bundle (#172).
+ */
+export function groupCompletionsByBundle(tasks: Task[], completions: TaskCompletion[]): Map<string, TaskCompletion[]> {
+  const taskToBundle = new Map<string, string>();
+  for (const t of tasks) if (t.bundleId) taskToBundle.set(t.id, t.bundleId);
+  const out = new Map<string, TaskCompletion[]>();
+  for (const c of completions) {
+    const bundleId = taskToBundle.get(c.taskId);
+    if (!bundleId) continue;
+    const list = out.get(bundleId);
+    if (list) list.push(c);
+    else out.set(bundleId, [c]);
+  }
+  return out;
+}
+
 export function toRoutineView(
   bundle: Bundle,
   tasks: Task[],
-  completions: TaskCompletion[],
+  /** Already scoped to this bundle's tasks — see groupCompletionsByBundle. */
+  bundleCompletions: TaskCompletion[],
   latestByTask: Map<string, TaskCompletion>,
   members: Member[],
   now = Date.now(),
   timeZone?: string,
 ): RoutineView {
-  const bundleTaskIds = new Set(tasks.filter((t) => t.bundleId === bundle.id).map((t) => t.id));
   const windowSize = bundle.cadence === "daily" ? DAILY_WINDOW : WEEKLY_WINDOW;
   const periodMs = (bundle.cadence === "daily" ? 1 : 7) * DAY_MS;
   const cutoff = now - windowSize * periodMs;
@@ -210,8 +230,7 @@ export function toRoutineView(
   // window it never had the chance to fill.
   const perPeriod = new Map<string, number>();
   let earliestMs = Infinity;
-  for (const c of completions) {
-    if (!bundleTaskIds.has(c.taskId)) continue;
+  for (const c of bundleCompletions) {
     const ms = new Date(c.completedAt).getTime();
     if (ms < earliestMs) earliestMs = ms;
     if (ms < cutoff) continue;

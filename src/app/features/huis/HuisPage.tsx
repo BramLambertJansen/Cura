@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -40,16 +40,6 @@ export function HuisPage() {
   const claimTask = useCuraStore((s) => s.claimTask);
   const updateTask = useCuraStore((s) => s.updateTask);
   const createTasksFromTemplates = useCuraStore((s) => s.createTasksFromTemplates);
-  // Swipe-right on a pool row both plans and claims the task. Planning an
-  // unplanned task auto-claims it (useCuraStore.updateTask); a task that's
-  // already planned but unclaimed (e.g. someone let go of it via "Laat los")
-  // needs the direct claim instead, since re-setting `planned: true` on an
-  // already-planned task is a no-op transition and wouldn't claim it.
-  const planTask = (t: { id: string; title: string; planned: boolean }) => {
-    if (t.planned) claimTask(t.id, true);
-    else updateTask(t.id, { planned: true });
-    toast("Op je dag gezet", { description: `${t.title} staat klaar wanneer jij wilt.` });
-  };
   const rooms = useRoomViews();
   const tasks = useTaskViews();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
@@ -67,10 +57,41 @@ export function HuisPage() {
   // Room detail is a real route (/huis/:roomId) so the OS/browser back gesture
   // returns to this page instead of leaving Huis entirely.
   const room = rooms.find((r) => r.id === roomId);
-  const dismissWithUndo = (t: { id: string; title: string }, waar: string) => {
-    dismissTask(t.id);
-    toast("Even niet vandaag", { description: `${t.title} staat even uit ${waar}.`, action: { label: "Ongedaan maken", onClick: () => restoreTask(t.id) } });
-  };
+
+  // Stable (id-based) dispatchers for TaakRij, so its memo() actually skips
+  // re-rendering a row whose task didn't change (#173) — each looks the
+  // current task up via a ref instead of closing over `tasks` directly,
+  // which would make the callback's own identity churn every tick/mutation
+  // and defeat the memoization right back (same pattern as VandaagPage).
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
+  const handleUnclaim = useCallback((taskId: string) => { void claimTask(taskId, false); }, [claimTask]);
+  const handlePlan = useCallback(
+    (taskId: string) => {
+      const t = tasksRef.current.find((x) => x.id === taskId);
+      if (!t) return;
+      // Planning an unplanned task auto-claims it (useCuraStore.updateTask); a
+      // task that's already planned but unclaimed (e.g. someone let go of it
+      // via "Laat los") needs the direct claim instead, since re-setting
+      // `planned: true` on an already-planned task is a no-op transition and
+      // wouldn't claim it.
+      if (t.planned) claimTask(taskId, true);
+      else updateTask(taskId, { planned: true });
+      toast("Op je dag gezet", { description: `${t.title} staat klaar wanneer jij wilt.` });
+    },
+    [claimTask, updateTask],
+  );
+  const dismissWithUndo = useCallback(
+    (taskId: string, waar: string) => {
+      const t = tasksRef.current.find((x) => x.id === taskId);
+      if (!t) return;
+      dismissTask(taskId);
+      toast("Even niet vandaag", { description: `${t.title} staat even uit ${waar}.`, action: { label: "Ongedaan maken", onClick: () => restoreTask(taskId) } });
+    },
+    [dismissTask, restoreTask],
+  );
+  const handleDismissRoomList = useCallback((taskId: string) => dismissWithUndo(taskId, "deze lijst"), [dismissWithUndo]);
+  const handleDismissAllTasks = useCallback((taskId: string) => dismissWithUndo(taskId, "alle taken"), [dismissWithUndo]);
 
   const visibleTasks = useMemo(() => tasks.filter((t) => !isTaskDismissed(t.id)), [tasks, isTaskDismissed]);
   const filteredTasks = useMemo(
@@ -150,19 +171,19 @@ export function HuisPage() {
                   <motion.div key={t.id} variants={fadeUp}>
                     <TaakRij
                       task={t}
-                      onToggle={() => toggleTask(t.id, !t.done)}
+                      onToggle={toggleTask}
                       showClaim
-                      onPlan={() => planTask(t)}
-                      onUnclaim={() => claimTask(t.id, false)}
-                      onEdit={() => openEditTask(t.id)}
-                      onDismiss={() => dismissWithUndo(t, "deze lijst")}
-                      onStartFocus={() => startFocus(t)}
+                      onPlan={handlePlan}
+                      onUnclaim={handleUnclaim}
+                      onEdit={openEditTask}
+                      onDismiss={handleDismissRoomList}
+                      onStartFocus={startFocus}
                     />
                   </motion.div>
                 ))}
               </motion.div>
               {done.map((t) => (
-                <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "deze lijst")} />
+                <TaakRij key={t.id} task={t} onToggle={toggleTask} onEdit={openEditTask} onDismiss={handleDismissRoomList} />
               ))}
             </>
           )}
@@ -293,7 +314,7 @@ export function HuisPage() {
                 <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
                   {openTasks.map((t) => (
                     <motion.div key={t.id} variants={fadeUp}>
-                      <TaakRij task={t} onToggle={() => toggleTask(t.id, !t.done)} showClaim onPlan={() => planTask(t)} onUnclaim={() => claimTask(t.id, false)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} onStartFocus={() => startFocus(t)} />
+                      <TaakRij task={t} onToggle={toggleTask} showClaim onPlan={handlePlan} onUnclaim={handleUnclaim} onEdit={openEditTask} onDismiss={handleDismissAllTasks} onStartFocus={startFocus} />
                     </motion.div>
                   ))}
                 </motion.div>
@@ -309,7 +330,7 @@ export function HuisPage() {
                   onToggle={() => setAfgerondOpen((v) => !v)}>
                   <div className="space-y-3">
                     {doneTasks.map((t) => (
-                      <TaakRij key={t.id} task={t} onToggle={() => toggleTask(t.id, !t.done)} onEdit={() => openEditTask(t.id)} onDismiss={() => dismissWithUndo(t, "alle taken")} />
+                      <TaakRij key={t.id} task={t} onToggle={toggleTask} onEdit={openEditTask} onDismiss={handleDismissAllTasks} />
                     ))}
                   </div>
                 </CollapsibleSection>
