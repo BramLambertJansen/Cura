@@ -32,7 +32,7 @@ function fieldStyle(active: boolean, hasValue: boolean) {
  *    Adding keeps the sheet open and refocuses, so several items go in a row.
  *  - "beheren": manage the snel-toevoegen shortcuts (remove / add new).
  */
-export function BoodschapToevoegSheet(props: { onClose: () => void; headerExtra?: ReactNode }) {
+export function BoodschapToevoegSheet(props: { onClose: () => void; headerExtra?: ReactNode; autoFocusTitle?: boolean }) {
   return (
     <Sheet onClose={props.onClose} tall>
       <BoodschapToevoegSheetBody {...props} />
@@ -43,8 +43,13 @@ export function BoodschapToevoegSheet(props: { onClose: () => void; headerExtra?
 /**
  * Body-only variant, for a caller that owns the `Sheet` shell itself — see
  * AddTaskSheetBody for why the FAB's add-flow needs that.
+ *
+ * `autoFocusTitle` exists for that same shared shell: opening the sheet on this
+ * form may focus the title field, but *switching* to it with the Taak/Boodschap
+ * toggle must not — the sheet is already open and grabbing focus (plus the
+ * keyboard) mid-flow reads as the field jumping at you.
  */
-export function BoodschapToevoegSheetBody({ onClose, headerExtra }: { onClose: () => void; headerExtra?: ReactNode }) {
+export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle = true }: { onClose: () => void; headerExtra?: ReactNode; autoFocusTitle?: boolean }) {
   const createShoppingItem = useCuraStore((s) => s.createShoppingItem);
   const shoppingItems = useCuraStore((s) => s.shoppingItems);
   const { items: quickItems, addQuickItem, removeQuickItem } = useQuickShoppingItems();
@@ -236,7 +241,7 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra }: { onClose: (
 
           <input
             ref={titleRef}
-            autoFocus
+            autoFocus={autoFocusTitle}
             value={title}
             onChange={(e) => changeTitle(e.target.value)}
             onFocus={() => setTitleActive(true)}

@@ -1,9 +1,9 @@
 import { forwardRef, memo, useEffect } from "react";
 import { animate, motion } from "motion/react";
-import { Check, RotateCcw, Timer, X } from "lucide-react";
+import { Check, RotateCcw, X } from "lucide-react";
 import type { TaskView } from "../../data/types";
 import { useSwipeRow } from "../lib/useSwipeRow";
-import { Checkbox, IconButton, SwipeReveal } from "./shared";
+import { Checkbox, SwipeReveal } from "./shared";
 import { TaakRijContent } from "./TaakRijContent";
 
 /**
@@ -14,6 +14,11 @@ import { TaakRijContent } from "./TaakRijContent";
  * interval/wekker/claimed badges) mirrors TaakRij exactly — both share the
  * drag mechanics via `useSwipeRow` — so the interaction language stays one
  * thing across Vandaag/Huis/Taken; only the visual shell differs here.
+ *
+ * Deliberately carries no trailing icon-buttons (no focus-timer, no "niet
+ * vandaag" ×): Vandaag's rows stay a calm title + checkbox, and the swipe
+ * gestures are the way to postpone here. TaakRij still has both, so Taken/Huis
+ * are unaffected.
  */
 export const TijdlijnTaakRij = memo(forwardRef<HTMLDivElement, {
   task: TaskView;
@@ -22,11 +27,10 @@ export const TijdlijnTaakRij = memo(forwardRef<HTMLDivElement, {
   onToggle: (taskId: string, done: boolean) => void;
   onEdit?: (taskId: string) => void;
   onDismiss?: (taskId: string) => void;
-  onStartFocus?: (task: TaskView) => void;
   /** One-time "peek" nudge (22px right and back) to hint that the row is swipeable — first row only, until the swipe hint is dismissed. */
   peek?: boolean;
 }>(function TijdlijnTaakRij({
-  task, onToggle, onEdit, onDismiss, onStartFocus, peek,
+  task, onToggle, onEdit, onDismiss, peek,
 }, ref) {
   const handleToggle = () => onToggle(task.id, !task.done);
   const handleDismiss = onDismiss ? () => onDismiss(task.id) : undefined;
@@ -74,28 +78,6 @@ export const TijdlijnTaakRij = memo(forwardRef<HTMLDivElement, {
           </button>
         ) : (
           <div className="flex-1 min-w-0 self-center">{content}</div>
-        )}
-        {onStartFocus && !task.done && (
-          <div className="flex-shrink-0 self-center">
-            <IconButton
-              size={8}
-              onClick={() => onStartFocus(task)}
-              label={`Focus starten op ${task.title}`}
-              icon={<Timer size={14} aria-hidden="true" />}
-            />
-          </div>
-        )}
-        {/* Swipe-left already does this — this is the keyboard/reduced-motion
-            fallback, since the gesture alone has no non-drag equivalent (#175). */}
-        {canDismiss && handleDismiss && (
-          <div className="flex-shrink-0 self-center">
-            <IconButton
-              size={8}
-              onClick={handleDismiss}
-              label={`${task.title} niet vandaag`}
-              icon={<X size={13} className="text-muted-foreground" aria-hidden="true" />}
-            />
-          </div>
         )}
       </motion.div>
     </motion.div>

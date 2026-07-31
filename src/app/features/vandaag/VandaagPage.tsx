@@ -12,7 +12,6 @@ import { stagger, fadeUp } from "../../lib/motion";
 import { useNietVandaag } from "../../lib/useNietVandaag";
 import { useTaskDismissals } from "../../lib/useTaskDismissals";
 import { useSwipeHint } from "../../lib/useSwipeHint";
-import { useStartFocus } from "../../lib/useStartFocus";
 import { SAGE } from "../../lib/constants";
 import { Avatar, Card, CARD_CHROME, CollapsibleSection, IconBadge, IconButton, Kop, Leeg } from "../../components/shared";
 import { PageBanner } from "../../components/PageBanner";
@@ -40,7 +39,6 @@ export function VandaagPage() {
   const { isDismissed, dismiss, restore } = useNietVandaag();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
   const swipeHint = useSwipeHint();
-  const startFocus = useStartFocus();
   // A stable "dismiss this task" dispatcher for TijdlijnTaakRij's onDismiss
   // (#173/#175): looks the task up fresh via a ref instead of closing over
   // the `tasks` view-model array directly, which would make this callback's
@@ -146,7 +144,6 @@ export function VandaagPage() {
                 onToggle={toggleTask}
                 onEdit={openEditTask}
                 onDismiss={handleDismissTask}
-                onStartFocus={startFocus}
                 peek={!swipeHint.seen && task.id === firstTaskId}
               />
             ))}
@@ -225,7 +222,6 @@ export function VandaagPage() {
                         task={task}
                         onToggle={toggleTask}
                         onEdit={openEditTask}
-                        onStartFocus={startFocus}
                         peek={!swipeHint.seen && task.id === firstTaskId}
                       />
                     ))}
