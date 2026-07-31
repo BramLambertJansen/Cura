@@ -23,7 +23,7 @@ import { PullToRefreshIndicator } from "./components/PullToRefreshIndicator";
 import { FocusMiniPill } from "./components/FocusMiniPill";
 import { usePullToRefresh } from "./lib/usePullToRefresh";
 import { SheetContext, type SheetActions } from "./sheetContext";
-import { KeuzeChip } from "./components/shared";
+import { KeuzeChip, Sheet } from "./components/shared";
 
 // Route-level code splitting — each tab/screen becomes its own chunk instead
 // of shipping in the single main bundle (CLAUDE.md §9 build verification).
@@ -43,8 +43,8 @@ const ResetPasswordPage = lazy(() => import("./features/auth/ResetPasswordPage")
 const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPage").then((m) => ({ default: m.OnboardingIntroPage })));
 const CreateHouseholdPage = lazy(() => import("./features/auth/CreateHouseholdPage").then((m) => ({ default: m.CreateHouseholdPage })));
 const AcceptInvitePage = lazy(() => import("./features/invite/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
-const AddTaskSheet = lazy(() => import("./sheets/AddTaskSheet").then((m) => ({ default: m.AddTaskSheet })));
 const BoodschapToevoegSheet = lazy(() => import("./sheets/BoodschapToevoegSheet").then((m) => ({ default: m.BoodschapToevoegSheet })));
+const AddFlowBody = lazy(() => import("./sheets/AddFlowBody").then((m) => ({ default: m.AddFlowBody })));
 const EditTaskSheet = lazy(() => import("./sheets/EditTaskSheet").then((m) => ({ default: m.EditTaskSheet })));
 const NewRoomSheet = lazy(() => import("./sheets/NewRoomSheet").then((m) => ({ default: m.NewRoomSheet })));
 const EditRoomSheet = lazy(() => import("./sheets/EditRoomSheet").then((m) => ({ default: m.EditRoomSheet })));
@@ -238,22 +238,23 @@ function MainShell() {
 
         <AnimatePresence>
           {showAdd && (
-            <LazyOverlay key="add">
-              {addMode === "taak"
-                ? (
-                  <AddTaskSheet
-                    roomId={addRoomId}
-                    onClose={() => setShowAdd(false)}
-                    headerExtra={<AddModeToggle mode={addMode} onChange={setAddMode} />}
-                  />
-                )
-                : (
-                  <BoodschapToevoegSheet
-                    onClose={() => setShowAdd(false)}
-                    headerExtra={<AddModeToggle mode={addMode} onChange={setAddMode} />}
-                  />
-                )}
-            </LazyOverlay>
+            // One persistent shell for both modes: only the body swaps, so the
+            // Taak ⇄ Boodschap toggle cross-fades in place instead of tearing
+            // the whole sheet down and sliding a new one back up.
+            <Sheet key="add" onClose={() => setShowAdd(false)} tall={addMode === "boodschap"}>
+              {/* Suspense sits INSIDE the shell on purpose: a boundary above it
+                  would unmount the whole Sheet the first time the other body's
+                  chunk suspends, replaying the slide-up — exactly the flicker
+                  this shared shell exists to avoid. */}
+              <Suspense fallback={null}>
+                <AddFlowBody
+                  mode={addMode}
+                  roomId={addRoomId}
+                  onClose={() => setShowAdd(false)}
+                  headerExtra={<AddModeToggle mode={addMode} onChange={setAddMode} />}
+                />
+              </Suspense>
+            </Sheet>
           )}
           {showAddBoodschap && <LazyOverlay key="add-boodschap"><BoodschapToevoegSheet onClose={() => setShowAddBoodschap(false)} /></LazyOverlay>}
           {editingTaskId && <LazyOverlay key="edit-task"><EditTaskSheet taskId={editingTaskId} onClose={() => setEditingTaskId(null)} /></LazyOverlay>}

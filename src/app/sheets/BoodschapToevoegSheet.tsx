@@ -32,7 +32,19 @@ function fieldStyle(active: boolean, hasValue: boolean) {
  *    Adding keeps the sheet open and refocuses, so several items go in a row.
  *  - "beheren": manage the snel-toevoegen shortcuts (remove / add new).
  */
-export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () => void; headerExtra?: ReactNode }) {
+export function BoodschapToevoegSheet(props: { onClose: () => void; headerExtra?: ReactNode }) {
+  return (
+    <Sheet onClose={props.onClose} tall>
+      <BoodschapToevoegSheetBody {...props} />
+    </Sheet>
+  );
+}
+
+/**
+ * Body-only variant, for a caller that owns the `Sheet` shell itself — see
+ * AddTaskSheetBody for why the FAB's add-flow needs that.
+ */
+export function BoodschapToevoegSheetBody({ onClose, headerExtra }: { onClose: () => void; headerExtra?: ReactNode }) {
   const createShoppingItem = useCuraStore((s) => s.createShoppingItem);
   const shoppingItems = useCuraStore((s) => s.shoppingItems);
   const { items: quickItems, addQuickItem, removeQuickItem } = useQuickShoppingItems();
@@ -147,7 +159,7 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
   const showSuggestionsSection = title.trim() === "";
 
   return (
-    <Sheet onClose={onClose} tall>
+    <>
       {manageOpen ? (
         <>
           <div className="flex items-center gap-3 mb-6">
@@ -363,6 +375,6 @@ export function BoodschapToevoegSheet({ onClose, headerExtra }: { onClose: () =>
           </div>
         </>
       )}
-    </Sheet>
+    </>
   );
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sun, Sunrise, X } from "lucide-react";
+import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sun, Sunrise, Undo2, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useActivityFeed, useCurrentMember, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen, splitPickedUpToday } from "../../../data/selectors";
@@ -282,7 +282,18 @@ export function VandaagPage() {
                             </span>
                           )}
                         </span>
-                        <span className="text-xs flex-shrink-0 self-start" style={{ color: "var(--muted-foreground)" }}>terug</span>
+                        {/* Round undo affordance instead of the bare word
+                            "terug": it sits centred and matches the pencil
+                            button next to it, so the row reads as two equal
+                            actions rather than a stray label hanging in the
+                            corner. The row's own aria-label still spells out
+                            what tapping does, so this stays decorative. */}
+                        <span
+                          aria-hidden="true"
+                          className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center"
+                          style={{ background: "color-mix(in srgb, var(--muted) 55%, transparent)" }}>
+                          <Undo2 size={13} className="text-muted-foreground" />
+                        </span>
                       </button>
                       <IconButton
                         size={8}

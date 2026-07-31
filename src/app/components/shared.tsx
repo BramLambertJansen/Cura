@@ -837,7 +837,10 @@ export function StatusBadge({
     : { initial: { opacity: 0, x: -4 }, animate: { opacity: 1, x: 0 } };
   return (
     <motion.span {...anim}
-      className="text-xs font-semibold px-2 py-0.5 rounded-full"
+      // A pill must never break across lines — an inline span that wraps mid-
+      // label renders as two half-pills (KamerKaart's "Verdient aandacht" in a
+      // narrow column did exactly that).
+      className="text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
       style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
       {children}
     </motion.span>

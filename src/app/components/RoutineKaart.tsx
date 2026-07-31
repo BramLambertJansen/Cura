@@ -6,15 +6,6 @@ import type { RoutineView } from "../../data/types";
 import { PRESS_TINT, SAGE, SHADOW } from "../lib/constants";
 import { CARD_CHROME, RingProgress, Card, PillButton, StatusBadge } from "./shared";
 
-function routineTone(routine: RoutineView): string | null {
-  const done = routine.tasks.filter((t) => t.done).length;
-  const total = routine.tasks.length;
-  if (total > 0 && done === total) return "Rond voor nu";
-  if (routine.windowSize > 0) return routine.hint;
-  if (total > 0) return null;
-  return "Nog leeg";
-}
-
 function routineWindowLine(routine: RoutineView): string | null {
   if (routine.windowSize <= 0) return null;
   return `${routine.doneInWindow} van ${routine.windowSize} ${routine.windowLabel}`;

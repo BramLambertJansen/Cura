@@ -3,12 +3,19 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, SlidersHorizontal, Sun } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoomViews } from "../../stores/useViews";
-import { FieldShell, Sheet, SheetHeader, Toggle, VeldInput, DubbelKnop } from "../components/shared";
+import { FieldShell, SheetHeader, Toggle, VeldInput, DubbelKnop } from "../components/shared";
 import { TaskFormFields, DagdeelKiezer, buildDueDate, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
 import { SAGE } from "../lib/constants";
 
-export function AddTaskSheet({ roomId, onClose, headerExtra }: { roomId?: string | null; onClose: () => void; headerExtra?: ReactNode }) {
+/**
+ * Body of the "taak toevoegen" sheet — content only, no `Sheet` shell: its only
+ * caller (App.tsx's FAB add-flow) owns one persistent shell and swaps this and
+ * BoodschapToevoegSheetBody inside it. Mounting two whole sheets there would
+ * replay the slide-up + backdrop-fade on every Taak/Boodschap toggle press,
+ * which reads as the sheet flickering shut and open again.
+ */
+export function AddTaskSheetBody({ roomId, onClose, headerExtra }: { roomId?: string | null; onClose: () => void; headerExtra?: ReactNode }) {
   const createTask = useCuraStore((s) => s.createTask);
   const rooms = useRoomViews();
   const [title, setTitle] = useState("");
@@ -64,7 +71,7 @@ export function AddTaskSheet({ roomId, onClose, headerExtra }: { roomId?: string
   }
 
   return (
-    <Sheet onClose={onClose}>
+    <>
       <SheetHeader title="Taak toevoegen" onClose={onClose} />
       {headerExtra}
       <VeldInput value={title} onChange={setTitle} onEnter={handleAdd} placeholder="Wat moet er gebeuren?" />
@@ -143,6 +150,6 @@ export function AddTaskSheet({ roomId, onClose, headerExtra }: { roomId?: string
 
       <DubbelKnop onCancel={onClose} onConfirm={handleAdd} label="Toevoegen"
         disabled={!title.trim() || (formState.wekkerAan && !formState.herhalenAan && !formState.wekkerDatum)} />
-    </Sheet>
+    </>
   );
 }
