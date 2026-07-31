@@ -184,6 +184,8 @@ VITE_VAPID_PUBLIC_KEY=...
 
 **3. Database in sync houden** — migraties in `supabase/migrations/` worden **niet automatisch toegepast**; elke nieuwe migratie moet je zelf via de Supabase Dashboard SQL-editor draaien op het productieproject nadat de PR gemerged is. Controleer na elke merge die een nieuw bestand in `supabase/migrations/` bevat of die stap ook echt is gebeurd — een migratie die alleen in de repo staat heeft in productie geen effect. Controleer daarbij ook dat de betrokken tabellen in de `supabase_realtime`-publicatie zitten als de migratie een nieuwe tabel toevoegt die live moet verversen (§3/§4 in `CLAUDE.md`).
 
+Omdat migraties handmatig gaan, is er ook geen `supabase_migrations`-tabel die bijhoudt wat er al gedraaid heeft. Gebruik daarvoor **[`supabase/check_migrations.sql`](./supabase/check_migrations.sql)**: plak dat bestand in de SQL-editor en draai het (read-only). Je krijgt één rij per migratie met `OK` of `ONTBREEKT` plus welk object er precies mist, zodat je gericht alleen de ontbrekende migratiebestanden hoeft na te draaien — in bestandsnaam-volgorde. Werk dat script bij zodra je een migratie toevoegt.
+
 **4. Na een deploy** — een snelle rooktest: inloggen, een taak aanmaken/afvinken, en (in cloud mode) controleren dat Realtime tussen twee sessies werkt en dat een testmelding via de wekker-flow aankomt.
 
 ## Werken aan de app
