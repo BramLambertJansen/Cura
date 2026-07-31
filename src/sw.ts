@@ -1,16 +1,19 @@
 /// <reference lib="webworker" />
-import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
+import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from "workbox-precaching";
+import { NavigationRoute, registerRoute } from "workbox-routing";
 
 /**
  * Cura service worker (vite-plugin-pwa `injectManifest`).
  *
- * Three jobs:
+ * Four jobs:
  *  1. Offline precache (Workbox) — what generateSW did before the switch.
- *  2. The 'prompt' update flow — activate a waiting worker ONLY when the app
+ *  2. The SPA navigation fallback — also something generateSW used to give us
+ *     for free (see below); without it the app can't start offline.
+ *  3. The 'prompt' update flow — activate a waiting worker ONLY when the app
  *     posts SKIP_WAITING (never unconditionally: that would silently become
  *     autoUpdate and reload mid-task, the opposite of calm — see vite.config.ts
  *     and useAppUpdate).
- *  3. Web Push — show a wekker notification when the app is closed, or hand it
+ *  4. Web Push — show a wekker notification when the app is closed, or hand it
  *     to a visible tab (which shows an in-app toast via useTaskReminders) so the
  *     user never gets both an OS notification and an in-app one for one wekker.
  */
@@ -27,6 +30,28 @@ declare global {
 
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
+
+/**
+ * SPA navigation fallback — serve the precached index.html for every navigation,
+ * so a deep route (/vandaag, /huis/:id, /boodschappen, …) resolves from cache
+ * instead of hitting the network for a URL that only exists as a Vercel rewrite.
+ *
+ * This is NOT optional polish: without it the app cannot start offline anywhere
+ * except "/". The precache route only matches real files, so every other route
+ * fell through to the network and a phone on no/flaky mobile data got the
+ * browser's network-error page instead of Cura. `generateSW` injected this
+ * automatically (its `navigateFallback` default is 'index.html'); moving to a
+ * hand-written `injectManifest` worker for push silently dropped it — so if this
+ * worker is ever rewritten, this route has to come along.
+ *
+ * `denylist`: /api and anything with a file extension keep going to the network,
+ * so a future server route can never be swallowed by the app shell.
+ */
+registerRoute(
+  new NavigationRoute(createHandlerBoundToURL("index.html"), {
+    denylist: [/^\/api\//, /\/[^/?]+\.[^/]+$/],
+  }),
+);
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
