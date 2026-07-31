@@ -232,8 +232,13 @@ export const useCuraStore = create<CuraState>((set, get) => ({
     try {
       set({ initError: null });
       const store = await getDataStore();
-      const userId = await store.currentUserId();
-      const households = await store.getHouseholdsForUser(userId);
+      // Bounded like the six LISTs below, and for exactly the same reason: both
+      // are network round-trips in cloud mode (auth.getUser + a household_members
+      // select), and an unbounded await here left the app on its startup skeleton
+      // forever with no error and no retry — the lists' own timeouts never got a
+      // chance to matter because we never reached them (#188's gap).
+      const userId = await withTimeout(store.currentUserId(), LIST_TIMEOUT_MS);
+      const households = await withTimeout(store.getHouseholdsForUser(userId), LIST_TIMEOUT_MS);
       const household = households[0];
       if (!household) {
         // Degrade gracefully rather than crash — there's always exactly one
