@@ -18,14 +18,14 @@
  */
 
 /**
- * Naam van de verwerkingsverantwoordelijke (AVG art. 13 lid 1 sub a).
- * Vervang door de naam van de rechtspersoon zodra die er is; de teksten
- * hieronder lezen met zowel deze omschrijving als een echte bedrijfsnaam.
+ * Naam van de verwerkingsverantwoordelijke (AVG art. 13 lid 1 sub a). Cura
+ * wordt door één persoon gemaakt en beheerd; komt er later een rechtspersoon,
+ * dan hoort hier die naam te staan (de teksten lezen met beide).
  */
-export const VERANTWOORDELIJKE = "het team achter Cura";
+export const VERANTWOORDELIJKE = "Bram Jansen";
 
 /** Kanaal voor privacyvragen én AVG-verzoeken (inzage, verwijdering, …). */
-export const CONTACT_EMAIL = "privacy@cura.app";
+export const CONTACT_EMAIL = "bramjansen3@gmail.com";
 
 /** Datum van de laatste inhoudelijke wijziging aan de teksten hieronder. */
 export const LAATST_BIJGEWERKT = "31 juli 2026";
@@ -80,7 +80,7 @@ export const PRIVACY: JuridischDocument = {
       blokken: [
         {
           type: "alinea",
-          text: `Cura wordt gemaakt en beheerd door ${VERANTWOORDELIJKE}, tevens de verwerkingsverantwoordelijke in de zin van de Algemene verordening gegevensbescherming (AVG).`,
+          text: `Cura wordt gemaakt en beheerd door ${VERANTWOORDELIJKE}, tevens de verwerkingsverantwoordelijke in de zin van de Algemene verordening gegevensbescherming (AVG). Cura is een persoonlijk project, geen bedrijf — "we" in deze verklaring is dus één maker.`,
         },
         {
           type: "alinea",
@@ -331,7 +331,7 @@ export const VOORWAARDEN: JuridischDocument = {
       blokken: [
         {
           type: "alinea",
-          text: `Deze voorwaarden gelden als je Cura gebruikt. Cura wordt aangeboden door ${VERANTWOORDELIJKE} ("wij"). Ben je het er niet mee eens, gebruik de app dan niet.`,
+          text: `Deze voorwaarden gelden als je Cura gebruikt. Cura wordt aangeboden door ${VERANTWOORDELIJKE} (hierna "we" of "wij"), als persoonlijk project. Ben je het er niet mee eens, gebruik de app dan niet.`,
         },
         {
           type: "alinea",
