@@ -43,6 +43,8 @@ const ResetPasswordPage = lazy(() => import("./features/auth/ResetPasswordPage")
 const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPage").then((m) => ({ default: m.OnboardingIntroPage })));
 const CreateHouseholdPage = lazy(() => import("./features/auth/CreateHouseholdPage").then((m) => ({ default: m.CreateHouseholdPage })));
 const AcceptInvitePage = lazy(() => import("./features/invite/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
+const PrivacyPage = lazy(() => import("./features/juridisch/PrivacyPage").then((m) => ({ default: m.PrivacyPage })));
+const VoorwaardenPage = lazy(() => import("./features/juridisch/VoorwaardenPage").then((m) => ({ default: m.VoorwaardenPage })));
 const BoodschapToevoegSheet = lazy(() => import("./sheets/BoodschapToevoegSheet").then((m) => ({ default: m.BoodschapToevoegSheet })));
 const AddFlowBody = lazy(() => import("./sheets/AddFlowBody").then((m) => ({ default: m.AddFlowBody })));
 const EditTaskSheet = lazy(() => import("./sheets/EditTaskSheet").then((m) => ({ default: m.EditTaskSheet })));
@@ -355,6 +357,12 @@ export default function App() {
         <ErrorBoundary>
           <Routes>
             <Route path="/uitnodiging/:token" element={<Suspense fallback={<FullScreenSkeleton />}><AcceptInvitePage /></Suspense>} />
+            {/* Buiten de Gate, net als de uitnodigingsroute: een privacy-
+                verklaring/voorwaarden moeten ook zonder account te lezen zijn
+                (de inlogpagina linkt er zelf naartoe), dus geen auth-gate en
+                geen MainShell — deze pagina's regelen hun eigen scroll. */}
+            <Route path="/privacy" element={<Suspense fallback={<FullScreenSkeleton />}><PrivacyPage /></Suspense>} />
+            <Route path="/voorwaarden" element={<Suspense fallback={<FullScreenSkeleton />}><VoorwaardenPage /></Suspense>} />
             <Route path="/*" element={<Gate />} />
           </Routes>
         </ErrorBoundary>

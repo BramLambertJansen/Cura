@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { Heart, Link2, UserRound, ListChecks, Timer, ShoppingCart, ChevronRight } from "lucide-react";
+import { Heart, Link2, UserRound, ListChecks, Timer, ShoppingCart, ShieldCheck, ScrollText, ChevronRight } from "lucide-react";
 import { useSheets } from "../../sheetContext";
 import { stagger, fadeUp } from "../../lib/motion";
 import { Kop, PageHeader, IconBadge, Card } from "../../components/shared";
@@ -42,6 +42,13 @@ export function MeerPage() {
       items: [
         { icon: <Link2 size={16} />, label: "Huishouden beheren", hint: "Naam, leden en uitnodigen", onClick: openHousehold },
         { icon: <UserRound size={16} />, label: "Account beheren", hint: "Naam, meldingen en uitloggen", onClick: openProfiel },
+      ],
+    },
+    {
+      title: "Over Cura",
+      items: [
+        { icon: <ShieldCheck size={16} />, label: "Privacy", hint: "Wat we bewaren, en waarom", onClick: () => navigate("/privacy") },
+        { icon: <ScrollText size={16} />, label: "Voorwaarden", hint: "De afspraken tussen jou en Cura", onClick: () => navigate("/voorwaarden") },
       ],
     },
   ];
