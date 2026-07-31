@@ -94,11 +94,6 @@ export const RoutineKaart = memo(function RoutineKaart({
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{routine.trigger}</p>
-          {routineTone(routine) && (
-            <p className="text-xs mt-1 leading-snug font-display italic" style={{ color: "var(--muted-foreground)" }}>
-              {routineTone(routine)}
-            </p>
-          )}
           {routineWindowLine(routine) && (
             <p className="text-[0.68rem] text-muted-foreground mt-1">{routineWindowLine(routine)}</p>
           )}

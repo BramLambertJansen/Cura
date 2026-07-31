@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../auth/AuthProvider";
-import { AppBackground } from "../../components/AppBackground";
 import { LandingHeader } from "../../components/LandingHeader";
 import { Logo } from "../../components/Logo";
 import { Card } from "../../components/shared";
@@ -73,7 +72,6 @@ export function AuthPage() {
         paddingRight: "var(--safe-right)",
       }}
     >
-      <AppBackground />
       <LandingHeader className="h-[36vh] min-h-[13rem] max-h-80 shrink-0 z-0" />
 
       <main className="w-full max-w-sm px-6 -mt-24 relative z-10 flex flex-col">
