@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Check, RotateCcw } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useCurrentMember, useRoomViews, useTaskView } from "../../stores/useViews";
-import { Sheet, SheetHeader, VeldInput, DubbelKnop, VerwijderKnop, PrimaryButton, Kop, KeuzeChip } from "../components/shared";
+import { Sheet, SheetHeader, VeldInput, VerwijderKnop, PrimaryButton, Kop, KeuzeChip } from "../components/shared";
 import { SAGE } from "../lib/constants";
 import { TaskFormFields, buildDueDate, addLocalDay, extractTijd, type TaskFormState } from "./TaskFormFields";
 import { requestNotificationPermission } from "../lib/useTaskReminders";
@@ -154,8 +154,10 @@ export function EditTaskSheet({ taskId, onClose }: { taskId: string; onClose: ()
       />
 
       <div className="mt-2 mb-4">
-        <DubbelKnop onCancel={onClose} onConfirm={save} label="Opslaan"
-          disabled={!title.trim() || (formState.wekkerAan && !formState.herhalenAan && !formState.wekkerDatum)} />
+        <PrimaryButton onClick={save}
+          disabled={!title.trim() || (formState.wekkerAan && !formState.herhalenAan && !formState.wekkerDatum)}>
+          Opslaan
+        </PrimaryButton>
       </div>
       <VerwijderKnop label="Taak verwijderen" onConfirm={remove} />
     </Sheet>
