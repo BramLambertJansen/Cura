@@ -106,7 +106,7 @@ Symptom if missing: PageHeader, Leeg, and every list-row/feed component
 The capture server and the DS upload serve only `ds-bundle/`, which has no
 `public/` assets, and the converter does not ship arbitrary public assets.
 Components that load images via absolute `/…` paths therefore can't show art:
-- **Room art** (`public/rooms/*.png`): KamerKaart / KamerKunstKiezer / RoomArt /
+- **Room art** (`public/rooms/*.webp` — converted from PNG in #199): KamerKaart / KamerKunstKiezer / RoomArt /
   RoomHero / RoomThumb render their DESIGNED FALLBACK (tinted wash + line icon) —
   a legitimate art-less-room state (CLAUDE.md §3 "degrade gracefully"). Authored
   and graded on the fallback.
