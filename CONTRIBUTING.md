@@ -31,19 +31,20 @@ pnpm test
 pnpm build
 ```
 
-- `pnpm typecheck` (`tsc --noEmit`) is **verplicht** bij elke data-layer wijziging (`CLAUDE.md` §8).
-- `pnpm test` (`vitest run`) dekt de pure domeinlogica in `src/data/selectors.ts`.
+- `pnpm typecheck` (app + service worker) is **verplicht** bij elke data-layer wijziging (`CLAUDE.md` §8).
+- `pnpm test` (`vitest run`) dekt pure domeinlogica (selectors, reminders, schema's), de store/datalaag, en een dunne laag hook- en pagina-smoketests. Raakt je wijziging een selector, de store of een van de geteste schermen, voeg dan een test toe in dezelfde PR.
 - Bij UI-wijzigingen: doe een lokale visuele check in de browser; bij merkbare webapp-wijzigingen hoort ook een screenshot in de werkcontext.
 
-Er is nog geen lint-script of CI-workflow in deze repo; typecheck en test zijn de geautomatiseerde poort. Voeg je linting/CI toe, werk dan `CLAUDE.md` §9 en `README.md` bij.
+Er is nog geen lint-script of CI-workflow-bestand in deze repo; typecheck, test en build zijn de poort en je draait ze zelf. Voeg je linting/CI toe, werk dan `CLAUDE.md` §9 en `README.md` bij.
 
 ## Documentatie bijwerken
 
 Docs horen bij de code — werk ze in dezelfde PR bij:
 
-- Feature toegevoegd/verwijderd/van fase veranderd → werk de feature-map in [`CLAUDE.md` §5](./CLAUDE.md) én de phasing-tabel in §4 bij.
+- Feature toegevoegd/verwijderd/van fase veranderd → werk de feature-map in [`CLAUDE.md` §5](./CLAUDE.md) én de phasing-tabel in §4 bij. **Verwijder je iets, haal het dan ook echt uit de docs** — een beschrijving van een component dat niet meer bestaat kost een volgende lezer meer tijd dan een ontbrekende regel.
 - Scripts, setup, env of stack gewijzigd → werk `CLAUDE.md` §9/§10 en `README.md` bij.
-- Nieuw herbruikbaar component → voeg het toe aan de design-system-pagina (`CLAUDE.md` §7).
+- Nieuw herbruikbaar component → voeg het toe aan de design-system-pagina (`CLAUDE.md` §7) én aan de inventaris in diezelfde sectie.
+- Nieuwe SQL-migratie → noem 'm in de sectie van de feature waar hij bij hoort (`CLAUDE.md` §4/§5) en onthoud dat hij op productie handmatig gedraaid moet worden (`README.md` → Live zetten).
 
 ## Pull requests
 

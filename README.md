@@ -6,11 +6,14 @@ De UI-taal is Nederlands en de toon is warm, vergevingsgezind en praktisch: liev
 
 ## Wat zit erin?
 
-- **Vandaag** — de planner-thuisbasis voor wat je nu gaat doen.
+- **Vandaag** — de planner-thuisbasis voor wat je nu gaat doen, als dagdeel-tijdlijn (ochtend/middag/avond).
 - **Huis** — een gedeelde pool van taken per kamer.
-- **Routines** — terugkerende bundels met zachte dichtheid-feedback in plaats van streaks.
-- **Samen** — zichtbaarheid rond wat er in huis al is gedaan, bereikbaar via Meer.
-- **Meer** — secundaire acties zoals Samen, huishouden beheren en account beheren.
+- **Routines** — terugkerende bundels met zachte dichtheid-feedback in plaats van streaks, inclusief een volledig-scherm "routine starten"-sessie.
+- **Samen** — zichtbaarheid rond wat er in huis al is gedaan, bereikbaar via Meer en via een preview-kaart op Vandaag.
+- **Meer** — de plek voor alles zonder eigen tab: Samen, Focustimer, Takenoverzicht, Boodschappen, huishouden beheren en account beheren.
+- **Boodschappen** — gedeelde lijst met categorieën, aantallen/eenheden en snel-toevoegen-snelkoppelingen.
+- **Focustimer** — zachte pomodoro-achtige timer, vrij of vanaf een taak.
+- **Wekkers & push** — taakherinneringen in de app, en echte Web Push (cloud mode) als de app dicht is, met stille uren per persoon.
 - **PWA-platform** — vaste app-shell, safe-area-aware layout, offline/update-UX en app-icon/splash-assets.
 - **Data modes** — lokaal via `localStorage` of cloud via Supabase.
 
@@ -88,7 +91,8 @@ Keys zonder `VITE_` blijven server-side en mogen niet naar de client worden gele
 | `pnpm build` | Maakt een productie-build inclusief PWA-assets/service worker. |
 | `pnpm preview` | Serveert de productie-build lokaal. |
 | `pnpm typecheck` | Draait `tsc --noEmit` (app) én `tsc --noEmit -p tsconfig.worker.json` (service worker). |
-| `pnpm test` | Draait Vitest unit tests. |
+| `pnpm test` | Draait Vitest (`vitest run`): pure domeinlogica, hook-tests en pagina-smoketests. |
+| `pnpm test:coverage` | Draait dezelfde tests met een v8-coveragerapport (nog geen thresholds). |
 
 ## Standaard validatie vóór een PR
 
@@ -154,15 +158,18 @@ Voor cloud mode is alleen het invullen van `.env` niet genoeg: de database moet 
 
 1. Maak of kies een Supabase-project.
 2. Zet `VITE_DATA_MODE=cloud`, `VITE_SUPABASE_URL` en `VITE_SUPABASE_ANON_KEY` in `.env`.
-3. Pas de SQL-migraties uit `supabase/migrations/` toe op het project.
-4. Controleer dat Realtime-publications zijn ingericht voor de tabellen die de app live wil verversen.
-5. Start de app opnieuw met `pnpm dev`.
+3. Pas de SQL-migraties uit `supabase/migrations/` toe op het project, in bestandsnaam-volgorde.
+4. Controleer dat Realtime-publications zijn ingericht voor de tabellen die de app live wil verversen (`tasks`, `rooms`, `bundles`, `members`, `shopping_items`, `task_completions`) — zonder de `supabase_realtime`-publicatie vuurt `postgres_changes` nooit.
+5. Zet de redirect-URL's van je omgeving in de Auth-instellingen van het project, inclusief de `/**`-wildcardvorm — magic links en bevestigingsmails sturen terug naar het volledige pad, niet naar de root (zie de toelichting in `supabase/config.toml`).
+6. Start de app opnieuw met `pnpm dev`.
 
 Gebruik `local` mode voor snel product- en UI-werk wanneer Supabase niet nodig is.
 
 ## Live zetten (productie)
 
 Cura draait in productie op Vercel (`vercel.json` regelt rewrites + CSP-headers) met `VITE_DATA_MODE=cloud`, gekoppeld aan de GitHub-repo zodat een merge naar `main` automatisch een nieuwe productie-deploy triggert. Er is geen apart CI-workflow-bestand — de build/typecheck/test-stap loopt via Vercel's eigen buildstap plus de handmatige validatie hierboven.
+
+> **Let op bij nieuwe externe hosts.** De CSP in `vercel.json` staat strak: `script-src 'self'`, `img-src 'self' data:`, `connect-src 'self' https://*.supabase.co wss://*.supabase.co`, fonts alleen van Google Fonts. Voeg je een analytics-script, CDN, of andere API toe, zet die host er dan expliciet bij — anders blokkeert de browser 'm stil in productie terwijl lokaal alles werkt.
 
 **1. Client-env in Vercel** — zet dezelfde `VITE_`-variabelen als in [Omgevingsvariabelen](#omgevingsvariabelen) in het Vercel-project (Project Settings → Environment Variables), gericht op het productie-Supabase-project:
 
@@ -191,15 +198,13 @@ Een praktische volgorde voor wijzigingen:
 
 ## Teststrategie
 
-De huidige unit tests richten zich op pure domeinlogica in `src/data/selectors.ts`, waaronder:
+De tests draaien in drie lagen, alle drie via `pnpm test`:
 
-- done-state voor eenmalige en terugkerende taken;
-- zachte due-hints;
-- routine-dichtheid zonder streak-mechaniek;
-- sortering van de Samen-activity feed;
-- reminder-triggerlogica.
+1. **Pure domeinlogica** (`environment: 'node'`, de meerderheid) — `src/data/selectors.ts` (done-state voor eenmalige en terugkerende taken, zachte due-hints, routine-dichtheid zonder streak-mechaniek, sortering van de Samen-feed, dagdeel-groepering, boodschappen-categorieën), `src/data/reminders.ts` (reminder-triggers, tijdzone-gedrag, stille uren, plus een guard dat de edge-function-kopie byte-identiek blijft), de zod-schema's en losse helpers.
+2. **Store- en datalaag-tests** — `useCuraStore` met een gemockte `DataStore`, plus `LocalStore`/`SupabaseStore` rechtstreeks (o.a. de "kolom bestaat nog niet"-retry en het overslaan van corrupte rijen).
+3. **Hook- en pagina-smoketests** — `@testing-library/react` + jsdom, per bestand opt-in via een `// @vitest-environment jsdom`-docblock zodat laag 1 snel blijft.
 
-Er is op dit moment nog geen lint-script of CI-workflow in deze repo.
+Er is op dit moment nog geen lint-script of CI-workflow-bestand in deze repo; typecheck, test en build zijn de handmatige poort vóór een PR.
 
 ## Productprincipes
 
