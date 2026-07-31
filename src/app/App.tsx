@@ -288,11 +288,35 @@ function MainShell() {
   );
 }
 
+/**
+ * Clears stale data from the previous session so a second sign-in never briefly
+ * flashes another user's households/tasks while init() is in flight.
+ *
+ * Deliberately mounted ABOVE <Routes>, not inside `Gate`: the public routes
+ * (/privacy, /voorwaarden, /uitnodiging/:token) render without `Gate`, so an
+ * observer living inside it would be unmounted exactly while one of those pages
+ * is open. Sign out in another tab from there and the signedIn -> signedOut
+ * transition would go unseen, leaving the store `ready` with the previous
+ * account's household — which the next sign-in would then render for a few
+ * frames. Renders nothing; it only watches auth status.
+ */
+function AuthResetObserver() {
+  const { status } = useAuth();
+  const reset = useCuraStore((s) => s.reset);
+  const prevStatusRef = useRef<string>("loading");
+
+  useEffect(() => {
+    if (prevStatusRef.current === "signedIn" && status === "signedOut") reset();
+    prevStatusRef.current = status;
+  }, [status, reset]);
+
+  return null;
+}
+
 /** Auth/household gating in front of MainShell — loading -> signed out -> no household -> the app. */
 function Gate() {
   const { status } = useAuth();
   const init = useCuraStore((s) => s.init);
-  const reset = useCuraStore((s) => s.reset);
   const ready = useCuraStore((s) => s.ready);
   const initError = useCuraStore((s) => s.initError);
   const households = useCuraStore((s) => s.households);
@@ -301,14 +325,6 @@ function Gate() {
   useEffect(() => {
     if (status === "signedIn") init();
   }, [status, init]);
-
-  // Clear stale data from the previous session so a second sign-in never
-  // briefly flashes another user's households/tasks while init() is in flight.
-  const prevStatusRef = useRef<string>("loading");
-  useEffect(() => {
-    if (prevStatusRef.current === "signedIn" && status === "signedOut") reset();
-    prevStatusRef.current = status;
-  }, [status, reset]);
 
   if (status === "loading") return <FullScreenSkeleton />;
   if (status === "passwordRecovery") return <Suspense fallback={<FullScreenSkeleton />}><ResetPasswordPage /></Suspense>;
@@ -354,6 +370,7 @@ export default function App() {
         />
         <ConnectivityBanner />
         <UpdatePrompt />
+        <AuthResetObserver />
         <ErrorBoundary>
           <Routes>
             <Route path="/uitnodiging/:token" element={<Suspense fallback={<FullScreenSkeleton />}><AcceptInvitePage /></Suspense>} />

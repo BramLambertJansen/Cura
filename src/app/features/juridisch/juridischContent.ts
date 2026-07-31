@@ -165,7 +165,7 @@ export const PRIVACY: JuridischDocument = {
         },
         {
           type: "alinea",
-          text: "Wat een huisgenoot níet ziet: je e-mailadres of wachtwoord, je stille uren en je meldingsinstellingen. Die zijn persoonlijk.",
+          text: "Wat een huisgenoot níet ziet: je e-mailadres en je wachtwoord. Die staan bij je account, niet bij je huishouden. Je stille uren en of je meldingen aan hebt staan, laten we nergens in de app aan je huisgenoot zien — maar ze worden wél bij je huishouden bewaard, dus technisch gesproken zou een huisgenoot die zelf de database uitleest ze kunnen zien. We zeggen dat liever eerlijk dan dat we een garantie beloven die we vandaag nog niet waterdicht hebben.",
         },
         {
           type: "alinea",
@@ -361,7 +361,7 @@ export const VOORWAARDEN: JuridischDocument = {
             "Je moet 16 jaar of ouder zijn om een account aan te maken.",
             "Gebruik een e-mailadres waar je zelf bij kunt; inloglinks en wachtwoordherstel gaan daarnaartoe.",
             "Houd je wachtwoord voor jezelf. Wie toegang heeft tot je e-mail of wachtwoord, kan bij je huishouden.",
-            "Eén account hoort bij één huishouden. Wil je naar een ander huishouden, verlaat dan eerst het huidige.",
+            "Eén account hoort bij één huishouden. Er zit nog geen knop in de app om zelf een huishouden te verlaten of naar een ander over te stappen — mail ons en we regelen het met de hand.",
           ],
         },
       ],
