@@ -142,6 +142,23 @@
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--primary)_50%,transparent)];
 }
 
+/* Zelf-scrollende pagina's die BUITEN MainShell vallen (privacy/voorwaarden)
+   moeten hun eigen safe areas respecteren — de shell doet dat hier niet voor ze.
+   Als utility en niet als inline `style`: jsdom's getComputedStyle struikelt
+   over een inline `calc()` met een `var()` erin en gooit dan bij elke
+   getByRole-query (dus in elke component-test op zo'n pagina), terwijl een
+   echte browser hier gewoon de env()-waarde oplost. */
+@utility page-safe-scroll {
+  /* Ook de bovenkant: als geïnstalleerde PWA staat er geen browser-chrome boven
+     de pagina, dus een vaste pt-* op de inhoud kan onder de notch/statusbalk
+     vallen. De shell doet dit voor de rest van de app; deze pagina's staan
+     erbuiten. */
+  padding-top: var(--safe-top);
+  padding-bottom: calc(2.5rem + var(--safe-bottom));
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

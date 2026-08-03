@@ -20,6 +20,7 @@ import { roomIcon } from "../../lib/constants";
 import { Logo } from "../../components/Logo";
 import { LandingHeader } from "../../components/LandingHeader";
 import { PageBanner } from "../../components/PageBanner";
+import { JuridischFooter } from "../../components/JuridischFooter";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
 import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
 
@@ -207,6 +208,11 @@ export function DesignSystemPage() {
       <Section title="Hint banner">
         <HintBanner>Badkamer is waarschijnlijk weer toe.</HintBanner>
         <HintBanner tone="muted">"De badkamer is waarschijnlijk weer toe aan een beurt."</HintBanner>
+      </Section>
+
+      <Section title="Juridische voetregel">
+        <p className="text-sm text-muted-foreground -mt-1">Verwijzing naar voorwaarden en privacyverklaring, voor de schermen waar iemand een account aanmaakt.</p>
+        <JuridischFooter />
       </Section>
 
       <Section title="Keuzechip">

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sun, Sunrise, Undo2, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
-import { useActivityFeed, useCurrentMember, useRoutineViews, useTaskViews } from "../../../stores/useViews";
+import { useActivityFeed, useCurrentMember, useHasHousemate, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen, splitPickedUpToday } from "../../../data/selectors";
 import type { DagdeelGroup } from "../../../data/types";
 import { getGreeting } from "../../lib/format";
@@ -34,7 +34,8 @@ export function VandaagPage() {
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
   const me = useCurrentMember();
-  const members = useCuraStore((s) => s.members);
+  // Geen huisgenoot = geen Samen-kaart (zie useHasHousemate).
+  const hasHousemate = useHasHousemate();
   const tasks = useTaskViews();
   const routines = useRoutineViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
@@ -114,17 +115,12 @@ export function VandaagPage() {
   // that wasn't the current user's own — a confirmed housemate id, not just
   // "not mine", so an unresolved/unknown doer never counts as a housemate.
   const housemateActivity = logboek.find((a) => !!a.doneById && a.doneById !== me?.id);
-  // In een huishouden van één is er nooit huisgenoot-activiteit, dus zou de kaart
-  // permanent "nog niets van een huisgenoot" melden — een verwijt over iemand die
-  // niet bestaat. Solo leest Samen als je eigen dag: wat er al is afgevinkt.
-  const solo = members.length <= 1;
+  // Mag naar een huisgenoot verwijzen zonder voorbehoud: de kaart hieronder
+  // rendert alleen als er een huisgenoot ís (hasHousemate), dus dit is nooit
+  // een verwijt over iemand die niet bestaat.
   const samenSubtitle = housemateActivity
     ? `${housemateActivity.doneBy} rondde ${housemateActivity.title.toLowerCase()} af`
-    : solo
-      ? logboek.length > 0
-        ? `${logboek.length} ${logboek.length === 1 ? "taak" : "taken"} afgevinkt vandaag`
-        : "Nog niets afgevinkt vandaag"
-      : "Nog niets afgevinkt door een huisgenoot vandaag";
+    : "Nog niets afgevinkt door een huisgenoot vandaag";
 
   const renderDagdeelGroep = (groep: DagdeelGroup) => {
     const Icon = DAGDEEL_ICON[groep.key];
@@ -315,8 +311,9 @@ export function VandaagPage() {
           </section>
         )}
 
+        {hasHousemate && (
         <section>
-          <Card onClick={() => navigate("/samen", { state: { from: "vandaag" } })} className="flex items-center gap-3.5 px-4 py-4" ariaLabel={solo ? "Samen — wat er vandaag is afgevinkt" : "Samen — wat huisgenoten vandaag deden"}>
+          <Card onClick={() => navigate("/samen", { state: { from: "vandaag" } })} className="flex items-center gap-3.5 px-4 py-4" ariaLabel="Samen — wat huisgenoten vandaag deden">
             <IconBadge icon={<Heart size={16} />} size={36} />
             <span className="flex-1 min-w-0 text-left">
               <span className="inline-flex items-center gap-1.5">
@@ -330,6 +327,7 @@ export function VandaagPage() {
             <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
           </Card>
         </section>
+        )}
 
         {suggestions.length > 0 && (
           <section>

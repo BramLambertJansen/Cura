@@ -135,19 +135,10 @@ describe("VandaagPage", () => {
     expect(useCuraStore.getState().toggleTask).toHaveBeenCalledWith("t-ochtend", true);
   });
 
-  // CLAUDE.md §1: copy mag geen tweede persoon aannemen. In een huishouden van
-  // één zou de Samen-kaart anders permanent klagen over een huisgenoot die er
-  // niet is.
-  it("does not blame a non-existent housemate in a one-member household", () => {
-    setTasks([], { members: [ME] });
-
-    renderVandaag();
-
-    expect(screen.getByText(/nog niets afgevinkt vandaag/i)).toBeInTheDocument();
-    expect(screen.queryByText(/door een huisgenoot/i)).not.toBeInTheDocument();
-  });
-
-  it("still points at housemate activity when the household is shared", () => {
+  // CLAUDE.md §1: copy mag geen tweede persoon aannemen. Solo is dat opgelost
+  // door de kaart te verbergen (#213, test verderop); in een gedeeld huishouden
+  // mag de subtitel wél over een huisgenoot gaan.
+  it("points at housemate activity when the household is shared", () => {
     setTasks([]);
 
     renderVandaag();
@@ -168,5 +159,21 @@ describe("VandaagPage", () => {
     expect(screen.queryByText("Stofzuigen")).not.toBeInTheDocument();
     const afgerondToggle = screen.getByRole("button", { name: /afgerond/i });
     expect(within(afgerondToggle).getByText("1")).toBeInTheDocument();
+  });
+
+  it("hides the Samen preview card in a household of one", () => {
+    setTasks([], { members: [ME] });
+
+    renderVandaag();
+
+    expect(screen.queryByRole("button", { name: /^samen/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the Samen preview card once a housemate joined", () => {
+    setTasks([]);
+
+    renderVandaag();
+
+    expect(screen.getByRole("button", { name: /^samen/i })).toBeInTheDocument();
   });
 });

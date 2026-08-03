@@ -8,6 +8,7 @@ import { useCurrentMember } from "../../stores/useViews";
 import { useNotificationPreference } from "../lib/useTaskReminders";
 import { usePushSubscription, isIOS } from "../lib/usePushSubscription";
 import { resolveDataMode } from "../../data/store";
+import { CONTACT_EMAIL } from "../features/juridisch/juridischContent";
 import { PRESS_TINT, SAGE } from "../lib/constants";
 import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, GroupCard, VerwijderKnop } from "../components/shared";
 
@@ -85,7 +86,9 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
   function openHelp() {
     const subject = encodeURIComponent("Feedback over Cura");
     const body = encodeURIComponent(`Hoi Cura,\n\nIk wil feedback delen over:\n\n- `);
-    window.location.href = `mailto:feedback@cura.app?subject=${subject}&body=${body}`;
+    // Zelfde postbus als het privacy-/AVG-kanaal (juridischContent.ts) — er is
+    // één maker, dus een tweede adres zou alleen maar dood kunnen lopen.
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
   }
 
   async function saveName() {

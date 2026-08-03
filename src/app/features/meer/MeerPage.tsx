@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { Heart, Link2, UserRound, ListChecks, Timer, ShoppingCart, ChevronRight } from "lucide-react";
+import { Heart, Link2, UserRound, ListChecks, Timer, ShoppingCart, ShieldCheck, ScrollText, ChevronRight } from "lucide-react";
 import { useSheets } from "../../sheetContext";
+import { useHasHousemate } from "../../../stores/useViews";
 import { stagger, fadeUp } from "../../lib/motion";
 import { Kop, PageHeader, IconBadge, Card } from "../../components/shared";
 
@@ -21,14 +22,19 @@ interface MeerGroup {
 export function MeerPage() {
   const navigate = useNavigate();
   const { openHousehold, openProfiel } = useSheets();
+  const hasHousemate = useHasHousemate();
 
   const groups: MeerGroup[] = [
-    {
-      title: "Samen",
-      items: [
-        { icon: <Heart size={16} />, label: "Samen", hint: "Wat is er vandaag afgevinkt", onClick: () => navigate("/samen", { state: { from: "meer" } }) },
-      ],
-    },
+    // Alleen zichtbaar zodra er echt een huisgenoot is toegevoegd — zonder
+    // tweede lid is Samen je eigen afvinklijst terugkijken (zie useHasHousemate).
+    ...(hasHousemate
+      ? [{
+          title: "Samen",
+          items: [
+            { icon: <Heart size={16} />, label: "Samen", hint: "Wat is er vandaag afgevinkt, en door wie", onClick: () => navigate("/samen", { state: { from: "meer" } }) },
+          ],
+        }]
+      : []),
     {
       title: "Lijsten en focus",
       items: [
@@ -42,6 +48,13 @@ export function MeerPage() {
       items: [
         { icon: <Link2 size={16} />, label: "Huishouden beheren", hint: "Naam wijzigen, leden zien, iemand uitnodigen", onClick: openHousehold },
         { icon: <UserRound size={16} />, label: "Account beheren", hint: "Je naam, meldingen en uitloggen", onClick: openProfiel },
+      ],
+    },
+    {
+      title: "Over Cura",
+      items: [
+        { icon: <ShieldCheck size={16} />, label: "Privacy", hint: "Wat we bewaren, en waarom", onClick: () => navigate("/privacy") },
+        { icon: <ScrollText size={16} />, label: "Voorwaarden", hint: "De afspraken tussen jou en Cura", onClick: () => navigate("/voorwaarden") },
       ],
     },
   ];

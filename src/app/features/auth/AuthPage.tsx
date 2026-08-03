@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { LandingHeader } from "../../components/LandingHeader";
 import { Logo } from "../../components/Logo";
 import { Card } from "../../components/shared";
+import { JuridischFooter } from "../../components/JuridischFooter";
 import { AuthForm, type AuthMode } from "./AuthForm";
 import { MagicLinkForm } from "./MagicLinkForm";
 
@@ -131,6 +132,8 @@ export function AuthPage() {
             )}
           </motion.button>
         )}
+
+        <JuridischFooter className="mt-6" />
       </main>
     </div>
   );

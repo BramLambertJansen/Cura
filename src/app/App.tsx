@@ -8,6 +8,7 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
 import { useCuraStore } from "../stores/useCuraStore";
+import { useHasHousemate } from "../stores/useViews";
 import { useOnboardingSeen } from "./lib/useOnboardingSeen";
 import { useDaypart } from "./lib/useDaypart";
 import { SHADOW_LG, DAYPART_NAV } from "./lib/constants";
@@ -43,6 +44,8 @@ const ResetPasswordPage = lazy(() => import("./features/auth/ResetPasswordPage")
 const OnboardingIntroPage = lazy(() => import("./features/auth/OnboardingIntroPage").then((m) => ({ default: m.OnboardingIntroPage })));
 const CreateHouseholdPage = lazy(() => import("./features/auth/CreateHouseholdPage").then((m) => ({ default: m.CreateHouseholdPage })));
 const AcceptInvitePage = lazy(() => import("./features/invite/AcceptInvitePage").then((m) => ({ default: m.AcceptInvitePage })));
+const PrivacyPage = lazy(() => import("./features/juridisch/PrivacyPage").then((m) => ({ default: m.PrivacyPage })));
+const VoorwaardenPage = lazy(() => import("./features/juridisch/VoorwaardenPage").then((m) => ({ default: m.VoorwaardenPage })));
 const BoodschapToevoegSheet = lazy(() => import("./sheets/BoodschapToevoegSheet").then((m) => ({ default: m.BoodschapToevoegSheet })));
 const AddFlowBody = lazy(() => import("./sheets/AddFlowBody").then((m) => ({ default: m.AddFlowBody })));
 const EditTaskSheet = lazy(() => import("./sheets/EditTaskSheet").then((m) => ({ default: m.EditTaskSheet })));
@@ -85,7 +88,7 @@ function AnimatedRoutes() {
         <Route path="/huis/:roomId" element={<PageTx><RoomDetailPage /></PageTx>} />
         <Route path="/routines" element={<PageTx><RoutinesPage /></PageTx>} />
         <Route path="/routines/:bundleId/starten" element={<PageTx><RoutineSessionPage /></PageTx>} />
-        <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
+        <Route path="/samen" element={<PageTx><SamenRoute /></PageTx>} />
         <Route path="/meer" element={<PageTx><MeerPage /></PageTx>} />
         <Route path="/taken" element={<PageTx><TakenPage /></PageTx>} />
         <Route path="/boodschappen" element={<PageTx><BoodschappenPage /></PageTx>} />
@@ -94,6 +97,19 @@ function AnimatedRoutes() {
       </Routes>
     </AnimatePresence>
   );
+}
+
+/**
+ * Samen only exists once the household actually has a second member (invite
+ * sent *and* accepted) — see useHasHousemate. Its entry points (Meer's row,
+ * Vandaag's preview card) are hidden in that case, so this guards the route
+ * itself: a bookmark, deeplink or leftover history entry lands calmly on
+ * Vandaag instead of on a feed that can only mirror your own completions.
+ */
+function SamenRoute() {
+  const hasHousemate = useHasHousemate();
+  if (!hasHousemate) return <Navigate to="/vandaag" replace />;
+  return <SamenPage />;
 }
 
 function PageTx({ children }: { children: ReactNode }) {
@@ -286,11 +302,35 @@ function MainShell() {
   );
 }
 
+/**
+ * Clears stale data from the previous session so a second sign-in never briefly
+ * flashes another user's households/tasks while init() is in flight.
+ *
+ * Deliberately mounted ABOVE <Routes>, not inside `Gate`: the public routes
+ * (/privacy, /voorwaarden, /uitnodiging/:token) render without `Gate`, so an
+ * observer living inside it would be unmounted exactly while one of those pages
+ * is open. Sign out in another tab from there and the signedIn -> signedOut
+ * transition would go unseen, leaving the store `ready` with the previous
+ * account's household — which the next sign-in would then render for a few
+ * frames. Renders nothing; it only watches auth status.
+ */
+function AuthResetObserver() {
+  const { status } = useAuth();
+  const reset = useCuraStore((s) => s.reset);
+  const prevStatusRef = useRef<string>("loading");
+
+  useEffect(() => {
+    if (prevStatusRef.current === "signedIn" && status === "signedOut") reset();
+    prevStatusRef.current = status;
+  }, [status, reset]);
+
+  return null;
+}
+
 /** Auth/household gating in front of MainShell — loading -> signed out -> no household -> the app. */
 function Gate() {
   const { status } = useAuth();
   const init = useCuraStore((s) => s.init);
-  const reset = useCuraStore((s) => s.reset);
   const ready = useCuraStore((s) => s.ready);
   const initError = useCuraStore((s) => s.initError);
   const households = useCuraStore((s) => s.households);
@@ -299,14 +339,6 @@ function Gate() {
   useEffect(() => {
     if (status === "signedIn") init();
   }, [status, init]);
-
-  // Clear stale data from the previous session so a second sign-in never
-  // briefly flashes another user's households/tasks while init() is in flight.
-  const prevStatusRef = useRef<string>("loading");
-  useEffect(() => {
-    if (prevStatusRef.current === "signedIn" && status === "signedOut") reset();
-    prevStatusRef.current = status;
-  }, [status, reset]);
 
   if (status === "loading") return <FullScreenSkeleton />;
   if (status === "passwordRecovery") return <Suspense fallback={<FullScreenSkeleton />}><ResetPasswordPage /></Suspense>;
@@ -352,9 +384,16 @@ export default function App() {
         />
         <ConnectivityBanner />
         <UpdatePrompt />
+        <AuthResetObserver />
         <ErrorBoundary>
           <Routes>
             <Route path="/uitnodiging/:token" element={<Suspense fallback={<FullScreenSkeleton />}><AcceptInvitePage /></Suspense>} />
+            {/* Buiten de Gate, net als de uitnodigingsroute: een privacy-
+                verklaring/voorwaarden moeten ook zonder account te lezen zijn
+                (de inlogpagina linkt er zelf naartoe), dus geen auth-gate en
+                geen MainShell — deze pagina's regelen hun eigen scroll. */}
+            <Route path="/privacy" element={<Suspense fallback={<FullScreenSkeleton />}><PrivacyPage /></Suspense>} />
+            <Route path="/voorwaarden" element={<Suspense fallback={<FullScreenSkeleton />}><VoorwaardenPage /></Suspense>} />
             <Route path="/*" element={<Gate />} />
           </Routes>
         </ErrorBoundary>
