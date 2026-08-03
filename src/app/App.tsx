@@ -8,7 +8,7 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
 import { useCuraStore } from "../stores/useCuraStore";
-import { useHasHousemate } from "../stores/useViews";
+import { useHasHousemate, useMembersLoaded } from "../stores/useViews";
 import { useOnboardingSeen } from "./lib/useOnboardingSeen";
 import { useDaypart } from "./lib/useDaypart";
 import { SHADOW_LG, DAYPART_NAV } from "./lib/constants";
@@ -105,10 +105,20 @@ function AnimatedRoutes() {
  * Vandaag's preview card) are hidden in that case, so this guards the route
  * itself: a bookmark, deeplink or leftover history entry lands calmly on
  * Vandaag instead of on a feed that can only mirror your own completions.
+ *
+ * The redirect additionally waits for the members list to actually be *known*
+ * (useMembersLoaded) — init() marks the store ready with an empty members slice
+ * when listMembers() was the one list that timed out, and retries it in the
+ * background (§3). Redirecting on that would mistake missing data for a solo
+ * household and throw away the requested route before the retry lands, which a
+ * `replace` can't be undone from (Codex review on #213). Hiding the two entry
+ * points on that same empty slice is harmless by comparison — they reappear by
+ * themselves once the retry fills it in, nothing is lost.
  */
 function SamenRoute() {
   const hasHousemate = useHasHousemate();
-  if (!hasHousemate) return <Navigate to="/vandaag" replace />;
+  const membersLoaded = useMembersLoaded();
+  if (membersLoaded && !hasHousemate) return <Navigate to="/vandaag" replace />;
   return <SamenPage />;
 }
 

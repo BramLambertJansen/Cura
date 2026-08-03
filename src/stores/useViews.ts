@@ -34,6 +34,22 @@ export function useHasHousemate(): boolean {
   return useCuraStore((s) => s.members.length > 1);
 }
 
+/**
+ * Whether the members list actually loaded — a household you're a member of
+ * always has at least your own row, so an *empty* slice means "not known yet",
+ * not "nobody here". `init()` deliberately marks the store ready with empty
+ * slices for the lists that timed out and retries them in the background (§3),
+ * so `useHasHousemate() === false` alone can't tell a solo household apart from
+ * a household whose `listMembers()` was the one that failed.
+ *
+ * Only callers that would do something *destructive* on that mistake need this
+ * (see `SamenRoute` in `App.tsx`, which would otherwise throw away a requested
+ * route); merely hiding an entry point is self-healing once the retry lands.
+ */
+export function useMembersLoaded(): boolean {
+  return useCuraStore((s) => s.members.length > 0);
+}
+
 /** Every task as a view-model — done/dueHint/claimedBy resolved, never stored. */
 export function useTaskViews(): TaskView[] {
   const tasks = useCuraStore((s) => s.tasks);
