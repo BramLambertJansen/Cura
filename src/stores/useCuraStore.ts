@@ -220,6 +220,13 @@ function friendlyMessage(e: unknown, fallback: string): string {
  * huisgenoot verwijst ("die ziet dit onder Samen") is een lege belofte in een
  * huishouden van één — Cura werkt ook solo, dus zulke teksten zijn dynamisch
  * in plaats van dat ze een tweede persoon aannemen.
+ *
+ * Een lege lijst betekent hier "onbekend of solo", en beide krijgen bewust
+ * dezelfde behandeling: de false-tak is nooit een claim óver een solo
+ * huishouden, alleen een tekst die een huisgenoot niet noemt. Een gedeeld
+ * huishouden waarvan `listMembers` bij de tolerante init faalde (§3) verliest
+ * dus hoogstens de "je huisgenoten zien dit"-toevoeging tot de achtergrond-
+ * refresh landt — het gaat niets onwaars beweren (#212 review).
  */
 function isShared(members: { id: string }[]): boolean {
   return members.length > 1;

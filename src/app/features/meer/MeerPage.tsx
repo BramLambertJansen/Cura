@@ -33,15 +33,15 @@ export function MeerPage() {
       title: "Lijsten en focus",
       items: [
         { icon: <Timer size={16} />, label: "Focustimer", hint: "Timer voor één taak", onClick: () => navigate("/focus") },
-        { icon: <ListChecks size={16} />, label: "Takenoverzicht", hint: "Alle open taken, geordend op datum", onClick: () => navigate("/taken") },
-        { icon: <ShoppingCart size={16} />, label: "Boodschappen", hint: "Gedeelde boodschappenlijst", onClick: () => navigate("/boodschappen") },
+        { icon: <ListChecks size={16} />, label: "Takenoverzicht", hint: "Alle open taken: blijven liggen, weer toe, later, zonder datum", onClick: () => navigate("/taken") },
+        { icon: <ShoppingCart size={16} />, label: "Boodschappen", hint: "Wat er nog gehaald moet worden", onClick: () => navigate("/boodschappen") },
       ],
     },
     {
       title: "Instellingen",
       items: [
         { icon: <Link2 size={16} />, label: "Huishouden beheren", hint: "Naam wijzigen, leden zien, iemand uitnodigen", onClick: openHousehold },
-        { icon: <UserRound size={16} />, label: "Account beheren", hint: "Je naam, meldingen, wachtwoord en uitloggen", onClick: openProfiel },
+        { icon: <UserRound size={16} />, label: "Account beheren", hint: "Je naam, meldingen en uitloggen", onClick: openProfiel },
       ],
     },
   ];

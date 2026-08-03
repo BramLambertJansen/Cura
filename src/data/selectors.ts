@@ -281,7 +281,7 @@ function densityHint(done: number, total: number): string {
   const ratio = done / total;
   if (ratio >= 0.75) return "Gaat bijna elke keer door";
   if (ratio >= 0.4) return "Gaat regelmatig door";
-  return "Blijft er de laatste tijd vaak bij liggen";
+  return "Ging de laatste tijd vaak niet door";
 }
 
 // ─── Vandaag suggestions — manual, no AI ─────────────────────────────────────

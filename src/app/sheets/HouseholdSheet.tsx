@@ -122,7 +122,7 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
         <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Uitnodigen werkt alleen met een online account. Nu staan je gegevens alleen op dit apparaat.</p>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Maak een link en stuur die naar je huisgenoot. Wie erop tikt, maakt een account en komt in dit huishouden.</p>
+          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">Maak een link en stuur die naar je huisgenoot. Wie erop tikt, logt in of maakt een account, en komt daarna in dit huishouden.</p>
           {!link
             ? <PrimaryButton onClick={genLink} busy={busy} icon={<Sparkles size={15} aria-hidden="true" />}>
                 {busy ? "Even geduld…" : "Uitnodigingslink genereren"}

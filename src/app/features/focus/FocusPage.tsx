@@ -78,7 +78,7 @@ export function FocusPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             {idle
-              ? "Kies hoelang je aan één taak wilt werken. De timer loopt door als je de app dichtdoet."
+              ? "Kies hoelang je aan één taak wilt werken. De timer loopt door terwijl je de app gebruikt."
               : taskTitle
                 ? `Bezig met ${taskTitle}.`
                 : "De timer loopt door terwijl je de app verder gebruikt."}

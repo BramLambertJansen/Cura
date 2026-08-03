@@ -133,7 +133,7 @@ export interface RoutineView {
   doneInWindow: number;
   windowSize: number;
   windowLabel: string; // "ochtenden", "avonden", "weekenden"
-  hint: string; // "Gaat bijna elke keer door" / "Blijft er de laatste tijd vaak bij liggen"
+  hint: string; // "Gaat bijna elke keer door" / "Ging de laatste tijd vaak niet door"
 }
 
 /** A shopping item as a screen sees it — a plain checklist row, no dueHint/density story. */
