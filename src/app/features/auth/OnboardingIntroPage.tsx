@@ -22,12 +22,12 @@ const SLIDES: Slide[] = [
   {
     icon: <Check size={26} aria-hidden="true" />,
     title: "Welkom bij Cura",
-    text: "Cura is een huishoudplanner die je deelt met je huisgenoot. Eén lijst voor jullie samen, in plaats van onthouden wie wat wanneer doet.",
+    text: "Cura is een planner voor je huishouden. Alles wat er te doen staat op één lijst — voor jou alleen, of gedeeld met wie er nog woont.",
     bullets: [
       "Taken per kamer bijhouden",
       "Routines die automatisch terugkomen",
       "Een gedeelde boodschappenlijst",
-      "Zien wat de ander al heeft gedaan",
+      "Een huisgenoot uitnodigen als je wilt delen",
     ],
   },
   {
@@ -45,14 +45,14 @@ const SLIDES: Slide[] = [
     title: "Huis en Routines",
     text: "Onder Huis staan alle taken van het huishouden, per kamer. Een routine is een groepje taken dat je vaak samen doet.",
     bullets: [
-      "Pak een taak op zodat de ander ziet dat jij hem doet",
+      "Een taak oppakken zodat duidelijk is wie hem doet",
       "Start een routine en loop de taken één voor één af",
     ],
   },
   {
     icon: <Heart size={26} aria-hidden="true" />,
     title: "Samen",
-    text: "Wat jij afvinkt, ziet je huisgenoot direct terug onder Samen. Geen scorebord — je hoeft alleen niet meer te vragen of de keuken al gedaan is.",
+    text: "Onder Samen staat wat er vandaag is afgevinkt. Woon je met iemand samen, dan zie je dat van elkaar en hoef je niet te vragen of de keuken al gedaan is. Alleen? Dan is het jouw dag op een rij.",
   },
 ];
 

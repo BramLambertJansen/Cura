@@ -34,6 +34,7 @@ export function VandaagPage() {
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
   const me = useCurrentMember();
+  const members = useCuraStore((s) => s.members);
   const tasks = useTaskViews();
   const routines = useRoutineViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
@@ -113,9 +114,17 @@ export function VandaagPage() {
   // that wasn't the current user's own — a confirmed housemate id, not just
   // "not mine", so an unresolved/unknown doer never counts as a housemate.
   const housemateActivity = logboek.find((a) => !!a.doneById && a.doneById !== me?.id);
+  // In een huishouden van één is er nooit huisgenoot-activiteit, dus zou de kaart
+  // permanent "nog niets van een huisgenoot" melden — een verwijt over iemand die
+  // niet bestaat. Solo leest Samen als je eigen dag: wat er al is afgevinkt.
+  const solo = members.length <= 1;
   const samenSubtitle = housemateActivity
     ? `${housemateActivity.doneBy} rondde ${housemateActivity.title.toLowerCase()} af`
-    : "Nog niets afgevinkt door een huisgenoot vandaag";
+    : solo
+      ? logboek.length > 0
+        ? `${logboek.length} ${logboek.length === 1 ? "taak" : "taken"} afgevinkt vandaag`
+        : "Nog niets afgevinkt vandaag"
+      : "Nog niets afgevinkt door een huisgenoot vandaag";
 
   const renderDagdeelGroep = (groep: DagdeelGroup) => {
     const Icon = DAGDEEL_ICON[groep.key];
@@ -307,7 +316,7 @@ export function VandaagPage() {
         )}
 
         <section>
-          <Card onClick={() => navigate("/samen", { state: { from: "vandaag" } })} className="flex items-center gap-3.5 px-4 py-4" ariaLabel="Samen — wat huisgenoten vandaag deden">
+          <Card onClick={() => navigate("/samen", { state: { from: "vandaag" } })} className="flex items-center gap-3.5 px-4 py-4" ariaLabel={solo ? "Samen — wat er vandaag is afgevinkt" : "Samen — wat huisgenoten vandaag deden"}>
             <IconBadge icon={<Heart size={16} />} size={36} />
             <span className="flex-1 min-w-0 text-left">
               <span className="inline-flex items-center gap-1.5">

@@ -1,6 +1,6 @@
 # Cura
 
-Een rustige, gedeelde huishoudplanner voor twee mensen. Geen schoonmaak-tracker, geen productiviteits-app met scoreborden — een plek die de mentale last van "wie doet wat en wanneer" wegneemt.
+Een rustige huishoudplanner die je alleen of samen gebruikt: één huishouden met één of twee leden. Geen schoonmaak-tracker, geen productiviteits-app met scoreborden — een plek die de mentale last van "wie doet wat en wanneer" wegneemt.
 
 De UI/UX is gedesigned in Figma (via Make), op basis van het wireframe-brief in `src/imports/pasted_text/cura-design-brief.md`. De app is daarna herbouwd op een echte data-laag (Zustand + zod-schema's, lokaal of Supabase) terwijl het Figma-ontwerp leidend blijft.
 
@@ -27,6 +27,8 @@ Plus **Huis**: de gedeelde pool van taken, georganiseerd per kamer.
 **Navigatie:** de onderbalk (`BottomNav`) toont 4 tabs — Vandaag, Huis, Routines, **Meer**. Samen heeft geen eigen tab meer; het is, samen met Huishouden beheren en Account beheren, bereikbaar via de Meer-pagina (§5). Nieuwe schermen die geen eigen tab verdienen, horen als item op Meer, niet als 5e tab.
 
 **Toon:** kalm, warm, vergevingsgezind — maar **duidelijk boven poëtisch**. Elke tekst zegt wat er is gebeurd, wat er staat te gebeuren, of wat de gebruiker kan doen; nooit een gevoel dat de app niet kan waarmaken. Dus geen sfeerwoorden als "rust", "ritme", "even bij een ding blijven" of "lekker bezig" waar een gewoon werkwoord staat ("Afgevinkt", "Uitgesteld", "Kies hoelang je aan één taak wilt werken"). Eerlijkheid boven precisie blijft: liever "badkamer is waarschijnlijk weer toe" dan een hard getal of tijdstip — dat is zachte *precisie*, geen zweverige *toon*. Vermijd ook interne begrippen in de UI: "de gedeelde pool" heet voor de gebruiker "onder Huis, bij alle taken". UI-taal is Nederlands.
+
+**Copy neemt nooit een tweede persoon aan.** Een huishouden kan uit één lid bestaan, dus statische tekst als "je huisgenoten zien dit" is daar een lege belofte (of erger: een verwijt over iemand die niet bestaat — "nog niets afgevinkt door een huisgenoot"). Verwijst een tekst naar een huisgenoot, dan is hij dynamisch: `members.length > 1` (in de store via de `isShared`-helper in `useCuraStore.ts`, in een component via de `members`-slice, zoals Vandaag's `solo`-vlag). Solo leest Samen simpelweg als je eigen dag. Uitnodigingsteksten mogen wél over een huisgenoot gaan — dat is precies wat de knop doet.
 
 Volledige ontwerpprincipes, schermen en microcopy-richtlijnen staan in `src/imports/pasted_text/cura-design-brief.md` — lees dat bij twijfel over toon of gedrag, niet alleen deze file.
 

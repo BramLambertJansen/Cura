@@ -135,6 +135,26 @@ describe("VandaagPage", () => {
     expect(useCuraStore.getState().toggleTask).toHaveBeenCalledWith("t-ochtend", true);
   });
 
+  // CLAUDE.md §1: copy mag geen tweede persoon aannemen. In een huishouden van
+  // één zou de Samen-kaart anders permanent klagen over een huisgenoot die er
+  // niet is.
+  it("does not blame a non-existent housemate in a one-member household", () => {
+    setTasks([], { members: [ME] });
+
+    renderVandaag();
+
+    expect(screen.getByText(/nog niets afgevinkt vandaag/i)).toBeInTheDocument();
+    expect(screen.queryByText(/door een huisgenoot/i)).not.toBeInTheDocument();
+  });
+
+  it("still points at housemate activity when the household is shared", () => {
+    setTasks([]);
+
+    renderVandaag();
+
+    expect(screen.getByText(/nog niets afgevinkt door een huisgenoot vandaag/i)).toBeInTheDocument();
+  });
+
   it("moves a completed task into the collapsed Afgerond section", () => {
     setTasks([
       { id: "t-done", householdId: "h1", title: "Stofzuigen", planned: true, checklistItems: [] },

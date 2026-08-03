@@ -215,6 +215,16 @@ function friendlyMessage(e: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * Deelt de gebruiker dit huishouden met iemand anders? Copy die naar een
+ * huisgenoot verwijst ("die ziet dit onder Samen") is een lege belofte in een
+ * huishouden van één — Cura werkt ook solo, dus zulke teksten zijn dynamisch
+ * in plaats van dat ze een tweede persoon aannemen.
+ */
+function isShared(members: { id: string }[]): boolean {
+  return members.length > 1;
+}
+
 export const useCuraStore = create<CuraState>((set, get) => ({
   ready: false,
   initError: null,
@@ -437,7 +447,9 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(8);
         const completion = await store.completeTask(taskId, currentUserId);
         toast.success("Afgevinkt", {
-          description: `${task.title} is gedaan. Je huisgenoten zien dit onder Samen.`,
+          description: isShared(get().members)
+            ? `${task.title} is gedaan. Je huisgenoten zien dit onder Samen.`
+            : `${task.title} is gedaan. Je vindt het terug onder Samen.`,
           // Vergevingsgezind: zet een per ongeluk (swipe-)afvink met één tik terug,
           // net als de "Even niet vandaag"-dismissals. Hergebruikt het uncomplete-pad.
           action: { label: "Ongedaan maken", onClick: () => { void get().toggleTask(taskId, false); } },
@@ -482,7 +494,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       // generic planned-auto-claim below, so it's the one true "picked up from
       // Huis" signal for Vandaag.
       const updated = await store.claimTask(taskId, claimed ? currentUserId : null, true);
-      if (claimed) toast(`Jij doet "${task.title}"`, { description: "Je huisgenoten zien dat jij deze taak hebt opgepakt." });
+      if (claimed) toast(`Jij doet "${task.title}"`, { description: isShared(get().members) ? "Je huisgenoten zien dat jij deze taak hebt opgepakt." : undefined });
       else toast(`"${task.title}" is weer vrij`, { description: "Iedereen kan de taak nu oppakken." });
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
@@ -501,14 +513,14 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
       if (memberId && !members.some((m) => m.id === memberId)) {
-        throw new Error("Deze huisgenoot zit niet in jullie huishouden.");
+        throw new Error("Dit lid zit niet in dit huishouden.");
       }
       const updated = await store.assignTask(taskId, memberId);
       if (assignSeq.get(taskId) !== seq) return; // a newer assign call already superseded this one
       if (memberId) {
         const me = members.find((m) => m.userId === currentUserId);
         const name = memberId === me?.id ? "Jij" : members.find((m) => m.id === memberId)?.displayName ?? "Iemand";
-        toast(`${name} doet "${task.title}"`, { description: name === "Jij" ? "Je huisgenoten zien dat jij deze taak hebt opgepakt." : undefined });
+        toast(`${name} doet "${task.title}"`, { description: name === "Jij" && isShared(members) ? "Je huisgenoten zien dat jij deze taak hebt opgepakt." : undefined });
       } else {
         toast(`"${task.title}" is weer vrij`, { description: "Iedereen kan de taak nu oppakken." });
       }

@@ -103,8 +103,8 @@ export function CreateHouseholdPage() {
         <Logo size={56} className="mx-auto mb-4 rounded-xl" />
         {step === "naam" ? (
           <>
-            <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Jullie huishouden</h1>
-            <p className="text-sm text-muted-foreground mb-8">Geef het een naam. Hieronder vallen straks jullie kamers, taken en lijsten.</p>
+            <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Je huishouden</h1>
+            <p className="text-sm text-muted-foreground mb-8">Geef het een naam. Hieronder vallen straks je kamers, taken en lijsten. Huisgenoten kun je later uitnodigen.</p>
             <div className="space-y-3 text-left">
               <VeldInput
                 value={naam} onChange={setNaam} placeholder="Bijv. Thuis" ariaLabel="Naam van je huishouden" autoFocus

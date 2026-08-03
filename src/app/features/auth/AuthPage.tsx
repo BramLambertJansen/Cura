@@ -59,9 +59,10 @@ export function AuthPage() {
   // Onder het woordmerk staat een slagzin, geen uitleg: het inlogscherm hoeft
   // de app niet te verkopen of te beschrijven (dat doet OnboardingIntroPage,
   // direct hierna). Bewust niet modus-afhankelijk — "Welkom terug" klopte niet
-  // voor een nieuwe bezoeker, en de modus staat standaard op inloggen.
+  // voor een nieuwe bezoeker, en de modus staat standaard op inloggen. Ook
+  // bewust zonder "samen"/"jullie": Cura werkt net zo goed voor één persoon.
   const sent = pendingConfirmation || magicLinkSent || resetSent;
-  const subtitle = sent ? "Nog één stap." : "Het huishouden, samen geregeld.";
+  const subtitle = sent ? "Nog één stap." : "Je huishouden, op één plek.";
 
   return (
     <div
