@@ -48,11 +48,14 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
               <Check size={28} strokeWidth={2.5} className="text-white" />
             </motion.div>
             <p className="text-lg font-medium text-center font-display">"{name}" aangemaakt</p>
-            <p className="text-sm text-muted-foreground text-center">Je vindt de routine terug in het overzicht.</p>
+            <p className="text-sm text-muted-foreground text-center">Je vindt de routine terug onder Routines.</p>
           </motion.div>
         ) : step === 0 ? (
           <motion.div key="s0" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }} transition={{ duration: 0.18 }}>
-            <SheetHeader title="Naam & moment" onClose={onClose} />
+            <SheetHeader title="Naam en moment" onClose={onClose} />
+            <p className="text-sm text-muted-foreground -mt-2 mb-4 leading-relaxed">
+              Een routine is een groepje taken dat je vaak samen doet. Je loopt ze straks in één keer af.
+            </p>
             <VeldInput autoFocus value={name} onChange={setName} placeholder="Bijv. Ochtendroutine" />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 mt-6">Wanneer</p>
             <div role="group" aria-label="Wanneer" className="flex flex-wrap gap-2 mb-8">

@@ -306,9 +306,9 @@ describe("routine density — rolling ratio, not a streak", () => {
     const b = bundle();
     const view = toRoutineView(b, [], [], buildLatestCompletionMap([]), [member()], now);
     expect(view.doneInWindow).toBe(0);
-    // A never-touched routine has age 0 → "Pas begonnen", not "0 van 14 — glipt eruit".
+    // A never-touched routine has age 0 → "nieuw", not "0 van 14 — blijft liggen".
     expect(view.windowSize).toBe(0);
-    expect(view.hint).toBe("Pas begonnen");
+    expect(view.hint).toBe("Deze routine is nieuw");
     expect(view.hint).not.toMatch(/streak|verbroken|achterstallig/i);
   });
 
@@ -326,7 +326,7 @@ describe("routine density — rolling ratio, not a streak", () => {
     const view = toRoutineView(b, [t], completions, buildLatestCompletionMap(completions), [member()], now);
     expect(view.windowSize).toBe(3);
     expect(view.doneInWindow).toBe(3);
-    expect(view.hint).toBe("Zit lekker in je ritme");
+    expect(view.hint).toBe("Gaat bijna elke keer door");
   });
 });
 

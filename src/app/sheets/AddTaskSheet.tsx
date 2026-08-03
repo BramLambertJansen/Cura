@@ -76,7 +76,7 @@ export function AddTaskSheetBody({ roomId, onClose, headerExtra }: { roomId?: st
       {headerExtra}
       <VeldInput value={title} onChange={setTitle} onEnter={handleAdd} placeholder="Wat moet er gebeuren?" />
       <p className="text-xs text-muted-foreground mt-3 mb-4 leading-relaxed">
-        {formState.opMijnDag ? "De taak komt op je dag en in de gedeelde pool." : "De taak komt in de gedeelde pool. Meer hoeft niet."}
+        {formState.opMijnDag ? "Komt op je dag te staan, en onder Huis bij alle taken." : "Komt onder Huis bij alle taken. Wie hem doet, bepaal je later."}
       </p>
 
       <div className="mb-4">
@@ -106,7 +106,7 @@ export function AddTaskSheetBody({ roomId, onClose, headerExtra }: { roomId?: st
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-foreground">Meer opties</span>
               <span className="block text-xs text-muted-foreground mt-0.5 truncate">
-                {optionSummary || "Kamer, herhalen, wekker, duur en beschrijving"}
+                {optionSummary || "Kamer, herhaling, wekker, duur, checklist"}
               </span>
             </span>
           </span>

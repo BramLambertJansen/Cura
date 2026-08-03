@@ -100,7 +100,7 @@ export function TakenPage() {
       )}
 
       {nonEmpty.length === 0
-        ? <Leeg icon="🗂️" text="Nog geen taken om te tonen." />
+        ? <Leeg icon="🗂️" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
         : <div className="space-y-8">
             {nonEmpty.map((group) => (
               <section key={group.label}>

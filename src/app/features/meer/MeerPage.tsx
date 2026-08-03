@@ -26,29 +26,29 @@ export function MeerPage() {
     {
       title: "Samen",
       items: [
-        { icon: <Heart size={16} />, label: "Samen", hint: "Wat is er vandaag gedaan", onClick: () => navigate("/samen", { state: { from: "meer" } }) },
+        { icon: <Heart size={16} />, label: "Samen", hint: "Wat is er vandaag afgevinkt, en door wie", onClick: () => navigate("/samen", { state: { from: "meer" } }) },
       ],
     },
     {
       title: "Lijsten en focus",
       items: [
-        { icon: <Timer size={16} />, label: "Focustimer", hint: "Even bij een ding blijven", onClick: () => navigate("/focus") },
-        { icon: <ListChecks size={16} />, label: "Takenoverzicht", hint: "Verlopen, toekomst en zonder datum", onClick: () => navigate("/taken") },
-        { icon: <ShoppingCart size={16} />, label: "Boodschappen", hint: "Wat moet er nog gehaald worden", onClick: () => navigate("/boodschappen") },
+        { icon: <Timer size={16} />, label: "Focustimer", hint: "Timer voor één taak", onClick: () => navigate("/focus") },
+        { icon: <ListChecks size={16} />, label: "Takenoverzicht", hint: "Alle open taken, geordend op datum", onClick: () => navigate("/taken") },
+        { icon: <ShoppingCart size={16} />, label: "Boodschappen", hint: "Gedeelde boodschappenlijst", onClick: () => navigate("/boodschappen") },
       ],
     },
     {
       title: "Instellingen",
       items: [
-        { icon: <Link2 size={16} />, label: "Huishouden beheren", hint: "Naam, leden en uitnodigen", onClick: openHousehold },
-        { icon: <UserRound size={16} />, label: "Account beheren", hint: "Naam, meldingen en uitloggen", onClick: openProfiel },
+        { icon: <Link2 size={16} />, label: "Huishouden beheren", hint: "Naam wijzigen, leden zien, iemand uitnodigen", onClick: openHousehold },
+        { icon: <UserRound size={16} />, label: "Account beheren", hint: "Je naam, meldingen, wachtwoord en uitloggen", onClick: openProfiel },
       ],
     },
   ];
 
   return (
     <div className="px-5 pt-14 pb-8">
-      <PageHeader title="Meer" subtitle="Handige plekken bij elkaar." />
+      <PageHeader title="Meer" subtitle="Lijsten, focustimer en instellingen." />
       <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-7">
         {groups.map((group) => (
           <motion.section key={group.title} variants={fadeUp}>

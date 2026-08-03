@@ -81,7 +81,7 @@ const demoRoutine: RoutineView = {
     { ...demoTaskDone, id: "rt1", title: "Bed opmaken" },
     { ...demoTaskOpen, id: "rt2", title: "Planten water geven" },
   ],
-  doneInWindow: 11, windowSize: 14, windowLabel: "ochtenden", hint: "Zit lekker in je ritme",
+  doneInWindow: 11, windowSize: 14, windowLabel: "ochtenden", hint: "Gaat bijna elke keer door",
 };
 
 export function DesignSystemPage() {
@@ -206,7 +206,7 @@ export function DesignSystemPage() {
 
       <Section title="Hint banner">
         <HintBanner>Badkamer is waarschijnlijk weer toe.</HintBanner>
-        <HintBanner tone="muted">"Rustig en gestaag — dat is het ritme dat telt."</HintBanner>
+        <HintBanner tone="muted">"De badkamer is waarschijnlijk weer toe aan een beurt."</HintBanner>
       </Section>
 
       <Section title="Keuzechip">

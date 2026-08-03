@@ -384,7 +384,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const me = get().members.find((m) => m.userId === get().currentUserId);
       if (!me) return;
       const updated = await store.updateMember(me.id, { quietHoursStart: start, quietHoursEnd: end });
-      toast(start && end ? "Stille uren ingesteld" : "Stille uren uit");
+      toast(start && end ? "Stille uren aan" : "Stille uren uit");
       set({ members: get().members.map((m) => (m.id === me.id ? updated : m)) });
     }, "Opslaan lukte niet");
   },
@@ -436,8 +436,8 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         // completion toasts, so screens don't fire their own on top of it.
         if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate?.(8);
         const completion = await store.completeTask(taskId, currentUserId);
-        toast.success("Lekker bezig", {
-          description: `${task.title} is gedaan — zichtbaar voor het huishouden.`,
+        toast.success("Afgevinkt", {
+          description: `${task.title} is gedaan. Je huisgenoten zien dit onder Samen.`,
           // Vergevingsgezind: zet een per ongeluk (swipe-)afvink met één tik terug,
           // net als de "Even niet vandaag"-dismissals. Hergebruikt het uncomplete-pad.
           action: { label: "Ongedaan maken", onClick: () => { void get().toggleTask(taskId, false); } },
@@ -482,8 +482,8 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       // generic planned-auto-claim below, so it's the one true "picked up from
       // Huis" signal for Vandaag.
       const updated = await store.claimTask(taskId, claimed ? currentUserId : null, true);
-      if (claimed) toast(`Jij pakt "${task.title}"`, { description: "Anderen zien dat jij dit doet." });
-      else toast(`"${task.title}" vrijgegeven`);
+      if (claimed) toast(`Jij doet "${task.title}"`, { description: "Je huisgenoten zien dat jij deze taak hebt opgepakt." });
+      else toast(`"${task.title}" is weer vrij`, { description: "Iedereen kan de taak nu oppakken." });
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
       toast.error(friendlyMessage(e, "Claimen lukte niet"));
@@ -501,16 +501,16 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
       if (memberId && !members.some((m) => m.id === memberId)) {
-        throw new Error("Dit huisgenootschap kent dit lid niet.");
+        throw new Error("Deze huisgenoot zit niet in jullie huishouden.");
       }
       const updated = await store.assignTask(taskId, memberId);
       if (assignSeq.get(taskId) !== seq) return; // a newer assign call already superseded this one
       if (memberId) {
         const me = members.find((m) => m.userId === currentUserId);
         const name = memberId === me?.id ? "Jij" : members.find((m) => m.id === memberId)?.displayName ?? "Iemand";
-        toast(`${name} pakt "${task.title}"`, { description: name === "Jij" ? "Anderen zien dat jij dit doet." : undefined });
+        toast(`${name} doet "${task.title}"`, { description: name === "Jij" ? "Je huisgenoten zien dat jij deze taak hebt opgepakt." : undefined });
       } else {
-        toast(`"${task.title}" vrijgegeven`);
+        toast(`"${task.title}" is weer vrij`, { description: "Iedereen kan de taak nu oppakken." });
       }
       set({ tasks: get().tasks.map((t) => (t.id === taskId ? updated : t)) });
     } catch (e) {
@@ -540,7 +540,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         created = await store.claimTask(created.id, currentUserId);
       }
       toast.success(`"${created.title}" toegevoegd`, {
-        description: input.planned ? "Op je dag gezet" : input.roomId ? undefined : "Gedeelde pool",
+        description: input.planned ? "Staat op je dag" : input.roomId ? undefined : "Staat onder Huis, bij alle taken",
       });
       set({ tasks: [...get().tasks, created] });
     }, "Toevoegen lukte niet");

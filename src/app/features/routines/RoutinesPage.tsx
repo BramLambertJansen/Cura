@@ -16,7 +16,7 @@ export function RoutinesPage() {
     <div className="px-5 pt-14 pb-8">
       <PageHeader
         title="Routines"
-        subtitle="Terugkerende structuur."
+        subtitle="Groepjes taken die steeds terugkomen."
         action={
           <PillButton onClick={openNewRoutine} ariaLabel="Nieuwe routine aanmaken" icon={<Plus size={14} strokeWidth={2.5} aria-hidden="true" />}>
             Nieuw
@@ -24,7 +24,7 @@ export function RoutinesPage() {
         }
       />
       {routines.length === 0
-        ? <Leeg icon="🔄" text="Nog geen routines. Maak je eerste aan." />
+        ? <Leeg icon="🔄" text="Nog geen routines. Bundel taken die je vaak samen doet, zoals opruimen voor het slapen." />
         : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3.5">
             {routines.map((r) => (
               <motion.div key={r.id} variants={fadeUp}>

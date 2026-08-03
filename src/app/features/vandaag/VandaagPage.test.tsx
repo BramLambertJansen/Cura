@@ -108,7 +108,7 @@ describe("VandaagPage", () => {
 
     renderVandaag();
 
-    expect(screen.getByText(/niets op de planning\./i)).toBeInTheDocument();
+    expect(screen.getByText(/nog niets op je dag/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /later vandaag/i })).not.toBeInTheDocument();
   });
 
@@ -119,7 +119,7 @@ describe("VandaagPage", () => {
 
     renderVandaag();
 
-    expect(screen.getByRole("button", { name: /misschien handig/i })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /suggesties voor vandaag/i })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Planten water geven")).toBeInTheDocument();
   });
 

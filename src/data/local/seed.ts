@@ -4,7 +4,7 @@ import type { Database } from "../types";
  * First-run seed for `local` mode — mirrors the Figma Make export's
  * INITIAL_ROOMS / INITIAL_TASKS / INITIAL_ROUTINES so the migrated app looks
  * the same on first load. No fabricated completion history is seeded for
- * bundles: density starts honestly at "Pas begonnen" rather than faking a
+ * bundles: density starts honestly at "Deze routine is nieuw" rather than faking a
  * track record that never happened (CLAUDE.md §2, honesty over precision).
  */
 

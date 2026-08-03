@@ -186,7 +186,7 @@ export function RoutineSessionPage() {
                 )}
               <div className="flex flex-col items-center gap-3">
                 <p className="text-lg font-medium text-foreground font-display">
-                  {allDone ? "Routine gedaan voor nu." : "Voor deze sessie klaar."}
+                  {allDone ? "Routine afgerond." : "Klaar voor nu — de overgeslagen taken blijven staan."}
                 </p>
                 <p className="text-sm text-muted-foreground italic font-display max-w-[240px]">{routine.hint}</p>
               </div>

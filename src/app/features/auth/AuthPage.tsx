@@ -57,11 +57,12 @@ export function AuthPage() {
   }
 
   const sent = pendingConfirmation || magicLinkSent || resetSent;
+  // Voor een nieuwe bezoeker is dit het eerste wat er van de app te zien is, dus
+  // staat hier wat Cura doet — niet "welkom terug", wat alleen klopt als je al
+  // een account hebt (de modus staat standaard op inloggen).
   const subtitle = sent
     ? "Nog één stap."
-    : mode === "signin"
-      ? "Welkom terug."
-      : "Maak een account aan om te beginnen.";
+    : "Huishoudtaken plannen en verdelen met je huisgenoot.";
 
   return (
     <div

@@ -74,14 +74,14 @@ export function FocusPage() {
         <div className="mb-2">
           <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">Focustimer</p>
           <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display">
-            {idle ? "Even bij één ding blijven" : phase === "break" ? "Momentje pauze" : "Aan het werk"}
+            {idle ? "Eén taak, één timer" : phase === "break" ? "Pauze" : "Aan het werk"}
           </h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             {idle
-              ? "Kies een tijd."
+              ? "Kies hoelang je aan één taak wilt werken. De timer loopt door als je de app dichtdoet."
               : taskTitle
                 ? `Bezig met ${taskTitle}.`
-                : "Blijf even hier — de timer loopt door terwijl je rondkijkt."}
+                : "De timer loopt door terwijl je de app verder gebruikt."}
           </p>
         </div>
 
@@ -98,7 +98,7 @@ export function FocusPage() {
                   <span className="flex-1 min-w-0 text-left">
                     <span className="block text-sm font-semibold text-foreground truncate">{nextTask.title}</span>
                     <span className="block text-xs text-muted-foreground mt-0.5 truncate">
-                      {[nextTask.room, nextTask.duration].filter(Boolean).join(" · ") || "Start een focussessie"}
+                      {[nextTask.room, nextTask.duration].filter(Boolean).join(" · ") || "Tik om de timer te starten"}
                     </span>
                   </span>
                   <span className="flex items-center gap-1 text-xs font-semibold flex-shrink-0" style={{ color: SAGE }}>
@@ -108,7 +108,7 @@ export function FocusPage() {
               </motion.div>
             )}
             <motion.div variants={fadeUp} className="space-y-2">
-              {nextTask && <Kop>Of kies zelf een tijd</Kop>}
+              {nextTask && <Kop>Of kies zelf een duur</Kop>}
               <div role="group" aria-label="Kies een focusduur" className="grid grid-cols-3 gap-3">
                 {FOCUS_PRESETS_MIN.map((min) => (
                   <OptieKaart
