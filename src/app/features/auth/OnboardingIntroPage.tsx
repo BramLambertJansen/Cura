@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { CalendarDays, Heart, RefreshCw } from "lucide-react";
+import { CalendarDays, Check, Heart, Home } from "lucide-react";
 import { AppBackground } from "../../components/AppBackground";
 import { PrimaryButton } from "../../components/shared";
 
@@ -8,28 +8,55 @@ interface Slide {
   icon: ReactNode;
   title: string;
   text: string;
+  /** Concrete, scannable "dit kun je hier doen"-punten onder de tekst. */
+  bullets?: string[];
 }
 
-// The three pillars (CLAUDE.md §1 / design brief §1) — same order as BottomNav.
+/**
+ * Slide 1 says in plain words wat de app is en wat je erin kunt doen; de drie
+ * daarna lopen de pijlers (CLAUDE.md §1) langs in dezelfde volgorde als de
+ * navigatie, elk met wat je er concreet doet — geen abstracte omschrijving van
+ * het idee erachter.
+ */
 const SLIDES: Slide[] = [
+  {
+    icon: <Check size={26} aria-hidden="true" />,
+    title: "Welkom bij Cura",
+    text: "Cura is een planner voor je huishouden. Alles wat er te doen staat op één lijst — voor jou alleen, of gedeeld met wie er nog woont.",
+    bullets: [
+      "Taken per kamer bijhouden",
+      "Routines die automatisch terugkomen",
+      "Een gedeelde boodschappenlijst",
+      "Een huisgenoot uitnodigen als je wilt delen",
+    ],
+  },
   {
     icon: <CalendarDays size={26} aria-hidden="true" />,
     title: "Vandaag",
-    text: "Wat ga ik nu doen. Je planner-thuisbasis — kort en actiegericht.",
+    text: "Je lijstje voor vandaag, op ochtend, middag en avond.",
+    bullets: [
+      "Veeg naar rechts om af te vinken",
+      "Veeg naar links om iets uit te stellen",
+      "Tik op + om een taak of boodschap toe te voegen",
+    ],
   },
   {
-    icon: <RefreshCw size={26} aria-hidden="true" />,
-    title: "Routines",
-    text: "Terugkerende structuur en bundels van taken. Hier leeft de gewoontevorming.",
+    icon: <Home size={26} aria-hidden="true" />,
+    title: "Huis en Routines",
+    text: "Onder Huis staan alle taken van het huishouden, per kamer. Een routine is een groepje taken dat je vaak samen doet.",
+    bullets: [
+      "Een taak oppakken zodat duidelijk is wie hem doet",
+      "Start een routine en loop de taken één voor één af",
+    ],
   },
   {
     icon: <Heart size={26} aria-hidden="true" />,
     title: "Samen",
-    text: "Een afgevinkte taak is een bericht — \"ik heb de keuken al gedaan\" — geen logboek of scorebord.",
+    text: "Onder Samen staat wat er vandaag is afgevinkt. Woon je met iemand samen, dan zie je dat van elkaar en hoef je niet te vragen of de keuken al gedaan is. Alleen? Dan is het jouw dag op een rij.",
   },
 ];
 
-/** Short, warm 3-screen intro shown once before "huishouden aanmaken" (design brief §4.6). */
+/** Eenmalige intro vóór "huishouden aanmaken": wat de app is en wat je erin kunt doen. */
 export function OnboardingIntroPage({ onDone }: { onDone: () => void }) {
   const [index, setIndex] = useState(0);
   const last = index === SLIDES.length - 1;
@@ -37,16 +64,19 @@ export function OnboardingIntroPage({ onDone }: { onDone: () => void }) {
 
   return (
     <div
-      className="min-h-dvh flex flex-col items-center justify-center bg-background"
+      className="min-h-dvh max-h-dvh overflow-y-auto flex flex-col items-center justify-center bg-background"
       style={{
-        paddingTop: "var(--safe-top)",
-        paddingBottom: "var(--safe-bottom)",
+        paddingTop: "calc(2rem + var(--safe-top))",
+        paddingBottom: "calc(2rem + var(--safe-bottom))",
         paddingLeft: "calc(1.5rem + var(--safe-left))",
         paddingRight: "calc(1.5rem + var(--safe-right))",
       }}
     >
       <AppBackground />
-      <div className="w-full max-w-sm text-center relative z-10">
+      {/* my-auto (i.p.v. alleen justify-center op de scroller) zodat een lange
+          slide op een klein scherm van bovenaf scrollt in plaats van de kop af
+          te snijden. */}
+      <div className="w-full max-w-sm text-center relative z-10 my-auto">
         <p className="sr-only" aria-live="polite">{slide.title}</p>
         <AnimatePresence mode="wait">
           <motion.div
@@ -64,7 +94,21 @@ export function OnboardingIntroPage({ onDone }: { onDone: () => void }) {
             <h1 className="text-[1.75rem] font-medium text-foreground mb-2 font-display">
               {slide.title}
             </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mx-auto">{slide.text}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-[300px] mx-auto">{slide.text}</p>
+            {slide.bullets && (
+              <ul className="mt-5 space-y-2 text-left max-w-[300px] mx-auto">
+                {slide.bullets.map((b) => (
+                  <li key={b} className="flex items-start gap-2.5 text-sm text-foreground leading-snug">
+                    <span
+                      className="mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0"
+                      style={{ background: "var(--primary)" }}
+                      aria-hidden="true"
+                    />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+            )}
           </motion.div>
         </AnimatePresence>
 

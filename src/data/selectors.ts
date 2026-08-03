@@ -270,13 +270,18 @@ export function toRoutineView(
   };
 }
 
-/** Qualitative line over the ratio. Encouraging, never punishing. */
+/**
+ * Zegt in gewone woorden hoe vaak de routine de laatste tijd doorging — het
+ * losse cijfer ("11 van de 14 ochtenden") staat er in de UI naast. Nooit
+ * bestraffend, maar ook niet vaag: "regelmatig" is te lezen, "zit lekker in
+ * je ritme" is een gevoel dat de data niet claimt.
+ */
 function densityHint(done: number, total: number): string {
-  if (total === 0) return "Pas begonnen";
+  if (total === 0) return "Deze routine is nieuw";
   const ratio = done / total;
-  if (ratio >= 0.75) return "Zit lekker in je ritme";
-  if (ratio >= 0.4) return "Gaat goed";
-  return "Glipt er de laatste tijd een beetje uit";
+  if (ratio >= 0.75) return "Gaat bijna elke keer door";
+  if (ratio >= 0.4) return "Gaat regelmatig door";
+  return "Ging de laatste tijd vaak niet door";
 }
 
 // ─── Vandaag suggestions — manual, no AI ─────────────────────────────────────

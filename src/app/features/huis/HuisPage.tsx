@@ -83,7 +83,7 @@ export function HuisPage() {
 
   return (
     <div className="px-5 pt-14 pb-8">
-      <PageHeader title="Huis" subtitle="Elke ruimte op z'n plek." />
+      <PageHeader title="Huis" subtitle="Alle taken bij elkaar, en je kamers." />
 
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-2 ml-1">

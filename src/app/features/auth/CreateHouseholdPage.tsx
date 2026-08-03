@@ -103,8 +103,8 @@ export function CreateHouseholdPage() {
         <Logo size={56} className="mx-auto mb-4 rounded-xl" />
         {step === "naam" ? (
           <>
-            <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Welkom</h1>
-            <p className="text-sm text-muted-foreground mb-8">Geef je huishouden een naam om te beginnen.</p>
+            <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Je huishouden</h1>
+            <p className="text-sm text-muted-foreground mb-8">Geef het een naam. Hieronder vallen straks je kamers, taken en lijsten. Huisgenoten kun je later uitnodigen.</p>
             <div className="space-y-3 text-left">
               <VeldInput
                 value={naam} onChange={setNaam} placeholder="Bijv. Thuis" ariaLabel="Naam van je huishouden" autoFocus
@@ -121,7 +121,7 @@ export function CreateHouseholdPage() {
         ) : step === "kamers" ? (
           <>
             <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Welke kamers zijn er?</h1>
-            <p className="text-sm text-muted-foreground mb-8">Optioneel — je kunt er later altijd meer toevoegen.</p>
+            <p className="text-sm text-muted-foreground mb-8">Je taken worden per kamer gesorteerd. Kamers toevoegen of weghalen kan later ook nog.</p>
             <div className="grid grid-cols-3 gap-2.5 mb-6" role="group" aria-label="Kamers selecteren">
               {STARTER_ROOMS.map((ic) => {
                 const active = selectedRooms.has(ic.key);
@@ -167,7 +167,7 @@ export function CreateHouseholdPage() {
         ) : (
           <>
             <h1 className="text-[2rem] font-medium text-foreground mb-2 font-display">Alvast wat starttaken?</h1>
-            <p className="text-sm text-muted-foreground mb-8">Optioneel — zet er een paar op je dag, of sla dit over.</p>
+            <p className="text-sm text-muted-foreground mb-8">Wat je hier aanvinkt, staat straks meteen op je dag. Zo begin je niet met een leeg scherm.</p>
             <div className="space-y-2.5 text-left mb-4">
               {STARTER_TASKS.map((t, i) => {
                 const active = selected.has(i);

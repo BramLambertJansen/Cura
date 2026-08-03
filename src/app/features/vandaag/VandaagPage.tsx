@@ -53,8 +53,8 @@ export function VandaagPage() {
       const task = tasksRef.current.find((t) => t.id === taskId);
       if (!task) return;
       dismissTask(taskId);
-      toast("Even niet vandaag", {
-        description: `${task.title} staat even uit je dag.`,
+      toast("Uitgesteld", {
+        description: `${task.title} staat morgen weer op je dag.`,
         action: { label: "Ongedaan maken", onClick: () => restoreTask(taskId) },
       });
     },
@@ -115,9 +115,12 @@ export function VandaagPage() {
   // that wasn't the current user's own — a confirmed housemate id, not just
   // "not mine", so an unresolved/unknown doer never counts as a housemate.
   const housemateActivity = logboek.find((a) => !!a.doneById && a.doneById !== me?.id);
+  // Mag naar een huisgenoot verwijzen zonder voorbehoud: de kaart hieronder
+  // rendert alleen als er een huisgenoot ís (hasHousemate), dus dit is nooit
+  // een verwijt over iemand die niet bestaat.
   const samenSubtitle = housemateActivity
     ? `${housemateActivity.doneBy} rondde ${housemateActivity.title.toLowerCase()} af`
-    : "Zie wat huisgenoten vandaag deden";
+    : "Nog niets afgevinkt door een huisgenoot vandaag";
 
   const renderDagdeelGroep = (groep: DagdeelGroup) => {
     const Icon = DAGDEEL_ICON[groep.key];
@@ -203,7 +206,7 @@ export function VandaagPage() {
             <Leeg
               icon="🌿"
               image="/empty-plants.webp"
-              text={allDone ? "Alles rond voor vandaag." : "Niets op de planning."}
+              text={allDone ? "Alles op je dag is afgevinkt." : "Nog niets op je dag. Tik op + of pak iets uit Huis."}
             />
           ) : (
             <>
@@ -329,7 +332,7 @@ export function VandaagPage() {
         {suggestions.length > 0 && (
           <section>
             <CollapsibleSection
-              title="Misschien handig"
+              title="Suggesties voor vandaag"
               count={suggestions.length}
               open={suggestiesOpen}
               onToggle={() => setSuggestiesOpen((v) => !v)}
@@ -340,8 +343,8 @@ export function VandaagPage() {
                     <SuggestieRij
                       key={task.id}
                       task={task}
-                      onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat klaar wanneer jij wilt.` }); }}
-                      onNietVandaag={() => { dismiss(task.id); toast("Even niet vandaag", { description: `${task.title} komt morgen weer langs.`, action: { label: "Ongedaan maken", onClick: () => restore(task.id) } }); }}
+                      onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat nu bij je taken van vandaag.` }); }}
+                      onNietVandaag={() => { dismiss(task.id); toast("Uitgesteld", { description: `${task.title} komt morgen weer bij de suggesties.`, action: { label: "Ongedaan maken", onClick: () => restore(task.id) } }); }}
                     />
                   ))}
                 </AnimatePresence>

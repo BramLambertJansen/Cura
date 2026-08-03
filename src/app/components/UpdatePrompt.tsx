@@ -11,7 +11,7 @@ export function UpdatePrompt() {
     if (!needRefresh || shown.current) return;
     shown.current = true;
     toast("Er is een nieuwe versie van Cura", {
-      description: "Vernieuw wanneer het jou uitkomt.",
+      description: "Tik op Vernieuwen om de nieuwe versie te laden.",
       duration: Infinity,
       action: { label: "Vernieuwen", onClick: () => { void updateServiceWorker(); } },
     });

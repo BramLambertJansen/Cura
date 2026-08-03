@@ -108,7 +108,7 @@ describe("VandaagPage", () => {
 
     renderVandaag();
 
-    expect(screen.getByText(/niets op de planning\./i)).toBeInTheDocument();
+    expect(screen.getByText(/nog niets op je dag/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /later vandaag/i })).not.toBeInTheDocument();
   });
 
@@ -119,7 +119,7 @@ describe("VandaagPage", () => {
 
     renderVandaag();
 
-    expect(screen.getByRole("button", { name: /misschien handig/i })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /suggesties voor vandaag/i })).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Planten water geven")).toBeInTheDocument();
   });
 
@@ -133,6 +133,17 @@ describe("VandaagPage", () => {
     await user.click(screen.getByRole("checkbox", { name: /afwas doen afvinken/i }));
 
     expect(useCuraStore.getState().toggleTask).toHaveBeenCalledWith("t-ochtend", true);
+  });
+
+  // CLAUDE.md §1: copy mag geen tweede persoon aannemen. Solo is dat opgelost
+  // door de kaart te verbergen (#213, test verderop); in een gedeeld huishouden
+  // mag de subtitel wél over een huisgenoot gaan.
+  it("points at housemate activity when the household is shared", () => {
+    setTasks([]);
+
+    renderVandaag();
+
+    expect(screen.getByText(/nog niets afgevinkt door een huisgenoot vandaag/i)).toBeInTheDocument();
   });
 
   it("moves a completed task into the collapsed Afgerond section", () => {

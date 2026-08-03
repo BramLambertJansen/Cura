@@ -86,6 +86,9 @@ export function DagdeelKiezer({
   return (
     <div className="mb-6">
       <Kop>Wanneer <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
+      <p className="text-xs text-muted-foreground -mt-1 mb-2.5 leading-relaxed">
+        Bepaalt waar de taak op Vandaag staat. Je krijgt hier geen melding van — dat doet de wekker.
+      </p>
       <div role="group" aria-label="Wanneer" className="flex gap-2">
         {(["ochtend", "middag", "avond"] as const).map((key) => (
           <KeuzeChip key={key} selected={dagdeel === key} onClick={() => onDagdeelChange(dagdeel === key ? undefined : key)}>
