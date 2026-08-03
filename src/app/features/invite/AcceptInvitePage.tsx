@@ -5,6 +5,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { AppBackground } from "../../components/AppBackground";
 import { PrimaryButton } from "../../components/shared";
+import { JuridischFooter } from "../../components/JuridischFooter";
 import { AuthForm, type AuthMode } from "../auth/AuthForm";
 import { MagicLinkForm } from "../auth/MagicLinkForm";
 
@@ -157,6 +158,7 @@ export function AcceptInvitePage() {
               className="w-full text-center text-sm text-muted-foreground mt-6">
               {authMode === "signup" ? "Al een account? Inloggen" : "Nog geen account? Registreren"}
             </button>
+            <JuridischFooter className="mt-5" />
           </>
         )}
 
