@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { Heart, Link2, UserRound, ListChecks, Timer, ShoppingCart, ShieldCheck, ScrollText, ChevronRight } from "lucide-react";
 import { useSheets } from "../../sheetContext";
+import { useHasHousemate } from "../../../stores/useViews";
 import { stagger, fadeUp } from "../../lib/motion";
 import { Kop, PageHeader, IconBadge, Card } from "../../components/shared";
 
@@ -21,14 +22,19 @@ interface MeerGroup {
 export function MeerPage() {
   const navigate = useNavigate();
   const { openHousehold, openProfiel } = useSheets();
+  const hasHousemate = useHasHousemate();
 
   const groups: MeerGroup[] = [
-    {
-      title: "Samen",
-      items: [
-        { icon: <Heart size={16} />, label: "Samen", hint: "Wat is er vandaag gedaan", onClick: () => navigate("/samen", { state: { from: "meer" } }) },
-      ],
-    },
+    // Alleen zichtbaar zodra er echt een huisgenoot is toegevoegd — zonder
+    // tweede lid is Samen je eigen afvinklijst terugkijken (zie useHasHousemate).
+    ...(hasHousemate
+      ? [{
+          title: "Samen",
+          items: [
+            { icon: <Heart size={16} />, label: "Samen", hint: "Wat is er vandaag gedaan", onClick: () => navigate("/samen", { state: { from: "meer" } }) },
+          ],
+        }]
+      : []),
     {
       title: "Lijsten en focus",
       items: [

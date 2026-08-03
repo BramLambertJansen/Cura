@@ -8,6 +8,7 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
 import { useCuraStore } from "../stores/useCuraStore";
+import { useHasHousemate } from "../stores/useViews";
 import { useOnboardingSeen } from "./lib/useOnboardingSeen";
 import { useDaypart } from "./lib/useDaypart";
 import { SHADOW_LG, DAYPART_NAV } from "./lib/constants";
@@ -87,7 +88,7 @@ function AnimatedRoutes() {
         <Route path="/huis/:roomId" element={<PageTx><RoomDetailPage /></PageTx>} />
         <Route path="/routines" element={<PageTx><RoutinesPage /></PageTx>} />
         <Route path="/routines/:bundleId/starten" element={<PageTx><RoutineSessionPage /></PageTx>} />
-        <Route path="/samen" element={<PageTx><SamenPage /></PageTx>} />
+        <Route path="/samen" element={<PageTx><SamenRoute /></PageTx>} />
         <Route path="/meer" element={<PageTx><MeerPage /></PageTx>} />
         <Route path="/taken" element={<PageTx><TakenPage /></PageTx>} />
         <Route path="/boodschappen" element={<PageTx><BoodschappenPage /></PageTx>} />
@@ -96,6 +97,19 @@ function AnimatedRoutes() {
       </Routes>
     </AnimatePresence>
   );
+}
+
+/**
+ * Samen only exists once the household actually has a second member (invite
+ * sent *and* accepted) — see useHasHousemate. Its entry points (Meer's row,
+ * Vandaag's preview card) are hidden in that case, so this guards the route
+ * itself: a bookmark, deeplink or leftover history entry lands calmly on
+ * Vandaag instead of on a feed that can only mirror your own completions.
+ */
+function SamenRoute() {
+  const hasHousemate = useHasHousemate();
+  if (!hasHousemate) return <Navigate to="/vandaag" replace />;
+  return <SamenPage />;
 }
 
 function PageTx({ children }: { children: ReactNode }) {
