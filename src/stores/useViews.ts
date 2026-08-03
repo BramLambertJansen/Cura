@@ -18,6 +18,22 @@ export function useCurrentMember(): Member | undefined {
   return useMemo(() => members.find((m) => m.userId === currentUserId), [members, currentUserId]);
 }
 
+/**
+ * Whether this household actually has a housemate — i.e. someone was invited
+ * and that invite was accepted, so a second `Member` row exists. Samen is the
+ * "zichtbaarheid tussen huisgenoten"-pijler (CLAUDE.md §1): with nobody else in
+ * the household it can only ever show your own completions back to you, which
+ * reads as a logboek/scorebord of one (§2). So every Samen entry point (Meer's
+ * row, Vandaag's preview card, the /samen route itself) hangs off this.
+ *
+ * Deliberately a plain member count, not "members minus me": when the acting
+ * member hasn't resolved yet (unknown userId, mid-init), a household of one
+ * must still read as "no housemate" rather than accidentally revealing Samen.
+ */
+export function useHasHousemate(): boolean {
+  return useCuraStore((s) => s.members.length > 1);
+}
+
 /** Every task as a view-model — done/dueHint/claimedBy resolved, never stored. */
 export function useTaskViews(): TaskView[] {
   const tasks = useCuraStore((s) => s.tasks);

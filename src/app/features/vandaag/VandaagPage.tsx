@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sun, Sunrise, Undo2, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
-import { useActivityFeed, useCurrentMember, useRoutineViews, useTaskViews } from "../../../stores/useViews";
+import { useActivityFeed, useCurrentMember, useHasHousemate, useRoutineViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen, splitPickedUpToday } from "../../../data/selectors";
 import type { DagdeelGroup } from "../../../data/types";
 import { getGreeting } from "../../lib/format";
@@ -34,6 +34,8 @@ export function VandaagPage() {
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
   const me = useCurrentMember();
+  // Geen huisgenoot = geen Samen-kaart (zie useHasHousemate).
+  const hasHousemate = useHasHousemate();
   const tasks = useTaskViews();
   const routines = useRoutineViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
@@ -306,6 +308,7 @@ export function VandaagPage() {
           </section>
         )}
 
+        {hasHousemate && (
         <section>
           <Card onClick={() => navigate("/samen", { state: { from: "vandaag" } })} className="flex items-center gap-3.5 px-4 py-4" ariaLabel="Samen — wat huisgenoten vandaag deden">
             <IconBadge icon={<Heart size={16} />} size={36} />
@@ -321,6 +324,7 @@ export function VandaagPage() {
             <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
           </Card>
         </section>
+        )}
 
         {suggestions.length > 0 && (
           <section>

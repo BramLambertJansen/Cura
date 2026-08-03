@@ -149,4 +149,20 @@ describe("VandaagPage", () => {
     const afgerondToggle = screen.getByRole("button", { name: /afgerond/i });
     expect(within(afgerondToggle).getByText("1")).toBeInTheDocument();
   });
+
+  it("hides the Samen preview card in a household of one", () => {
+    setTasks([], { members: [ME] });
+
+    renderVandaag();
+
+    expect(screen.queryByRole("button", { name: /^samen/i })).not.toBeInTheDocument();
+  });
+
+  it("shows the Samen preview card once a housemate joined", () => {
+    setTasks([]);
+
+    renderVandaag();
+
+    expect(screen.getByRole("button", { name: /^samen/i })).toBeInTheDocument();
+  });
 });
