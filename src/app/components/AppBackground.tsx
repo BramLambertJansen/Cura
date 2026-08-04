@@ -2,10 +2,9 @@ import { useDaypart } from "../lib/useDaypart";
 import { DAYPART_BG } from "../lib/constants";
 
 /**
- * The same soft sage/peach pattern used in the iOS splash screens
- * (public/splash/*) — fixed full-bleed layer so the in-app experience
- * matches the PWA launch screen. Served as WebP (8 KB vs the 900 KB source
- * PNG, which only lives on as the splash-screen artwork). A second, tinted
+ * A quiet full-bleed watercolor parchment: fine paper grain and low-contrast
+ * pigment blooms without decorative objects, so cards and text stay calm at
+ * every scroll position. A second, tinted
  * layer on top shifts with the time of day (ochtend/middag/avond,
  * `useDaypart`) via `mix-blend-mode: soft-light` — a wash over the art, not a
  * replacement of it, so the illustration still reads at every daypart.

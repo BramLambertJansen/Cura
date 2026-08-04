@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Check, CheckCircle2, ChevronDown, Plus, ShoppingCart } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, Plus } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useShoppingList, useTaskViews } from "../../../stores/useViews";
 import { useSheets } from "../../sheetContext";
 import { stagger, fadeUp } from "../../lib/motion";
 import { SAGE, SHADOW } from "../../lib/constants";
-import { PageHeader, PillButton, VerwijderKnop, IconButton } from "../../components/shared";
+import { PillButton, VerwijderKnop } from "../../components/shared";
+import { PageHero } from "../../components/PageHero";
 import { BoodschapRij } from "../../components/BoodschapRij";
+import { EmptyIllustration } from "../../components/EmptyIllustration";
 
 export function BoodschappenPage() {
   const navigate = useNavigate();
@@ -34,35 +36,20 @@ export function BoodschappenPage() {
 
   return (
     <div className="relative">
-      {/* Watercolour hero, bleeding to the screen edges and fading into the page. */}
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-[150px] overflow-hidden pointer-events-none">
-        <img
-          src="/landing-header.webp"
-          alt=""
-          className="w-full h-full object-cover"
-          style={{
-            objectPosition: "72% 35%",
-            WebkitMaskImage: "linear-gradient(to bottom, black 40%, transparent 98%)",
-            maskImage: "linear-gradient(to bottom, black 40%, transparent 98%)",
-          }}
-        />
-      </div>
+      <PageHero
+        src="/headers/boodschappen.webp"
+        title="Boodschappen"
+        subtitle="Wat moet er nog gehaald worden?"
+        onBack={() => navigate("/meer")}
+        backLabel="Terug naar Meer"
+      />
 
-      <div className="relative px-5 pt-14 pb-8">
-        <IconButton
-          onClick={() => navigate("/meer")}
-          label="Terug naar Meer"
-          tone="card" className="mb-4"
-          icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
-        <PageHeader
-          title="Boodschappen"
-          subtitle="Wat moet er nog gehaald worden?"
-          action={
-            open.length > 0 && !hasOpenBoodschappenTask
-              ? <PillButton onClick={zetOpMijnDag}>Zet op mijn dag</PillButton>
-              : undefined
-          }
-        />
+      <div className="relative px-5 pb-8">
+        {open.length > 0 && !hasOpenBoodschappenTask && (
+          <div className="mb-4 flex justify-end">
+            <PillButton onClick={zetOpMijnDag}>Zet op mijn dag</PillButton>
+          </div>
+        )}
 
         <motion.button
           type="button"
@@ -85,11 +72,7 @@ export function BoodschappenPage() {
             transition={{ duration: 0.32 }}
             className="rounded-3xl border border-border/60 bg-card px-5 py-12 text-center"
             style={{ boxShadow: SHADOW }}>
-            <div
-              className="w-14 h-14 mx-auto mb-4 rounded-full flex items-center justify-center"
-              style={{ background: "radial-gradient(circle at 40% 35%, color-mix(in srgb, var(--accent) 55%, var(--card)) 0%, color-mix(in srgb, var(--accent) 20%, var(--card)) 70%)" }}>
-              <ShoppingCart size={24} style={{ color: SAGE }} strokeWidth={1.9} aria-hidden="true" />
-            </div>
+            <EmptyIllustration src="/states/empty-shopping.webp" className="mb-2" />
             <p className="font-display italic text-[1.05rem] text-foreground">Nog niets op je lijst</p>
           </motion.div>
         ) : (

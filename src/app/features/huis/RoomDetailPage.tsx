@@ -72,9 +72,9 @@ export function RoomDetailPage() {
         editLabel={`${room.name} bewerken`}
       />
 
-      <div className={`px-5 pb-6 relative z-10 ${ic.image ? "-mt-10" : "pt-4"}`}>
-        <h2 className="text-3xl font-medium text-foreground leading-tight font-display">{room.name}</h2>
-        {room.owner && <p className="text-muted-foreground text-xs mt-1">Meestal {room.owner}</p>}
+      <div className="relative z-10 -mt-28 h-28 px-5 pt-3">
+        <h1 className="font-display text-3xl font-medium leading-tight text-foreground">{room.name}</h1>
+        {room.owner && <p className="mt-2 text-sm text-muted-foreground">Meestal {room.owner}</p>}
       </div>
 
       <div className="px-5 pb-6">
@@ -84,7 +84,7 @@ export function RoomDetailPage() {
       <div className="px-5 pb-28 space-y-3">
         {roomTasks.length === 0 ? (
           <div className="text-center pt-2 pb-4">
-            <EmptyIllustration />
+            <EmptyIllustration src="/states/empty-room-tasks.webp" />
             <p className="text-sm text-muted-foreground mt-1">Nog geen taken in deze kamer.</p>
           </div>
         ) : (

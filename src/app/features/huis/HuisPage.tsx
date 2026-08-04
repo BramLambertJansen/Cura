@@ -1,12 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, ChevronDown, Plus, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Plus, SlidersHorizontal } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { PageHeader, Card, IconBadge, KeuzeChip, StatusBadge, Kop, CollapsibleSection } from "../../components/shared";
+import { Card, IconBadge, KeuzeChip, StatusBadge, Kop, CollapsibleSection } from "../../components/shared";
+import { PageHero } from "../../components/PageHero";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
@@ -82,8 +83,10 @@ export function HuisPage() {
         .join(" · ");
 
   return (
-    <div className="px-5 pt-14 pb-8">
-      <PageHeader title="Huis" subtitle="Alle taken bij elkaar, en je kamers." />
+    <div className="pb-8">
+      <PageHero src="/headers/huis.webp" title="Huis" subtitle="Alle taken bij elkaar, en je kamers." />
+
+      <div className="px-5">
 
       <section className="mb-8">
         <div className="flex items-center gap-2 mb-2 ml-1">
@@ -153,7 +156,7 @@ export function HuisPage() {
 
           {filteredTasks.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 py-10 px-6 text-center">
-              <IconBadge icon={<Sparkles size={20} />} size={44} />
+              <EmptyIllustration src="/states/empty-filter.webp" className="!w-32 !h-32 -my-2" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Geen taken gevonden</p>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[240px]">Pas je filters aan of voeg een taak toe in een kamer.</p>
@@ -200,7 +203,7 @@ export function HuisPage() {
         <Kop>Kamers</Kop>
         {rooms.length === 0 && (
           <div className="text-center pt-4 pb-6">
-            <EmptyIllustration />
+            <EmptyIllustration src="/states/empty-rooms.webp" />
             <p className="text-sm text-muted-foreground mt-1">Nog geen kamers. Voeg er hieronder een toe.</p>
           </div>
         )}
@@ -224,6 +227,7 @@ export function HuisPage() {
           </motion.div>
         </motion.div>
       </section>
+      </div>
     </div>
   );
 }

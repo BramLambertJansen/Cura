@@ -14,7 +14,7 @@ import { useTaskDismissals } from "../../lib/useTaskDismissals";
 import { useSwipeHint } from "../../lib/useSwipeHint";
 import { SAGE } from "../../lib/constants";
 import { Avatar, Card, CARD_CHROME, CollapsibleSection, IconBadge, IconButton, Kop, Leeg } from "../../components/shared";
-import { PageBanner } from "../../components/PageBanner";
+import { PageHero } from "../../components/PageHero";
 import { TijdlijnTaakRij } from "../../components/TijdlijnTaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
@@ -162,21 +162,22 @@ export function VandaagPage() {
 
   return (
     <div className="relative">
-      {/* Same sunrise art as the auth screen, so opening the app and starting the day feel like one moment. */}
-      <PageBanner src="/landing-header.webp" className="h-48" position="72% 35%" />
-      <div className="relative px-5 pt-14 pb-6">
-        <div className="flex-1 min-w-0">
+      <PageHero
+        // The watercolor sunrise, not a headers/*.webp of its own: reusing the
+        // auth screen's art keeps opening the app and starting the day feeling
+        // like one moment (the same reason PageBanner used it here before), and
+        // its calm left-hand sky is the title room the other headers paint in.
+        src="/landing-header.webp"
+        title={greeting.text}
+        eyebrow={
           <span
-            className="inline-flex items-center gap-1.5 mb-2 px-3 py-1 rounded-full"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1"
             style={{ background: "color-mix(in srgb, var(--card) 85%, transparent)", backdropFilter: "blur(8px)" }}>
             <DateIcon size={12} aria-hidden="true" style={{ color: SAGE }} />
             <span className="text-xs font-semibold tracking-wide" style={{ color: "var(--muted-foreground)" }}>{greeting.date}</span>
           </span>
-          <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display mt-2">
-            {greeting.text}
-          </h1>
-        </div>
-      </div>
+        }
+      />
 
       <div className="relative px-5 pb-8 space-y-8">
         <section>
@@ -204,8 +205,7 @@ export function VandaagPage() {
           )}
           {plannedOpen.length === 0 ? (
             <Leeg
-              icon="🌿"
-              image="/empty-plants.webp"
+              image="/states/empty-plants.webp"
               text={allDone ? "Alles op je dag is afgevinkt." : "Nog niets op je dag. Tik op + of pak iets uit Huis."}
             />
           ) : (

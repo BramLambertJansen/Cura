@@ -3,7 +3,6 @@ import { useEffect, useId, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, useTransform, type MotionValue, type PanInfo } from "motion/react";
 import { Check, ChevronDown, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
-import { bloom } from "../lib/motion";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
 
 // How far (as a fraction of the sheet's own height) or how fast (px/s) a
@@ -403,32 +402,21 @@ export function Card({
 }
 
 /**
- * Gentle empty state. Pass `image` (a public/ watercolor illustration) to show
- * art instead of the emoji; the emoji stays the fallback when the file is
- * missing or fails to load, so partial art degrades gracefully (CLAUDE.md §3).
- * The art renders as a framed, rounded picture: `imageAspect` picks the frame
- * ("square" for the 1:1 scenes, "wide" for the 3:1 banners), and a slight zoom
- * crops the art's own cream margins away.
+ * Gentle empty state with scene-specific, transparent Cura artwork. If the
+ * asset cannot load, the explanatory text remains as the quiet fallback.
  */
-export function Leeg({
-  icon, text, image, imageAspect = "square",
-}: { icon: string; text: string; image?: string; imageAspect?: "square" | "wide" }) {
+export function Leeg({ image, text }: { image: string; text: string }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const showImage = Boolean(image) && !imageFailed;
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.32, ease: [0.25, 0.46, 0.45, 0.94] }}>
-      <Card className={`flex flex-col items-center gap-4 px-8 text-center ${showImage ? "py-8" : "py-14"}`}>
-        {showImage
-          ? (
-            <div className={`rounded-2xl overflow-hidden ${imageAspect === "wide" ? "w-full max-w-[280px] aspect-[2/1]" : "w-36 h-36"}`}>
-              <img
-                src={image} alt="" aria-hidden="true" loading="lazy"
-                onError={() => setImageFailed(true)}
-                className={`w-full h-full object-cover ${imageAspect === "wide" ? "object-bottom" : "scale-[1.22]"}`}
-              />
-            </div>
-          )
-          : <span className="text-4xl select-none">{icon}</span>}
+      <Card className={`flex flex-col items-center gap-4 px-8 text-center ${imageFailed ? "py-14" : "py-8"}`}>
+        {!imageFailed && (
+          <img
+            src={image} alt="" aria-hidden="true" loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="w-40 h-40 object-contain"
+          />
+        )}
         <p className="text-[0.875rem] text-muted-foreground leading-relaxed max-w-[200px] font-display italic"
           style={{ lineHeight: 1.65 }}>{text}</p>
       </Card>
@@ -844,29 +832,6 @@ export function StatusBadge({
       style={{ background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE }}>
       {children}
     </motion.span>
-  );
-}
-
-/**
- * A big sage-gradient checkmark badge that scales in with a soft overshoot
- * (the `bloom` variant, `src/app/lib/motion.ts`) — a distinct "we're done"
- * celebration for a genuine session-completion moment (finishing a whole
- * routine), never for task-to-task progress or a single checkbox tick. A
- * shared primitive so any other real "goed gedaan"-moment can reuse it
- * instead of a one-off inline animation.
- */
-export function CompletionBloom({ size = 88 }: { size?: number }) {
-  return (
-    <motion.div
-      variants={bloom} initial="initial" animate="animate"
-      className="rounded-full flex items-center justify-center flex-shrink-0"
-      style={{
-        width: size, height: size,
-        background: "var(--gradient-primary)",
-        boxShadow: "var(--shadow-cta), 0 8px 28px color-mix(in srgb, var(--primary) 35%, transparent)",
-      }}>
-      <Check size={size * 0.42} strokeWidth={3} className="text-white" aria-hidden="true" />
-    </motion.div>
   );
 }
 
