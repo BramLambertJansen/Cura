@@ -168,8 +168,6 @@ export function toRoomView(
     name: room.name,
     iconKey: room.iconKey,
     color: room.color,
-    owner: memberName(members, room.ownerId),
-    ownerId: room.ownerId,
     tasks: roomTasks,
     openCount,
     hint: anyDue ? "Waarschijnlijk weer toe aan een beurt" : "Nog even goed",

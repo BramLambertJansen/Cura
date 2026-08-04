@@ -16,7 +16,6 @@ export function Keuken() {
         name: 'Keuken',
         iconKey: 'utensils',
         color: '#B8924A',
-        owner: 'Sanne',
         tasks: [],
         openCount: 3,
         hint: 'Waarschijnlijk weer toe aan een beurt',

@@ -31,7 +31,7 @@ export function seedDatabase(): Database {
     invites: [],
     rooms: [
       { id: "room-keuken", householdId: HOUSEHOLD_ID, name: "Keuken", iconKey: "utensils", color: "#B8924A" },
-      { id: "room-badkamer", householdId: HOUSEHOLD_ID, name: "Badkamer", iconKey: "droplets", color: "#5A8FA8", ownerId: LOCAL_USER_ID },
+      { id: "room-badkamer", householdId: HOUSEHOLD_ID, name: "Badkamer", iconKey: "droplets", color: "#5A8FA8" },
       { id: "room-woonkamer", householdId: HOUSEHOLD_ID, name: "Woonkamer", iconKey: "sofa", color: "#8B6EA8" },
       { id: "room-slaapkamer", householdId: HOUSEHOLD_ID, name: "Slaapkamer", iconKey: "bed", color: "#496E46" },
     ],
