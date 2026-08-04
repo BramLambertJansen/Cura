@@ -95,6 +95,16 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+
+  /*
+   * Height of the illustrated page header, shared by PageHero (the eight
+   * overviews) and RoomHero (every room detail) so both keep the same rhythm.
+   * One token because they hardcoded the same value twice before, which is the
+   * drift class CLAUDE.md §4 warns about (#152/#153/#154) — the art is cropped
+   * to whatever this says, so two copies meant two different headers.
+   * Excludes --safe-top; both call sites add it and pull up behind the notch.
+   */
+  --hero-height: 12.5rem;
 }
 
 

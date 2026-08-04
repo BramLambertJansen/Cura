@@ -51,9 +51,10 @@ export function ResetPasswordPage() {
       }}
     >
       <AppBackground />
-      <LandingHeader className="h-[36vh] min-h-[13rem] max-h-80 shrink-0 z-0" />
+      {/* Height + card overlap mirror AuthPage exactly — see the note there. */}
+      <LandingHeader className="h-[calc(var(--hero-height)+var(--safe-top))] shrink-0 z-0" />
 
-      <main className="w-full max-w-sm px-6 -mt-24 relative z-10 flex flex-col">
+      <main className="w-full max-w-sm px-6 -mt-16 relative z-10 flex flex-col">
         <Card className="px-6 pt-7 pb-6">
           <div className="text-center mb-6">
             <Logo size={44} className="mx-auto mb-3 rounded-2xl shadow-sm" />

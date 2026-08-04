@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { ArrowLeft, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { useActivityFeed, useCurrentMember } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Leeg, PageHeader, Card, IconButton, Avatar } from "../../components/shared";
+import { Leeg, Card, Avatar } from "../../components/shared";
+import { PageHero } from "../../components/PageHero";
 
 export function SamenPage() {
   const navigate = useNavigate();
@@ -25,20 +26,22 @@ export function SamenPage() {
   const completedToday = useActivityFeed(sinceIso);
 
   return (
-    <div className="px-5 pt-14 pb-8">
-      <IconButton
+    <div className="pb-8">
+      <PageHero
+        src="/headers/samen.webp"
+        title="Samen"
+        subtitle="Wat is er vandaag gedaan?"
         // replace, not push — Samen itself was reached with a push (from Vandaag's
         // preview card or Meer's list item), so pushing again here would leave a
         // stale /samen entry in history and turn the OS/browser back gesture into
         // a Vandaag/Meer ⇄ Samen loop.
-        onClick={() => navigate(cameFrom === "vandaag" ? "/vandaag" : "/meer", { replace: true })}
-        label={cameFrom === "vandaag" ? "Terug naar Vandaag" : "Terug naar Meer"}
-        tone="card" className="mb-4"
-        icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
-      <PageHeader title="Samen" subtitle="Wat is er vandaag gedaan?" />
+        onBack={() => navigate(cameFrom === "vandaag" ? "/vandaag" : "/meer", { replace: true })}
+        backLabel={cameFrom === "vandaag" ? "Terug naar Vandaag" : "Terug naar Meer"}
+      />
 
+      <div className="px-5">
       {completedToday.length === 0
-        ? <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag." />
+        ? <Leeg image="/states/samen-mugs.webp" text="Nog niks gedaan vandaag." />
         : <motion.div variants={stagger} initial="initial" animate="animate" aria-live="polite" className="space-y-1.5 mb-8">
             {completedToday.map((activity, i) => {
               const activityKey = `${activity.taskId}-${activity.doneAt}`;
@@ -73,6 +76,7 @@ export function SamenPage() {
             })}
           </motion.div>
       }
+      </div>
     </div>
   );
 }

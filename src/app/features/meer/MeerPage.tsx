@@ -5,7 +5,8 @@ import { Heart, Link2, UserRound, ListChecks, Timer, ShoppingCart, ShieldCheck, 
 import { useSheets } from "../../sheetContext";
 import { useHasHousemate } from "../../../stores/useViews";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Kop, PageHeader, IconBadge, Card } from "../../components/shared";
+import { Kop, IconBadge, Card } from "../../components/shared";
+import { PageHero } from "../../components/PageHero";
 
 interface MeerItem {
   icon: ReactNode;
@@ -60,9 +61,9 @@ export function MeerPage() {
   ];
 
   return (
-    <div className="px-5 pt-14 pb-8">
-      <PageHeader title="Meer" subtitle="Lijsten, focustimer en instellingen." />
-      <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-7">
+    <div className="pb-8">
+      <PageHero src="/headers/meer.webp" title="Meer" subtitle="Lijsten, focustimer en instellingen." />
+      <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-7 px-5">
         {groups.map((group) => (
           <motion.section key={group.title} variants={fadeUp}>
             <Kop>{group.title}</Kop>

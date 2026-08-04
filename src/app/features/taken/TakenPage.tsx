@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { ArrowLeft, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useTaskViews } from "../../../stores/useViews";
 import { toTaskOverview } from "../../../data/selectors";
 import type { TaskView } from "../../../data/types";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Kop, Leeg, PageHeader, KeuzeChip, IconButton } from "../../components/shared";
+import { Kop, Leeg, KeuzeChip } from "../../components/shared";
+import { PageHero } from "../../components/PageHero";
 import { TaakRij } from "../../components/TaakRij";
 import { useSheets } from "../../sheetContext";
 import { useStartFocus } from "../../lib/useStartFocus";
@@ -81,14 +82,16 @@ export function TakenPage() {
   }
 
   return (
-    <div className="px-5 pt-14 pb-8">
-      <IconButton
-        onClick={() => navigate("/meer")}
-        label="Terug naar Meer"
-        tone="card" className="mb-4"
-        icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
-      <PageHeader title="Takenoverzicht" subtitle="Alles op een rij, geordend op datum." />
+    <div className="pb-8">
+      <PageHero
+        src="/headers/taken.webp"
+        title="Takenoverzicht"
+        subtitle="Alles op een rij, geordend op datum."
+        onBack={() => navigate("/meer")}
+        backLabel="Terug naar Meer"
+      />
 
+      <div className="px-5">
       {showFilters && (
         <div role="group" aria-label="Filter op kamer" className="flex flex-wrap gap-2 mb-6">
           {roomOptions.map((opt) => (
@@ -100,7 +103,7 @@ export function TakenPage() {
       )}
 
       {nonEmpty.length === 0
-        ? <Leeg icon="🗂️" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
+        ? <Leeg image="/states/empty-tasks.webp" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
         : <div className="space-y-8">
             {nonEmpty.map((group) => (
               <section key={group.label}>
@@ -132,6 +135,7 @@ export function TakenPage() {
             ))}
           </div>
       }
+      </div>
     </div>
   );
 }

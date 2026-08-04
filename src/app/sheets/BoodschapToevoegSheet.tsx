@@ -14,6 +14,7 @@ import {
 import type { ShoppingCategoryKey, ShoppingUnitKey } from "../../data/types";
 import { FREE_UNIT_DEFAULT, parseDraftAmount } from "../lib/shoppingDraft";
 import { useQuickShoppingItems, type QuickShoppingItem } from "../lib/useQuickShoppingItems";
+import { EmptyIllustration } from "../components/EmptyIllustration";
 
 /** Field-chrome for the bespoke title inputs (VeldInput has no ref for the
  *  refocus-after-add flow, so the sheet styles its own inputs the same way). */
@@ -178,7 +179,10 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
 
           <div className="flex flex-col gap-2">
             {quickItems.length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground py-4">Geen snelkoppelingen.</p>
+              <div className="py-2 text-center">
+                <EmptyIllustration src="/states/empty-shortcuts.webp" className="!w-20 !h-20" />
+                <p className="text-sm text-muted-foreground">Geen snelkoppelingen.</p>
+              </div>
             ) : (
               quickItems.map((q) => (
                 <div key={q.id} className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 border border-border/60">
@@ -279,7 +283,10 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">Nog geen snelkoppelingen.</p>
+                <div className="flex items-center gap-2">
+                  <EmptyIllustration src="/states/empty-shortcuts.webp" className="!w-14 !h-14 !mx-0" />
+                  <p className="text-xs text-muted-foreground">Nog geen snelkoppelingen.</p>
+                </div>
               )}
             </div>
           )}
