@@ -72,7 +72,7 @@ export function RoomDetailPage() {
         editLabel={`${room.name} bewerken`}
       />
 
-      <div className="relative z-10 -mt-28 h-28 px-5 pt-3">
+      <div className="relative z-10 -mt-28 h-28 flex flex-col justify-end px-5 pb-3">
         <h1 className="font-display text-3xl font-medium leading-tight text-foreground">{room.name}</h1>
         {room.owner && <p className="mt-2 text-sm text-muted-foreground">Meestal {room.owner}</p>}
       </div>
