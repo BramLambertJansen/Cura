@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Check, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
+import { Check, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
 import { useTaskViews } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { fadeUp, stagger } from "../../lib/motion";
 import { useStartFocus } from "../../lib/useStartFocus";
-import { PageBanner } from "../../components/PageBanner";
+import { PageHero } from "../../components/PageHero";
 import { TimerDisplay } from "../../components/TimerDisplay";
 import { Card, DubbelKnop, IconBadge, IconButton, Kop, OptieKaart, PillButton, PrimaryButton } from "../../components/shared";
 
@@ -58,32 +58,25 @@ export function FocusPage() {
 
   return (
     <div className="relative min-h-full">
-      <PageBanner src="/landing-header.webp" className="h-44" position="72% 35%" />
-
-      <div className="relative px-5 pt-14 pb-10">
-        <IconButton
-          onClick={() => navigate(cameFrom, { replace: true })}
-          label={
+      <PageHero
+        src="/headers/focus.webp"
+        title={idle ? "Eén taak, één timer" : phase === "break" ? "Pauze" : "Aan het werk"}
+        subtitle={idle
+          ? "Kies hoelang je aan één taak wilt werken. De timer loopt door terwijl je de app gebruikt."
+          : taskTitle
+            ? `Bezig met ${taskTitle}.`
+            : "De timer loopt door terwijl je de app verder gebruikt."}
+        eyebrow={<p className="text-xs font-medium tracking-wide text-muted-foreground">Focustimer</p>}
+        onBack={() => navigate(cameFrom, { replace: true })}
+        backLabel={
             cameFrom.startsWith("/vandaag") ? "Terug naar Vandaag"
               : cameFrom.startsWith("/huis") ? "Terug naar Huis"
                 : cameFrom.startsWith("/taken") ? "Terug naar Takenoverzicht"
                   : "Terug naar Meer"
           }
-          tone="card" className="mb-4"
-          icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />} />
-        <div className="mb-2">
-          <p className="text-xs font-medium text-muted-foreground mb-2 tracking-wide">Focustimer</p>
-          <h1 className="text-[2.15rem] leading-[1.08] text-foreground font-medium font-display">
-            {idle ? "Eén taak, één timer" : phase === "break" ? "Pauze" : "Aan het werk"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            {idle
-              ? "Kies hoelang je aan één taak wilt werken. De timer loopt door terwijl je de app gebruikt."
-              : taskTitle
-                ? `Bezig met ${taskTitle}.`
-                : "De timer loopt door terwijl je de app verder gebruikt."}
-          </p>
-        </div>
+      />
+
+      <div className="relative px-5 pb-10">
 
         {idle ? (
           <motion.div variants={stagger} initial="initial" animate="animate" className="mt-8 space-y-6">

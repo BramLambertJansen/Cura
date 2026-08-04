@@ -4,7 +4,7 @@ import { AnimatePresence } from "motion/react";
 import { Plus, Link2, Home, Bell, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, CompletionBloom, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton,
+  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton,
   InstRij, KeuzeChip, Leeg, OptieKaart, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge,
   TaakToevoegRij, Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
@@ -251,9 +251,9 @@ export function DesignSystemPage() {
         </div>
       </Section>
 
-      <Section title="Completion bloom">
-        <p className="text-sm text-muted-foreground -mt-1">Scale-overshoot "we zijn klaar"-viering — gereserveerd voor een echt sessie-afronding-moment (bv. een hele routine), nooit taak-naar-taak-voortgang. Zie <span className="font-mono">/routines/:bundleId/starten</span>'s afgeronde staat.</p>
-        <CompletionBloom />
+      <Section title="Routine-uitkomst">
+        <p className="text-sm text-muted-foreground -mt-1">Custom "we zijn klaar"-illustratie — gereserveerd voor een echt sessie-afronding-moment. Zie <span className="font-mono">/routines/:bundleId/starten</span>'s afgeronde staat.</p>
+        <EmptyIllustration src="/states/routine-complete.webp" className="!w-36 !h-36" />
       </Section>
 
       <Section title="Focustimer">
@@ -293,10 +293,10 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Lege staat">
-        <p className="text-sm text-muted-foreground -mt-1">Met illustratie (<code>image</code>-prop) waar er kunst voor bestaat; het emoji blijft de stille fallback als het bestand ontbreekt.</p>
-        <Leeg icon="🌿" image="/empty-plants.webp" text="Niets op de planning." />
-        <Leeg icon="🤍" image="/samen-mugs.webp" imageAspect="wide" text="Nog niks gedaan vandaag." />
-        <Leeg icon="🌿" text="Zonder illustratie — emoji-fallback." />
+        <p className="text-sm text-muted-foreground -mt-1">Elke lege staat gebruikt eigen, transparante Cura-kunst; als een bestand ontbreekt blijft de begeleidende tekst staan.</p>
+        <Leeg image="/states/empty-plants.webp" text="Niets op de planning." />
+        <Leeg image="/states/samen-mugs.webp" text="Nog niks gedaan vandaag." />
+        <Leeg image="/states/empty-tasks.webp" text="Geen open taken." />
       </Section>
 
       <Section title="Laden">

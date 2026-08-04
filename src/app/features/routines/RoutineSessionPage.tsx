@@ -7,7 +7,8 @@ import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoutineView } from "../../../stores/useViews";
 import { fadeUp } from "../../lib/motion";
 import { SAGE } from "../../lib/constants";
-import { Card, CompletionBloom, IconButton, PillButton, PrimaryButton, RingProgress } from "../../components/shared";
+import { Card, IconButton, PillButton, PrimaryButton, RingProgress } from "../../components/shared";
+import { EmptyIllustration } from "../../components/EmptyIllustration";
 
 type DotState = "done" | "current" | "skipped" | "upcoming";
 
@@ -88,8 +89,8 @@ export function RoutineSessionPage() {
   // advance to the "klaar"-screen, not loop back onto an already-skipped card.
   const currentTask = openTasks.find((t) => !skipped.has(t.id)) ?? null;
   // The session can also end because every remaining task was skipped, not
-  // completed — that's not the same thing as "klaar" and shouldn't get the
-  // celebratory bloom CLAUDE.md reserves for an actual finish.
+  // completed — that's not the same thing as "klaar" and therefore gets the
+  // quieter skipped illustration instead of the celebratory completion art.
   const allDone = total > 0 && done === total;
   // Scoped to this session's own remaining tasks, not the whole routine — the
   // hero ring above already shows the whole-routine "{done}/{total} gedaan"
@@ -176,14 +177,10 @@ export function RoutineSessionPage() {
               role="status"
               aria-live="polite"
               className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
-              {allDone
-                ? <CompletionBloom />
-                : (
-                  <div aria-hidden="true" className="rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ width: 88, height: 88, background: "var(--secondary)" }}>
-                    <SkipForward size={32} strokeWidth={2} className="text-muted-foreground" />
-                  </div>
-                )}
+              <EmptyIllustration
+                src={allDone ? "/states/routine-complete.webp" : "/states/routine-skipped.webp"}
+                className="!w-36 !h-36 -mb-2"
+              />
               <div className="flex flex-col items-center gap-3">
                 <p className="text-lg font-medium text-foreground font-display">
                   {allDone ? "Routine afgerond." : "Klaar voor nu — de overgeslagen taken blijven staan."}

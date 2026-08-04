@@ -23,6 +23,7 @@ import { UpdatePrompt } from "./components/UpdatePrompt";
 import { PullToRefreshIndicator } from "./components/PullToRefreshIndicator";
 import { FocusMiniPill } from "./components/FocusMiniPill";
 import { usePullToRefresh } from "./lib/usePullToRefresh";
+import { useScrollToTop } from "./lib/useScrollToTop";
 import { SheetContext, type SheetActions } from "./sheetContext";
 import { KeuzeChip, Sheet } from "./components/shared";
 
@@ -152,6 +153,9 @@ function MainShell() {
   const scrollRef = useRef<HTMLElement>(null);
   const refresh = useCuraStore((s) => s.refresh);
   const { pull, state: pullState } = usePullToRefresh(scrollRef, refresh);
+  // One scroll container for every route, so a new page has to be sent back to
+  // the top itself — see useScrollToTop.
+  useScrollToTop(scrollRef);
 
   // A phone left locked for hours (or a long-throttled background tab) can
   // leave the realtime channel stale even after it resumes — resync on

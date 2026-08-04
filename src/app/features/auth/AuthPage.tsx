@@ -74,9 +74,15 @@ export function AuthPage() {
         paddingRight: "var(--safe-right)",
       }}
     >
-      <LandingHeader className="h-[36vh] min-h-[13rem] max-h-80 shrink-0 z-0" />
+      {/* Same height as every in-app header (--hero-height, theme.css) instead of
+          its own 36vh clamp, so opening the app and moving through it keep one
+          rhythm. */}
+      <LandingHeader className="h-[calc(var(--hero-height)+var(--safe-top))] shrink-0 z-0" />
 
-      <main className="w-full max-w-sm px-6 -mt-24 relative z-10 flex flex-col">
+      {/* -mt-16, not -mt-24: the card still rises over the art's fading bottom,
+          but the sun's disc ends at 52.7% of the art's height (~105px in a
+          200px band) and a 96px pull put the card edge exactly through it. */}
+      <main className="w-full max-w-sm px-6 -mt-16 relative z-10 flex flex-col">
         <Card className="px-6 pt-7 pb-6">
           <div className="text-center mb-6">
             <Logo size={44} className="mx-auto mb-3 rounded-2xl shadow-sm" />

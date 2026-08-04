@@ -52,7 +52,7 @@ export function RoomHero({
       // Pull up behind the shell's safe-top padding and out to both edges so the
       // art reaches the physical top/side edges instead of the content inset.
       style={{
-        height: "calc(14.5rem + var(--safe-top))",
+        height: "calc(var(--hero-height) + var(--safe-top))",
         marginTop: "calc(-1 * var(--safe-top))",
         marginLeft: "calc(-1 * var(--safe-left))",
         marginRight: "calc(-1 * var(--safe-right))",
@@ -71,7 +71,7 @@ export function RoomHero({
         }}
       >
         <img
-          src={ic.image}
+          src={ic.image?.replace("/rooms/", "/headers/rooms/")}
           alt=""
           aria-hidden="true"
           loading="lazy"
@@ -80,7 +80,7 @@ export function RoomHero({
           // past — object-cover alone frames it; object-position keeps the
           // painted subject centred in the short header strip.
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: "center 42%" }}
+          style={{ objectPosition: "right center" }}
         />
       </div>
       {controls(true)}
