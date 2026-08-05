@@ -113,8 +113,6 @@ export interface RoomView {
   name: string;
   iconKey: string;
   color: string;
-  owner?: string; // resolved soft owner name
-  ownerId?: string; // raw member id, for the edit form — not for display
   tasks: TaskView[];
   openCount: number;
   hint: string; // soft: "Waarschijnlijk weer toe aan een beurt" / "Nog even goed"

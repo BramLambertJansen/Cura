@@ -66,8 +66,8 @@ export const HouseholdInviteSchema = z.object({
 });
 
 // ─── Rooms ───────────────────────────────────────────────────────────────────
-// No taskIds (derived via task.roomId) and no hint (derived). `ownerId` is a
-// SOFT preference — "meestal Bram" — never a hard assignment. Tasks stay a pool.
+// No taskIds (derived via task.roomId) and no hint (derived). No owner, soft or
+// otherwise — a room is a pool, and nobody is "usually" responsible for it.
 
 export const RoomSchema = z.object({
   id: Id,
@@ -75,7 +75,6 @@ export const RoomSchema = z.object({
   name: z.string().min(1),
   iconKey: z.string().min(1), // maps to the UI icon set; data layer stays icon-agnostic
   color: z.string().min(1), // hex, drives the room accent
-  ownerId: Id.optional(), // soft preferred owner, not an assignment
 });
 
 // ─── Tasks ─────────────────────────────────────────────────────────────────

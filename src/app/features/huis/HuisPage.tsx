@@ -197,7 +197,7 @@ export function HuisPage() {
       <section>
         {/* A vertical KamerKaart list, not the 3-column image-tile grid the frozen
             Claude-Design mockup shows — deliberate: a full-bleed photo grid can't
-            carry the featured-badge/owner/count text at WCAG AA contrast the way
+            carry the featured-badge/count text at WCAG AA contrast the way
             an inset-art card can (CLAUDE.md §6), and rooms without art would need
             a second, inconsistent tile treatment. */}
         <Kop>Kamers</Kop>

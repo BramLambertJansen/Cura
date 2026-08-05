@@ -2,16 +2,14 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { ICON_BY_KEY, SAGE } from "../lib/constants";
-import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip } from "../components/shared";
+import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop } from "../components/shared";
 import { RoomThumb } from "../components/RoomThumb";
 import { KamerKunstKiezer } from "../components/KamerKunstKiezer";
 
 export function NewRoomSheet({ onClose }: { onClose: () => void }) {
   const createRoom = useCuraStore((s) => s.createRoom);
-  const members = useCuraStore((s) => s.members);
   const [iconKey, setIconKey] = useState("");
   const [name, setName] = useState("");
-  const [ownerId, setOwnerId] = useState<string | null>(null);
 
   const selectedIcon = ICON_BY_KEY[iconKey];
 
@@ -22,7 +20,7 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
 
   function save() {
     if (!iconKey || !name.trim()) return;
-    createRoom({ name: name.trim(), iconKey, color: selectedIcon?.color ?? SAGE, ownerId: ownerId ?? undefined });
+    createRoom({ name: name.trim(), iconKey, color: selectedIcon?.color ?? SAGE });
     onClose();
   }
 
@@ -53,15 +51,6 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
 
       <Kop>Naam</Kop>
       <VeldInput value={name} onChange={setName} placeholder="Naam van de kamer" />
-
-      <Kop><span className="normal-case">Voorkeur eigenaar <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></span></Kop>
-      <div className="flex flex-wrap gap-2 mt-3">
-        {members.map((m) => (
-          <KeuzeChip key={m.id} selected={ownerId === m.id} onClick={() => setOwnerId(ownerId === m.id ? null : m.id)}>
-            {m.displayName}
-          </KeuzeChip>
-        ))}
-      </div>
 
       <div className="mt-7">
         <DubbelKnop onCancel={onClose} onConfirm={save} label="Toevoegen" disabled={!iconKey || !name.trim()} />
