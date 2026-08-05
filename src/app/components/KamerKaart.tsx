@@ -52,11 +52,6 @@ export const KamerKaart = memo(function KamerKaart({
             style={{ fontSize: "0.9375rem" }}>{room.name}</p>
           <p className="text-xs text-muted-foreground mt-0.5 leading-snug truncate"
             style={{ fontStyle: "italic" }}>{room.hint}</p>
-          {room.owner && (
-            <p className="text-xs mt-1 leading-none" style={{ color: c, opacity: 0.82 }}>
-              Meestal {room.owner}
-            </p>
-          )}
         </div>
 
         <div className="flex items-center gap-2.5 flex-shrink-0">

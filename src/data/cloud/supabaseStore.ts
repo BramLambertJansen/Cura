@@ -24,7 +24,7 @@ interface MemberRow {
   quiet_hours_start: string | null; quiet_hours_end: string | null;
 }
 interface InviteRow { token: string; household_id: string; created_by_id: string; created_at: string; expires_at: string | null }
-interface RoomRow { id: string; household_id: string; name: string; icon_key: string; color: string; owner_id: string | null }
+interface RoomRow { id: string; household_id: string; name: string; icon_key: string; color: string }
 interface BundleRow { id: string; household_id: string; name: string; trigger: string; cadence: "daily" | "weekly"; window_label: string }
 interface TaskRow {
   id: string; household_id: string; room_id: string | null; title: string;
@@ -96,7 +96,7 @@ function mapInvite(r: InviteRow): HouseholdInvite {
   }), "uitnodiging");
 }
 function mapRoom(r: RoomRow): Room {
-  return parseRow(() => RoomSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, iconKey: r.icon_key, color: r.color, ownerId: r.owner_id ?? undefined }), "kamer");
+  return parseRow(() => RoomSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, iconKey: r.icon_key, color: r.color }), "kamer");
 }
 function mapBundle(r: BundleRow): Bundle {
   return parseRow(() => BundleSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, trigger: r.trigger, cadence: r.cadence, windowLabel: r.window_label }), "routine");
@@ -248,7 +248,7 @@ export function mapList<Row, T>(rows: readonly Row[], map: (r: Row) => T, label:
 /**
  * `cloud` mode: Supabase (Postgres + RLS + auth), CLAUDE.md §4 Phase 3.
  *
- * IMPORTANT: completed_by_id / claimed_by_id / created_by_id / owner_id all
+ * IMPORTANT: completed_by_id / claimed_by_id / created_by_id all
  * reference members.id, NOT the Supabase auth user id. currentUserId() below
  * returns the raw auth uid (auth.uid()) — every write that touches one of
  * those columns must first resolve it to a members.id via memberIdFor().
@@ -377,7 +377,7 @@ export class SupabaseStore implements DataStore {
   async createRoom(householdId: string, room: Omit<Room, "id" | "householdId">): Promise<Room> {
     const row: RoomRow = {
       id: uid(), household_id: householdId, name: room.name, icon_key: room.iconKey,
-      color: room.color, owner_id: room.ownerId ?? null,
+      color: room.color,
     };
     const { error } = await supabase.from("rooms").insert(row);
     if (error) throw new Error(error.message);
@@ -389,7 +389,6 @@ export class SupabaseStore implements DataStore {
     if (patch.name !== undefined) update.name = patch.name;
     if (patch.iconKey !== undefined) update.icon_key = patch.iconKey;
     if (patch.color !== undefined) update.color = patch.color;
-    if (patch.ownerId !== undefined) update.owner_id = patch.ownerId ?? null;
     const { data, error } = await supabase.from("rooms").update(update).eq("id", roomId).select().single();
     if (error || !data) throw new Error(error?.message ?? `Room not found: ${roomId}`);
     return mapRoom(data as RoomRow);

@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { RoomDetailPage } from "./RoomDetailPage";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { SheetContext, type SheetActions } from "../../sheetContext";
-import type { Household, Member, Room, Task } from "../../../data/types";
+import type { Household, Member, Room, Task, TaskCompletion } from "../../../data/types";
 
 /**
  * Smoke tests for CLAUDE.md §5 Huis's room-detail view (`/huis/:roomId`),
@@ -57,7 +58,7 @@ afterEach(() => {
   useCuraStore.setState(initialState, true);
 });
 
-function setFixture(rooms: Room[], tasks: Task[]) {
+function setFixture(rooms: Room[], tasks: Task[], completions: TaskCompletion[] = []) {
   useCuraStore.setState({
     ...useCuraStore.getState(),
     households: [HOUSEHOLD],
@@ -65,7 +66,7 @@ function setFixture(rooms: Room[], tasks: Task[]) {
     currentUserId: ME.userId,
     rooms,
     tasks,
-    completions: [],
+    completions,
     bundles: [],
     toggleTask: vi.fn().mockResolvedValue(undefined),
     updateTask: vi.fn().mockResolvedValue(true),
@@ -99,6 +100,29 @@ describe("RoomDetailPage", () => {
 
     expect(screen.getByRole("heading", { name: "Badkamer" })).toBeInTheDocument();
     expect(screen.getByText("Nog geen taken in deze kamer.")).toBeInTheDocument();
+  });
+
+  it("tucks completed tasks behind a collapsed Afgerond section", async () => {
+    const user = userEvent.setup();
+    setFixture(
+      [KEUKEN],
+      [
+        { id: "t1", householdId: "h1", title: "Afwassen", roomId: "r-keuken", planned: false, checklistItems: [] },
+        { id: "t2", householdId: "h1", title: "Aanrecht afnemen", roomId: "r-keuken", planned: false, checklistItems: [] },
+      ],
+      [{ id: "c1", taskId: "t2", completedById: "m1", completedAt: new Date().toISOString() }],
+    );
+
+    renderRoomDetail("r-keuken");
+
+    // Open task shows directly; the done one is hidden behind the collapsed toggle.
+    expect(screen.getByText("Afwassen")).toBeInTheDocument();
+    expect(screen.getByText("Afgerond")).toBeInTheDocument();
+    expect(screen.queryByText("Aanrecht afnemen")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Afgerond/ }));
+
+    expect(screen.getByText("Aanrecht afnemen")).toBeInTheDocument();
   });
 
   it("bounces back to the room list for a stale/unknown roomId instead of a broken page", () => {

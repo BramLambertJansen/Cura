@@ -66,7 +66,7 @@ const demoTaskChecklist: TaskView = {
 };
 
 const demoRoom: RoomView = {
-  id: "r1", name: "Keuken", iconKey: "utensils", color: "#B8924A", owner: "Bram",
+  id: "r1", name: "Keuken", iconKey: "utensils", color: "#B8924A",
   tasks: [demoTaskOpen], openCount: 2, hint: "Waarschijnlijk weer toe aan een beurt",
 };
 
@@ -216,7 +216,7 @@ export function DesignSystemPage() {
       </Section>
 
       <Section title="Keuzechip">
-        <p className="text-sm text-muted-foreground -mt-1">Selecteerbare pill voor kies-één-rijen (moment, eigenaar, soort ruimte) — sage wanneer geselecteerd, <code>aria-pressed</code> ingebouwd.</p>
+        <p className="text-sm text-muted-foreground -mt-1">Selecteerbare pill voor kies-één-rijen (moment, duur, soort ruimte) — sage wanneer geselecteerd, <code>aria-pressed</code> ingebouwd.</p>
         <div className="flex flex-wrap gap-2">
           <KeuzeChip selected={chip === "a"} onClick={() => setChip("a")}>'s Ochtends</KeuzeChip>
           <KeuzeChip selected={chip === "b"} onClick={() => setChip("b")}>'s Middags</KeuzeChip>

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion } from "motion/react";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
-import { roomIcon, SHADOW } from "../../lib/constants";
+import { roomIcon, SAGE, SHADOW } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { HintBanner } from "../../components/shared";
+import { CollapsibleSection, HintBanner } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { RoomHero } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
@@ -33,6 +33,7 @@ export function RoomDetailPage() {
   // Guards the quick-add buttons against a double-tap firing two create calls
   // during the (usually brief, but non-zero in cloud mode) async gap.
   const [quickAddBusy, setQuickAddBusy] = useState(false);
+  const [afgerondOpen, setAfgerondOpen] = useState(false);
 
   const room = rooms.find((r) => r.id === roomId);
 
@@ -71,9 +72,8 @@ export function RoomDetailPage() {
         editLabel={`${room.name} bewerken`}
       />
 
-      <div className="relative z-10 -mt-28 h-28 px-5 pt-3">
+      <div className="relative z-10 -mt-28 h-28 flex flex-col justify-end px-5 pb-3">
         <h1 className="font-display text-3xl font-medium leading-tight text-foreground">{room.name}</h1>
-        {room.owner && <p className="mt-2 text-sm text-muted-foreground">Meestal {room.owner}</p>}
       </div>
 
       <div className="px-5 pb-6">
@@ -88,24 +88,37 @@ export function RoomDetailPage() {
           </div>
         ) : (
           <>
-            <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
-              {open.map((t) => (
-                <motion.div key={t.id} variants={fadeUp}>
-                  <TaakRij
-                    task={t}
-                    onToggle={toggleTask}
-                    showClaim
-                    onPlan={planTask}
-                    onUnclaim={handleUnclaim}
-                    onEdit={openEditTask}
-                    onDismiss={handleDismiss}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-            {done.map((t) => (
-              <TaakRij key={t.id} task={t} onToggle={toggleTask} onEdit={openEditTask} onDismiss={handleDismiss} />
-            ))}
+            {open.length > 0 && (
+              <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3">
+                {open.map((t) => (
+                  <motion.div key={t.id} variants={fadeUp}>
+                    <TaakRij
+                      task={t}
+                      onToggle={toggleTask}
+                      showClaim
+                      onPlan={planTask}
+                      onUnclaim={handleUnclaim}
+                      onEdit={openEditTask}
+                      onDismiss={handleDismiss}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+            {done.length > 0 && (
+              <CollapsibleSection
+                title="Afgerond"
+                count={done.length}
+                icon={<Check size={13} style={{ color: SAGE }} aria-hidden="true" />}
+                open={afgerondOpen}
+                onToggle={() => setAfgerondOpen((v) => !v)}>
+                <div className="space-y-3">
+                  {done.map((t) => (
+                    <TaakRij key={t.id} task={t} onToggle={toggleTask} onEdit={openEditTask} onDismiss={handleDismiss} />
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
           </>
         )}
 
