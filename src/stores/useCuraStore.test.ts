@@ -340,6 +340,20 @@ describe("withToastOnError", () => {
     expect(useCuraStore.getState().rooms).toEqual([]);
   });
 
+  it("deleteRoom clears roomId on any in-memory tasks that lived in it", async () => {
+    const room = { id: "r1", householdId: "h1", name: "Badkamer", iconKey: "droplets", color: "#000" };
+    const inRoom = task({ id: "t1", roomId: "r1" });
+    const elsewhere = task({ id: "t2", roomId: "r2" });
+    const store = makeStore({ deleteRoom: vi.fn().mockResolvedValue(undefined) });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", rooms: [room], tasks: [inRoom, elsewhere] });
+
+    await useCuraStore.getState().deleteRoom("r1");
+
+    expect(useCuraStore.getState().rooms).toEqual([]);
+    expect(useCuraStore.getState().tasks).toEqual([{ ...inRoom, roomId: undefined }, elsewhere]);
+  });
+
   it("falls back to the action's own message for a non-Error rejection", async () => {
     const store = makeStore({ createRoom: vi.fn().mockRejectedValue("network down") });
     createDataStoreMock.mockResolvedValue(store);
