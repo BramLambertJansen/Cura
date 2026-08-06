@@ -61,6 +61,19 @@ describe("LocalStore shopping items", () => {
 });
 
 describe("LocalStore CRUD (#155)", () => {
+  it("deleteRoom clears roomId on tasks that lived in it instead of leaving a dangling reference", async () => {
+    const store = new LocalStore();
+    const room = await store.createRoom("h1", { name: "Badkamer", iconKey: "droplets", color: "#5A8FA8" });
+    const task = await store.createTask("h1", { title: "Douche schoonmaken", roomId: room.id });
+
+    await store.deleteRoom(room.id);
+
+    await expect(store.listRooms("h1")).resolves.toEqual([]);
+    await expect(store.listTasks("h1")).resolves.toEqual([{ ...task, roomId: undefined }]);
+    // A fresh instance re-reads from localStorage — confirms persist() wrote the cleared roomId, not just in-memory state.
+    await expect(new LocalStore().listTasks("h1")).resolves.toEqual([{ ...task, roomId: undefined }]);
+  });
+
   it("createRoom assigns an id/householdId and persists it", async () => {
     const store = new LocalStore();
     const created = await store.createRoom("h1", { name: "Badkamer", iconKey: "droplets", color: "#5A8FA8" });

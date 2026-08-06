@@ -661,7 +661,14 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       const store = await getDataStore();
       await store.deleteRoom(roomId);
       toast("Kamer verwijderd");
-      set({ rooms: get().rooms.filter((r) => r.id !== roomId) });
+      // The backend already drops the room's tasks' roomId (LocalStore mirrors
+      // the cloud schema's "on delete set null"), but neither tells this
+      // session's in-memory tasks — without this they'd keep pointing at a
+      // room that's gone, rendering with a blank kamer field until a reload.
+      set({
+        rooms: get().rooms.filter((r) => r.id !== roomId),
+        tasks: get().tasks.map((t) => (t.roomId === roomId ? { ...t, roomId: undefined } : t)),
+      });
     }, "Verwijderen lukte niet");
   },
 
