@@ -272,7 +272,7 @@ export function VandaagPage() {
                     <div key={task.id} className="flex items-center gap-1.5">
                       <button
                         onClick={() => toggleTask(task.id, false)}
-                        aria-label={`${task.title}${task.doneBy && task.doneAt ? `, gedaan door ${mine ? "jij" : task.doneBy} om ${task.doneAt}` : ""} — als niet gedaan markeren`}
+                        aria-label={`${task.title}${task.doneBy && task.doneAt ? `, gedaan door ${mine ? "jou" : task.doneBy} om ${task.doneAt}` : ""} — als niet gedaan markeren`}
                         className="flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 rounded-xl bg-card text-left focus-ring">
                         <Avatar name={mine ? "Jij" : task.doneBy ?? "?"} size={28} tone={mine ? "solid" : "soft"} serif />
                         <span className="flex-1 min-w-0">
