@@ -86,7 +86,6 @@ export function TakenPage() {
       <PageHero
         src="/headers/taken.webp"
         title="Takenoverzicht"
-        subtitle="Alles op een rij, geordend op datum."
         onBack={() => navigate("/meer")}
         backLabel="Terug naar Meer"
       />

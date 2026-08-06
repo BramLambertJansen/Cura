@@ -39,7 +39,6 @@ export function BoodschappenPage() {
       <PageHero
         src="/headers/boodschappen.webp"
         title="Boodschappen"
-        subtitle="Wat moet er nog gehaald worden?"
         onBack={() => navigate("/meer")}
         backLabel="Terug naar Meer"
       />
