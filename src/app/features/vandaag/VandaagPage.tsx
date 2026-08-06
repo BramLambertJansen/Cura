@@ -353,18 +353,20 @@ export function VandaagPage() {
           </section>
         )}
 
-        <section>
-          <Kop>Routines van vandaag</Kop>
-          <motion.div
-            variants={stagger} initial="initial" animate="animate"
-            className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide" style={{ scrollSnapType: "x proximity" }}>
-            {routines.slice(0, 2).map((r) => (
-              <motion.div key={r.id} variants={fadeUp} className="flex-shrink-0 w-[168px]" style={{ scrollSnapAlign: "start" }}>
-                <RoutineKaartCompact routine={r} />
-              </motion.div>
-            ))}
-          </motion.div>
-        </section>
+        {routines.length > 0 && (
+          <section>
+            <Kop>Routines van vandaag</Kop>
+            <motion.div
+              variants={stagger} initial="initial" animate="animate"
+              className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide" style={{ scrollSnapType: "x proximity" }}>
+              {routines.slice(0, 2).map((r) => (
+                <motion.div key={r.id} variants={fadeUp} className="flex-shrink-0 w-[168px]" style={{ scrollSnapAlign: "start" }}>
+                  <RoutineKaartCompact routine={r} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </section>
+        )}
       </div>
     </div>
   );
