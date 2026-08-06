@@ -218,6 +218,13 @@ export class LocalStore implements DataStore {
 
   async deleteRoom(roomId: string): Promise<void> {
     this.db.rooms = this.db.rooms.filter((r) => r.id !== roomId);
+    // Mirrors the cloud schema's `room_id ... on delete set null` — a task
+    // that lived in the deleted room becomes roomless (a valid, already-
+    // supported state, see Task.roomId), not a dangling reference that
+    // renders with a blank kamer field.
+    for (const task of this.db.tasks) {
+      if (task.roomId === roomId) task.roomId = undefined;
+    }
     this.persist();
   }
 

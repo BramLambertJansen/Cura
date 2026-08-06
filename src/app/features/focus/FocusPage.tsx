@@ -60,12 +60,14 @@ export function FocusPage() {
     <div className="relative min-h-full">
       <PageHero
         src="/headers/focus.webp"
-        title={idle ? "Eén taak, één timer" : phase === "break" ? "Pauze" : "Aan het werk"}
+        title={idle ? "Eén taak, één timer" : status === "paused" ? "Gepauzeerd" : phase === "break" ? "Pauze" : "Aan het werk"}
         subtitle={idle
           ? "Kies hoelang je aan één taak wilt werken. De timer loopt door terwijl je de app gebruikt."
-          : taskTitle
-            ? `Bezig met ${taskTitle}.`
-            : "De timer loopt door terwijl je de app verder gebruikt."}
+          : status === "paused"
+            ? "De timer staat stil — hervat wanneer je wilt."
+            : taskTitle
+              ? `Bezig met ${taskTitle}.`
+              : "De timer loopt door terwijl je de app verder gebruikt."}
         eyebrow={<p className="text-xs font-medium tracking-wide text-muted-foreground">Focustimer</p>}
         onBack={() => navigate(cameFrom, { replace: true })}
         backLabel={

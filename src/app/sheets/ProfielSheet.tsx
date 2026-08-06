@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Bell, Check, ChevronRight, HelpCircle, Home, KeyRound, LogOut, Moon, Pencil, UserRound } from "lucide-react";
+import { Bell, Check, ChevronRight, HelpCircle, Home, KeyRound, LogOut, Moon, Pencil, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../auth/AuthProvider";
 import { useCuraStore } from "../../stores/useCuraStore";
@@ -10,7 +10,7 @@ import { usePushSubscription, isIOS } from "../lib/usePushSubscription";
 import { resolveDataMode } from "../../data/store";
 import { CONTACT_EMAIL } from "../features/juridisch/juridischContent";
 import { PRESS_TINT, SAGE } from "../lib/constants";
-import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, GroupCard, VerwijderKnop } from "../components/shared";
+import { Sheet, Kop, Toggle, InstRij, Avatar, IconBadge, IconButton, GroupCard, VerwijderKnop } from "../components/shared";
 
 export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { onOpenHousehold: () => void; onOpenWachtwoord: () => void; onClose: () => void }) {
   const { signOut, status, userId, email } = useAuth();
@@ -108,28 +108,31 @@ export function ProfielSheet({ onOpenHousehold, onOpenWachtwoord, onClose }: { o
 
   return (
     <Sheet onClose={onClose} tall>
-      <div className="flex items-center gap-4 mb-7">
-        <Avatar name={weergaveNaam} size={64} tone="solid" shape="rounded" serif />
-        <div className="flex-1 min-w-0">
-          {editing ? (
-            <input value={naam} onChange={(e) => setNaam(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && saveName()}
-              autoFocus
-              aria-label="Naam"
-              className="w-full rounded-2xl px-3.5 py-2.5 text-foreground outline-none text-base border border-border transition-all"
-              style={{ background: "var(--input-background)", boxShadow: `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` }} />
-          ) : (
-            <h3 className="text-xl font-medium text-foreground leading-tight font-display">{weergaveNaam}</h3>
-          )}
-          <p className="text-sm text-muted-foreground mt-0.5">{household?.name ?? "Thuis"}</p>
+      <div className="flex items-start justify-between gap-4 mb-7">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <Avatar name={weergaveNaam} size={64} tone="solid" shape="rounded" serif />
+          <div className="flex-1 min-w-0">
+            {editing ? (
+              <input value={naam} onChange={(e) => setNaam(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveName()}
+                autoFocus
+                aria-label="Naam"
+                className="w-full rounded-2xl px-3.5 py-2.5 text-foreground outline-none text-base border border-border transition-all"
+                style={{ background: "var(--input-background)", boxShadow: `var(--shadow-input), 0 0 0 2px color-mix(in srgb, var(--primary) 26%, transparent)` }} />
+            ) : (
+              <h3 className="text-xl font-medium text-foreground leading-tight font-display">{weergaveNaam}</h3>
+            )}
+            <p className="text-sm text-muted-foreground mt-0.5">{household?.name ?? "Thuis"}</p>
+          </div>
+          <motion.button whileTap={{ scale: 0.9 }} disabled={savingName}
+            onClick={() => (editing ? saveName() : setEditing(true))}
+            aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
+            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 focus-ring disabled:opacity-60"
+            style={{ background: editing ? SAGE : "var(--secondary)" }}>
+            {editing ? <Check size={14} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
+          </motion.button>
         </div>
-        <motion.button whileTap={{ scale: 0.9 }} disabled={savingName}
-          onClick={() => (editing ? saveName() : setEditing(true))}
-          aria-label={editing ? "Naam opslaan" : "Naam bewerken"}
-          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 focus-ring disabled:opacity-60"
-          style={{ background: editing ? SAGE : "var(--secondary)" }}>
-          {editing ? <Check size={14} className="text-white" aria-hidden="true" /> : <Pencil size={13} className="text-muted-foreground" aria-hidden="true" />}
-        </motion.button>
+        <IconButton onClick={onClose} label="Sluiten" icon={<X size={15} className="text-muted-foreground" aria-hidden="true" />} />
       </div>
 
       <Kop>Huishouden</Kop>

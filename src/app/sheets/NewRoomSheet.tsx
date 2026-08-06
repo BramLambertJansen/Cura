@@ -10,6 +10,10 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
   const createRoom = useCuraStore((s) => s.createRoom);
   const [iconKey, setIconKey] = useState("");
   const [name, setName] = useState("");
+  // Guards against a double-tap firing two create calls during the (usually
+  // brief, but non-zero in cloud mode) async gap — same pattern as Huis'
+  // quick-add buttons.
+  const [saving, setSaving] = useState(false);
 
   const selectedIcon = ICON_BY_KEY[iconKey];
 
@@ -18,10 +22,15 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [iconKey]);
 
-  function save() {
-    if (!iconKey || !name.trim()) return;
-    createRoom({ name: name.trim(), iconKey, color: selectedIcon?.color ?? SAGE });
-    onClose();
+  async function save() {
+    if (!iconKey || !name.trim() || saving) return;
+    setSaving(true);
+    try {
+      await createRoom({ name: name.trim(), iconKey, color: selectedIcon?.color ?? SAGE });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -53,7 +62,7 @@ export function NewRoomSheet({ onClose }: { onClose: () => void }) {
       <VeldInput value={name} onChange={setName} placeholder="Naam van de kamer" />
 
       <div className="mt-7">
-        <DubbelKnop onCancel={onClose} onConfirm={save} label="Toevoegen" disabled={!iconKey || !name.trim()} />
+        <DubbelKnop onCancel={onClose} onConfirm={save} label="Toevoegen" disabled={!iconKey || !name.trim() || saving} />
       </div>
     </Sheet>
   );

@@ -647,8 +647,8 @@ export function VerwijderKnop({
  * field (smaller than VeldInput) the routine sheets have always used.
  */
 export function TaakToevoegRij({
-  value, onChange, onAdd, placeholder, ariaLabel,
-}: { value: string; onChange: (v: string) => void; onAdd: () => void; placeholder: string; ariaLabel?: string }) {
+  value, onChange, onAdd, placeholder, ariaLabel, addLabel = "Taak toevoegen",
+}: { value: string; onChange: (v: string) => void; onAdd: () => void; placeholder: string; ariaLabel?: string; addLabel?: string }) {
   const [active, setActive] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
   function add() { onAdd(); ref.current?.focus(); }
@@ -665,7 +665,7 @@ export function TaakToevoegRij({
           boxShadow: fieldBoxShadow({ active }),
         }} />
       <motion.button whileTap={{ scale: 0.88 }} onClick={add} disabled={!value.trim()}
-        aria-label="Taak toevoegen"
+        aria-label={addLabel}
         className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 focus-ring focus-visible:ring-offset-2"
         style={{ background: SAGE }}>
         <Plus size={17} className="text-white" aria-hidden="true" />

@@ -357,6 +357,7 @@ export function TaskFormFields({
           }}
           placeholder="Subtaak toevoegen…"
           ariaLabel="Checklist-item toevoegen"
+          addLabel="Checklist-item toevoegen"
         />
       </div>
 

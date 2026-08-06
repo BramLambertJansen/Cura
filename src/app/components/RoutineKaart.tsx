@@ -85,9 +85,9 @@ export const RoutineKaart = memo(function RoutineKaart({
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{routine.trigger}</p>
-          {routineWindowLine(routine) && (
-            <p className="text-[0.68rem] text-muted-foreground mt-1">{routineWindowLine(routine)}</p>
-          )}
+          {/* A brand-new routine has no window yet — fall back to the honest
+              routine.hint ("Deze routine is nieuw") instead of showing nothing. */}
+          <p className="text-[0.68rem] text-muted-foreground mt-1">{routineWindowLine(routine) ?? routine.hint}</p>
         </div>
         <motion.div animate={{ rotate: open ? 90 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }}>
           <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" aria-hidden="true" />
