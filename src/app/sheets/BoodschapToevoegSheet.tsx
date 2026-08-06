@@ -1,8 +1,9 @@
 import { useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, Minus, Plus, X } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Plus, Tag, X } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { IconButton, KeuzeChip, PrimaryButton, Sheet, SheetHeader, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { IconBadge, IconButton, PrimaryButton, Sheet, SheetHeader, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { SAGE } from "../lib/constants";
 import {
   SHOPPING_CATEGORY_LABELS,
@@ -15,6 +16,87 @@ import type { ShoppingCategoryKey, ShoppingUnitKey } from "../../data/types";
 import { FREE_UNIT_DEFAULT, parseDraftAmount } from "../lib/shoppingDraft";
 import { useQuickShoppingItems, type QuickShoppingItem } from "../lib/useQuickShoppingItems";
 import { EmptyIllustration } from "../components/EmptyIllustration";
+
+/**
+ * Collapsed "current value + chevron" trigger that opens a Popover list of
+ * options — the Eenheid/Categorie pickers, in both the add-view and the
+ * "nieuwe snelkoppeling"-view of manage. Replaces what used to be a permanently
+ * open row of KeuzeChip pills for these two fields: with only one value ever
+ * selected at a time, showing every option at once was more chrome than the
+ * choice needed (unlike kamer/duur filters elsewhere, which stay chip-rows
+ * because several can apply loosely at once).
+ *
+ * `variant="pill"` is the compact rounded-full trigger (Eenheid); `variant="row"`
+ * is the wider field-style row with a leading icon badge (Categorie). Local to
+ * this sheet, not `shared.tsx` — same precedent as ChecklistItemRij/TaakDraftRij
+ * (CLAUDE.md §5 Status & checklist), so no design-system-page entry needed.
+ */
+function PickerField<T extends string>({
+  variant, value, options, labels, onChange, icon, ariaLabel, contentWidth = "w-48",
+}: {
+  variant: "pill" | "row";
+  value: T;
+  options: readonly T[];
+  labels: Record<T, string>;
+  onChange: (v: T) => void;
+  icon?: ReactNode;
+  ariaLabel: string;
+  contentWidth?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const borderColor = open ? SAGE : "var(--border-input)";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        {variant === "pill" ? (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            aria-label={ariaLabel}
+            className="w-full flex items-center justify-between gap-2 rounded-full px-4 py-3 text-[0.9375rem] text-foreground border transition-colors focus-ring"
+            style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
+            <span className="truncate">{labels[value]}</span>
+            <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex-shrink-0 text-muted-foreground" aria-hidden="true">
+              <ChevronDown size={16} />
+            </motion.span>
+          </motion.button>
+        ) : (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.99 }}
+            aria-label={ariaLabel}
+            className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left border transition-colors focus-ring"
+            style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
+            {icon && <IconBadge icon={icon} size={34} />}
+            <span className="flex-1 min-w-0 truncate text-[0.9375rem] text-foreground">{labels[value]}</span>
+            <ChevronRight size={16} className="flex-shrink-0 text-muted-foreground" aria-hidden="true" />
+          </motion.button>
+        )}
+      </PopoverTrigger>
+      <PopoverContent className={`${contentWidth} p-1.5`} align="start">
+        <div role="listbox" aria-label={ariaLabel} className="flex flex-col gap-0.5">
+          {options.map((key) => {
+            const selected = value === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => { onChange(key); setOpen(false); }}
+                className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-left transition-colors focus-ring hover:bg-secondary/70"
+                style={selected ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE, fontWeight: 600 } : { color: "var(--foreground)" }}>
+                {labels[key]}
+                {selected && <Check size={14} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 /** Field-chrome for the bespoke title inputs (VeldInput has no ref for the
  *  refocus-after-add flow, so the sheet styles its own inputs the same way). */
@@ -216,19 +298,13 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
               className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
               style={fieldStyle(mTitleActive, !!mTitle)}
             />
-            <div role="group" className="flex flex-wrap gap-2" aria-label="Eenheid kiezen">
-              {SHOPPING_UNIT_ORDER.map((key) => (
-                <KeuzeChip key={key} selected={mUnit === key} onClick={() => setMUnit(key)}>
-                  {SHOPPING_UNIT_LABELS[key]}
-                </KeuzeChip>
-              ))}
-            </div>
-            <div role="group" className="flex flex-wrap gap-2" aria-label="Categorie kiezen">
-              {SHOPPING_CATEGORY_ORDER.map((key) => (
-                <KeuzeChip key={key} selected={mCategory === key} onClick={() => pickMCategory(key)}>
-                  {SHOPPING_CATEGORY_LABELS[key]}
-                </KeuzeChip>
-              ))}
+            <div className="flex gap-2.5">
+              <div className="w-28 flex-shrink-0">
+                <PickerField variant="pill" value={mUnit} options={SHOPPING_UNIT_ORDER} labels={SHOPPING_UNIT_LABELS} onChange={setMUnit} ariaLabel="Eenheid kiezen" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <PickerField variant="row" value={mCategory} options={SHOPPING_CATEGORY_ORDER} labels={SHOPPING_CATEGORY_LABELS} onChange={pickMCategory} icon={<Tag size={15} aria-hidden="true" />} ariaLabel="Categorie kiezen" />
+              </div>
             </div>
             <PrimaryButton
               onClick={handleAddShortcut}
@@ -291,9 +367,9 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
             </div>
           )}
 
-          <div className="mt-5 flex gap-4 items-start">
-            <div>
-              <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Aantal</p>
+          <div className="mt-5">
+            <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Aantal &amp; eenheid</p>
+            <div className="flex gap-3 items-center">
               {unit === "stuks" ? (
                 <div
                   className="inline-flex items-center gap-2.5 rounded-full p-1 border"
@@ -324,32 +400,19 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
                   inputMode="decimal"
                   placeholder={`bijv. ${FREE_UNIT_DEFAULT[unit]}`}
                   aria-label="Aantal"
-                  className="w-28 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
+                  className="w-24 flex-shrink-0 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
                   style={fieldStyle(false, !!qtyText)}
                 />
               )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Eenheid</p>
-              <div role="group" className="flex flex-wrap gap-2" aria-label="Eenheid kiezen">
-                {SHOPPING_UNIT_ORDER.map((key) => (
-                  <KeuzeChip key={key} selected={unit === key} onClick={() => selectUnit(key)}>
-                    {SHOPPING_UNIT_LABELS[key]}
-                  </KeuzeChip>
-                ))}
+              <div className="w-28 flex-shrink-0">
+                <PickerField variant="pill" value={unit} options={SHOPPING_UNIT_ORDER} labels={SHOPPING_UNIT_LABELS} onChange={selectUnit} ariaLabel="Eenheid kiezen" />
               </div>
             </div>
           </div>
 
           <div className="mt-5">
             <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Categorie</p>
-            <div role="group" className="flex flex-wrap gap-2" aria-label="Categorie kiezen">
-              {SHOPPING_CATEGORY_ORDER.map((key) => (
-                <KeuzeChip key={key} selected={category === key} onClick={() => pickCategory(key)}>
-                  {SHOPPING_CATEGORY_LABELS[key]}
-                </KeuzeChip>
-              ))}
-            </div>
+            <PickerField variant="row" value={category} options={SHOPPING_CATEGORY_ORDER} labels={SHOPPING_CATEGORY_LABELS} onChange={pickCategory} icon={<Tag size={15} aria-hidden="true" />} ariaLabel="Categorie kiezen" />
           </div>
 
           <div className="mt-5">
