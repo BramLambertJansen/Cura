@@ -11,6 +11,7 @@ import {
   BundleSchema,
   ShoppingItemSchema,
   ShoppingUnitSchema,
+  ShoppingCategorySchema,
   DatabaseSchema,
 } from "./schemas";
 
@@ -135,7 +136,7 @@ export interface RoutineView {
 }
 
 /** A shopping item as a screen sees it — a plain checklist row, no dueHint/density story. */
-export type ShoppingCategoryKey = "fresh" | "cold" | "pantry" | "household" | "other";
+export type ShoppingCategoryKey = z.infer<typeof ShoppingCategorySchema>;
 
 export interface ShoppingCategoryView {
   key: ShoppingCategoryKey;

@@ -15,6 +15,7 @@ De UI/UX is gedesigned in Figma (via Make), op basis van het wireframe-brief in 
 | `guidelines/Guidelines.md` | Dunne pointer terug naar §6/§7 en de design brief. |
 | `.design-sync/NOTES.md` | Repo-specifieke gotchas voor het syncen van de design system naar claude.ai/design. Alleen relevant bij een `/design-sync`-run. |
 | `.github/pull_request_template.md` | PR-checklist (validatie + a11y). |
+| `ATTRIBUTIONS.md` | Licentievermeldingen voor meegeleverde componenten/assets (shadcn/ui, Unsplash) — overgenomen uit de oorspronkelijke Figma Make-export. Wijzig alleen als er nieuwe extern-gelicenseerde componenten/assets bijkomen. |
 
 ## 1. De drie pijlers
 
@@ -330,7 +331,7 @@ We bouwen component-based: nieuwe UI is samengesteld uit herbruikbare, uniforme 
   - *Velden* — `VeldInput`, `VeldTextarea`, `FieldShell`, plus `fieldBorderColor`/`fieldBoxShadow` voor een component dat om een goede reden zijn eigen input rendert (zie `BoodschapToevoegSheet`), `TaakToevoegRij`.
   - *Badges & feedback* — `StatusBadge` (kleine sage-pill, `whitespace-nowrap`), `IconBadge`, `Avatar`, `HintBanner`, `RingProgress`, `SwipeReveal` (de tint+icoon-cirkel achter een vegende rij — zie Swipe & verversen), `InstRij` (instellingenrij binnen een `GroupCard`).
 - `TaakRijContent` (`src/app/components/TaakRijContent.tsx`) is de gedeelde titel/beschrijving/badge-rij-JSX voor `TaakRij`/`TijdlijnTaakRij` — geen eigen design-system-pagina-entry (beide rij-componenten die 'm gebruiken staan daar al).
-- **shadcn-primitives** in `src/app/components/ui/` zijn teruggesnoeid tot alleen wat de app rendert: `button`, `calendar`, `popover`, `utils`. Voeg alleen een nieuwe shadcn-primitive toe als je die ook echt gebruikt.
+- **shadcn-primitives** in `src/app/components/ui/` zijn teruggesnoeid tot alleen wat de app rendert: `calendar`, `popover` (`Popover`/`PopoverTrigger`/`PopoverContent`), `utils`. `button.tsx` levert alléén nog `buttonVariants` (geleend door `calendar.tsx` voor de nav-/dag-knoppen) — de `Button`-component zelf wordt nergens gerenderd, de app gebruikt daarvoor `PrimaryButton`/`PillButton`/`IconButton` uit `shared.tsx`. Voeg alleen een nieuwe shadcn-primitive (of export) toe als je die ook echt gebruikt.
 - Feature-pagina's componeren deze, ze herdefiniëren geen eigen knop/kaart/badge-stijl inline.
 
 ### Design-system-pagina
