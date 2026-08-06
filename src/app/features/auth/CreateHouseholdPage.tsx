@@ -37,10 +37,17 @@ const PRESELECTED = [0, 1];
 const STARTER_ROOMS = ICONS.slice(0, 6);
 const PRESELECTED_ROOMS = new Set(["utensils", "droplets", "sofa", "bed"]);
 
+// Starter set for the shopping list's categories — fully user-managed from
+// here on (rename/delete/reorder/add via "Categorieën beheren" in
+// BoodschapToevoegSheet). Not a user choice during onboarding, unlike rooms
+// above: every household needs somewhere for shopping items to land.
+const STARTER_CATEGORIES = ["Vers", "Koeling", "Voorraad", "Huis", "Overig"];
+
 /** "Create your first household" onboarding — for a signed-in user with zero households. */
 export function CreateHouseholdPage() {
   const createHousehold = useCuraStore((s) => s.createHousehold);
   const createRoom = useCuraStore((s) => s.createRoom);
+  const createCategory = useCuraStore((s) => s.createCategory);
   const createTasksFromTemplates = useCuraStore((s) => s.createTasksFromTemplates);
   const [step, setStep] = useState<"naam" | "kamers" | "taken">("naam");
   const [naam, setNaam] = useState("");
@@ -72,6 +79,9 @@ export function CreateHouseholdPage() {
       for (const key of selectedRooms) {
         const ic = STARTER_ROOMS.find((r) => r.key === key);
         if (ic) await createRoom({ name: ic.defaultName, iconKey: ic.key, color: ic.color });
+      }
+      for (const [index, name] of STARTER_CATEGORIES.entries()) {
+        await createCategory({ name, sortOrder: index });
       }
       if (indices.length > 0) {
         await createTasksFromTemplates(

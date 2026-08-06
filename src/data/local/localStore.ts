@@ -9,8 +9,9 @@ import {
   TaskCompletionSchema,
   BundleSchema,
   ShoppingItemSchema,
+  CategorySchema,
 } from "../schemas";
-import type { Database, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
+import type { Database, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem, Category } from "../types";
 import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type UpdateShoppingItemInput } from "../store";
 import { seedDatabase, LOCAL_USER_ID } from "./seed";
 
@@ -66,7 +67,7 @@ function validateEntity<S extends z.ZodTypeAny>(schema: S, candidate: unknown, l
 // all" (e.g. a different app's localStorage key, or garbage) — only the
 // latter warrants a full reseed.
 const DATABASE_LIST_KEYS = [
-  "households", "members", "householdMembers", "invites", "rooms", "tasks", "completions", "bundles", "shoppingItems",
+  "households", "members", "householdMembers", "invites", "rooms", "tasks", "completions", "bundles", "shoppingItems", "categories",
 ] as const;
 
 function looksLikeDatabase(source: Record<string, unknown>): boolean {
@@ -107,6 +108,7 @@ function loadDatabase(): Database {
     completions: parseList(source.completions, TaskCompletionSchema, "completion"),
     bundles: parseList(source.bundles, BundleSchema, "bundle"),
     shoppingItems: parseList(source.shoppingItems, ShoppingItemSchema, "shopping item"),
+    categories: parseList(source.categories, CategorySchema, "categorie"),
   };
 }
 
@@ -224,6 +226,38 @@ export class LocalStore implements DataStore {
     // renders with a blank kamer field.
     for (const task of this.db.tasks) {
       if (task.roomId === roomId) task.roomId = undefined;
+    }
+    this.persist();
+  }
+
+  async listCategories(householdId: string): Promise<Category[]> {
+    return this.db.categories.filter((c) => c.householdId === householdId);
+  }
+
+  async createCategory(householdId: string, category: Omit<Category, "id" | "householdId">): Promise<Category> {
+    const created: Category = { ...category, id: uid(), householdId };
+    validateEntity(CategorySchema, created, "categorie");
+    this.db.categories.push(created);
+    this.persist();
+    return created;
+  }
+
+  async updateCategory(categoryId: string, patch: Partial<Omit<Category, "id" | "householdId">>): Promise<Category> {
+    const category = this.db.categories.find((c) => c.id === categoryId);
+    if (!category) throw new Error(`Category not found: ${categoryId}`);
+    validateEntity(CategorySchema, { ...category, ...patch }, "categorie");
+    Object.assign(category, patch);
+    this.persist();
+    return category;
+  }
+
+  async deleteCategory(categoryId: string): Promise<void> {
+    this.db.categories = this.db.categories.filter((c) => c.id !== categoryId);
+    // Mirrors deleteRoom above: an item that referenced the deleted category
+    // falls back to "Zonder categorie" (toShoppingList in selectors.ts), not a
+    // dangling reference.
+    for (const item of this.db.shoppingItems) {
+      if (item.categoryId === categoryId) item.categoryId = undefined;
     }
     this.persist();
   }
@@ -354,7 +388,7 @@ export class LocalStore implements DataStore {
       amount: input.amount,
       unit: input.unit,
       description: input.description,
-      category: input.category,
+      categoryId: input.categoryId,
       checked: false,
       createdAt: new Date().toISOString(),
     };
@@ -374,14 +408,14 @@ export class LocalStore implements DataStore {
       ...("amount" in normalized && { amount: normalized.amount }),
       ...("unit" in normalized && { unit: normalized.unit }),
       ...("description" in normalized && { description: normalized.description }),
-      ...(normalized.category !== undefined && { category: normalized.category }),
+      ...("categoryId" in normalized && { categoryId: normalized.categoryId }),
     };
     validateEntity(ShoppingItemSchema, candidate, "boodschap");
     if (normalized.title !== undefined) item.title = normalized.title;
     if ("amount" in normalized) item.amount = normalized.amount;
     if ("unit" in normalized) item.unit = normalized.unit;
     if ("description" in normalized) item.description = normalized.description;
-    if (normalized.category !== undefined) item.category = normalized.category;
+    if ("categoryId" in normalized) item.categoryId = normalized.categoryId;
     this.persist();
     return item;
   }

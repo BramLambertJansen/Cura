@@ -11,7 +11,7 @@ import {
   BundleSchema,
   ShoppingItemSchema,
   ShoppingUnitSchema,
-  ShoppingCategorySchema,
+  CategorySchema,
   DatabaseSchema,
 } from "./schemas";
 
@@ -42,6 +42,7 @@ export type TaskCompletion = z.infer<typeof TaskCompletionSchema>;
 export type Bundle = z.infer<typeof BundleSchema>;
 export type ShoppingItem = z.infer<typeof ShoppingItemSchema>;
 export type ShoppingUnitKey = z.infer<typeof ShoppingUnitSchema>;
+export type Category = z.infer<typeof CategorySchema>;
 export type Database = z.infer<typeof DatabaseSchema>;
 
 // ─── View-models (derived, what screens consume) ─────────────────────────────
@@ -135,12 +136,16 @@ export interface RoutineView {
   hint: string; // "Gaat bijna elke keer door" / "Ging de laatste tijd vaak niet door"
 }
 
-/** A shopping item as a screen sees it — a plain checklist row, no dueHint/density story. */
-export type ShoppingCategoryKey = z.infer<typeof ShoppingCategorySchema>;
-
+/**
+ * A group of open shopping items sharing a category, for the Boodschappen
+ * screen. `id: null` is the synthesized "Zonder categorie" bucket — items
+ * with no `categoryId`, or one pointing at a deleted category — never a real,
+ * persisted category (CLAUDE.md §3: no derived state stored as if it were
+ * domain data).
+ */
 export interface ShoppingCategoryView {
-  key: ShoppingCategoryKey;
-  label: string;
+  id: string | null;
+  name: string;
   items: ShoppingItemView[];
 }
 
@@ -153,7 +158,8 @@ export interface ShoppingItemView {
   quantity?: string;
   description?: string;
   checked: boolean;
-  category: ShoppingCategoryKey;
+  /** Raw category reference, or undefined for "Zonder categorie" — resolved into a group by toShoppingList, never shown directly. */
+  categoryId?: string;
 }
 
 /** The shopping list split into open vs already-checked items, oldest-added first within each. */

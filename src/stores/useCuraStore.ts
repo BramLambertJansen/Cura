@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../data/store";
-import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, ShoppingItem } from "../data/types";
+import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, ShoppingItem, Category } from "../data/types";
 import { MAX_TASK_INTERVAL_DAYS } from "../data/selectors";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
-/** Keys of the six household-scoped lists this store fetches/refetches. */
-type ListKey = "members" | "rooms" | "tasks" | "completions" | "bundles" | "shoppingItems";
+/** Keys of the seven household-scoped lists this store fetches/refetches. */
+type ListKey = "members" | "rooms" | "tasks" | "completions" | "bundles" | "shoppingItems" | "categories";
 
 // Supabase's realtime payload names which table changed; not every list needs
 // refetching on every remote write (#174) — a task_completions insert
@@ -15,6 +15,7 @@ type ListKey = "members" | "rooms" | "tasks" | "completions" | "bundles" | "shop
 const TABLE_TO_LIST_KEY: Record<string, ListKey> = {
   tasks: "tasks",
   rooms: "rooms",
+  categories: "categories",
   bundles: "bundles",
   members: "members",
   shopping_items: "shoppingItems",
@@ -49,6 +50,7 @@ interface CuraState {
   completions: TaskCompletion[];
   bundles: Bundle[];
   shoppingItems: ShoppingItem[];
+  categories: Category[];
 
   init: () => Promise<void>;
   /**
@@ -82,6 +84,10 @@ interface CuraState {
   createRoom: (room: Omit<Room, "id" | "householdId">) => Promise<void>;
   updateRoom: (roomId: string, patch: Partial<Omit<Room, "id" | "householdId">>) => Promise<void>;
   deleteRoom: (roomId: string) => Promise<void>;
+
+  createCategory: (category: Omit<Category, "id" | "householdId">) => Promise<void>;
+  updateCategory: (categoryId: string, patch: Partial<Omit<Category, "id" | "householdId">>) => Promise<void>;
+  deleteCategory: (categoryId: string) => Promise<void>;
 
   createBundle: (
     bundle: Omit<Bundle, "id" | "householdId">,
@@ -244,6 +250,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   completions: [],
   bundles: [],
   shoppingItems: [],
+  categories: [],
 
   async init() {
     try {
@@ -270,8 +277,9 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         withTimeout(store.listCompletions(household.id, completionsSince()), LIST_TIMEOUT_MS),
         withTimeout(store.listBundles(household.id), LIST_TIMEOUT_MS),
         withTimeout(store.listShoppingItems(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listCategories(household.id), LIST_TIMEOUT_MS),
       ]);
-      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR] = results;
+      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR, categoriesR] = results;
       // A total loss (every list failed — network down, dead proxy) is the one
       // case worth surfacing as a retryable error; a partial loss degrades
       // gracefully with empty slices for just the lists that failed, instead
@@ -288,6 +296,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         completions: completionsR.status === "fulfilled" ? completionsR.value : [],
         bundles: bundlesR.status === "fulfilled" ? bundlesR.value : [],
         shoppingItems: shoppingItemsR.status === "fulfilled" ? shoppingItemsR.value : [],
+        categories: categoriesR.status === "fulfilled" ? categoriesR.value : [],
       });
 
       // A list that failed here has no "previous value" to fall back to the
@@ -308,6 +317,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       if (completionsR.status === "rejected") failedKeys.add("completions");
       if (bundlesR.status === "rejected") failedKeys.add("bundles");
       if (shoppingItemsR.status === "rejected") failedKeys.add("shoppingItems");
+      if (categoriesR.status === "rejected") failedKeys.add("categories");
       if (failedKeys.size > 0) void get().refresh(failedKeys);
 
       // Re-init (e.g. after accepting an invite) replaces any earlier subscription.
@@ -345,10 +355,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         want("completions") ? withTimeout(store.listCompletions(householdId, completionsSince()), LIST_TIMEOUT_MS) : Promise.resolve(null),
         want("bundles") ? withTimeout(store.listBundles(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
         want("shoppingItems") ? withTimeout(store.listShoppingItems(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("categories") ? withTimeout(store.listCategories(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
       ]);
       // Household changed while the fetch was in flight (sign-out/re-init) — discard.
       if (get().householdId !== householdId) return;
-      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR] = results;
+      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR, categoriesR] = results;
       // Apply whichever lists succeeded and keep the previous value for
       // whichever didn't — a flaky single endpoint must not throw away data
       // that DID come back, especially since a realtime refetch relies on
@@ -361,6 +372,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         completions: completionsR.status === "fulfilled" && completionsR.value !== null ? completionsR.value : current.completions,
         bundles: bundlesR.status === "fulfilled" && bundlesR.value !== null ? bundlesR.value : current.bundles,
         shoppingItems: shoppingItemsR.status === "fulfilled" && shoppingItemsR.value !== null ? shoppingItemsR.value : current.shoppingItems,
+        categories: categoriesR.status === "fulfilled" && categoriesR.value !== null ? categoriesR.value : current.categories,
       });
     } catch {
       // Silent — a transient refresh failure isn't worth interrupting the session over; the next refresh retries.
@@ -435,7 +447,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       clearTimeout(realtimeRefreshTimer);
       realtimeRefreshTimer = null;
     }
-    set({ ready: false, initError: null, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [], shoppingItems: [] });
+    set({ ready: false, initError: null, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [], shoppingItems: [], categories: [] });
     dataStorePromise = null;
   },
 
@@ -668,6 +680,42 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       set({
         rooms: get().rooms.filter((r) => r.id !== roomId),
         tasks: get().tasks.map((t) => (t.roomId === roomId ? { ...t, roomId: undefined } : t)),
+      });
+    }, "Verwijderen lukte niet");
+  },
+
+  async createCategory(category) {
+    return withToastOnError(async () => {
+      const store = await getDataStore();
+      const { householdId } = get();
+      if (!householdId) return;
+      const created = await store.createCategory(householdId, category);
+      toast.success(`"${created.name}" toegevoegd`);
+      set({ categories: [...get().categories, created] });
+    }, "Toevoegen lukte niet");
+  },
+
+  async updateCategory(categoryId, patch) {
+    return withToastOnError(async () => {
+      const store = await getDataStore();
+      const updated = await store.updateCategory(categoryId, patch);
+      set({ categories: get().categories.map((c) => (c.id === categoryId ? updated : c)) });
+    }, "Bijwerken lukte niet");
+  },
+
+  async deleteCategory(categoryId) {
+    return withToastOnError(async () => {
+      const store = await getDataStore();
+      await store.deleteCategory(categoryId);
+      toast("Categorie verwijderd");
+      // The backend already clears categoryId on any shopping item that
+      // referenced it (LocalStore mirrors the cloud schema's "on delete set
+      // null"), but neither tells this session's in-memory shoppingItems —
+      // without this they'd keep pointing at a category that's gone, until a
+      // reload (same reasoning as deleteRoom above).
+      set({
+        categories: get().categories.filter((c) => c.id !== categoryId),
+        shoppingItems: get().shoppingItems.map((i) => (i.categoryId === categoryId ? { ...i, categoryId: undefined } : i)),
       });
     }, "Verwijderen lukte niet");
   },

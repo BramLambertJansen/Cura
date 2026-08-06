@@ -1,27 +1,33 @@
 import { useEffect, useState } from "react";
-import { SHOPPING_CATEGORY_ORDER, SHOPPING_UNIT_ORDER } from "../../data/selectors";
-import type { ShoppingCategoryKey, ShoppingUnitKey } from "../../data/types";
+import { SHOPPING_UNIT_ORDER } from "../../data/selectors";
+import type { ShoppingUnitKey } from "../../data/types";
 
 /** A "snel toevoegen" shortcut: a saved product with its usual unit + category,
- *  so a single tap adds a fully-specified item to the list. */
+ *  so a single tap adds a fully-specified item to the list. `categoryId` is
+ *  optional and unvalidated beyond "is a string" — category ids are generated
+ *  per household, so a static default can't hardcode one, and a category the
+ *  user later deletes just leaves the shortcut without one (resolved back to
+ *  "no category" by the render site, never treated as an error). */
 export interface QuickShoppingItem {
   id: string;
   title: string;
   unit: ShoppingUnitKey;
-  category: ShoppingCategoryKey;
+  categoryId?: string;
 }
 
 const STORAGE_KEY = "cura:shopping:quick-items:v2";
 
 /** First-run shortcuts. Once stored, the list is fully user-managed (any of
- *  these can be removed), so this seed only applies when nothing is saved yet. */
+ *  these can be removed), so this seed only applies when nothing is saved yet.
+ *  No categoryId — category ids are per-household, so a static seed can't
+ *  point at a real one; the user categorizes a shortcut themselves if they want to. */
 const DEFAULT_QUICK_ITEMS: QuickShoppingItem[] = [
-  { id: "q-melk", title: "Melk", unit: "l", category: "cold" },
-  { id: "q-brood", title: "Brood", unit: "stuks", category: "pantry" },
-  { id: "q-eieren", title: "Eieren", unit: "stuks", category: "cold" },
-  { id: "q-kaas", title: "Kaas", unit: "g", category: "cold" },
-  { id: "q-wcpapier", title: "Wc-papier", unit: "stuks", category: "household" },
-  { id: "q-groente", title: "Groente", unit: "kg", category: "fresh" },
+  { id: "q-melk", title: "Melk", unit: "l" },
+  { id: "q-brood", title: "Brood", unit: "stuks" },
+  { id: "q-eieren", title: "Eieren", unit: "stuks" },
+  { id: "q-kaas", title: "Kaas", unit: "g" },
+  { id: "q-wcpapier", title: "Wc-papier", unit: "stuks" },
+  { id: "q-groente", title: "Groente", unit: "kg" },
 ];
 
 const normalizeTitle = (title: string) => title.trim().toLocaleLowerCase("nl-NL");
@@ -35,8 +41,7 @@ function isQuickShoppingItem(value: unknown): value is QuickShoppingItem {
     v.title.trim().length > 0 &&
     typeof v.unit === "string" &&
     SHOPPING_UNIT_ORDER.includes(v.unit as ShoppingUnitKey) &&
-    typeof v.category === "string" &&
-    SHOPPING_CATEGORY_ORDER.includes(v.category as ShoppingCategoryKey)
+    (v.categoryId === undefined || typeof v.categoryId === "string")
   );
 }
 
@@ -74,14 +79,14 @@ export function useQuickShoppingItems() {
     }
   }, [items]);
 
-  function addQuickItem(input: { title: string; unit: ShoppingUnitKey; category: ShoppingCategoryKey }) {
+  function addQuickItem(input: { title: string; unit: ShoppingUnitKey; categoryId?: string }) {
     const title = input.title.trim();
     if (!title) return;
     const normalized = normalizeTitle(title);
     setItems((cur) =>
       cur.some((x) => normalizeTitle(x.title) === normalized)
         ? cur
-        : [...cur, { id: makeId(), title, unit: input.unit, category: input.category }],
+        : [...cur, { id: makeId(), title, unit: input.unit, categoryId: input.categoryId }],
     );
   }
 

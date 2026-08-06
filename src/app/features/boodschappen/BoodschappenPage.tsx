@@ -78,13 +78,13 @@ export function BoodschappenPage() {
         ) : (
           <div className="space-y-6">
             {openGroups.map((group) => (
-              <section key={group.key} aria-labelledby={`boodschappen-${group.key}`}>
+              <section key={group.id ?? "none"} aria-labelledby={`boodschappen-${group.id ?? "none"}`}>
                 <div
-                  id={`boodschappen-${group.key}`}
+                  id={`boodschappen-${group.id ?? "none"}`}
                   className="mb-2.5 ml-0.5 inline-flex items-center gap-2 rounded-full px-3 py-1.5"
                   style={{ background: "color-mix(in srgb, var(--muted-foreground) 7%, transparent)" }}>
                   <span className="w-[7px] h-[7px] rounded-full flex-shrink-0" style={{ background: SAGE }} aria-hidden="true" />
-                  <span className="text-[0.66rem] font-semibold uppercase tracking-wider text-muted-foreground">{group.label}</span>
+                  <span className="text-[0.66rem] font-semibold uppercase tracking-wider text-muted-foreground">{group.name}</span>
                   <span className="text-[0.66rem] font-semibold text-muted-foreground">{group.items.length}</span>
                 </div>
                 <motion.div

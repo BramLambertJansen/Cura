@@ -159,6 +159,21 @@ export const BundleSchema = z.object({
   windowLabel: z.string().min(1),
 });
 
+// ─── Shopping categories ─────────────────────────────────────────────────────
+// User-managed, household-shared groups for the shopping list — architecturally
+// a near-copy of Room (no icon/color, since a category is a text pill in a
+// section header, not a card; `sortOrder` drives the display/reorder order,
+// which Room has no equivalent of). No keyword-based auto-categorization
+// exists anymore: the user always picks a category explicitly when adding an
+// item (CLAUDE.md §5 "Boodschappenlijst").
+
+export const CategorySchema = z.object({
+  id: Id,
+  householdId: Id,
+  name: z.string().min(1),
+  sortOrder: z.number().int().nonnegative(),
+});
+
 // ─── Shopping list ───────────────────────────────────────────────────────────
 // A plain checklist, deliberately NOT following the "no derived state" rule
 // above: `checked` is a stored flag, not derived from an event log. Unlike a
@@ -166,8 +181,6 @@ export const BundleSchema = z.object({
 // appears in the Samen visibility feed — it's a disposable list, not an
 // activity log, so there's nothing worth event-sourcing (CLAUDE.md §5
 // "Boodschappenlijst").
-
-export const ShoppingCategorySchema = z.enum(["fresh", "cold", "pantry", "household", "other"]);
 
 // Common metric measures + a bare count ("stuks") — covers "500ml melk", "1kg
 // suiker" without trying to model every container word a household might use.
@@ -184,7 +197,11 @@ export const ShoppingItemSchema = z.object({
   amount: z.number().positive().optional(),
   unit: ShoppingUnitSchema.optional(),
   description: z.string().min(1).optional(),
-  category: ShoppingCategorySchema.optional(),
+  // References a user-managed Category (see CategorySchema above). Absent, or
+  // pointing at a category that's since been deleted, means the item shows in
+  // the synthesized "Zonder categorie" bucket (toShoppingList in selectors.ts)
+  // rather than breaking — the same "on delete set null" shape as Task.roomId.
+  categoryId: Id.optional(),
   checked: z.boolean().default(false),
   createdAt: Iso, // stable add-order
 });
@@ -203,4 +220,5 @@ export const DatabaseSchema = z.object({
   // Default so pre-existing local snapshots (before this field existed) keep
   // loading instead of getting reseeded — same reasoning as timeZone above.
   shoppingItems: z.array(ShoppingItemSchema).default([]),
+  categories: z.array(CategorySchema).default([]),
 });

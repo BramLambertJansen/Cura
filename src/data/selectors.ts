@@ -13,8 +13,9 @@ import type {
   DagdeelGroup,
   ShoppingItemView,
   ShoppingListView,
-  ShoppingCategoryKey,
+  ShoppingCategoryView,
   ShoppingUnitKey,
+  Category,
 } from "./types";
 import { buildLatestCompletionMap, isDone, getDueReminders } from "./reminders";
 
@@ -428,61 +429,9 @@ export function splitPickedUpToday(tasks: TaskView[], now = Date.now()): { picke
 }
 
 // ─── Shopping list ────────────────────────────────────────────────────────────
-
-const SHOPPING_CATEGORIES: { key: ShoppingCategoryKey; label: string; matches: string[] }[] = [
-  {
-    key: "fresh",
-    label: "Vers",
-    matches: [
-      "appel",
-      "appels",
-      "banaan",
-      "bananen",
-      "broccoli",
-      "citroen",
-      "fruit",
-      "groente",
-      "komkommer",
-      "paprika",
-      "sla",
-      "tomaat",
-      "tomaten",
-      "wortel",
-    ],
-  },
-  {
-    key: "cold",
-    label: "Koeling",
-    matches: ["boter", "eieren", "kaas", "melk", "room", "tofu", "vla", "yoghurt", "yogurt", "zuivel"],
-  },
-  {
-    key: "pantry",
-    label: "Voorraad",
-    matches: ["bonen", "brood", "crackers", "koffie", "meel", "olie", "pasta", "rijst", "suiker", "thee"],
-  },
-  {
-    key: "household",
-    label: "Huis",
-    matches: ["afwas", "bakpapier", "batterij", "batterijen", "keukenpapier", "schoonmaak", "toiletpapier", "vuilniszak", "wc-papier", "wc papier"],
-  },
-];
-
-export const SHOPPING_CATEGORY_LABELS: Record<ShoppingCategoryKey, string> = {
-  fresh: "Vers",
-  cold: "Koeling",
-  pantry: "Voorraad",
-  household: "Huis",
-  other: "Overig",
-};
-
-export const SHOPPING_CATEGORY_ORDER: ShoppingCategoryKey[] = ["fresh", "cold", "pantry", "household", "other"];
-
-export function shoppingCategory(title: string): ShoppingCategoryKey {
-  const normalized = title.toLocaleLowerCase("nl-NL");
-  return SHOPPING_CATEGORIES.find((category) =>
-    category.matches.some((match) => normalized.includes(match)),
-  )?.key ?? "other";
-}
+// Categories are user-managed, household-shared entities (see CategorySchema
+// in schemas.ts) — no built-in list, no keyword-based auto-categorization. The
+// user always picks a category explicitly when adding an item.
 
 export const SHOPPING_UNIT_ORDER: ShoppingUnitKey[] = ["stuks", "g", "kg", "ml", "l"];
 
@@ -512,8 +461,16 @@ export function formatShoppingQuantity(item: Pick<ShoppingItem, "amount" | "unit
   return `${formatShoppingAmount(item.amount)}${item.unit}`;
 }
 
-/** Split the shopping list into open vs checked, each oldest-added first. */
-export function toShoppingList(items: ShoppingItem[]): ShoppingListView {
+/**
+ * Split the shopping list into open vs checked, each oldest-added first, and
+ * group the open items by the household's own categories (sorted by
+ * `sortOrder`). An item with no `categoryId`, or one pointing at a category
+ * that's since been deleted, falls into a synthesized trailing "Zonder
+ * categorie" group (`id: null`) rather than being dropped — the selector-level
+ * mirror of Category's "on delete set null" (see deleteCategory in
+ * localStore.ts/supabaseStore.ts).
+ */
+export function toShoppingList(items: ShoppingItem[], categories: Category[]): ShoppingListView {
   const views: ShoppingItemView[] = [...items]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .map((i) => ({
@@ -524,17 +481,24 @@ export function toShoppingList(items: ShoppingItem[]): ShoppingListView {
       quantity: formatShoppingQuantity(i),
       description: i.description,
       checked: i.checked,
-      category: i.category ?? shoppingCategory(i.title),
+      categoryId: i.categoryId,
     }));
   const open = views.filter((i) => !i.checked);
+  const orderedCategories = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
+  const categoryIds = new Set(orderedCategories.map((c) => c.id));
+  const openGroups: ShoppingCategoryView[] = orderedCategories
+    .map((category) => ({
+      id: category.id,
+      name: category.name,
+      items: open.filter((item) => item.categoryId === category.id),
+    }))
+    .filter((group) => group.items.length > 0);
+  const uncategorized = open.filter((item) => !item.categoryId || !categoryIds.has(item.categoryId));
+  if (uncategorized.length > 0) openGroups.push({ id: null, name: "Zonder categorie", items: uncategorized });
   return {
     open,
     checked: views.filter((i) => i.checked),
-    openGroups: SHOPPING_CATEGORY_ORDER.map((key) => ({
-      key,
-      label: SHOPPING_CATEGORY_LABELS[key],
-      items: open.filter((item) => item.category === key),
-    })).filter((group) => group.items.length > 0),
+    openGroups,
   };
 }
 

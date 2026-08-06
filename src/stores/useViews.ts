@@ -105,10 +105,11 @@ export function useRoutineView(bundleId: string): RoutineView | undefined {
   return useMemo(() => routines.find((b) => b.id === bundleId), [routines, bundleId]);
 }
 
-/** The shopping list, split into open vs already-checked items. */
+/** The shopping list, split into open vs already-checked items and grouped by the household's own categories. */
 export function useShoppingList(): ShoppingListView {
   const shoppingItems = useCuraStore((s) => s.shoppingItems);
-  return useMemo(() => toShoppingList(shoppingItems), [shoppingItems]);
+  const categories = useCuraStore((s) => s.categories);
+  return useMemo(() => toShoppingList(shoppingItems, categories), [shoppingItems, categories]);
 }
 
 /** Recent completions as a calm chronological feed for Samen. */

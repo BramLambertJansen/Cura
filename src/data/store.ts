@@ -8,8 +8,8 @@ import type {
   TaskCompletion,
   Bundle,
   ShoppingItem,
-  ShoppingCategoryKey,
   ShoppingUnitKey,
+  Category,
 } from "./types";
 
 /**
@@ -49,7 +49,7 @@ export interface CreateShoppingItemInput {
   amount?: number;
   unit?: ShoppingUnitKey;
   description?: string;
-  category?: ShoppingCategoryKey;
+  categoryId?: string;
 }
 
 export interface UpdateShoppingItemInput {
@@ -57,7 +57,7 @@ export interface UpdateShoppingItemInput {
   amount?: number;
   unit?: ShoppingUnitKey;
   description?: string;
-  category?: ShoppingCategoryKey;
+  categoryId?: string;
 }
 
 export function normalizeShoppingItemPatch(patch: UpdateShoppingItemInput): UpdateShoppingItemInput {
@@ -69,7 +69,7 @@ export function normalizeShoppingItemPatch(patch: UpdateShoppingItemInput): Upda
     const description = patch.description?.trim();
     normalized.description = description || undefined;
   }
-  if (patch.category !== undefined) normalized.category = patch.category;
+  if ("categoryId" in patch) normalized.categoryId = patch.categoryId;
   return normalized;
 }
 
@@ -137,6 +137,18 @@ export interface DataStore {
   createRoom(householdId: string, room: Omit<Room, "id" | "householdId">): Promise<Room>;
   updateRoom(roomId: string, patch: Partial<Omit<Room, "id" | "householdId">>): Promise<Room>;
   deleteRoom(roomId: string): Promise<void>;
+
+  // ── Shopping categories ────────────────────────────────────────────────────
+  // Household-shared and fully user-managed (add/rename/delete/reorder) —
+  // architecturally a near-copy of Room. No dedicated reorder call: the UI
+  // swaps two rows' sortOrder via two updateCategory calls. Deleting a
+  // category clears categoryId on any shopping item that referenced it
+  // (mirrors deleteRoom clearing Task.roomId) rather than leaving a dangling
+  // reference.
+  listCategories(householdId: string): Promise<Category[]>;
+  createCategory(householdId: string, category: Omit<Category, "id" | "householdId">): Promise<Category>;
+  updateCategory(categoryId: string, patch: Partial<Omit<Category, "id" | "householdId">>): Promise<Category>;
+  deleteCategory(categoryId: string): Promise<void>;
 
   // ── Tasks ──────────────────────────────────────────────────────────────────
   listTasks(householdId: string): Promise<Task[]>;

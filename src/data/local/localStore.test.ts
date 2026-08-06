@@ -154,6 +154,45 @@ describe("LocalStore CRUD (#155)", () => {
     expect(remainingTasks.map((t) => t.id)).toEqual([otherTask.id]);
     expect(remainingTasks.some((t) => t.id === bundleTask.id)).toBe(false);
   });
+
+  it("createCategory assigns an id/householdId and persists it", async () => {
+    const store = new LocalStore();
+    const created = await store.createCategory("h1", { name: "Vers", sortOrder: 0 });
+
+    expect(created.id).toBeTruthy();
+    expect(created.householdId).toBe("h1");
+    await expect(store.listCategories("h1")).resolves.toEqual([created]);
+    // A fresh instance re-reads from localStorage — confirms persist() actually wrote it.
+    await expect(new LocalStore().listCategories("h1")).resolves.toEqual([created]);
+  });
+
+  it("updateCategory merges the patch onto the existing category", async () => {
+    const store = new LocalStore();
+    const created = await store.createCategory("h1", { name: "Vers", sortOrder: 0 });
+
+    const updated = await store.updateCategory(created.id, { name: "Verse producten" });
+
+    expect(updated).toMatchObject({ id: created.id, name: "Verse producten", sortOrder: 0 });
+  });
+
+  it("deleteCategory clears categoryId on shopping items that referenced it instead of leaving a dangling reference", async () => {
+    const store = new LocalStore();
+    const category = await store.createCategory("h1", { name: "Koeling", sortOrder: 0 });
+    const item = await store.createShoppingItem("h1", { title: "Wc-papier", categoryId: category.id });
+
+    await store.deleteCategory(category.id);
+
+    await expect(store.listCategories("h1")).resolves.toEqual([]);
+    const items = await store.listShoppingItems("h1");
+    expect(items.find((i) => i.id === item.id)?.categoryId).toBeUndefined();
+    // A fresh instance re-reads from localStorage — confirms persist() wrote the
+    // cleared categoryId, not just in-memory state. (JSON.stringify drops an
+    // undefined-valued key entirely, so a fresh parse never has it — checking
+    // via property access rather than objectContaining, which requires the
+    // key to literally exist.)
+    const freshItems = await new LocalStore().listShoppingItems("h1");
+    expect(freshItems.find((i) => i.id === item.id)?.categoryId).toBeUndefined();
+  });
 });
 
 describe("LocalStore write-time validation (Codex review on #202)", () => {

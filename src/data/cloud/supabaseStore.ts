@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 import { supabase } from "./supabaseClient";
 import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../store";
-import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
+import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem, Category } from "../types";
 import {
   HouseholdSchema,
   MemberSchema,
@@ -11,6 +11,7 @@ import {
   TaskCompletionSchema,
   BundleSchema,
   ShoppingItemSchema,
+  CategorySchema,
 } from "../schemas";
 
 const uid = (): string => crypto.randomUUID();
@@ -25,6 +26,7 @@ interface MemberRow {
 }
 interface InviteRow { token: string; household_id: string; created_by_id: string; created_at: string; expires_at: string | null }
 interface RoomRow { id: string; household_id: string; name: string; icon_key: string; color: string }
+interface CategoryRow { id: string; household_id: string; name: string; sort_order: number }
 interface BundleRow { id: string; household_id: string; name: string; trigger: string; cadence: "daily" | "weekly"; window_label: string }
 interface TaskRow {
   id: string; household_id: string; room_id: string | null; title: string;
@@ -41,7 +43,7 @@ interface ShoppingItemRow {
   id: string; household_id: string; title: string;
   quantity: string | null; // legacy free text, no longer written by the app
   amount: number | null; unit: string | null; description: string | null;
-  category: string | null; checked: boolean; created_at: string;
+  category_id: string | null; checked: boolean; created_at: string;
 }
 interface PushSubscriptionRow {
   id: string; household_id: string; member_id: string;
@@ -98,6 +100,9 @@ function mapInvite(r: InviteRow): HouseholdInvite {
 function mapRoom(r: RoomRow): Room {
   return parseRow(() => RoomSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, iconKey: r.icon_key, color: r.color }), "kamer");
 }
+function mapCategory(r: CategoryRow): Category {
+  return parseRow(() => CategorySchema.parse({ id: r.id, householdId: r.household_id, name: r.name, sortOrder: r.sort_order }), "categorie");
+}
 function mapBundle(r: BundleRow): Bundle {
   return parseRow(() => BundleSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, trigger: r.trigger, cadence: r.cadence, windowLabel: r.window_label }), "routine");
 }
@@ -122,15 +127,15 @@ function mapShoppingItem(r: ShoppingItemRow): ShoppingItem {
     id: r.id, householdId: r.household_id, title: r.title,
     quantity: r.quantity ?? undefined,
     amount: r.amount ?? undefined, unit: r.unit ?? undefined, description: r.description ?? undefined,
-    category: r.category ?? undefined, checked: r.checked, createdAt: r.created_at,
+    categoryId: r.category_id ?? undefined, checked: r.checked, createdAt: r.created_at,
   }), "boodschap");
 }
 
-// Optional shopping_items columns added after the initial table (category,
+// Optional shopping_items columns added after the initial table (category_id,
 // then amount/unit/description) — since migrations apply manually and can lag
 // behind deployed code, a request touching a not-yet-migrated column must
 // degrade instead of throwing (same reasoning as the category column before it).
-const NEW_SHOPPING_COLUMNS = ["category", "amount", "unit", "description"] as const;
+const NEW_SHOPPING_COLUMNS = ["category_id", "amount", "unit", "description"] as const;
 
 /**
  * Which of NEW_SHOPPING_COLUMNS a PGRST204 "column not found" error is
@@ -207,7 +212,7 @@ export function shoppingItemUpdateRow(patch: UpdateShoppingItemInput): Partial<S
   if ("amount" in normalized) update.amount = normalized.amount ?? null;
   if ("unit" in normalized) update.unit = normalized.unit ?? null;
   if ("description" in normalized) update.description = normalized.description ?? null;
-  if (normalized.category !== undefined) update.category = normalized.category;
+  if ("categoryId" in normalized) update.category_id = normalized.categoryId ?? null;
   return update;
 }
 
@@ -396,6 +401,38 @@ export class SupabaseStore implements DataStore {
 
   async deleteRoom(roomId: string): Promise<void> {
     const { error } = await supabase.from("rooms").delete().eq("id", roomId);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Shopping categories ─────────────────────────────────────────────────────
+  async listCategories(householdId: string): Promise<Category[]> {
+    const { data, error } = await supabase.from("categories").select("*").eq("household_id", householdId);
+    if (error) throw new Error(error.message);
+    return mapList((data ?? []) as CategoryRow[], mapCategory, "categorie");
+  }
+
+  async createCategory(householdId: string, category: Omit<Category, "id" | "householdId">): Promise<Category> {
+    const row: CategoryRow = {
+      id: uid(), household_id: householdId, name: category.name, sort_order: category.sortOrder,
+    };
+    const { error } = await supabase.from("categories").insert(row);
+    if (error) throw new Error(error.message);
+    return mapCategory(row);
+  }
+
+  async updateCategory(categoryId: string, patch: Partial<Omit<Category, "id" | "householdId">>): Promise<Category> {
+    const update: Partial<CategoryRow> = {};
+    if (patch.name !== undefined) update.name = patch.name;
+    if (patch.sortOrder !== undefined) update.sort_order = patch.sortOrder;
+    const { data, error } = await supabase.from("categories").update(update).eq("id", categoryId).select().single();
+    if (error || !data) throw new Error(error?.message ?? `Category not found: ${categoryId}`);
+    return mapCategory(data as CategoryRow);
+  }
+
+  async deleteCategory(categoryId: string): Promise<void> {
+    // The DB's `category_id ... on delete set null` (see the migration) clears
+    // the reference on any shopping item that had it — the client just deletes.
+    const { error } = await supabase.from("categories").delete().eq("id", categoryId);
     if (error) throw new Error(error.message);
   }
 
@@ -616,7 +653,7 @@ export class SupabaseStore implements DataStore {
       id: uid(), household_id: householdId, title: input.title,
       quantity: null,
       amount: input.amount ?? null, unit: input.unit ?? null, description: input.description ?? null,
-      category: input.category ?? null, checked: false, created_at: new Date().toISOString(),
+      category_id: input.categoryId ?? null, checked: false, created_at: new Date().toISOString(),
     };
     // Each retry drops only the column(s) THIS error actually named — never
     // the whole NEW_SHOPPING_COLUMNS quartet — so a lone still-missing column
@@ -664,8 +701,8 @@ export class SupabaseStore implements DataStore {
 
   // ── Realtime (Phase 3+) ──────────────────────────────────────────────────
   // One channel per household, subscribed to every table the household view
-  // depends on. tasks/rooms/bundles/members/shopping_items carry household_id
-  // and are filtered server-side; task_completions has no household_id of its own
+  // depends on. tasks/rooms/categories/bundles/members/shopping_items carry
+  // household_id and are filtered server-side; task_completions has no household_id of its own
   // (only via a join to tasks), so it's subscribed unfiltered and relies on
   // the same RLS policy (task_completions_select) that gates normal reads —
   // Supabase's Realtime "postgres_changes" feed is RLS-aware for the
@@ -685,6 +722,7 @@ export class SupabaseStore implements DataStore {
         // only the affected list instead of all six on every remote write.
         .on("postgres_changes", { event: "*", schema: "public", table: "tasks", filter: `household_id=eq.${householdId}` }, () => onChange("tasks"))
         .on("postgres_changes", { event: "*", schema: "public", table: "rooms", filter: `household_id=eq.${householdId}` }, () => onChange("rooms"))
+        .on("postgres_changes", { event: "*", schema: "public", table: "categories", filter: `household_id=eq.${householdId}` }, () => onChange("categories"))
         .on("postgres_changes", { event: "*", schema: "public", table: "bundles", filter: `household_id=eq.${householdId}` }, () => onChange("bundles"))
         .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `household_id=eq.${householdId}` }, () => onChange("members"))
         .on("postgres_changes", { event: "*", schema: "public", table: "shopping_items", filter: `household_id=eq.${householdId}` }, () => onChange("shopping_items"))

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Task, TaskCompletion, Room, Bundle, Member, ShoppingItem, TaskView } from "./types";
+import type { Task, TaskCompletion, Room, Bundle, Member, ShoppingItem, TaskView, Category } from "./types";
 import {
   buildLatestCompletionMap,
   toTaskView,
@@ -529,11 +529,18 @@ describe("shopping list", () => {
     createdAt: iso(0, now),
     ...overrides,
   });
+  // A household's user-managed categories — no keyword matching, no built-in
+  // set; toShoppingList just groups by whatever the household has.
+  const categories: Category[] = [
+    { id: "cat-vers", householdId: "h1", name: "Vers", sortOrder: 0 },
+    { id: "cat-koeling", householdId: "h1", name: "Koeling", sortOrder: 1 },
+    { id: "cat-huis", householdId: "h1", name: "Huis", sortOrder: 2 },
+  ];
 
   it("splits items into open and checked", () => {
     const open1 = item({ id: "s1", checked: false });
     const checked1 = item({ id: "s2", checked: true });
-    const { open, checked } = toShoppingList([open1, checked1]);
+    const { open, checked } = toShoppingList([open1, checked1], categories);
     expect(open.map((i) => i.id)).toEqual(["s1"]);
     expect(checked.map((i) => i.id)).toEqual(["s2"]);
   });
@@ -541,13 +548,13 @@ describe("shopping list", () => {
   it("orders each group oldest-added first", () => {
     const newer = item({ id: "s1", createdAt: iso(0, now) });
     const older = item({ id: "s2", createdAt: iso(DAY_MS, now) });
-    const { open } = toShoppingList([newer, older]);
+    const { open } = toShoppingList([newer, older], categories);
     expect(open.map((i) => i.id)).toEqual(["s2", "s1"]);
   });
 
   it("carries the legacy free-text quantity through to the view when there's no amount/unit", () => {
     const withQty = item({ id: "s1", quantity: "2" });
-    const { open } = toShoppingList([withQty]);
+    const { open } = toShoppingList([withQty], categories);
     expect(open[0].quantity).toBe("2");
   });
 
@@ -555,49 +562,56 @@ describe("shopping list", () => {
     const ml = item({ id: "s1", amount: 500, unit: "ml" });
     const kg = item({ id: "s2", amount: 1, unit: "kg" });
     const stuks = item({ id: "s3", amount: 3, unit: "stuks" });
-    const { open } = toShoppingList([ml, kg, stuks]);
+    const { open } = toShoppingList([ml, kg, stuks], categories);
     expect(open.map((i) => i.quantity)).toEqual(["500ml", "1kg", "3x"]);
   });
 
   it("suppresses the label for a bare single stuks item", () => {
     const single = item({ id: "s1", amount: 1, unit: "stuks" });
     const noUnit = item({ id: "s2", amount: 1 });
-    const { open } = toShoppingList([single, noUnit]);
+    const { open } = toShoppingList([single, noUnit], categories);
     expect(open.map((i) => i.quantity)).toEqual([undefined, undefined]);
   });
 
   it("prefers amount/unit over a legacy quantity when both are present", () => {
     const withBoth = item({ id: "s1", quantity: "1 pak", amount: 2, unit: "kg" });
-    const { open } = toShoppingList([withBoth]);
+    const { open } = toShoppingList([withBoth], categories);
     expect(open[0].quantity).toBe("2kg");
   });
 
-  it("adds calm category groups for open items", () => {
-    const milk = item({ id: "s1", title: "Melk" });
-    const apples = item({ id: "s2", title: "Appels" });
-    const bags = item({ id: "s3", title: "Vuilniszakken" });
-    const { openGroups } = toShoppingList([bags, milk, apples]);
-    expect(openGroups.map((group) => group.label)).toEqual(["Vers", "Koeling", "Huis"]);
+  it("groups open items by their category, ordered by sortOrder", () => {
+    const milk = item({ id: "s1", title: "Melk", categoryId: "cat-koeling" });
+    const apples = item({ id: "s2", title: "Appels", categoryId: "cat-vers" });
+    const bags = item({ id: "s3", title: "Vuilniszakken", categoryId: "cat-huis" });
+    const { openGroups } = toShoppingList([bags, milk, apples], categories);
+    expect(openGroups.map((group) => group.name)).toEqual(["Vers", "Koeling", "Huis"]);
     expect(openGroups.map((group) => group.items.map((i) => i.id))).toEqual([["s2"], ["s1"], ["s3"]]);
   });
 
   it("keeps checked items out of open category groups", () => {
-    const checkedMilk = item({ id: "s1", title: "Melk", checked: true });
-    const { openGroups, checked } = toShoppingList([checkedMilk]);
+    const checkedMilk = item({ id: "s1", title: "Melk", checked: true, categoryId: "cat-koeling" });
+    const { openGroups, checked } = toShoppingList([checkedMilk], categories);
     expect(openGroups).toHaveLength(0);
-    expect(checked[0].category).toBe("cold");
+    expect(checked[0].categoryId).toBe("cat-koeling");
   });
 
-  it("uses a manually chosen category before the title-based fallback", () => {
-    const milk = item({ id: "s1", title: "Melk", category: "household" });
-    const { openGroups } = toShoppingList([milk]);
-    expect(openGroups.map((group) => group.label)).toEqual(["Huis"]);
+  it("skips categories with no open items", () => {
+    const milk = item({ id: "s1", title: "Melk", categoryId: "cat-koeling" });
+    const { openGroups } = toShoppingList([milk], categories);
+    expect(openGroups.map((group) => group.name)).toEqual(["Koeling"]);
   });
 
-  it("categorizes wc-papier (hyphenated) as Huis, not Overig", () => {
-    const wcPapier = item({ id: "s1", title: "Wc-papier" });
-    const { openGroups } = toShoppingList([wcPapier]);
-    expect(openGroups.map((group) => group.label)).toEqual(["Huis"]);
+  it("puts items with no categoryId into a trailing 'Zonder categorie' bucket", () => {
+    const uncategorized = item({ id: "s1", title: "Iets" });
+    const { openGroups } = toShoppingList([uncategorized], categories);
+    expect(openGroups).toEqual([{ id: null, name: "Zonder categorie", items: expect.arrayContaining([expect.objectContaining({ id: "s1" })]) }]);
+  });
+
+  it("falls back to 'Zonder categorie' for an item whose category was deleted", () => {
+    const orphaned = item({ id: "s1", title: "Melk", categoryId: "cat-deleted" });
+    const { openGroups } = toShoppingList([orphaned], categories);
+    expect(openGroups.map((group) => group.name)).toEqual(["Zonder categorie"]);
+    expect(openGroups[0].id).toBeNull();
   });
 });
 

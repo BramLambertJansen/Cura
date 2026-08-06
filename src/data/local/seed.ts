@@ -68,11 +68,21 @@ export function seedDatabase(): Database {
       { id: "bundle-weekend", householdId: HOUSEHOLD_ID, name: "Weekend schoonmaak", trigger: "Weekeinde", cadence: "weekly", windowLabel: "weekenden" },
     ],
     shoppingItems: [
-      { id: "shopping-1", householdId: HOUSEHOLD_ID, title: "Melk", amount: 500, unit: "ml", checked: false, createdAt: todayAt(9, 0) },
-      { id: "shopping-2", householdId: HOUSEHOLD_ID, title: "Eieren", amount: 10, unit: "stuks", checked: false, createdAt: todayAt(9, 1) },
+      { id: "shopping-1", householdId: HOUSEHOLD_ID, title: "Melk", amount: 500, unit: "ml", checked: false, categoryId: "category-koeling", createdAt: todayAt(9, 0) },
+      { id: "shopping-2", householdId: HOUSEHOLD_ID, title: "Eieren", amount: 10, unit: "stuks", checked: false, categoryId: "category-koeling", createdAt: todayAt(9, 1) },
       // Legacy free-text row (pre-amount/unit) — demonstrates the display fallback still works.
-      { id: "shopping-3", householdId: HOUSEHOLD_ID, title: "Wc-papier", quantity: "1 pak", checked: false, createdAt: todayAt(9, 2) },
-      { id: "shopping-4", householdId: HOUSEHOLD_ID, title: "Afwasmiddel", checked: true, createdAt: todayAt(8, 30) },
+      { id: "shopping-3", householdId: HOUSEHOLD_ID, title: "Wc-papier", quantity: "1 pak", checked: false, categoryId: "category-huis", createdAt: todayAt(9, 2) },
+      { id: "shopping-4", householdId: HOUSEHOLD_ID, title: "Afwasmiddel", checked: true, categoryId: "category-huis", createdAt: todayAt(8, 30) },
+    ],
+    // Starter set, fully user-managed from here (rename/delete/reorder/add via
+    // "Categorieën beheren" in BoodschapToevoegSheet) — no keyword-based
+    // auto-categorization exists anymore (CLAUDE.md §5 "Boodschappenlijst").
+    categories: [
+      { id: "category-vers", householdId: HOUSEHOLD_ID, name: "Vers", sortOrder: 0 },
+      { id: "category-koeling", householdId: HOUSEHOLD_ID, name: "Koeling", sortOrder: 1 },
+      { id: "category-voorraad", householdId: HOUSEHOLD_ID, name: "Voorraad", sortOrder: 2 },
+      { id: "category-huis", householdId: HOUSEHOLD_ID, name: "Huis", sortOrder: 3 },
+      { id: "category-overig", householdId: HOUSEHOLD_ID, name: "Overig", sortOrder: 4 },
     ],
   };
 }

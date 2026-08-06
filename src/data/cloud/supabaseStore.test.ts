@@ -76,7 +76,7 @@ describe("shoppingItemUpdateRow", () => {
 
 describe("isMissingShoppingColumn", () => {
   it("recognizes Supabase schema-cache misses for the optional shopping_items columns", () => {
-    for (const column of ["category", "amount", "unit", "description"]) {
+    for (const column of ["category_id", "amount", "unit", "description"]) {
       expect(isMissingShoppingColumn({
         code: "PGRST204",
         message: `Could not find the '${column}' column of 'shopping_items' in the schema cache`,
@@ -94,10 +94,10 @@ describe("isMissingShoppingColumn", () => {
 
 /**
  * Regression guard: an earlier version of this fallback dropped the WHOLE
- * category/amount/unit/description quartet whenever any one of them was
- * reported missing — so a household mid-migration (category already added,
- * description not yet) would silently discard an already-set category on
- * every insert/update, not just skip the genuinely-missing column.
+ * category_id/amount/unit/description quartet whenever any one of them was
+ * reported missing — so a household mid-migration (category_id already
+ * added, description not yet) would silently discard an already-set
+ * category on every insert/update, not just skip the genuinely-missing column.
  */
 describe("missingShoppingColumns", () => {
   it("names only the column the error actually reports, not its siblings", () => {
@@ -108,7 +108,7 @@ describe("missingShoppingColumns", () => {
   });
 
   it("recognizes each of the optional shopping_items columns", () => {
-    for (const column of ["category", "amount", "unit", "description"]) {
+    for (const column of ["category_id", "amount", "unit", "description"]) {
       expect(missingShoppingColumns({
         code: "PGRST204",
         message: `Could not find the '${column}' column of 'shopping_items' in the schema cache`,
@@ -223,6 +223,44 @@ describe("SupabaseStore retry-on-missing-column (#155)", () => {
 
     expect(insertAttempt1.mock.calls[0][0]).toMatchObject({ description: "halfvol" });
     expect(insertAttempt2.mock.calls[0][0]).not.toHaveProperty("description");
+    expect(item.title).toBe("Melk");
+  });
+
+  it("createShoppingItem drops category_id and retries when the categories migration hasn't landed yet", async () => {
+    const insertAttempt1 = vi.fn((_row: unknown) => Promise.resolve({ error: missingColumnError("shopping_items", "category_id") }));
+    const insertAttempt2 = vi.fn((_row: unknown) => Promise.resolve({ error: null }));
+    fromMock
+      .mockReturnValueOnce({ insert: insertAttempt1 })
+      .mockReturnValueOnce({ insert: insertAttempt2 });
+
+    const store = new SupabaseStore();
+    const item = await store.createShoppingItem("h1", { title: "Melk", categoryId: "cat-1" });
+
+    expect(insertAttempt1.mock.calls[0][0]).toMatchObject({ category_id: "cat-1" });
+    expect(insertAttempt2.mock.calls[0][0]).not.toHaveProperty("category_id");
+    expect(item.title).toBe("Melk");
+  });
+
+  it("updateShoppingItem drops category_id and retries when the categories migration hasn't landed yet", async () => {
+    // Patch carries a second field (title) alongside categoryId — after the
+    // retry strips category_id, the update payload still isn't empty, so it
+    // stays on the .update() path rather than falling through to the
+    // no-fields-left .select() branch (a different, already-covered case).
+    const chain = (result: unknown) => ({
+      update: vi.fn((_row: unknown) => ({ eq: vi.fn(() => ({ select: vi.fn(() => ({ single: vi.fn(() => Promise.resolve(result)) })) })) })),
+    });
+    const attempt1 = chain({ data: null, error: missingColumnError("shopping_items", "category_id") });
+    const attempt2 = chain({
+      data: { id: "s1", household_id: "h1", title: "Melk", quantity: null, amount: null, unit: null, description: null, checked: false, created_at: "2026-01-01T00:00:00.000Z" },
+      error: null,
+    });
+    fromMock.mockReturnValueOnce(attempt1).mockReturnValueOnce(attempt2);
+
+    const store = new SupabaseStore();
+    const item = await store.updateShoppingItem("s1", { title: "Melk", categoryId: "cat-1" });
+
+    expect(attempt1.update.mock.calls[0][0]).toMatchObject({ title: "Melk", category_id: "cat-1" });
+    expect(attempt2.update.mock.calls[0][0]).not.toHaveProperty("category_id");
     expect(item.title).toBe("Melk");
   });
 });
