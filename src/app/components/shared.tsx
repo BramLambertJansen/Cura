@@ -121,25 +121,28 @@ export function Sheet({
         onDragEnd={handleDragEnd}
         initial={{ y: "100%" }} animate={{ y: -keyboardInset }} exit={{ y: "100%" }}
         transition={dragging ? { duration: 0 } : SHEET_SPRING}
-        className="absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] pt-5 overflow-y-auto scrollbar-hide"
+        // flex-col + overflow-hidden, not a single scrolling box: the drag
+        // handle is now a non-scrolling flex child (see below) that stays put
+        // while only the content beneath it scrolls — previously the handle
+        // lived inside the one scrollable region and scrolled away with the
+        // rest of the sheet, which read as the "grab" affordance vanishing
+        // mid-scroll. overflow-hidden here clips the handle's flat top edges
+        // to the rounded-t-[2rem] corners, same as it always clipped content.
+        className="absolute bottom-0 left-0 right-0 z-50 rounded-t-[2rem] flex flex-col overflow-hidden"
         style={{
           background: "var(--card)",
           boxShadow: `0 -16px 56px color-mix(in srgb, var(--shadow-color) 14%, transparent),0 -2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent)`,
-          // Always capped + scrollable, not just for `tall` sheets: when the
-          // keyboard opens (often instantly, since most sheets autoFocus
-          // their first field) it eats into the available height without
-          // shrinking this absolutely-positioned sheet's own box, and the
-          // shell behind it is overflow-hidden. Without an internal scroll
-          // region here, content below the fold (e.g. the submit button)
-          // would be unreachable rather than just offscreen.
+          // Always capped, not just for `tall` sheets: when the keyboard opens
+          // (often instantly, since most sheets autoFocus their first field)
+          // it eats into the available height without shrinking this
+          // absolutely-positioned sheet's own box, and the shell behind it is
+          // overflow-hidden. Without a cap here, content below the fold (e.g.
+          // the submit button) would be unreachable rather than just offscreen.
           maxHeight: tall ? "calc(90dvh - var(--safe-top))" : "calc(100dvh - var(--safe-top) - 1rem)",
-          paddingBottom: tall ? "calc(2rem + var(--safe-bottom))" : "calc(2.5rem + var(--safe-bottom))",
-          paddingLeft: "calc(1.25rem + var(--safe-left))",
-          paddingRight: "calc(1.25rem + var(--safe-right))",
         }}
         onClick={(e) => e.stopPropagation()}>
         <div
-          className="flex justify-center items-center -mt-5 py-5 mb-1 cursor-grab active:cursor-grabbing"
+          className="flex-shrink-0 flex justify-center items-center py-5 cursor-grab active:cursor-grabbing"
           style={{ touchAction: "none" }}
           onPointerDown={(e: ReactPointerEvent) => !reduceMotion && dragControls.start(e)}
           aria-hidden="true">
@@ -148,7 +151,19 @@ export function Sheet({
             transition={{ duration: 0.12 }}
             className="w-14 h-[5px] rounded-full" style={{ background: "var(--muted)" }} />
         </div>
-        {children}
+        {/* The one scrolling region — everything below the handle, which stays
+            fixed above it. min-h-0 is load-bearing: without it a flex child
+            refuses to shrink below its content size and this would just grow
+            the sheet past maxHeight instead of scrolling internally. */}
+        <div
+          className="flex-1 min-h-0 overflow-y-auto scrollbar-hide"
+          style={{
+            paddingBottom: tall ? "calc(2rem + var(--safe-bottom))" : "calc(2.5rem + var(--safe-bottom))",
+            paddingLeft: "calc(1.25rem + var(--safe-left))",
+            paddingRight: "calc(1.25rem + var(--safe-right))",
+          }}>
+          {children}
+        </div>
       </motion.div>
     </>
   );

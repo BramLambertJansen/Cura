@@ -16,6 +16,7 @@ export function PageHero({
   backLabel = "Terug",
   topAction,
   position = "right center",
+  subtitleMaxWidth = "56%",
 }: {
   src: string;
   title: ReactNode;
@@ -25,6 +26,8 @@ export function PageHero({
   backLabel?: string;
   topAction?: ReactNode;
   position?: string;
+  /** Overrides the subtitle's default 56% cap — see the comment at its use below. */
+  subtitleMaxWidth?: string;
 }) {
   const [failed, setFailed] = useState(false);
 
@@ -80,8 +83,28 @@ export function PageHero({
         <div className="max-w-[72%]">
           {eyebrow && <div className="mb-2">{eyebrow}</div>}
           <div role="heading" aria-level={1} className="font-display font-medium text-foreground" style={{ fontSize: "30px", lineHeight: 1.25 }}>{title}</div>
-          {subtitle && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>}
         </div>
+        {/* A narrower cap than the title's own 72%, measured against the same
+            full-width containing block (not nested inside the title's div,
+            which would compound the two percentages) — a wrapped subtitle's
+            second/third line is what actually reaches into the art's subject
+            on longer copy (Routines' gift box, Focustimer's idle screen),
+            where the title's own shorter single line never did. 56% clears
+            every header's art at every viewport width tried (375–430px).
+            Focustimer overrides this wider (see its own call site) — its
+            subtitle is long enough that 56% would wrap it to a 4th line,
+            and that extra line's height pushes the eyebrow+title above it
+            up into the fixed-position back button (measured overlap goes
+            from ~18px, already there today at any width ≥65%, to ~40px+
+            once a 4th line lands) — a worse regression than the graze
+            against the art's low-contrast paper/pencil prop that 65% still
+            leaves, so this is the one call site that keeps a wider cap on
+            purpose rather than a hack to shrink later. */}
+        {subtitle && (
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground" style={{ maxWidth: subtitleMaxWidth }}>
+            {subtitle}
+          </p>
+        )}
       </div>
     </motion.header>
   );
