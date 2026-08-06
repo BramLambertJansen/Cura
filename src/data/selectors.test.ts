@@ -593,6 +593,12 @@ describe("shopping list", () => {
     const { openGroups } = toShoppingList([milk]);
     expect(openGroups.map((group) => group.label)).toEqual(["Huis"]);
   });
+
+  it("categorizes wc-papier (hyphenated) as Huis, not Overig", () => {
+    const wcPapier = item({ id: "s1", title: "Wc-papier" });
+    const { openGroups } = toShoppingList([wcPapier]);
+    expect(openGroups.map((group) => group.label)).toEqual(["Huis"]);
+  });
 });
 
 describe("Vandaag timeline — dagdeel grouping", () => {

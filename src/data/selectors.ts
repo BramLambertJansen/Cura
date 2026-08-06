@@ -463,7 +463,7 @@ const SHOPPING_CATEGORIES: { key: ShoppingCategoryKey; label: string; matches: s
   {
     key: "household",
     label: "Huis",
-    matches: ["afwas", "bakpapier", "batterij", "batterijen", "keukenpapier", "schoonmaak", "toiletpapier", "vuilniszak"],
+    matches: ["afwas", "bakpapier", "batterij", "batterijen", "keukenpapier", "schoonmaak", "toiletpapier", "vuilniszak", "wc-papier", "wc papier"],
   },
 ];
 
