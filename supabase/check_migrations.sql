@@ -224,7 +224,15 @@ with checks(seq, migration, item, present) as (values
   (19, '20260728010000_ensure_rls_event_trigger', 'function rls_auto_enable',
      to_regprocedure('public.rls_auto_enable()') is not null),
   (19, '20260728010000_ensure_rls_event_trigger', 'event trigger ensure_rls',
-     exists (select 1 from pg_event_trigger where evtname = 'ensure_rls'))
+     exists (select 1 from pg_event_trigger where evtname = 'ensure_rls')),
+
+  -- 20260804000000_room_owner_removal.sql
+  -- Bewust OMGEKEERD, zelfde patroon als het members_update-blok hierboven:
+  -- deze kolom hoort WEG te zijn zodra deze migratie is toegepast.
+  (20, '20260804000000_room_owner_removal', 'kolom rooms.owner_id is verwijderd (verwacht: afwezig)',
+     not exists (select 1 from information_schema.columns
+                 where table_schema = 'public' and table_name = 'rooms'
+                   and column_name = 'owner_id'))
 )
 
 select

@@ -65,7 +65,10 @@ schema_paths = []
 
 [db.seed]
 # If enabled, seeds the database after migrations during a db reset.
-enabled = true
+# Cura seeds local mode purely client-side (src/data/local/seed.ts); there is
+# no supabase/seed.sql, so this stays disabled to avoid a `db reset` failure
+# over a missing file.
+enabled = false
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = ["./seed.sql"]
