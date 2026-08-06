@@ -67,18 +67,7 @@ export function FocusPage() {
       <PageHero
         src="/headers/focus.webp"
         title={idle ? "Eén taak, één timer" : status === "paused" ? "Gepauzeerd" : phase === "break" ? "Pauze" : "Aan het werk"}
-        subtitle={idle
-          ? "Kies hoelang je aan één taak wilt werken. De timer loopt door terwijl je de app gebruikt."
-          : status === "paused"
-            ? "De timer staat stil — hervat wanneer je wilt."
-            : taskTitle
-              ? `Bezig met ${taskTitle}.`
-              : "De timer loopt door terwijl je de app verder gebruikt."}
         eyebrow={<p className="text-xs font-medium tracking-wide text-muted-foreground">Focustimer</p>}
-        // Wider than PageHero's 56% default — see the comment at its default:
-        // the idle subtitle is long enough that 56% wraps a 4th line, and that
-        // extra line pushes this page's eyebrow up into the back button.
-        subtitleMaxWidth="65%"
         onBack={() => navigate(cameFrom, { replace: true })}
         backLabel={
             cameFrom.startsWith("/vandaag") ? "Terug naar Vandaag"
