@@ -176,4 +176,23 @@ describe("VandaagPage", () => {
 
     expect(screen.getByRole("button", { name: /^samen/i })).toBeInTheDocument();
   });
+
+  it("hides the Routines section when the household has no routines", () => {
+    setTasks([]); // setTasks defaults bundles to []
+
+    renderVandaag();
+
+    expect(screen.queryByText("Routines van vandaag")).not.toBeInTheDocument();
+  });
+
+  it("shows the Routines section once a routine exists", () => {
+    setTasks(
+      [{ id: "t-routine", householdId: "h1", title: "Bed opmaken", planned: false, bundleId: "b1", checklistItems: [] }],
+      { bundles: [{ id: "b1", householdId: "h1", name: "Ochtendroutine", trigger: "'s ochtends", cadence: "daily", windowLabel: "ochtenden" }] },
+    );
+
+    renderVandaag();
+
+    expect(screen.getByText("Routines van vandaag")).toBeInTheDocument();
+  });
 });
