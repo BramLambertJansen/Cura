@@ -1,8 +1,8 @@
 import { useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Minus, Plus, Tag, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, Minus, Plus, Tag } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { IconBadge, IconButton, PrimaryButton, Sheet, SheetHeader, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { IconBadge, PrimaryButton, Sheet, SheetHeader, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { SAGE } from "../lib/constants";
 import {
@@ -14,17 +14,14 @@ import {
 } from "../../data/selectors";
 import type { ShoppingCategoryKey, ShoppingUnitKey } from "../../data/types";
 import { FREE_UNIT_DEFAULT, parseDraftAmount } from "../lib/shoppingDraft";
-import { useQuickShoppingItems, type QuickShoppingItem } from "../lib/useQuickShoppingItems";
-import { EmptyIllustration } from "../components/EmptyIllustration";
 
 /**
  * Collapsed "current value + chevron" trigger that opens a Popover list of
- * options — the Eenheid/Categorie pickers, in both the add-view and the
- * "nieuwe snelkoppeling"-view of manage. Replaces what used to be a permanently
- * open row of KeuzeChip pills for these two fields: with only one value ever
- * selected at a time, showing every option at once was more chrome than the
- * choice needed (unlike kamer/duur filters elsewhere, which stay chip-rows
- * because several can apply loosely at once).
+ * options — the Eenheid/Categorie pickers. Replaces what used to be a
+ * permanently open row of KeuzeChip pills for these two fields: with only
+ * one value ever selected at a time, showing every option at once was more
+ * chrome than the choice needed (unlike kamer/duur filters elsewhere, which
+ * stay chip-rows because several can apply loosely at once).
  *
  * `variant="pill"` is the compact rounded-full trigger (Eenheid); `variant="row"`
  * is the wider field-style row with a leading icon badge (Categorie). Local to
@@ -110,10 +107,9 @@ function fieldStyle(active: boolean, hasValue: boolean) {
 
 /**
  * Add-to-list bottom sheet for boodschappen (mounted in the app shell, opened
- * from the page's add-pill via SheetContext). Two views:
- *  - "toevoegen": title + snel-toevoegen shortcuts + aantal/eenheid + categorie.
- *    Adding keeps the sheet open and refocuses, so several items go in a row.
- *  - "beheren": manage the snel-toevoegen shortcuts (remove / add new).
+ * from the page's add-pill via SheetContext): title + aantal/eenheid +
+ * categorie. Adding keeps the sheet open and refocuses, so several items go
+ * in a row.
  */
 export function BoodschapToevoegSheet(props: { onClose: () => void; headerExtra?: ReactNode; autoFocusTitle?: boolean }) {
   return (
@@ -134,10 +130,6 @@ export function BoodschapToevoegSheet(props: { onClose: () => void; headerExtra?
  */
 export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle = true }: { onClose: () => void; headerExtra?: ReactNode; autoFocusTitle?: boolean }) {
   const createShoppingItem = useCuraStore((s) => s.createShoppingItem);
-  const shoppingItems = useCuraStore((s) => s.shoppingItems);
-  const { items: quickItems, addQuickItem, removeQuickItem } = useQuickShoppingItems();
-
-  const [manageOpen, setManageOpen] = useState(false);
 
   // Add-view draft.
   const [title, setTitle] = useState("");
@@ -153,13 +145,6 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
   const titleRef = useRef<HTMLInputElement>(null);
   const justAddedTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Manage-view draft.
-  const [mTitle, setMTitle] = useState("");
-  const [mTitleActive, setMTitleActive] = useState(false);
-  const [mUnit, setMUnit] = useState<ShoppingUnitKey>("stuks");
-  const [mCategory, setMCategory] = useState<ShoppingCategoryKey>("other");
-  const [mCategoryTouched, setMCategoryTouched] = useState(false);
-
   const amount = parseDraftAmount(unit, qty, qtyText);
   const canAdd = title.trim().length > 0 && amount !== null;
 
@@ -172,11 +157,6 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
   function changeTitle(next: string) {
     setTitle(next);
     if (!categoryTouched) setCategory(next.trim() ? shoppingCategory(next) : "other");
-  }
-
-  function changeMTitle(next: string) {
-    setMTitle(next);
-    if (!mCategoryTouched) setMCategory(next.trim() ? shoppingCategory(next) : "other");
   }
 
   function selectUnit(next: ShoppingUnitKey) {
@@ -192,11 +172,6 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
   function pickCategory(next: ShoppingCategoryKey) {
     setCategory(next);
     setCategoryTouched(true);
-  }
-
-  function pickMCategory(next: ShoppingCategoryKey) {
-    setMCategory(next);
-    setMCategoryTouched(true);
   }
 
   function resetDraft() {
@@ -218,238 +193,106 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
     titleRef.current?.focus();
   }
 
-  function handleQuickAdd(q: QuickShoppingItem) {
-    // A shortcut is meant for something you buy often — tapping it again once
-    // it's already open or checked on the list would silently duplicate it.
-    const alreadyOnList = shoppingItems.some((i) => i.title.trim().toLowerCase() === q.title.trim().toLowerCase());
-    if (alreadyOnList) {
-      flashMessage(`${q.title} staat al op de lijst`);
-      return;
-    }
-    const amt = q.unit === "stuks" ? 1 : FREE_UNIT_DEFAULT[q.unit];
-    void createShoppingItem({ title: q.title, amount: amt, unit: q.unit, category: q.category });
-    flashMessage(`${q.title} toegevoegd`);
-  }
-
-  function handleAddShortcut() {
-    const name = mTitle.trim();
-    if (!name) return;
-    addQuickItem({ title: name, unit: mUnit, category: mCategory });
-    setMTitle("");
-    setMUnit("stuks");
-    setMCategory("other");
-    setMCategoryTouched(false);
-  }
-
-  // "Beheren" must stay reachable even with zero shortcuts — it's the only
-  // entry point into managing them, so gating the whole block on
-  // quickItems.length > 0 would permanently lock it once the list is empty.
-  const showSuggestionsSection = title.trim() === "";
-
   return (
     <>
-      {manageOpen ? (
-        <>
-          <div className="flex items-center gap-3 mb-6">
-            <IconButton
-              onClick={() => setManageOpen(false)}
-              label="Terug"
-              icon={<ChevronLeft size={16} className="text-foreground" aria-hidden="true" />}
-            />
-            <h3 id="sheet-title" className="text-xl font-medium text-foreground font-display">Snel toevoegen beheren</h3>
-          </div>
+      <SheetHeader title="Item toevoegen" onClose={onClose} />
+      {headerExtra}
 
-          <div className="flex flex-col gap-2">
-            {quickItems.length === 0 ? (
-              <div className="py-2 text-center">
-                <EmptyIllustration src="/states/empty-shortcuts.webp" className="!w-20 !h-20" />
-                <p className="text-sm text-muted-foreground">Geen snelkoppelingen.</p>
-              </div>
-            ) : (
-              quickItems.map((q) => (
-                <div key={q.id} className="flex items-center gap-3 rounded-2xl bg-card px-4 py-3 border border-border/60">
-                  <span className="flex-1 min-w-0 truncate text-[0.9375rem] font-medium text-foreground">{q.title}</span>
-                  <span className="flex-shrink-0 text-xs text-muted-foreground">
-                    {SHOPPING_CATEGORY_LABELS[q.category]} · {SHOPPING_UNIT_LABELS[q.unit]}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeQuickItem(q.id)}
-                    aria-label={`${q.title} uit snelkeuzes halen`}
-                    className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center focus-ring"
-                    style={{ background: "color-mix(in srgb, var(--destructive) 12%, transparent)", color: "var(--destructive)" }}>
-                    <X size={13} strokeWidth={2.6} aria-hidden="true" />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
+      <input
+        ref={titleRef}
+        autoFocus={autoFocusTitle}
+        value={title}
+        onChange={(e) => changeTitle(e.target.value)}
+        onFocus={() => setTitleActive(true)}
+        onBlur={() => setTitleActive(false)}
+        onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+        placeholder="Bijv. melk of suiker"
+        aria-label="Boodschap"
+        className="w-full rounded-2xl px-4 py-3.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
+        style={fieldStyle(titleActive, !!title)}
+      />
 
-          <div className="mt-6 pt-5 border-t border-border/60 flex flex-col gap-3.5">
-            <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground">Nieuwe snelkoppeling</p>
+      <div className="mt-5">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Aantal &amp; eenheid</p>
+        <div className="flex gap-3 items-center">
+          {unit === "stuks" ? (
+            <div
+              className="inline-flex items-center gap-2.5 rounded-full p-1 border"
+              style={{ borderColor: "var(--border-input)", background: "var(--input-background)" }}>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.88 }}
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                aria-label="Minder"
+                className="w-8 h-8 rounded-full flex items-center justify-center bg-secondary text-foreground focus-ring">
+                <Minus size={15} aria-hidden="true" />
+              </motion.button>
+              <span className="min-w-[22px] text-center text-[0.95rem] font-semibold tabular-nums text-foreground">{qty}</span>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.88 }}
+                onClick={() => setQty((q) => Math.min(99, q + 1))}
+                aria-label="Meer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white focus-ring"
+                style={{ background: SAGE }}>
+                <Plus size={15} aria-hidden="true" />
+              </motion.button>
+            </div>
+          ) : (
             <input
-              value={mTitle}
-              onChange={(e) => changeMTitle(e.target.value)}
-              onFocus={() => setMTitleActive(true)}
-              onBlur={() => setMTitleActive(false)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleAddShortcut(); }}
-              placeholder="Naam, bijv. Yoghurt"
-              aria-label="Naam snelkoppeling"
-              className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
-              style={fieldStyle(mTitleActive, !!mTitle)}
+              value={qtyText}
+              onChange={(e) => { const v = e.target.value; if (/^[0-9]*[.,]?[0-9]*$/.test(v)) setQtyText(v); }}
+              inputMode="decimal"
+              placeholder={`bijv. ${FREE_UNIT_DEFAULT[unit]}`}
+              aria-label="Aantal"
+              className="w-24 flex-shrink-0 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
+              style={fieldStyle(false, !!qtyText)}
             />
-            <div className="flex gap-2.5">
-              <div className="w-28 flex-shrink-0">
-                <PickerField variant="pill" value={mUnit} options={SHOPPING_UNIT_ORDER} labels={SHOPPING_UNIT_LABELS} onChange={setMUnit} ariaLabel="Eenheid kiezen" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <PickerField variant="row" value={mCategory} options={SHOPPING_CATEGORY_ORDER} labels={SHOPPING_CATEGORY_LABELS} onChange={pickMCategory} icon={<Tag size={15} aria-hidden="true" />} ariaLabel="Categorie kiezen" />
-              </div>
-            </div>
-            <PrimaryButton
-              onClick={handleAddShortcut}
-              disabled={!mTitle.trim()}
-              icon={<Plus size={16} aria-hidden="true" />}>
-              Toevoegen aan snel toevoegen
-            </PrimaryButton>
-          </div>
-        </>
-      ) : (
-        <>
-          <SheetHeader title="Item toevoegen" onClose={onClose} />
-          {headerExtra}
-
-          <input
-            ref={titleRef}
-            autoFocus={autoFocusTitle}
-            value={title}
-            onChange={(e) => changeTitle(e.target.value)}
-            onFocus={() => setTitleActive(true)}
-            onBlur={() => setTitleActive(false)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-            placeholder="Bijv. melk of suiker"
-            aria-label="Boodschap"
-            className="w-full rounded-2xl px-4 py-3.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
-            style={fieldStyle(titleActive, !!title)}
-          />
-
-          {showSuggestionsSection && (
-            <div className="mt-5">
-              <div className="flex items-center justify-between mb-2.5">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground">Snel toevoegen</p>
-                <button
-                  type="button"
-                  onClick={() => setManageOpen(true)}
-                  className="text-xs font-semibold focus-ring rounded-md px-1 -mx-1"
-                  style={{ color: SAGE }}>
-                  Beheren
-                </button>
-              </div>
-              {quickItems.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {quickItems.map((q) => (
-                    <motion.button
-                      key={q.id}
-                      type="button"
-                      whileTap={{ scale: 0.93 }}
-                      onClick={() => handleQuickAdd(q)}
-                      className="rounded-full border border-border/60 bg-card px-3.5 py-2 text-[0.82rem] font-medium text-foreground focus-ring">
-                      {q.title}
-                    </motion.button>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <EmptyIllustration src="/states/empty-shortcuts.webp" className="!w-14 !h-14 !mx-0" />
-                  <p className="text-xs text-muted-foreground">Nog geen snelkoppelingen.</p>
-                </div>
-              )}
-            </div>
           )}
-
-          <div className="mt-5">
-            <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Aantal &amp; eenheid</p>
-            <div className="flex gap-3 items-center">
-              {unit === "stuks" ? (
-                <div
-                  className="inline-flex items-center gap-2.5 rounded-full p-1 border"
-                  style={{ borderColor: "var(--border-input)", background: "var(--input-background)" }}>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.88 }}
-                    onClick={() => setQty((q) => Math.max(1, q - 1))}
-                    aria-label="Minder"
-                    className="w-8 h-8 rounded-full flex items-center justify-center bg-secondary text-foreground focus-ring">
-                    <Minus size={15} aria-hidden="true" />
-                  </motion.button>
-                  <span className="min-w-[22px] text-center text-[0.95rem] font-semibold tabular-nums text-foreground">{qty}</span>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.88 }}
-                    onClick={() => setQty((q) => Math.min(99, q + 1))}
-                    aria-label="Meer"
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white focus-ring"
-                    style={{ background: SAGE }}>
-                    <Plus size={15} aria-hidden="true" />
-                  </motion.button>
-                </div>
-              ) : (
-                <input
-                  value={qtyText}
-                  onChange={(e) => { const v = e.target.value; if (/^[0-9]*[.,]?[0-9]*$/.test(v)) setQtyText(v); }}
-                  inputMode="decimal"
-                  placeholder={`bijv. ${FREE_UNIT_DEFAULT[unit]}`}
-                  aria-label="Aantal"
-                  className="w-24 flex-shrink-0 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
-                  style={fieldStyle(false, !!qtyText)}
-                />
-              )}
-              <div className="w-28 flex-shrink-0">
-                <PickerField variant="pill" value={unit} options={SHOPPING_UNIT_ORDER} labels={SHOPPING_UNIT_LABELS} onChange={selectUnit} ariaLabel="Eenheid kiezen" />
-              </div>
-            </div>
+          <div className="w-28 flex-shrink-0">
+            <PickerField variant="pill" value={unit} options={SHOPPING_UNIT_ORDER} labels={SHOPPING_UNIT_LABELS} onChange={selectUnit} ariaLabel="Eenheid kiezen" />
           </div>
+        </div>
+      </div>
 
-          <div className="mt-5">
-            <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Categorie</p>
-            <PickerField variant="row" value={category} options={SHOPPING_CATEGORY_ORDER} labels={SHOPPING_CATEGORY_LABELS} onChange={pickCategory} icon={<Tag size={15} aria-hidden="true" />} ariaLabel="Categorie kiezen" />
-          </div>
+      <div className="mt-5">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Categorie</p>
+        <PickerField variant="row" value={category} options={SHOPPING_CATEGORY_ORDER} labels={SHOPPING_CATEGORY_LABELS} onChange={pickCategory} icon={<Tag size={15} aria-hidden="true" />} ariaLabel="Categorie kiezen" />
+      </div>
 
-          <div className="mt-5">
-            <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
-              Beschrijving <span className="normal-case font-medium opacity-70">(optioneel)</span>
-            </p>
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              onFocus={() => setDescriptionActive(true)}
-              onBlur={() => setDescriptionActive(false)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
-              placeholder="Bijv. merk of smaak"
-              aria-label="Beschrijving"
-              className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
-              style={fieldStyle(descriptionActive, !!description)}
-            />
-          </div>
+      <div className="mt-5">
+        <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+          Beschrijving <span className="normal-case font-medium opacity-70">(optioneel)</span>
+        </p>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onFocus={() => setDescriptionActive(true)}
+          onBlur={() => setDescriptionActive(false)}
+          onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+          placeholder="Bijv. merk of smaak"
+          aria-label="Beschrijving"
+          className="w-full rounded-2xl px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
+          style={fieldStyle(descriptionActive, !!description)}
+        />
+      </div>
 
-          <div className="mt-6">
-            <PrimaryButton onClick={handleAdd} disabled={!canAdd} icon={<Plus size={16} aria-hidden="true" />}>
-              Toevoegen
-            </PrimaryButton>
-            <div className="h-5 mt-1.5 text-center" aria-live="polite">
-              {justAdded && (
-                <motion.p
-                  initial={{ opacity: 0, y: -3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-xs font-semibold"
-                  style={{ color: SAGE }}>
-                  {justAdded}
-                </motion.p>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+      <div className="mt-6">
+        <PrimaryButton onClick={handleAdd} disabled={!canAdd} icon={<Plus size={16} aria-hidden="true" />}>
+          Toevoegen
+        </PrimaryButton>
+        <div className="h-5 mt-1.5 text-center" aria-live="polite">
+          {justAdded && (
+            <motion.p
+              initial={{ opacity: 0, y: -3 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-xs font-semibold"
+              style={{ color: SAGE }}>
+              {justAdded}
+            </motion.p>
+          )}
+        </div>
+      </div>
     </>
   );
 }
