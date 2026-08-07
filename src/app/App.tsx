@@ -8,7 +8,6 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
 import { useCuraStore } from "../stores/useCuraStore";
-import { usePomodoroStore } from "../stores/usePomodoroStore";
 import { useHasHousemate } from "../stores/useViews";
 import { useOnboardingSeen } from "./lib/useOnboardingSeen";
 import { useDaypart } from "./lib/useDaypart";
@@ -148,14 +147,13 @@ function MainShell() {
 
   // Routine-sessie is een echte takeover (§5 Routines) — geen onderbalk/gradient
   // eronder, minder scroll-bottom-padding omdat er geen navbar te vrijwaren is.
-  // Een lopende (of gepauzeerde) focussessie op /focus zelf is dezelfde soort
-  // takeover: eenmaal gestart hoeft de onderbalk niet meer zichtbaar te zijn —
-  // je bent gefocust op de timer, niet op tabwisselen. Idle (nog niet gestart,
-  // of net gestopt) toont de balk gewoon weer.
+  // /focus is dezelfde soort takeover in élke status, inclusief idle: het is
+  // een focusscherm, geen tabwissel-hub, en moet altijd in één scherm passen
+  // zonder scroll (CLAUDE.md §5 Focustimer) — de onderbalk zou daar zowel
+  // ruimte als aandacht wegnemen die de pagina zelf nodig heeft.
   const { pathname } = useLocation();
   const isRoutineSession = Boolean(matchPath("/routines/:bundleId/starten", pathname));
-  const focusStatus = usePomodoroStore((s) => s.status);
-  const isFocusSession = Boolean(matchPath("/focus", pathname)) && focusStatus !== "idle";
+  const isFocusSession = Boolean(matchPath("/focus", pathname));
   const isTakeover = isRoutineSession || isFocusSession;
 
   const scrollRef = useRef<HTMLElement>(null);

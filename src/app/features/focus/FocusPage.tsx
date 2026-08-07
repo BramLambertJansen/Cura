@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
+import { ArrowLeft, Check, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
 import { useTaskViews } from "../../../stores/useViews";
 import { splitPickedUpToday, toDagdelen } from "../../../data/selectors";
 import { SAGE } from "../../lib/constants";
 import { fadeUp, stagger } from "../../lib/motion";
 import { useStartFocus } from "../../lib/useStartFocus";
-import { PageHero } from "../../components/PageHero";
 import { TimerDisplay } from "../../components/TimerDisplay";
 import { Card, DubbelKnop, IconBadge, IconButton, Kop, OptieKaart, PillButton, PrimaryButton } from "../../components/shared";
 
@@ -18,6 +17,17 @@ import { Card, DubbelKnop, IconBadge, IconButton, Kop, OptieKaart, PillButton, P
  * grote ring + m:ss met pauze/hervat, +5 min en stoppen. Alle state leeft in
  * `usePomodoroStore` (blijft lopen bij tabwissel); dit scherm componeert alleen
  * de bestaande primitieven (CLAUDE.md §7).
+ *
+ * Bewust geen `PageHero` — dit is een focusscherm, geen overzicht (CLAUDE.md
+ * §Gedeelde overzichtsheaders noemt Focus daarom niet langer als achtste
+ * hero-pagina). De hele pagina past altijd in exact één scherm zonder scroll:
+ * de rootcontainer krijgt zijn hoogte via `100dvh` min de safe-area-tokens
+ * (hetzelfde budget dat `main` al aframmelt met zijn eigen padding — App.tsx
+ * maakt `/focus` daarom in elke status een takeover, zodat er ook geen
+ * onderbalk-ruimte meer gereserveerd hoeft te worden), in plaats van via een
+ * percentage-hoogte die door de niet-gehoogde route/animatie-wrappers erboven
+ * toch niet zou doorwerken. Een kleine terugknop + statuslabel vervangt de
+ * hero-afbeelding.
  */
 export function FocusPage() {
   const navigate = useNavigate();
@@ -62,25 +72,33 @@ export function FocusPage() {
     if (idle || !taskId) setConfirmFinish(false);
   }, [idle, taskId]);
 
+  const backLabel =
+    cameFrom.startsWith("/vandaag") ? "Terug naar Vandaag"
+      : cameFrom.startsWith("/huis") ? "Terug naar Huis"
+        : cameFrom.startsWith("/taken") ? "Terug naar Takenoverzicht"
+          : "Terug naar Meer";
+  const stateLabel = idle ? "Focustimer" : status === "paused" ? "Gepauzeerd" : phase === "break" ? "Pauze" : "Aan het werk";
+
   return (
-    <div className="relative min-h-full">
-      <PageHero
-        src="/headers/focus.webp"
-        title={idle ? "Eén taak, één timer" : status === "paused" ? "Gepauzeerd" : phase === "break" ? "Pauze" : "Aan het werk"}
-        eyebrow={<p className="text-xs font-medium tracking-wide text-muted-foreground">Focustimer</p>}
-        onBack={() => navigate(cameFrom, { replace: true })}
-        backLabel={
-            cameFrom.startsWith("/vandaag") ? "Terug naar Vandaag"
-              : cameFrom.startsWith("/huis") ? "Terug naar Huis"
-                : cameFrom.startsWith("/taken") ? "Terug naar Takenoverzicht"
-                  : "Terug naar Meer"
-          }
-      />
+    <div
+      className="relative flex flex-col overflow-hidden px-5"
+      style={{ height: "calc(100dvh - var(--safe-top) - var(--safe-bottom))" }}
+    >
+      <div className="flex items-center justify-between flex-shrink-0 pt-3 pb-1">
+        <IconButton
+          icon={<ArrowLeft size={16} className="text-foreground" aria-hidden="true" />}
+          onClick={() => navigate(cameFrom, { replace: true })}
+          label={backLabel}
+          tone="card"
+        />
+        <p className="text-xs font-medium tracking-wide text-muted-foreground">{stateLabel}</p>
+        {/* Decoratieve spacer zodat het statuslabel echt gecentreerd staat naast de terugknop. */}
+        <span className="w-9 flex-shrink-0" aria-hidden="true" />
+      </div>
 
-      <div className="relative px-5 pb-10">
-
+      <div className="relative flex-1 min-h-0 flex flex-col justify-center overflow-hidden">
         {idle ? (
-          <motion.div variants={stagger} initial="initial" animate="animate" className="mt-8 space-y-6">
+          <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-5">
             {nextTask && (
               <motion.div variants={fadeUp} className="space-y-2">
                 <Kop>Volgende op je dag</Kop>
@@ -126,8 +144,8 @@ export function FocusPage() {
             </motion.div>
           </motion.div>
         ) : (
-          <div className="mt-10 flex flex-col items-center gap-9">
-            <TimerDisplay remainingSec={remainingSec} totalSec={totalSec} phase={phase} />
+          <div className="flex flex-col items-center gap-6">
+            <TimerDisplay remainingSec={remainingSec} totalSec={totalSec} phase={phase} size={216} />
 
             <div className="flex items-center gap-3">
               <PillButton icon={<Plus size={13} aria-hidden="true" />} onClick={() => addTime(5 * 60)}>
