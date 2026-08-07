@@ -195,11 +195,11 @@ export function HuisPage() {
       </section>
 
       <section>
-        {/* A vertical KamerKaart list, not the 3-column image-tile grid the frozen
-            Claude-Design mockup shows — deliberate: a full-bleed photo grid can't
-            carry the featured-badge/count text at WCAG AA contrast the way
-            an inset-art card can (CLAUDE.md §6), and rooms without art would need
-            a second, inconsistent tile treatment. */}
+        {/* Compact image-tile grid (CLAUDE.md §5 Huis), matching the Figma/Make
+            mockup. KamerKaart keeps featured/openCount legible at this size by
+            putting that text on the tile's own opaque surface below the art,
+            never over the photo itself — so WCAG AA contrast (§6) doesn't
+            depend on which watercolor happens to sit behind it. */}
         <Kop>Kamers</Kop>
         {rooms.length === 0 && (
           <div className="text-center pt-4 pb-6">
@@ -207,22 +207,18 @@ export function HuisPage() {
             <p className="text-sm text-muted-foreground mt-1">Nog geen kamers. Voeg er hieronder een toe.</p>
           </div>
         )}
-        <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
+        <motion.div variants={stagger} initial="initial" animate="animate" className="grid grid-cols-4 gap-3">
           {sortedRooms.map((r) => (
             <motion.div key={r.id} variants={fadeUp}>
               <KamerKaart room={r} featured={r.id === featuredRoomId} onClick={() => navigate(`/huis/${r.id}`)} />
             </motion.div>
           ))}
-          <motion.div variants={fadeUp}>
-            <motion.button onClick={openNewRoom} whileTap={{ scale: 0.985 }}
-              className="w-full flex items-center gap-4 bg-card rounded-2xl px-4 py-3.5 border-2 border-dashed focus-ring"
+          <motion.div variants={fadeUp} className="h-full">
+            <motion.button onClick={openNewRoom} whileTap={{ scale: 0.97 }}
+              className="h-full w-full flex flex-col items-center justify-center gap-1 py-3 rounded-2xl border-2 border-dashed focus-ring"
               style={{ borderColor: "color-mix(in srgb, var(--border-color) 16%, transparent)", color: "var(--muted-foreground)" }}>
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-secondary">
-                <Plus size={20} strokeWidth={1.75} aria-hidden="true" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-muted-foreground">Kamer toevoegen</p>
-              </div>
+              <Plus size={18} strokeWidth={1.75} aria-hidden="true" />
+              <span className="text-[0.68rem] font-medium text-center leading-tight px-1">Kamer toevoegen</span>
             </motion.button>
           </motion.div>
         </motion.div>

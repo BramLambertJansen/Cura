@@ -6,7 +6,7 @@ import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { roomIcon, SAGE, SHADOW } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { CollapsibleSection, HintBanner, IconButton } from "../../components/shared";
+import { CollapsibleSection, IconButton } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { RoomHero } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
@@ -81,11 +81,7 @@ export function RoomDetailPage() {
         <h1 className="font-display text-3xl font-medium leading-tight text-foreground">{room.name}</h1>
       </div>
 
-      <div className="px-5 pb-6">
-        <HintBanner>{room.hint}</HintBanner>
-      </div>
-
-      <div className="px-5 pb-28 space-y-3">
+      <div className="px-5 pt-2 pb-28 space-y-3">
         {roomTasks.length === 0 ? (
           <div className="text-center pt-2 pb-4">
             <EmptyIllustration src="/states/empty-room-tasks.webp" />
