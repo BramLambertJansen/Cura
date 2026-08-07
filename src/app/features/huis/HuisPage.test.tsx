@@ -18,8 +18,8 @@ import type { Household, Member, Room, Task } from "../../../data/types";
 const HOUSEHOLD: Household = { id: "h1", name: "Thuis", timeZone: "Europe/Amsterdam" };
 const ME: Member = { id: "m1", householdId: "h1", displayName: "Bram", userId: "u1" };
 
-const KEUKEN: Room = { id: "r-keuken", householdId: "h1", name: "Keuken", iconKey: "utensils", color: "#B8924A" };
-const BADKAMER: Room = { id: "r-badkamer", householdId: "h1", name: "Badkamer", iconKey: "droplets", color: "#5A8FA8" };
+const KEUKEN: Room = { id: "r-keuken", householdId: "h1", name: "Keuken", iconKey: "utensils", color: "#B8924A", quickAddTemplates: [] };
+const BADKAMER: Room = { id: "r-badkamer", householdId: "h1", name: "Badkamer", iconKey: "droplets", color: "#5A8FA8", quickAddTemplates: [] };
 
 function sheetActions(): SheetActions {
   return {

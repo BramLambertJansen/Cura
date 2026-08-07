@@ -62,7 +62,7 @@ export function MeerPage() {
 
   return (
     <div className="pb-8">
-      <PageHero src="/headers/meer.webp" title="Meer" subtitle="Lijsten, focustimer en instellingen." />
+      <PageHero src="/headers/meer.webp" title="Meer" />
       <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-7 px-5">
         {groups.map((group) => (
           <motion.section key={group.title} variants={fadeUp}>

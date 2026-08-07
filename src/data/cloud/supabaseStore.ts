@@ -24,7 +24,8 @@ interface MemberRow {
   quiet_hours_start: string | null; quiet_hours_end: string | null;
 }
 interface InviteRow { token: string; household_id: string; created_by_id: string; created_at: string; expires_at: string | null }
-interface RoomRow { id: string; household_id: string; name: string; icon_key: string; color: string }
+interface TaskTemplateRow { title: string; description?: string; durationMin?: number; intervalDays?: number }
+interface RoomRow { id: string; household_id: string; name: string; icon_key: string; color: string; quick_add_templates: TaskTemplateRow[] }
 interface BundleRow { id: string; household_id: string; name: string; trigger: string; cadence: "daily" | "weekly"; window_label: string }
 interface TaskRow {
   id: string; household_id: string; room_id: string | null; title: string;
@@ -96,7 +97,10 @@ function mapInvite(r: InviteRow): HouseholdInvite {
   }), "uitnodiging");
 }
 function mapRoom(r: RoomRow): Room {
-  return parseRow(() => RoomSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, iconKey: r.icon_key, color: r.color }), "kamer");
+  return parseRow(() => RoomSchema.parse({
+    id: r.id, householdId: r.household_id, name: r.name, iconKey: r.icon_key, color: r.color,
+    quickAddTemplates: r.quick_add_templates ?? [],
+  }), "kamer");
 }
 function mapBundle(r: BundleRow): Bundle {
   return parseRow(() => BundleSchema.parse({ id: r.id, householdId: r.household_id, name: r.name, trigger: r.trigger, cadence: r.cadence, windowLabel: r.window_label }), "routine");
@@ -194,6 +198,32 @@ export function isMissingTaskColumn(error: unknown): boolean {
 function withoutTaskColumns<T extends Partial<Record<(typeof NEW_TASK_COLUMNS)[number], unknown>>>(
   row: T,
   cols: readonly (typeof NEW_TASK_COLUMNS)[number][],
+): T {
+  const clone = { ...row };
+  for (const col of cols) delete clone[col];
+  return clone;
+}
+
+// Optional rooms column added after the initial table (the household-managed
+// "Snel toevoegen" override) — same manual-migration-can-lag reasoning/pattern
+// as NEW_TASK_COLUMNS/NEW_SHOPPING_COLUMNS above, kept as its own
+// table-scoped singleton rather than a shared helper.
+const NEW_ROOM_COLUMNS = ["quick_add_templates"] as const;
+
+export function missingRoomColumns(error: unknown): (typeof NEW_ROOM_COLUMNS)[number][] {
+  const err = error as { code?: string; message?: string } | null | undefined;
+  if (err?.code !== "PGRST204" || typeof err.message !== "string" || !err.message.includes("'rooms'")) return [];
+  const message = err.message;
+  return NEW_ROOM_COLUMNS.filter((col) => message.includes(`'${col}'`));
+}
+
+export function isMissingRoomColumn(error: unknown): boolean {
+  return missingRoomColumns(error).length > 0;
+}
+
+function withoutRoomColumns<T extends Partial<Record<(typeof NEW_ROOM_COLUMNS)[number], unknown>>>(
+  row: T,
+  cols: readonly (typeof NEW_ROOM_COLUMNS)[number][],
 ): T {
   const clone = { ...row };
   for (const col of cols) delete clone[col];
@@ -374,24 +404,38 @@ export class SupabaseStore implements DataStore {
     return mapList((data ?? []) as RoomRow[], mapRoom, "room");
   }
 
-  async createRoom(householdId: string, room: Omit<Room, "id" | "householdId">): Promise<Room> {
-    const row: RoomRow = {
+  async createRoom(householdId: string, room: Omit<Room, "id" | "householdId" | "quickAddTemplates"> & { quickAddTemplates?: Room["quickAddTemplates"] }): Promise<Room> {
+    let row: RoomRow = {
       id: uid(), household_id: householdId, name: room.name, icon_key: room.iconKey,
-      color: room.color,
+      color: room.color, quick_add_templates: room.quickAddTemplates ?? [],
     };
-    const { error } = await supabase.from("rooms").insert(row);
-    if (error) throw new Error(error.message);
-    return mapRoom(row);
+    for (let attempt = 0; attempt <= NEW_ROOM_COLUMNS.length; attempt++) {
+      const { error } = await supabase.from("rooms").insert(row);
+      if (!error) return mapRoom(row);
+      const missing = missingRoomColumns(error);
+      if (missing.length === 0) throw new Error(error.message);
+      row = withoutRoomColumns(row, missing);
+    }
+    throw new Error("Kamer aanmaken mislukt: onverwacht veel ontbrekende kolommen op 'rooms'.");
   }
 
   async updateRoom(roomId: string, patch: Partial<Omit<Room, "id" | "householdId">>): Promise<Room> {
-    const update: Partial<RoomRow> = {};
+    let update: Partial<RoomRow> = {};
     if (patch.name !== undefined) update.name = patch.name;
     if (patch.iconKey !== undefined) update.icon_key = patch.iconKey;
     if (patch.color !== undefined) update.color = patch.color;
-    const { data, error } = await supabase.from("rooms").update(update).eq("id", roomId).select().single();
-    if (error || !data) throw new Error(error?.message ?? `Room not found: ${roomId}`);
-    return mapRoom(data as RoomRow);
+    if (patch.quickAddTemplates !== undefined) update.quick_add_templates = patch.quickAddTemplates;
+    for (let attempt = 0; attempt <= NEW_ROOM_COLUMNS.length; attempt++) {
+      const { data, error } = await supabase.from("rooms").update(update).eq("id", roomId).select().single();
+      if (!error) {
+        if (!data) throw new Error(`Room not found: ${roomId}`);
+        return mapRoom(data as RoomRow);
+      }
+      const missing = missingRoomColumns(error);
+      if (missing.length === 0) throw new Error(error.message);
+      update = withoutRoomColumns(update, missing);
+    }
+    throw new Error("Kamer bijwerken mislukt: onverwacht veel ontbrekende kolommen op 'rooms'.");
   }
 
   async deleteRoom(roomId: string): Promise<void> {

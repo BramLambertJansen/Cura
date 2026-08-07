@@ -68,12 +68,14 @@ const demoTaskChecklist: TaskView = {
 const demoRoom: RoomView = {
   id: "r1", name: "Keuken", iconKey: "utensils", color: "#B8924A",
   tasks: [demoTaskOpen], openCount: 2, hint: "Waarschijnlijk weer toe aan een beurt",
+  quickAddTemplates: [],
 };
 
 // A room type without watercolor art — shows the tinted-icon fallback banner.
 const demoRoomNoArt: RoomView = {
   id: "r2", name: "Kantoor", iconKey: "monitor", color: "#7A6448",
   tasks: [], openCount: 0, hint: "Nog even goed",
+  quickAddTemplates: [],
 };
 
 const demoRoutine: RoutineView = {

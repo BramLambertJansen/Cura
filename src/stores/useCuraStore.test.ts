@@ -318,7 +318,7 @@ describe("deleteBundle", () => {
 // non-Error rejection), since every wrapped action shares this exact contract.
 describe("withToastOnError", () => {
   it("shows the success toast and applies the state update", async () => {
-    const created = { id: "r1", householdId: "h1", name: "Keuken", iconKey: "utensils", color: "#000" };
+    const created = { id: "r1", householdId: "h1", name: "Keuken", iconKey: "utensils", color: "#000", quickAddTemplates: [] };
     const store = makeStore({ createRoom: vi.fn().mockResolvedValue(created) });
     createDataStoreMock.mockResolvedValue(store);
     useCuraStore.setState({ householdId: "h1", rooms: [] });
@@ -341,7 +341,7 @@ describe("withToastOnError", () => {
   });
 
   it("deleteRoom clears roomId on any in-memory tasks that lived in it", async () => {
-    const room = { id: "r1", householdId: "h1", name: "Badkamer", iconKey: "droplets", color: "#000" };
+    const room = { id: "r1", householdId: "h1", name: "Badkamer", iconKey: "droplets", color: "#000", quickAddTemplates: [] };
     const inRoom = task({ id: "t1", roomId: "r1" });
     const elsewhere = task({ id: "t2", roomId: "r2" });
     const store = makeStore({ deleteRoom: vi.fn().mockResolvedValue(undefined) });

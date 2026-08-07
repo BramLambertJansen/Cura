@@ -18,7 +18,6 @@ export function RoutinesPage() {
       <PageHero
         src="/headers/routines.webp"
         title="Routines"
-        subtitle="Groepjes taken die steeds terugkomen."
         topAction={
           <PillButton onClick={openNewRoutine} ariaLabel="Nieuwe routine aanmaken" icon={<Plus size={14} strokeWidth={2.5} aria-hidden="true" />}>
             Nieuw

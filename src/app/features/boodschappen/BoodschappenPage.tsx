@@ -39,7 +39,6 @@ export function BoodschappenPage() {
       <PageHero
         src="/headers/boodschappen.webp"
         title="Boodschappen"
-        subtitle="Wat moet er nog gehaald worden?"
         onBack={() => navigate("/meer")}
         backLabel="Terug naar Meer"
       />
@@ -144,6 +143,7 @@ export function BoodschappenPage() {
                             type="button"
                             whileTap={{ scale: 0.98 }}
                             onClick={() => void toggleShoppingItem(item.id, false)}
+                            aria-label={`${item.title} terugzetten`}
                             className="flex items-center gap-3 rounded-xl bg-card px-3 py-2.5 text-left focus-ring">
                             <span className="w-[19px] h-[19px] rounded-full flex items-center justify-center flex-shrink-0" style={{ background: SAGE }} aria-hidden="true">
                               <Check size={10} strokeWidth={3.4} className="text-white" />

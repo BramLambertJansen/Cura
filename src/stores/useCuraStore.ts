@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../data/store";
-import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, ShoppingItem } from "../data/types";
+import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, TaskTemplate, ShoppingItem } from "../data/types";
 import { MAX_TASK_INTERVAL_DAYS } from "../data/selectors";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
@@ -79,7 +79,11 @@ interface CuraState {
   updateTask: (taskId: string, patch: Partial<CreateTaskInput>) => Promise<boolean>;
   deleteTask: (taskId: string) => Promise<void>;
 
-  createRoom: (room: Omit<Room, "id" | "householdId">) => Promise<void>;
+  // quickAddTemplates is optional here (defaults to []) — a brand new room
+  // never starts with its own "Snel toevoegen" override, that's set later via
+  // EditRoomSheet. Omitted/undefined treated as [] (same precedent as
+  // CreateTaskInput.checklistItems in store.ts).
+  createRoom: (room: Omit<Room, "id" | "householdId" | "quickAddTemplates"> & { quickAddTemplates?: TaskTemplate[] }) => Promise<void>;
   updateRoom: (roomId: string, patch: Partial<Omit<Room, "id" | "householdId">>) => Promise<void>;
   deleteRoom: (roomId: string) => Promise<void>;
 

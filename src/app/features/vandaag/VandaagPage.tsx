@@ -167,10 +167,6 @@ export function VandaagPage() {
         // auth screen's art keeps opening the app and starting the day feeling
         // like one moment (the same reason PageBanner used it here before), and
         // its calm left-hand sky is the title room the other headers paint in.
-        // Vandaag is also the one page that keeps this full-bleed "banner"
-        // treatment — every other overview uses the compact side-illustration
-        // default (see PageHero.tsx).
-        variant="banner"
         src="/landing-header.webp"
         title={greeting.text}
         eyebrow={
@@ -357,18 +353,20 @@ export function VandaagPage() {
           </section>
         )}
 
-        <section>
-          <Kop>Routines van vandaag</Kop>
-          <motion.div
-            variants={stagger} initial="initial" animate="animate"
-            className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide" style={{ scrollSnapType: "x proximity" }}>
-            {routines.slice(0, 2).map((r) => (
-              <motion.div key={r.id} variants={fadeUp} className="flex-shrink-0 w-[168px]" style={{ scrollSnapAlign: "start" }}>
-                <RoutineKaartCompact routine={r} />
-              </motion.div>
-            ))}
-          </motion.div>
-        </section>
+        {routines.length > 0 && (
+          <section>
+            <Kop>Routines van vandaag</Kop>
+            <motion.div
+              variants={stagger} initial="initial" animate="animate"
+              className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-hide" style={{ scrollSnapType: "x proximity" }}>
+              {routines.slice(0, 2).map((r) => (
+                <motion.div key={r.id} variants={fadeUp} className="flex-shrink-0 w-[168px]" style={{ scrollSnapAlign: "start" }}>
+                  <RoutineKaartCompact routine={r} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </section>
+        )}
       </div>
     </div>
   );

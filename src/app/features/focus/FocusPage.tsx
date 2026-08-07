@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Check, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
 import { useTaskViews } from "../../../stores/useViews";
+import { splitPickedUpToday, toDagdelen } from "../../../data/selectors";
 import { SAGE } from "../../lib/constants";
 import { fadeUp, stagger } from "../../lib/motion";
 import { useStartFocus } from "../../lib/useStartFocus";
@@ -40,8 +41,13 @@ export function FocusPage() {
   const tasks = useTaskViews();
   const startFocus = useStartFocus();
   // "Volgende" = de eerstvolgende open, geplande taak (Mijn dag) — een kalm aanbod
-  // om door te stromen, geen verplichte volgende ronde (§2).
-  const nextTask = tasks.find((t) => t.planned && !t.done && t.id !== taskId);
+  // om door te stromen, geen verplichte volgende ronde (§2). Zelfde volgorde als
+  // Vandaag's eigen tijdlijn (Vandaag opgepakt, dan ochtend→middag→avond→overig)
+  // in plaats van de rauwe aanmaakvolgorde van `tasks` — anders kan een taak met
+  // een ochtend-wekker hier na een taak zonder tijdsignaal als "volgende" tonen.
+  const plannedOpen = tasks.filter((t) => t.planned && !t.done && t.id !== taskId);
+  const { pickedUpToday, rest } = splitPickedUpToday(plannedOpen);
+  const nextTask = pickedUpToday[0] ?? toDagdelen(rest).flatMap((g) => g.tasks)[0];
 
   const [presetMin, setPresetMin] = useState<number>(25);
   // Afvinken is een klein, betekenisvol moment (§1/§5) — vraag een bevestiging.
@@ -61,13 +67,6 @@ export function FocusPage() {
       <PageHero
         src="/headers/focus.webp"
         title={idle ? "Eén taak, één timer" : status === "paused" ? "Gepauzeerd" : phase === "break" ? "Pauze" : "Aan het werk"}
-        subtitle={idle
-          ? "Kies hoelang je aan één taak wilt werken. De timer loopt door terwijl je de app gebruikt."
-          : status === "paused"
-            ? "De timer staat stil — hervat wanneer je wilt."
-            : taskTitle
-              ? `Bezig met ${taskTitle}.`
-              : "De timer loopt door terwijl je de app verder gebruikt."}
         eyebrow={<p className="text-xs font-medium tracking-wide text-muted-foreground">Focustimer</p>}
         onBack={() => navigate(cameFrom, { replace: true })}
         backLabel={

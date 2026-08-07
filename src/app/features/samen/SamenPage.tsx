@@ -30,7 +30,6 @@ export function SamenPage() {
       <PageHero
         src="/headers/samen.webp"
         title="Samen"
-        subtitle="Wat is er vandaag gedaan?"
         // replace, not push — Samen itself was reached with a push (from Vandaag's
         // preview card or Meer's list item), so pushing again here would leave a
         // stale /samen entry in history and turn the OS/browser back gesture into

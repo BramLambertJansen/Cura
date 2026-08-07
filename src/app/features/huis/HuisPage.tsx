@@ -84,7 +84,7 @@ export function HuisPage() {
 
   return (
     <div className="pb-8">
-      <PageHero src="/headers/huis.webp" title="Huis" subtitle="Alle taken bij elkaar, en je kamers." />
+      <PageHero src="/headers/huis.webp" title="Huis" />
 
       <div className="px-5">
 
