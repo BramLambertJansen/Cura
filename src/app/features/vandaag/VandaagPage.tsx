@@ -167,6 +167,10 @@ export function VandaagPage() {
         // auth screen's art keeps opening the app and starting the day feeling
         // like one moment (the same reason PageBanner used it here before), and
         // its calm left-hand sky is the title room the other headers paint in.
+        // Vandaag is also the one page that keeps this full-bleed "banner"
+        // treatment — every other overview uses the compact side-illustration
+        // default (see PageHero.tsx).
+        variant="banner"
         src="/landing-header.webp"
         title={greeting.text}
         eyebrow={
