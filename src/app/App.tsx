@@ -8,6 +8,7 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import { Toaster } from "sonner";
 import { useAuth } from "./auth/AuthProvider";
 import { useCuraStore } from "../stores/useCuraStore";
+import { usePomodoroStore } from "../stores/usePomodoroStore";
 import { useHasHousemate } from "../stores/useViews";
 import { useOnboardingSeen } from "./lib/useOnboardingSeen";
 import { useDaypart } from "./lib/useDaypart";
@@ -147,8 +148,15 @@ function MainShell() {
 
   // Routine-sessie is een echte takeover (§5 Routines) — geen onderbalk/gradient
   // eronder, minder scroll-bottom-padding omdat er geen navbar te vrijwaren is.
+  // Een lopende (of gepauzeerde) focussessie op /focus zelf is dezelfde soort
+  // takeover: eenmaal gestart hoeft de onderbalk niet meer zichtbaar te zijn —
+  // je bent gefocust op de timer, niet op tabwisselen. Idle (nog niet gestart,
+  // of net gestopt) toont de balk gewoon weer.
   const { pathname } = useLocation();
   const isRoutineSession = Boolean(matchPath("/routines/:bundleId/starten", pathname));
+  const focusStatus = usePomodoroStore((s) => s.status);
+  const isFocusSession = Boolean(matchPath("/focus", pathname)) && focusStatus !== "idle";
+  const isTakeover = isRoutineSession || isFocusSession;
 
   const scrollRef = useRef<HTMLElement>(null);
   const refresh = useCuraStore((s) => s.refresh);
@@ -211,7 +219,7 @@ function MainShell() {
       <div className="fixed inset-0 flex flex-col bg-background overflow-hidden">
         <AppBackground />
 
-        {!isRoutineSession && <NavTintScrim />}
+        {!isTakeover && <NavTintScrim />}
 
         <main
           ref={scrollRef}
@@ -220,7 +228,7 @@ function MainShell() {
             paddingTop: "var(--safe-top)",
             paddingLeft: "var(--safe-left)",
             paddingRight: "var(--safe-right)",
-            paddingBottom: isRoutineSession ? "var(--safe-bottom)" : "calc(6rem + var(--safe-bottom))",
+            paddingBottom: isTakeover ? "var(--safe-bottom)" : "calc(6rem + var(--safe-bottom))",
             // We own the pull gesture at the top — keep native overscroll/PTR out of it.
             overscrollBehaviorY: "contain",
           }}
@@ -241,7 +249,7 @@ function MainShell() {
 
         <FocusMiniPill />
 
-        {!isRoutineSession && (
+        {!isTakeover && (
           <BottomNav
             showAdd={showAdd}
             onAdd={() => {
