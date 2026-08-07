@@ -39,21 +39,26 @@ export const KamerKaart = memo(function KamerKaart({
           : showDoneBadge ? `${room.name}, alles gedaan`
           : room.name
       }
-      className={`h-full w-full flex flex-col rounded-2xl overflow-hidden bg-card focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${featured ? "border-2" : "border border-border/60"}`}
+      className={`h-full w-full flex flex-col rounded-2xl overflow-hidden bg-card-art focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${featured ? "border-2" : "border border-border/60"}`}
       style={{ boxShadow: featured ? SHADOW_LG : SHADOW, borderColor: featured ? `color-mix(in srgb, ${c} 45%, transparent)` : undefined }}>
-      <div className="relative w-full aspect-square p-1.5">
-        <RoomThumb ic={ic} color={c} className="w-full h-full" rounded="rounded-xl" large />
+      {/* Flush with the tile's own edges, no padding gutter and no radius of
+          its own — bg-card-art matches RoomThumb's own fill exactly, and the
+          outer card's overflow-hidden clips the top corners, so art and card
+          read as one surface instead of a separately-rounded box floating
+          inside a differently-toned one. */}
+      <div className="relative w-full aspect-square">
+        <RoomThumb ic={ic} color={c} className="w-full h-full" rounded="rounded-none" large />
         {openCount > 0 ? (
           <span
             aria-hidden="true"
-            className="absolute top-1 right-1 min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center text-[0.65rem] font-bold text-white leading-none tabular-nums"
+            className="absolute top-1.5 right-1.5 min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center text-[0.65rem] font-bold text-white leading-none tabular-nums"
             style={{ background: SAGE, boxShadow: "0 1px 4px color-mix(in srgb, var(--shadow-color) 35%, transparent)" }}>
             {openCount}
           </span>
         ) : showDoneBadge ? (
           <span
             aria-hidden="true"
-            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center bg-card"
+            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center bg-card"
             style={{ boxShadow: "0 1px 4px color-mix(in srgb, var(--shadow-color) 35%, transparent)" }}>
             <Check size={11} strokeWidth={2.5} style={{ color: c, opacity: 0.7 }} />
           </span>
