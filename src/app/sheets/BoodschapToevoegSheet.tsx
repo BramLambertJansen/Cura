@@ -291,12 +291,12 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
             </div>
           )}
 
-          <div className="mt-5 flex gap-4 items-start">
-            <div>
+          <div className="mt-5 grid grid-cols-2 gap-4 items-start">
+            <div className="min-w-0">
               <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Aantal</p>
               {unit === "stuks" ? (
                 <div
-                  className="inline-flex items-center gap-2.5 rounded-full p-1 border"
+                  className="flex w-full items-center justify-between gap-2.5 rounded-full p-1 border"
                   style={{ borderColor: "var(--border-input)", background: "var(--input-background)" }}>
                   <motion.button
                     type="button"
@@ -324,12 +324,12 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
                   inputMode="decimal"
                   placeholder={`bijv. ${FREE_UNIT_DEFAULT[unit]}`}
                   aria-label="Aantal"
-                  className="w-28 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
+                  className="w-full rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
                   style={fieldStyle(false, !!qtyText)}
                 />
               )}
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0">
               <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Eenheid</p>
               <div role="group" className="flex flex-wrap gap-2" aria-label="Eenheid kiezen">
                 {SHOPPING_UNIT_ORDER.map((key) => (
