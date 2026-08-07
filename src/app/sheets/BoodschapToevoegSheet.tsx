@@ -369,10 +369,10 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
 
           <div className="mt-5">
             <p className="text-[0.68rem] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">Aantal &amp; eenheid</p>
-            <div className="flex gap-3 items-center">
+            <div className="grid grid-cols-2 gap-3 items-center">
               {unit === "stuks" ? (
                 <div
-                  className="inline-flex items-center gap-2.5 rounded-full p-1 border"
+                  className="flex w-full items-center justify-between gap-2.5 rounded-full p-1 border"
                   style={{ borderColor: "var(--border-input)", background: "var(--input-background)" }}>
                   <motion.button
                     type="button"
@@ -400,11 +400,11 @@ export function BoodschapToevoegSheetBody({ onClose, headerExtra, autoFocusTitle
                   inputMode="decimal"
                   placeholder={`bijv. ${FREE_UNIT_DEFAULT[unit]}`}
                   aria-label="Aantal"
-                  className="w-24 flex-shrink-0 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
+                  className="w-full min-w-0 rounded-xl px-3 py-2.5 text-foreground placeholder:text-muted-foreground outline-none text-[0.9375rem] border transition-all"
                   style={fieldStyle(false, !!qtyText)}
                 />
               )}
-              <div className="w-28 flex-shrink-0">
+              <div className="min-w-0">
                 <PickerField variant="pill" value={unit} options={SHOPPING_UNIT_ORDER} labels={SHOPPING_UNIT_LABELS} onChange={selectUnit} ariaLabel="Eenheid kiezen" />
               </div>
             </div>
