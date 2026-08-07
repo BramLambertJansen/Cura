@@ -18,6 +18,12 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
+  server: {
+    // Respect an externally-assigned port (e.g. a preview harness picking a
+    // free one) instead of always binding 5173, while `pnpm dev` on its own
+    // still defaults to 5173 as before.
+    port: Number(process.env.PORT) || 5173,
+  },
   plugins: [
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if

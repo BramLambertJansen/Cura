@@ -171,6 +171,7 @@ export function toRoomView(
     tasks: roomTasks,
     openCount,
     hint: anyDue ? "Waarschijnlijk weer toe aan een beurt" : "Nog even goed",
+    quickAddTemplates: room.quickAddTemplates,
   };
 }
 

@@ -69,12 +69,28 @@ export const HouseholdInviteSchema = z.object({
 // No taskIds (derived via task.roomId) and no hint (derived). No owner, soft or
 // otherwise — a room is a pool, and nobody is "usually" responsible for it.
 
+// One "Snel toevoegen" one-tap suggestion — same shape as the static entries
+// in src/app/lib/templates.ts's ROOM_TEMPLATES, now also usable as a
+// per-room, household-shared override of that static category list.
+export const TaskTemplateSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1).optional(),
+  durationMin: z.number().int().positive().optional(),
+  intervalDays: z.number().int().positive().optional(),
+});
+
 export const RoomSchema = z.object({
   id: Id,
   householdId: Id,
   name: z.string().min(1),
   iconKey: z.string().min(1), // maps to the UI icon set; data layer stays icon-agnostic
   color: z.string().min(1), // hex, drives the room accent
+  // Household-managed override of the static per-category "Snel toevoegen"
+  // list (ROOM_TEMPLATES in templates.ts). Empty/absent = fall back to that
+  // static category list — see toRoomView/RoomDetailPage. Default so
+  // pre-existing rows without this field keep loading (same reasoning as
+  // shoppingItems/timeZone above).
+  quickAddTemplates: z.array(TaskTemplateSchema).default([]),
 });
 
 // ─── Tasks ─────────────────────────────────────────────────────────────────
