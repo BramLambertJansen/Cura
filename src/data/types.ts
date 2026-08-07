@@ -7,6 +7,7 @@ import {
   RoomSchema,
   TaskSchema,
   ChecklistItemSchema,
+  TaskTemplateSchema,
   TaskCompletionSchema,
   BundleSchema,
   ShoppingItemSchema,
@@ -38,6 +39,7 @@ export type HouseholdInvite = z.infer<typeof HouseholdInviteSchema>;
 export type Room = z.infer<typeof RoomSchema>;
 export type Task = z.infer<typeof TaskSchema>;
 export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
+export type TaskTemplate = z.infer<typeof TaskTemplateSchema>;
 export type TaskCompletion = z.infer<typeof TaskCompletionSchema>;
 export type Bundle = z.infer<typeof BundleSchema>;
 export type ShoppingItem = z.infer<typeof ShoppingItemSchema>;
@@ -117,6 +119,8 @@ export interface RoomView {
   tasks: TaskView[];
   openCount: number;
   hint: string; // soft: "Waarschijnlijk weer toe aan een beurt" / "Nog even goed"
+  /** Direct pass-through of the domain override — empty until managed via EditRoomSheet. Empty ⟹ RoomDetailPage falls back to the static per-category ROOM_TEMPLATES list. */
+  quickAddTemplates: TaskTemplate[];
 }
 
 /**

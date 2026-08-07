@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion } from "motion/react";
-import { Check, Plus } from "lucide-react";
+import { Check, Plus, Settings2 } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { roomIcon, SAGE, SHADOW } from "../../lib/constants";
 import { spring, stagger, fadeUp } from "../../lib/motion";
-import { CollapsibleSection, HintBanner } from "../../components/shared";
+import { CollapsibleSection, HintBanner, IconButton } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
 import { RoomHero } from "../../components/RoomThumb";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
@@ -59,9 +59,14 @@ export function RoomDetailPage() {
   // count as "already added" — otherwise dismissing it makes the same
   // template reappear here as if it were new, and re-adding it duplicates it.
   const existingTitles = new Set(allRoomTasks.map((t) => t.title.trim().toLowerCase()));
-  const quickSuggestions = ROOM_TEMPLATES[categoryForIconKey(room.iconKey)]
-    .filter((t) => !existingTitles.has(t.title.trim().toLowerCase()))
-    .slice(0, 2);
+  // A room's own managed list (EditRoomSheet) fully replaces the static
+  // category list once it has anything in it, and — unlike the category
+  // list's "taste of what's available" cap of 2 — shows in full: the user
+  // already chose to keep it short (or not).
+  const hasCustomQuickAdd = room.quickAddTemplates.length > 0;
+  const quickAddSource = hasCustomQuickAdd ? room.quickAddTemplates : ROOM_TEMPLATES[categoryForIconKey(room.iconKey)];
+  const unusedQuickAdd = quickAddSource.filter((t) => !existingTitles.has(t.title.trim().toLowerCase()));
+  const quickSuggestions = hasCustomQuickAdd ? unusedQuickAdd : unusedQuickAdd.slice(0, 2);
 
   return (
     <motion.div initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={spring}>
@@ -132,33 +137,39 @@ export function RoomDetailPage() {
           <span className="text-sm font-medium">Taak toevoegen aan {room.name}</span>
         </button>
 
-        {quickSuggestions.length > 0 && (
-          <div className="space-y-2">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground ml-1">Snel toevoegen</p>
-            {quickSuggestions.map((t) => (
-              <button
-                key={t.title}
-                disabled={quickAddBusy}
-                onClick={async () => {
-                  if (quickAddBusy) return;
-                  setQuickAddBusy(true);
-                  try {
-                    await createTasksFromTemplates(room.id, [t]);
-                  } finally {
-                    setQuickAddBusy(false);
-                  }
-                }}
-                className="w-full flex items-center gap-3 bg-card rounded-2xl px-4 py-3 border border-border/60 focus-ring text-left disabled:opacity-50"
-                style={{ boxShadow: SHADOW }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-secondary">
-                  <Plus size={15} strokeWidth={2} aria-hidden="true" />
-                </div>
-                <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">{t.title}</span>
-                {t.durationMin && <span className="text-xs text-muted-foreground flex-shrink-0">{t.durationMin} min</span>}
-              </button>
-            ))}
+            <IconButton
+              icon={<Settings2 size={13} aria-hidden="true" />}
+              onClick={() => openEditRoom(room.id)}
+              label={`Sneltoevoegen-taken van ${room.name} beheren`}
+              size={8}
+            />
           </div>
-        )}
+          {quickSuggestions.length > 0 && quickSuggestions.map((t) => (
+            <button
+              key={t.title}
+              disabled={quickAddBusy}
+              onClick={async () => {
+                if (quickAddBusy) return;
+                setQuickAddBusy(true);
+                try {
+                  await createTasksFromTemplates(room.id, [t]);
+                } finally {
+                  setQuickAddBusy(false);
+                }
+              }}
+              className="w-full flex items-center gap-3 bg-card rounded-2xl px-4 py-3 border border-border/60 focus-ring text-left disabled:opacity-50"
+              style={{ boxShadow: SHADOW }}>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-secondary">
+                <Plus size={15} strokeWidth={2} aria-hidden="true" />
+              </div>
+              <span className="flex-1 min-w-0 text-sm font-medium text-foreground truncate">{t.title}</span>
+              {t.durationMin && <span className="text-xs text-muted-foreground flex-shrink-0">{t.durationMin} min</span>}
+            </button>
+          ))}
+        </div>
       </div>
     </motion.div>
   );

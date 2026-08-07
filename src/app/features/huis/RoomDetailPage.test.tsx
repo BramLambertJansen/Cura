@@ -16,8 +16,8 @@ import type { Household, Member, Room, Task, TaskCompletion } from "../../../dat
 const HOUSEHOLD: Household = { id: "h1", name: "Thuis", timeZone: "Europe/Amsterdam" };
 const ME: Member = { id: "m1", householdId: "h1", displayName: "Bram", userId: "u1" };
 
-const KEUKEN: Room = { id: "r-keuken", householdId: "h1", name: "Keuken", iconKey: "utensils", color: "#B8924A" };
-const BADKAMER: Room = { id: "r-badkamer", householdId: "h1", name: "Badkamer", iconKey: "droplets", color: "#5A8FA8" };
+const KEUKEN: Room = { id: "r-keuken", householdId: "h1", name: "Keuken", iconKey: "utensils", color: "#B8924A", quickAddTemplates: [] };
+const BADKAMER: Room = { id: "r-badkamer", householdId: "h1", name: "Badkamer", iconKey: "droplets", color: "#5A8FA8", quickAddTemplates: [] };
 
 function sheetActions(): SheetActions {
   return {
@@ -91,6 +91,41 @@ describe("RoomDetailPage", () => {
     expect(screen.getByText("Snel toevoegen")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Afwassen" })).not.toBeInTheDocument();
     expect(screen.getByText("Aanrecht schoonvegen")).toBeInTheDocument();
+  });
+
+  it("shows a room's own managed quick-add list in full instead of the category default, uncapped at 2", () => {
+    const keukenWithOwnList: Room = {
+      ...KEUKEN,
+      quickAddTemplates: [
+        { title: "Kattenbak verversen" },
+        { title: "Planten water geven" },
+        { title: "Ramen zemen" },
+      ],
+    };
+    setFixture([keukenWithOwnList], []);
+
+    renderRoomDetail("r-keuken");
+
+    expect(screen.getByText("Kattenbak verversen")).toBeInTheDocument();
+    expect(screen.getByText("Planten water geven")).toBeInTheDocument();
+    expect(screen.getByText("Ramen zemen")).toBeInTheDocument();
+    // The static category default must not leak in alongside the room's own list.
+    expect(screen.queryByText("Aanrecht schoonvegen")).not.toBeInTheDocument();
+  });
+
+  it("always offers a way to manage the quick-add list, even with nothing left to suggest", async () => {
+    const user = userEvent.setup();
+    const keukenEmptiedOut: Room = { ...KEUKEN, quickAddTemplates: [{ title: "Al toegevoegd" }] };
+    setFixture(
+      [keukenEmptiedOut],
+      [{ id: "t1", householdId: "h1", title: "Al toegevoegd", roomId: "r-keuken", planned: false, checklistItems: [] }],
+    );
+
+    const { sheets } = renderRoomDetail("r-keuken");
+
+    expect(screen.getByText("Snel toevoegen")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Sneltoevoegen-taken van Keuken beheren" }));
+    expect(sheets.openEditRoom).toHaveBeenCalledWith("r-keuken");
   });
 
   it("shows the empty illustration when a room has no tasks yet", () => {

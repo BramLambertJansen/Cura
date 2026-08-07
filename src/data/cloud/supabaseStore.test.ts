@@ -225,4 +225,22 @@ describe("SupabaseStore retry-on-missing-column (#155)", () => {
     expect(insertAttempt2.mock.calls[0][0]).not.toHaveProperty("description");
     expect(item.title).toBe("Melk");
   });
+
+  it("createRoom drops only the reported-missing quick_add_templates column and retries", async () => {
+    const insertAttempt1 = vi.fn((_row: unknown) => Promise.resolve({ error: missingColumnError("rooms", "quick_add_templates") }));
+    const insertAttempt2 = vi.fn((_row: unknown) => Promise.resolve({ error: null }));
+    fromMock
+      .mockReturnValueOnce({ insert: insertAttempt1 })
+      .mockReturnValueOnce({ insert: insertAttempt2 });
+
+    const store = new SupabaseStore();
+    const room = await store.createRoom("h1", {
+      name: "Keuken", iconKey: "utensils", color: "#B8924A",
+      quickAddTemplates: [{ title: "Afwassen" }],
+    });
+
+    expect(insertAttempt1.mock.calls[0][0]).toMatchObject({ quick_add_templates: [{ title: "Afwassen" }] });
+    expect(insertAttempt2.mock.calls[0][0]).not.toHaveProperty("quick_add_templates");
+    expect(room.name).toBe("Keuken");
+  });
 });
