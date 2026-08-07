@@ -12,9 +12,11 @@ import { PageHero } from "../../components/PageHero";
 import { TaakRij } from "../../components/TaakRij";
 import { useSheets } from "../../sheetContext";
 import { useStartFocus } from "../../lib/useStartFocus";
+import { type DurationFilter, durationMatches, DURATION_LABELS } from "../../lib/durationFilter";
 
 const ALL = "all";
 const NONE = "none";
+const DURATION_FILTERS: DurationFilter[] = ["alles", "kort", "middel", "lang"];
 
 /**
  * Takenoverzicht — every open task on one page, grouped by date status and
@@ -32,6 +34,7 @@ export function TakenPage() {
   const deleteTask = useCuraStore((s) => s.deleteTask);
   const tasks = useTaskViews();
   const [roomFilter, setRoomFilter] = useState<string>(ALL);
+  const [durationFilter, setDurationFilter] = useState<DurationFilter>("alles");
 
   // Room chips are built from the rooms present among open tasks, plus a
   // "Zonder kamer" option when some open task has no room.
@@ -47,7 +50,13 @@ export function TakenPage() {
     ...[...roomsPresent].map(([id, label]) => ({ id, label })),
     ...(hasRoomless ? [{ id: NONE, label: "Zonder kamer" }] : []),
   ];
-  const showFilters = roomOptions.length > 2;
+  const showRoomFilter = roomOptions.length > 2;
+  // Duur-chips zijn er altijd zodra er open taken zijn, ongeacht welke duren daar
+  // toevallig onder zitten — zelfde vaste vier buckets als Huis, geen aparte
+  // "komt er wel iets uit"-berekening (die zou hier alleen inconsistent ogen).
+  const showDurationFilter = openTasks.length > 0;
+  const showFilters = showRoomFilter || showDurationFilter;
+  const filtersActive = roomFilter !== ALL || durationFilter !== "alles";
 
   // If the filtered room's last open task was just completed, it drops out of
   // roomOptions — fall back to "Alle" so we never strand the user on a false-empty
@@ -56,8 +65,9 @@ export function TakenPage() {
 
   const matchesRoom = (t: TaskView) =>
     effectiveFilter === ALL || (effectiveFilter === NONE ? !t.roomId : t.roomId === effectiveFilter);
+  const matchesDuration = (t: TaskView) => durationMatches(t.durationMin, durationFilter);
 
-  const { overdue, recurring, upcoming, undated } = toTaskOverview(tasks.filter(matchesRoom));
+  const { overdue, recurring, upcoming, undated } = toTaskOverview(tasks.filter((t) => matchesRoom(t) && matchesDuration(t)));
 
   const groups: { label: string; tasks: TaskView[]; renew?: boolean }[] = [
     { label: "Al even blijven liggen", tasks: overdue, renew: true },
@@ -92,17 +102,32 @@ export function TakenPage() {
 
       <div className="px-5">
       {showFilters && (
-        <div role="group" aria-label="Filter op kamer" className="flex flex-wrap gap-2 mb-6">
-          {roomOptions.map((opt) => (
-            <KeuzeChip key={opt.id} selected={effectiveFilter === opt.id} onClick={() => setRoomFilter(opt.id)}>
-              {opt.label}
-            </KeuzeChip>
-          ))}
+        <div className="space-y-2.5 mb-6">
+          {showRoomFilter && (
+            <div role="group" aria-label="Filter op kamer" className="flex flex-wrap gap-2">
+              {roomOptions.map((opt) => (
+                <KeuzeChip key={opt.id} selected={effectiveFilter === opt.id} onClick={() => setRoomFilter(opt.id)}>
+                  {opt.label}
+                </KeuzeChip>
+              ))}
+            </div>
+          )}
+          {showDurationFilter && (
+            <div role="group" aria-label="Filter op duur" className="flex flex-wrap gap-2">
+              {DURATION_FILTERS.map((f) => (
+                <KeuzeChip key={f} selected={durationFilter === f} onClick={() => setDurationFilter(f)}>
+                  {DURATION_LABELS[f]}
+                </KeuzeChip>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {nonEmpty.length === 0
-        ? <Leeg image="/states/empty-tasks.webp" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
+        ? filtersActive
+          ? <Leeg image="/states/empty-filter.webp" text="Geen taken binnen deze filters." />
+          : <Leeg image="/states/empty-tasks.webp" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
         : <div className="space-y-8">
             {nonEmpty.map((group) => (
               <section key={group.label}>
