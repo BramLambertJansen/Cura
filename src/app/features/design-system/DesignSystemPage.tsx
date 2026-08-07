@@ -355,7 +355,7 @@ export function DesignSystemPage() {
         </div>
         <div>
           <p className="text-xs text-muted-foreground mb-2">Kamerkaart — compact image-tile kaart voor het Kamers-grid op Huis; valt terug op een getinte wash met lijn-icoon als er geen kunst is. De `featured`-variant markeert de kamer die op Huis het meest aandacht verdient met een sterkere rand/schaduw (de "verdient aandacht"-tekst zelf leeft alleen in de aria-label)</p>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             <KamerKaart room={demoRoom} featured onClick={() => {}} />
             <KamerKaart room={demoRoomNoArt} onClick={() => {}} />
           </div>

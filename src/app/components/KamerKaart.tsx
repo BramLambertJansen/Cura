@@ -64,8 +64,8 @@ export const KamerKaart = memo(function KamerKaart({
           </span>
         ) : null}
       </div>
-      <div className="px-1.5 pb-2.5 pt-1 text-center min-w-0">
-        <p className="text-xs font-semibold text-foreground leading-snug font-display truncate">{room.name}</p>
+      <div className="px-2.5 pb-3.5 pt-2 text-center min-w-0">
+        <p className="text-sm font-semibold text-foreground leading-snug font-display truncate">{room.name}</p>
       </div>
     </motion.button>
   );

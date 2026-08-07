@@ -207,7 +207,7 @@ export function HuisPage() {
             <p className="text-sm text-muted-foreground mt-1">Nog geen kamers. Voeg er hieronder een toe.</p>
           </div>
         )}
-        <motion.div variants={stagger} initial="initial" animate="animate" className="grid grid-cols-4 gap-3">
+        <motion.div variants={stagger} initial="initial" animate="animate" className="grid grid-cols-3 gap-4">
           {sortedRooms.map((r) => (
             <motion.div key={r.id} variants={fadeUp}>
               <KamerKaart room={r} featured={r.id === featuredRoomId} onClick={() => navigate(`/huis/${r.id}`)} />
@@ -215,10 +215,10 @@ export function HuisPage() {
           ))}
           <motion.div variants={fadeUp} className="h-full">
             <motion.button onClick={openNewRoom} whileTap={{ scale: 0.97 }}
-              className="h-full w-full flex flex-col items-center justify-center gap-1 py-3 rounded-2xl border-2 border-dashed focus-ring"
+              className="h-full w-full flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl border-2 border-dashed focus-ring"
               style={{ borderColor: "color-mix(in srgb, var(--border-color) 16%, transparent)", color: "var(--muted-foreground)" }}>
-              <Plus size={18} strokeWidth={1.75} aria-hidden="true" />
-              <span className="text-[0.68rem] font-medium text-center leading-tight px-1">Kamer toevoegen</span>
+              <Plus size={20} strokeWidth={1.75} aria-hidden="true" />
+              <span className="text-xs font-medium text-center leading-tight px-1">Kamer toevoegen</span>
             </motion.button>
           </motion.div>
         </motion.div>
