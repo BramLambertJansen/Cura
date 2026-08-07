@@ -30,10 +30,10 @@ export function seedDatabase(): Database {
     ],
     invites: [],
     rooms: [
-      { id: "room-keuken", householdId: HOUSEHOLD_ID, name: "Keuken", iconKey: "utensils", color: "#B8924A" },
-      { id: "room-badkamer", householdId: HOUSEHOLD_ID, name: "Badkamer", iconKey: "droplets", color: "#5A8FA8" },
-      { id: "room-woonkamer", householdId: HOUSEHOLD_ID, name: "Woonkamer", iconKey: "sofa", color: "#8B6EA8" },
-      { id: "room-slaapkamer", householdId: HOUSEHOLD_ID, name: "Slaapkamer", iconKey: "bed", color: "#496E46" },
+      { id: "room-keuken", householdId: HOUSEHOLD_ID, name: "Keuken", iconKey: "utensils", color: "#B8924A", quickAddTemplates: [] },
+      { id: "room-badkamer", householdId: HOUSEHOLD_ID, name: "Badkamer", iconKey: "droplets", color: "#5A8FA8", quickAddTemplates: [] },
+      { id: "room-woonkamer", householdId: HOUSEHOLD_ID, name: "Woonkamer", iconKey: "sofa", color: "#8B6EA8", quickAddTemplates: [] },
+      { id: "room-slaapkamer", householdId: HOUSEHOLD_ID, name: "Slaapkamer", iconKey: "bed", color: "#496E46", quickAddTemplates: [] },
     ],
     tasks: [
       { id: "task-1", householdId: HOUSEHOLD_ID, roomId: "room-keuken", title: "Afwas doen", durationMin: 10, planned: true, checklistItems: [] },

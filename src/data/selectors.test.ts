@@ -41,6 +41,7 @@ const room = (overrides: Partial<Room> = {}): Room => ({
   name: "Keuken",
   iconKey: "kitchen",
   color: "#ccc",
+  quickAddTemplates: [],
   ...overrides,
 });
 
@@ -516,6 +517,12 @@ describe("room view hint", () => {
     const view = toRoomView(r, [t], buildLatestCompletionMap(completions), [member()], now);
     expect(view.hint).toBe("Waarschijnlijk weer toe aan een beurt");
     expect(view.openCount).toBe(1);
+  });
+
+  it("passes a room's own quickAddTemplates through unchanged", () => {
+    const r = room({ quickAddTemplates: [{ title: "Kattenbak verversen", durationMin: 5 }] });
+    const view = toRoomView(r, [], new Map(), [member()], Date.now());
+    expect(view.quickAddTemplates).toEqual([{ title: "Kattenbak verversen", durationMin: 5 }]);
   });
 });
 

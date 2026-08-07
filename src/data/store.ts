@@ -5,6 +5,7 @@ import type {
   Room,
   Task,
   ChecklistItem,
+  TaskTemplate,
   TaskCompletion,
   Bundle,
   ShoppingItem,
@@ -134,7 +135,10 @@ export interface DataStore {
 
   // ── Rooms ────────────────────────────────────────────────────────────────────
   listRooms(householdId: string): Promise<Room[]>;
-  createRoom(householdId: string, room: Omit<Room, "id" | "householdId">): Promise<Room>;
+  // quickAddTemplates omitted/undefined treated as [] by both backends (same
+  // precedent as CreateTaskInput.checklistItems above) — a room's "Snel
+  // toevoegen" override starts empty until managed via EditRoomSheet.
+  createRoom(householdId: string, room: Omit<Room, "id" | "householdId" | "quickAddTemplates"> & { quickAddTemplates?: TaskTemplate[] }): Promise<Room>;
   updateRoom(roomId: string, patch: Partial<Omit<Room, "id" | "householdId">>): Promise<Room>;
   deleteRoom(roomId: string): Promise<void>;
 

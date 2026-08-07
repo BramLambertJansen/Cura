@@ -199,8 +199,8 @@ export class LocalStore implements DataStore {
     return this.db.rooms.filter((r) => r.householdId === householdId);
   }
 
-  async createRoom(householdId: string, room: Omit<Room, "id" | "householdId">): Promise<Room> {
-    const created: Room = { ...room, id: uid(), householdId };
+  async createRoom(householdId: string, room: Omit<Room, "id" | "householdId" | "quickAddTemplates"> & { quickAddTemplates?: Room["quickAddTemplates"] }): Promise<Room> {
+    const created: Room = { ...room, id: uid(), householdId, quickAddTemplates: room.quickAddTemplates ?? [] };
     validateEntity(RoomSchema, created, "kamer");
     this.db.rooms.push(created);
     this.persist();

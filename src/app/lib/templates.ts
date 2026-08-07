@@ -1,15 +1,14 @@
 /**
  * Static task templates — a quiet starting point for a new or empty room,
  * not a full checklist. 5-8 per category, no backend, composed via the
- * existing createTask (CLAUDE.md §5 "Taaktemplates en kamerstarter").
+ * existing createTask (CLAUDE.md §5 "Taaktemplates en kamerstarter"). A room
+ * can override this per-category default with its own household-managed
+ * list (Room.quickAddTemplates, same TaskTemplate shape) — see RoomDetailPage.
  */
 
-export interface TaskTemplate {
-  title: string;
-  description?: string;
-  durationMin?: number;
-  intervalDays?: number;
-}
+import type { TaskTemplate } from "../../data/types";
+
+export type { TaskTemplate };
 
 export type TemplateCategory = "keuken" | "badkamer" | "woonkamer" | "slaapkamer" | "toilet" | "algemeen";
 
