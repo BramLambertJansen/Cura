@@ -2,18 +2,18 @@ import { memo } from "react";
 import { motion } from "motion/react";
 import { Check } from "lucide-react";
 import type { RoomView } from "../../data/types";
-import { SHADOW, SHADOW_LG, roomIcon } from "../lib/constants";
+import { SAGE, SHADOW, SHADOW_LG, roomIcon } from "../lib/constants";
 import { RoomThumb } from "./RoomThumb";
 
 /**
- * Compact image-tile room card for the Huis grid — art on top, name (and a
- * quiet status line) below on the tile's own opaque surface. That surface
- * placement is what lets `featured`/openCount stay legible: text never sits
- * on top of the photo itself, only ever on the card's flat background, so
- * WCAG AA contrast doesn't depend on which watercolor happens to be behind it
- * (the concern that first ruled out a full-bleed photo-grid treatment here).
- * `featured` is a border/shadow accent only — decorative, `aria-hidden` by
- * omission — the real "verdient aandacht" semantics live in the button's own
+ * Compact image-tile room card for the Huis grid — art on top, name below on
+ * the tile's own opaque surface (so `featured`'s border/shadow accent stays
+ * legible regardless of which watercolor sits behind it — the WCAG AA concern
+ * that first ruled out a full-bleed photo-grid treatment here). The open
+ * count/done state is a small corner badge on the art instead — safe there
+ * because the badge brings its own solid fill, so its own text/icon contrast
+ * never depends on the artwork underneath, unlike bare text over a photo
+ * would. `featured`'s "verdient aandacht" semantics live only in the button's
  * aria-label, same as before.
  */
 export const KamerKaart = memo(function KamerKaart({
@@ -41,20 +41,26 @@ export const KamerKaart = memo(function KamerKaart({
       }
       className={`h-full w-full flex flex-col rounded-2xl overflow-hidden bg-card focus-visible:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color-mix(in_srgb,var(--primary)_50%,transparent)] ${featured ? "border-2" : "border border-border/60"}`}
       style={{ boxShadow: featured ? SHADOW_LG : SHADOW, borderColor: featured ? `color-mix(in srgb, ${c} 45%, transparent)` : undefined }}>
-      <div className="w-full aspect-square p-1.5">
+      <div className="relative w-full aspect-square p-1.5">
         <RoomThumb ic={ic} color={c} className="w-full h-full" rounded="rounded-xl" large />
-      </div>
-      <div className="px-1.5 pb-2.5 pt-0.5 text-center min-w-0">
-        <p className="text-xs font-semibold text-foreground leading-snug font-display truncate">{room.name}</p>
         {openCount > 0 ? (
-          <p className="text-[0.68rem] leading-snug mt-0.5 font-medium" style={{ color: c }}>
-            {openCount} {openCount === 1 ? "taak" : "taken"}
-          </p>
+          <span
+            aria-hidden="true"
+            className="absolute top-1 right-1 min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center text-[0.65rem] font-bold text-white leading-none tabular-nums"
+            style={{ background: SAGE, boxShadow: "0 1px 4px color-mix(in srgb, var(--shadow-color) 35%, transparent)" }}>
+            {openCount}
+          </span>
         ) : showDoneBadge ? (
-          <div className="flex justify-center mt-1" aria-hidden="true">
-            <Check size={11} strokeWidth={2.5} style={{ color: c, opacity: 0.65 }} />
-          </div>
+          <span
+            aria-hidden="true"
+            className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center bg-card"
+            style={{ boxShadow: "0 1px 4px color-mix(in srgb, var(--shadow-color) 35%, transparent)" }}>
+            <Check size={11} strokeWidth={2.5} style={{ color: c, opacity: 0.7 }} />
+          </span>
         ) : null}
+      </div>
+      <div className="px-1.5 pb-2.5 pt-1 text-center min-w-0">
+        <p className="text-xs font-semibold text-foreground leading-snug font-display truncate">{room.name}</p>
       </div>
     </motion.button>
   );
