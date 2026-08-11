@@ -110,7 +110,7 @@ export interface DagdeelGroup {
   tasks: TaskView[];
 }
 
-/** A room with its pooled tasks and a soft, honest hint. */
+/** A room with its pooled tasks. */
 export interface RoomView {
   id: string;
   name: string;
@@ -118,7 +118,6 @@ export interface RoomView {
   color: string;
   tasks: TaskView[];
   openCount: number;
-  hint: string; // soft: "Waarschijnlijk weer toe aan een beurt" / "Nog even goed"
   /** Direct pass-through of the domain override — empty until managed via EditRoomSheet. Empty ⟹ RoomDetailPage falls back to the static per-category ROOM_TEMPLATES list. */
   quickAddTemplates: TaskTemplate[];
 }

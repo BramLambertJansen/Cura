@@ -506,8 +506,8 @@ describe("task overview buckets", () => {
   });
 });
 
-describe("room view hint", () => {
-  it("derives a soft hint without exposing counts or timestamps", () => {
+describe("room view", () => {
+  it("derives openCount from its tasks' done state", () => {
     const now = Date.now();
     const r = room();
     const t = task({ id: "t1", roomId: r.id, intervalDays: 5 });
@@ -515,7 +515,6 @@ describe("room view hint", () => {
       { id: "c1", taskId: "t1", completedById: "m1", completedAt: iso(6 * DAY_MS, now) },
     ];
     const view = toRoomView(r, [t], buildLatestCompletionMap(completions), [member()], now);
-    expect(view.hint).toBe("Waarschijnlijk weer toe aan een beurt");
     expect(view.openCount).toBe(1);
   });
 

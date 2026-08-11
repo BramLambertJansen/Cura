@@ -67,14 +67,14 @@ const demoTaskChecklist: TaskView = {
 
 const demoRoom: RoomView = {
   id: "r1", name: "Keuken", iconKey: "utensils", color: "#B8924A",
-  tasks: [demoTaskOpen], openCount: 2, hint: "Waarschijnlijk weer toe aan een beurt",
+  tasks: [demoTaskOpen], openCount: 2,
   quickAddTemplates: [],
 };
 
 // A room type without watercolor art — shows the tinted-icon fallback banner.
 const demoRoomNoArt: RoomView = {
   id: "r2", name: "Kantoor", iconKey: "monitor", color: "#7A6448",
-  tasks: [], openCount: 0, hint: "Nog even goed",
+  tasks: [], openCount: 0,
   quickAddTemplates: [],
 };
 
@@ -354,8 +354,8 @@ export function DesignSystemPage() {
           </div>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Kamerkaart — full-bleed aquarel links die naar de kaart vervaagt; valt terug op een getinte wash met lijn-icoon als er geen kunst is. De `featured`-variant markeert de kamer die op Huis het meest aandacht verdient met een badge + sterkere rand/schaduw</p>
-          <div className="space-y-3">
+          <p className="text-xs text-muted-foreground mb-2">Kamerkaart — compact image-tile kaart voor het Kamers-grid op Huis; valt terug op een getinte wash met lijn-icoon als er geen kunst is. De `featured`-variant markeert de kamer die op Huis het meest aandacht verdient met een sterkere rand/schaduw (de "verdient aandacht"-tekst zelf leeft alleen in de aria-label)</p>
+          <div className="grid grid-cols-3 gap-4">
             <KamerKaart room={demoRoom} featured onClick={() => {}} />
             <KamerKaart room={demoRoomNoArt} onClick={() => {}} />
           </div>
