@@ -56,7 +56,7 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
             <p className="text-sm text-muted-foreground -mt-2 mb-4 leading-relaxed">
               Een routine is een groepje taken dat je vaak samen doet. Je loopt ze straks in één keer af.
             </p>
-            <VeldInput autoFocus value={name} onChange={setName} placeholder="Bijv. Ochtendroutine" />
+            <VeldInput value={name} onChange={setName} placeholder="Bijv. Ochtendroutine" />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 mt-6">Wanneer</p>
             <div role="group" aria-label="Wanneer" className="flex flex-wrap gap-2 mb-8">
               {TRIGGER_OPTIONS.map((opt) => (
