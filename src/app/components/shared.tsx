@@ -1,4 +1,4 @@
-import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, useTransform, type MotionValue, type PanInfo } from "motion/react";
 import { Check, ChevronDown, ChevronRight, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
@@ -376,6 +376,19 @@ export function OptieKaart({
  * the wider field-style row with a leading icon badge. Pass `placeholder`
  * for a field that can start with nothing chosen yet (a `value` absent from
  * `labels`) — shown muted instead of a blank trigger.
+ *
+ * The popover is `modal`: Radix's own focus trap (not a hand-rolled one)
+ * then covers the portaled option list, which otherwise sits outside the
+ * range a parent `Sheet`'s trap can see (that one only queries its own
+ * descendants) and let Tab/Shift+Tab escape past it. `onEscapeKeyDown`
+ * stops that keypress from also reaching `Sheet`'s own window-level Escape
+ * listener once Radix has used it to close just this popover — without it,
+ * closing the dropdown discarded the whole sheet (and an unsaved routine
+ * draft) underneath. The option list is a real `listbox`: arrow keys/Home/
+ * End rove real DOM focus across the options (the APG roving-tabindex
+ * pattern) instead of just implying that via the role without backing it,
+ * and the trigger's accessible name folds in the current value so a screen
+ * reader doesn't have to open the popover to learn what's selected.
  */
 export function PickerField<T extends string>({
   variant, value, options, labels, onChange, icon, ariaLabel, contentWidth = "w-48", placeholder,
@@ -394,15 +407,45 @@ export function PickerField<T extends string>({
   const borderColor = open ? SAGE : "var(--border-input)";
   const selectedLabel = labels[value];
   const displayLabel = selectedLabel ?? placeholder ?? "";
+  const triggerLabel = selectedLabel ? `${ariaLabel}: ${displayLabel}` : ariaLabel;
+  const optionRefs = useRef(new Map<T, HTMLButtonElement>());
+  const activeIndex = Math.max(0, options.indexOf(value));
+
+  function moveTo(index: number) {
+    const next = options[index];
+    onChange(next);
+    optionRefs.current.get(next)?.focus();
+  }
+
+  function onListboxKeyDown(e: ReactKeyboardEvent<HTMLDivElement>) {
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        moveTo((activeIndex + 1) % options.length);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        moveTo((activeIndex - 1 + options.length) % options.length);
+        break;
+      case "Home":
+        e.preventDefault();
+        moveTo(0);
+        break;
+      case "End":
+        e.preventDefault();
+        moveTo(options.length - 1);
+        break;
+    }
+  }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         {variant === "pill" ? (
           <motion.button
             type="button"
             whileTap={{ scale: 0.98 }}
-            aria-label={ariaLabel}
+            aria-label={triggerLabel}
             className="w-full flex items-center justify-between gap-2 rounded-full px-4 py-3 text-[0.9375rem] text-foreground border transition-colors focus-ring"
             style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
             <span className="truncate" style={selectedLabel ? undefined : { color: "var(--muted-foreground)" }}>{displayLabel}</span>
@@ -414,7 +457,7 @@ export function PickerField<T extends string>({
           <motion.button
             type="button"
             whileTap={{ scale: 0.99 }}
-            aria-label={ariaLabel}
+            aria-label={triggerLabel}
             className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left border transition-colors focus-ring"
             style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
             {icon && <IconBadge icon={icon} size={34} />}
@@ -423,15 +466,17 @@ export function PickerField<T extends string>({
           </motion.button>
         )}
       </PopoverTrigger>
-      <PopoverContent className={`${contentWidth} p-1.5`} align="start">
-        <div role="listbox" aria-label={ariaLabel} className="flex flex-col gap-0.5">
-          {options.map((key) => {
+      <PopoverContent className={`${contentWidth} p-1.5`} align="start" onEscapeKeyDown={(e) => e.stopPropagation()}>
+        <div role="listbox" aria-label={ariaLabel} className="flex flex-col gap-0.5" onKeyDown={onListboxKeyDown}>
+          {options.map((key, i) => {
             const selected = value === key;
             return (
               <button
                 key={key}
+                ref={(el) => { if (el) optionRefs.current.set(key, el); else optionRefs.current.delete(key); }}
                 type="button"
                 role="option"
+                tabIndex={i === activeIndex ? 0 : -1}
                 aria-selected={selected}
                 onClick={() => { onChange(key); setOpen(false); }}
                 className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-left transition-colors focus-ring hover:bg-secondary/70"
