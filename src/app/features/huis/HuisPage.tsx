@@ -155,7 +155,7 @@ export function HuisPage() {
             <p className="text-sm text-muted-foreground mt-1">Nog geen kamers. Voeg er hieronder een toe.</p>
           </div>
         )}
-        <motion.div variants={stagger} initial="initial" animate="animate" className="grid grid-cols-3 gap-4">
+        <motion.div variants={stagger} initial="initial" animate="animate" className="grid grid-cols-2 gap-4">
           {sortedRooms.map((r) => (
             <motion.div key={r.id} variants={fadeUp}>
               <KamerKaart room={r} featured={r.id === featuredRoomId} onClick={() => navigate(`/huis/${r.id}`)} />
