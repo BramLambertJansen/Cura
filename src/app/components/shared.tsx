@@ -1,9 +1,10 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, useTransform, type MotionValue, type PanInfo } from "motion/react";
-import { Check, ChevronDown, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 // How far (as a fraction of the sheet's own height) or how fast (px/s) a
 // downward drag from the handle has to go before it counts as "let go of
@@ -359,6 +360,90 @@ export function OptieKaart({
       className={`rounded-2xl border-2 focus-ring ${className}`}>
       {children}
     </motion.button>
+  );
+}
+
+/**
+ * Collapsed "current value + chevron" trigger that opens a Popover list of
+ * options — for a field where exactly one value ever applies at a time
+ * (Eenheid/Categorie in BoodschapToevoegSheet, Wanneer in the routine
+ * sheets). The §7 alternative to a permanently-open row of KeuzeChip pills
+ * for such a field: with only one value ever selected, showing every option
+ * at once was more chrome than the choice needed (unlike kamer/duur filters
+ * elsewhere, which stay chip-rows because several can apply loosely at once).
+ *
+ * `variant="pill"` is the compact rounded-full trigger; `variant="row"` is
+ * the wider field-style row with a leading icon badge. Pass `placeholder`
+ * for a field that can start with nothing chosen yet (a `value` absent from
+ * `labels`) — shown muted instead of a blank trigger.
+ */
+export function PickerField<T extends string>({
+  variant, value, options, labels, onChange, icon, ariaLabel, contentWidth = "w-48", placeholder,
+}: {
+  variant: "pill" | "row";
+  value: T;
+  options: readonly T[];
+  labels: Record<T, string>;
+  onChange: (v: T) => void;
+  icon?: ReactNode;
+  ariaLabel: string;
+  contentWidth?: string;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const borderColor = open ? SAGE : "var(--border-input)";
+  const selectedLabel = labels[value];
+  const displayLabel = selectedLabel ?? placeholder ?? "";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        {variant === "pill" ? (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            aria-label={ariaLabel}
+            className="w-full flex items-center justify-between gap-2 rounded-full px-4 py-3 text-[0.9375rem] text-foreground border transition-colors focus-ring"
+            style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
+            <span className="truncate" style={selectedLabel ? undefined : { color: "var(--muted-foreground)" }}>{displayLabel}</span>
+            <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex-shrink-0 text-muted-foreground" aria-hidden="true">
+              <ChevronDown size={16} />
+            </motion.span>
+          </motion.button>
+        ) : (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.99 }}
+            aria-label={ariaLabel}
+            className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left border transition-colors focus-ring"
+            style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
+            {icon && <IconBadge icon={icon} size={34} />}
+            <span className="flex-1 min-w-0 truncate text-[0.9375rem]" style={{ color: selectedLabel ? "var(--foreground)" : "var(--muted-foreground)" }}>{displayLabel}</span>
+            <ChevronRight size={16} className="flex-shrink-0 text-muted-foreground" aria-hidden="true" />
+          </motion.button>
+        )}
+      </PopoverTrigger>
+      <PopoverContent className={`${contentWidth} p-1.5`} align="start">
+        <div role="listbox" aria-label={ariaLabel} className="flex flex-col gap-0.5">
+          {options.map((key) => {
+            const selected = value === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => { onChange(key); setOpen(false); }}
+                className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-left transition-colors focus-ring hover:bg-secondary/70"
+                style={selected ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE, fontWeight: 600 } : { color: "var(--foreground)" }}>
+                {labels[key]}
+                {selected && <Check size={14} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence } from "motion/react";
-import { Plus, Link2, Home, Bell, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
+import { Plus, Link2, Home, Bell, Clock, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
   Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton,
-  InstRij, KeuzeChip, Leeg, OptieKaart, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge,
+  InstRij, KeuzeChip, Leeg, OptieKaart, PickerField, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge,
   TaakToevoegRij, Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
@@ -87,10 +87,15 @@ const demoRoutine: RoutineView = {
   doneInWindow: 11, windowSize: 14, windowLabel: "ochtenden", hint: "Gaat bijna elke keer door",
 };
 
+const PICKER_DEMO_LABELS: Record<string, string> = { ochtend: "'s Ochtends", middag: "'s Middags", avond: "'s Avonds" };
+const PICKER_DEMO_OPTIONS = Object.keys(PICKER_DEMO_LABELS);
+
 export function DesignSystemPage() {
   const [checked, setChecked] = useState(true);
   const [toggled, setToggled] = useState(false);
   const [chip, setChip] = useState("a");
+  const [pickerPill, setPickerPill] = useState("ochtend");
+  const [pickerRow, setPickerRow] = useState("");
   const [kamerKey, setKamerKey] = useState("utensils");
   const [veld, setVeld] = useState("");
   const [veldWachtwoord, setVeldWachtwoord] = useState("");
@@ -223,6 +228,18 @@ export function DesignSystemPage() {
           <KeuzeChip selected={chip === "a"} onClick={() => setChip("a")}>'s Ochtends</KeuzeChip>
           <KeuzeChip selected={chip === "b"} onClick={() => setChip("b")}>'s Middags</KeuzeChip>
           <KeuzeChip selected={chip === "c"} onClick={() => setChip("c")}>'s Avonds</KeuzeChip>
+        </div>
+      </Section>
+
+      <Section title="Pickerfield">
+        <p className="text-sm text-muted-foreground -mt-1">Ingeklapt "huidige waarde + chevron"-veld dat een Popover-lijst opent — voor een kies-er-precies-één-veld (Eenheid/Categorie in Boodschappen, Wanneer bij een routine). <code>variant="pill"</code> is compact en rounded-full; <code>variant="row"</code> is de bredere veldrij met een icoonbadge. <code>placeholder</code> toont een gedimde tekst zolang er nog niets gekozen is.</p>
+        <div className="flex gap-3">
+          <div className="w-40">
+            <PickerField variant="pill" value={pickerPill} options={PICKER_DEMO_OPTIONS} labels={PICKER_DEMO_LABELS} onChange={setPickerPill} ariaLabel="Moment kiezen (pill)" />
+          </div>
+          <div className="flex-1">
+            <PickerField variant="row" value={pickerRow} options={PICKER_DEMO_OPTIONS} labels={PICKER_DEMO_LABELS} onChange={setPickerRow} icon={<Clock size={15} aria-hidden="true" />} ariaLabel="Moment kiezen (row)" placeholder="Kies een moment" />
+          </div>
         </div>
       </Section>
 

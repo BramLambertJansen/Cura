@@ -82,6 +82,9 @@ export const TRIGGER_OPTIONS = [
   { id: "wekelijks", label: "Wekelijks" },
 ];
 
+export const TRIGGER_IDS: string[] = TRIGGER_OPTIONS.map((o) => o.id);
+export const TRIGGER_LABELS: Record<string, string> = Object.fromEntries(TRIGGER_OPTIONS.map((o) => [o.id, o.label]));
+
 export const INTERVAL_PRESETS = [
   { days: 1, label: "Dagelijks" },
   { days: 2, label: "Om de dag" },

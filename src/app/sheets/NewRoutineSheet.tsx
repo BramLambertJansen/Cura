@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Check, ChevronLeft } from "lucide-react";
+import { Check, ChevronLeft, Clock } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { SAGE, TRIGGER_OPTIONS } from "../lib/constants";
+import { SAGE, TRIGGER_IDS, TRIGGER_LABELS, TRIGGER_OPTIONS } from "../lib/constants";
 import { spring } from "../lib/motion";
 import { cadenceAndLabel } from "../lib/format";
-import { Sheet, SheetHeader, VeldInput, DubbelKnop, KeuzeChip, IconButton, TaakToevoegRij } from "../components/shared";
+import { Sheet, SheetHeader, VeldInput, DubbelKnop, PickerField, IconButton, TaakToevoegRij } from "../components/shared";
 import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
@@ -58,12 +58,17 @@ export function NewRoutineSheet({ onClose }: { onClose: () => void }) {
             </p>
             <VeldInput autoFocus value={name} onChange={setName} placeholder="Bijv. Ochtendroutine" />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 mt-6">Wanneer</p>
-            <div role="group" aria-label="Wanneer" className="flex flex-wrap gap-2 mb-8">
-              {TRIGGER_OPTIONS.map((opt) => (
-                <KeuzeChip key={opt.id} selected={trigger === opt.id} onClick={() => setTrigger(opt.id)}>
-                  {opt.label}
-                </KeuzeChip>
-              ))}
+            <div className="mb-8">
+              <PickerField
+                variant="row"
+                value={trigger}
+                options={TRIGGER_IDS}
+                labels={TRIGGER_LABELS}
+                onChange={setTrigger}
+                icon={<Clock size={15} aria-hidden="true" />}
+                ariaLabel="Wanneer kiezen"
+                placeholder="Kies een moment"
+              />
             </div>
             <DubbelKnop onCancel={onClose} onConfirm={() => setStep(1)} label="Volgende" disabled={!name.trim() || !trigger} />
           </motion.div>

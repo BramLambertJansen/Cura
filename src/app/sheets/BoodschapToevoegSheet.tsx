@@ -1,9 +1,8 @@
 import { useRef, useState, type ReactNode } from "react";
 import { motion } from "motion/react";
-import { Check, ChevronDown, ChevronRight, Minus, Plus, Tag } from "lucide-react";
+import { Minus, Plus, Tag } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
-import { IconBadge, PrimaryButton, Sheet, SheetHeader, fieldBorderColor, fieldBoxShadow } from "../components/shared";
-import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { PickerField, PrimaryButton, Sheet, SheetHeader, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { SAGE } from "../lib/constants";
 import {
   SHOPPING_CATEGORY_LABELS,
@@ -14,86 +13,6 @@ import {
 } from "../../data/selectors";
 import type { ShoppingCategoryKey, ShoppingUnitKey } from "../../data/types";
 import { FREE_UNIT_DEFAULT, parseDraftAmount } from "../lib/shoppingDraft";
-
-/**
- * Collapsed "current value + chevron" trigger that opens a Popover list of
- * options — the Eenheid/Categorie pickers. Replaces what used to be a
- * permanently open row of KeuzeChip pills for these two fields: with only
- * one value ever selected at a time, showing every option at once was more
- * chrome than the choice needed (unlike kamer/duur filters elsewhere, which
- * stay chip-rows because several can apply loosely at once).
- *
- * `variant="pill"` is the compact rounded-full trigger (Eenheid); `variant="row"`
- * is the wider field-style row with a leading icon badge (Categorie). Local to
- * this sheet, not `shared.tsx` — same precedent as ChecklistItemRij/TaakDraftRij
- * (CLAUDE.md §5 Status & checklist), so no design-system-page entry needed.
- */
-function PickerField<T extends string>({
-  variant, value, options, labels, onChange, icon, ariaLabel, contentWidth = "w-48",
-}: {
-  variant: "pill" | "row";
-  value: T;
-  options: readonly T[];
-  labels: Record<T, string>;
-  onChange: (v: T) => void;
-  icon?: ReactNode;
-  ariaLabel: string;
-  contentWidth?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const borderColor = open ? SAGE : "var(--border-input)";
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        {variant === "pill" ? (
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.98 }}
-            aria-label={ariaLabel}
-            className="w-full flex items-center justify-between gap-2 rounded-full px-4 py-3 text-[0.9375rem] text-foreground border transition-colors focus-ring"
-            style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
-            <span className="truncate">{labels[value]}</span>
-            <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex-shrink-0 text-muted-foreground" aria-hidden="true">
-              <ChevronDown size={16} />
-            </motion.span>
-          </motion.button>
-        ) : (
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.99 }}
-            aria-label={ariaLabel}
-            className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left border transition-colors focus-ring"
-            style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
-            {icon && <IconBadge icon={icon} size={34} />}
-            <span className="flex-1 min-w-0 truncate text-[0.9375rem] text-foreground">{labels[value]}</span>
-            <ChevronRight size={16} className="flex-shrink-0 text-muted-foreground" aria-hidden="true" />
-          </motion.button>
-        )}
-      </PopoverTrigger>
-      <PopoverContent className={`${contentWidth} p-1.5`} align="start">
-        <div role="listbox" aria-label={ariaLabel} className="flex flex-col gap-0.5">
-          {options.map((key) => {
-            const selected = value === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                role="option"
-                aria-selected={selected}
-                onClick={() => { onChange(key); setOpen(false); }}
-                className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-left transition-colors focus-ring hover:bg-secondary/70"
-                style={selected ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE, fontWeight: 600 } : { color: "var(--foreground)" }}>
-                {labels[key]}
-                {selected && <Check size={14} aria-hidden="true" />}
-              </button>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 /** Field-chrome for the bespoke title inputs (VeldInput has no ref for the
  *  refocus-after-add flow, so the sheet styles its own inputs the same way). */
