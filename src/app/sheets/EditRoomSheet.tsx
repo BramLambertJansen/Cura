@@ -22,8 +22,7 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
   const [iconKey, setIconKey] = useState(room?.iconKey ?? "sparkles");
   const [name, setName] = useState(room?.name ?? "");
   // Seeded from the room's own list if it has one, else a preview of the
-  // static per-category defaults (templates.ts) — same "seed-until-managed"
-  // precedent as useQuickShoppingItems. `templatesDirty` stays false until
+  // static per-category defaults (templates.ts). `templatesDirty` stays false until
   // the user actually adds/edits/removes a row, so opening this sheet and
   // saving WITHOUT touching this section never pins a snapshot over a room
   // that's still meant to follow the live category defaults.
