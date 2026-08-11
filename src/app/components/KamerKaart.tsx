@@ -49,7 +49,7 @@ export const KamerKaart = memo(function KamerKaart({
           fill, so the margin reads as the same surface, not a second box. */}
       <div className="w-full px-2.5 pt-2.5">
         <div className="relative w-full aspect-square">
-          <RoomThumb ic={ic} color={c} className="w-full h-full" rounded="rounded-xl" large />
+          <RoomThumb ic={ic} color={c} className="w-full h-full" rounded="rounded-none" large />
           {openCount > 0 ? (
             <span
               aria-hidden="true"
