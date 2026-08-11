@@ -4,7 +4,7 @@ import { AnimatePresence } from "motion/react";
 import { Plus, Link2, Home, Bell, Clock, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton,
+  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, DubbelKnop, FilterPanel, GroupCard, HintBanner, IconBadge, IconButton,
   InstRij, KeuzeChip, Leeg, OptieKaart, PickerField, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge,
   TaakToevoegRij, Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
@@ -23,6 +23,7 @@ import { PageBanner } from "../../components/PageBanner";
 import { JuridischFooter } from "../../components/JuridischFooter";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
 import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
+import { DURATION_FILTER_OPTIONS, type DurationFilter } from "../../lib/durationFilter";
 
 /**
  * Living style guide — not a tab, no route in BottomNav. Visit /dev/design-system
@@ -104,6 +105,9 @@ export function DesignSystemPage() {
   const [optie, setOptie] = useState(true);
   const [taak, setTaak] = useState("");
   const [collapsibleOpen, setCollapsibleOpen] = useState(true);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(true);
+  const [filterRoom, setFilterRoom] = useState("keuken");
+  const [filterDuration, setFilterDuration] = useState<DurationFilter>("alles");
 
   return (
     <div className="px-5 pt-14 pb-16 space-y-10">
@@ -350,6 +354,39 @@ export function DesignSystemPage() {
         <CollapsibleSection title="Voorbeeld" count={3} open={collapsibleOpen} onToggle={() => setCollapsibleOpen((v) => !v)}>
           <p className="text-sm text-muted-foreground px-1 py-1">Inhoud van de sectie.</p>
         </CollapsibleSection>
+      </Section>
+
+      <Section title="Filters (FilterPanel)">
+        <p className="text-sm text-muted-foreground -mt-1">Inklapbare "Filters"-kaart — icoon, telbadge en een samenvattingsregel klappen open naar één KeuzeChip-rij per filtergroep, met een "Wis"-knop zodra er iets actief is. Gedeeld door Huis' "Alle taken" en Takenoverzicht in plaats van elk hun eigen filterlook (CLAUDE.md §5/§7) — elke pagina levert alleen zijn eigen groepen (welke opties, wat is geselecteerd) aan.</p>
+        <FilterPanel
+          open={filterPanelOpen}
+          onToggle={() => setFilterPanelOpen((v) => !v)}
+          activeCount={(filterRoom !== "alles" ? 1 : 0) + (filterDuration !== "alles" ? 1 : 0)}
+          summary={
+            filterRoom === "alles" && filterDuration === "alles"
+              ? "Filter op kamer en duur"
+              : [filterRoom === "alles" ? null : filterRoom === "keuken" ? "Keuken" : "Badkamer", filterDuration === "alles" ? null : DURATION_FILTER_OPTIONS.find((o) => o.id === filterDuration)?.label]
+                  .filter(Boolean)
+                  .join(" · ")
+          }
+          onClear={() => { setFilterRoom("alles"); setFilterDuration("alles"); }}
+          groups={[
+            {
+              label: "Kamer",
+              ariaLabel: "Filter op kamer",
+              options: [
+                { id: "alles", label: "Alles", selected: filterRoom === "alles", onSelect: () => setFilterRoom("alles") },
+                { id: "keuken", label: "Keuken", selected: filterRoom === "keuken", onSelect: () => setFilterRoom("keuken") },
+                { id: "badkamer", label: "Badkamer", selected: filterRoom === "badkamer", onSelect: () => setFilterRoom("badkamer") },
+              ],
+            },
+            {
+              label: "Duur",
+              ariaLabel: "Filter op duur",
+              options: DURATION_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label, selected: filterDuration === o.id, onSelect: () => setFilterDuration(o.id) })),
+            },
+          ]}
+        />
       </Section>
 
       <Section title="Suggestie (Vandaag)">
