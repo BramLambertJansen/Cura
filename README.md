@@ -11,7 +11,7 @@ De UI-taal is Nederlands en de toon is warm, vergevingsgezind en praktisch: liev
 - **Routines** — terugkerende bundels met zachte dichtheid-feedback in plaats van streaks, inclusief een volledig-scherm "routine starten"-sessie.
 - **Samen** — zichtbaarheid rond wat er in huis al is gedaan, bereikbaar via Meer en via een preview-kaart op Vandaag.
 - **Meer** — de plek voor alles zonder eigen tab: Samen, Focustimer, Takenoverzicht, Boodschappen, huishouden beheren, account beheren, en Privacy/Voorwaarden.
-- **Boodschappen** — gedeelde lijst met categorieën, aantallen/eenheden en snel-toevoegen-snelkoppelingen.
+- **Boodschappen** — gedeelde lijst met categorieën en aantallen/eenheden.
 - **Focustimer** — zachte pomodoro-achtige timer, vrij of vanaf een taak.
 - **Wekkers & push** — taakherinneringen in de app, en echte Web Push (cloud mode) als de app dicht is, met stille uren per persoon.
 - **PWA-platform** — vaste app-shell, safe-area-aware layout, offline/update-UX en app-icon/splash-assets.

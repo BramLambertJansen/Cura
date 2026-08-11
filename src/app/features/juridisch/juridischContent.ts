@@ -218,7 +218,7 @@ export const PRIVACY: JuridischDocument = {
           type: "lijst",
           items: [
             "Je inlogsessie, zodat je niet bij elke keer opnieuw hoeft in te loggen.",
-            "Kleine voorkeuren van dit toestel: of meldingen aan staan, een lopende focustimer, je snelkoppelingen voor boodschappen, en of je de intro en de veeg-uitleg al hebt gezien.",
+            "Kleine voorkeuren van dit toestel: of meldingen aan staan, een lopende focustimer, en of je de intro en de veeg-uitleg al hebt gezien.",
             "Wat je vandaag hebt weggetikt met \"niet vandaag\" — dat vervalt automatisch aan het eind van de dag.",
           ],
         },

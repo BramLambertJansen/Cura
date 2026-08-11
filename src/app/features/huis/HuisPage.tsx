@@ -6,6 +6,7 @@ import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
+import { type DurationFilter, durationMatches, DURATION_LABELS } from "../../lib/durationFilter";
 import { Card, IconBadge, KeuzeChip, StatusBadge, Kop, CollapsibleSection } from "../../components/shared";
 import { PageHero } from "../../components/PageHero";
 import { TaakRij } from "../../components/TaakRij";
@@ -13,23 +14,6 @@ import { KamerKaart } from "../../components/KamerKaart";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
 import { useHuisTaskActions } from "./useHuisTaskActions";
-
-type DurationFilter = "alles" | "kort" | "middel" | "lang";
-
-function durationMatches(durationMin: number | undefined, filter: DurationFilter) {
-  if (filter === "alles") return true;
-  if (durationMin === undefined) return false;
-  if (filter === "kort") return durationMin <= 15;
-  if (filter === "middel") return durationMin > 15 && durationMin <= 45;
-  return durationMin > 45;
-}
-
-const DURATION_LABELS: Record<DurationFilter, string> = {
-  alles: "Alle duur",
-  kort: "≤ 15 min",
-  middel: "15–45 min",
-  lang: "45+ min",
-};
 
 /**
  * Huis's list view — the merged "Alle taken" + "Kamers" home. Room detail
