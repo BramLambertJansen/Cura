@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
-import { Check, ChevronDown, Plus, SlidersHorizontal } from "lucide-react";
+import { motion } from "motion/react";
+import { Check, Plus } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { type DurationFilter, durationMatches, DURATION_LABELS } from "../../lib/durationFilter";
-import { Card, IconBadge, KeuzeChip, StatusBadge, Kop, CollapsibleSection } from "../../components/shared";
+import { type DurationFilter, durationMatches, DURATION_LABELS, DURATION_FILTER_OPTIONS } from "../../lib/durationFilter";
+import { Card, Kop, CollapsibleSection, FilterPanel, type FilterGroup } from "../../components/shared";
 import { PageHero } from "../../components/PageHero";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
@@ -65,6 +65,21 @@ export function HuisPage() {
     : [roomFilter === "alles" ? null : rooms.find((r) => r.id === roomFilter)?.name, durationFilter === "alles" ? null : DURATION_LABELS[durationFilter]]
         .filter(Boolean)
         .join(" · ");
+  const filterGroups: FilterGroup[] = [
+    {
+      label: "Kamer",
+      ariaLabel: "Filter op kamer",
+      options: [
+        { id: "alles", label: "Alles", selected: roomFilter === "alles", onSelect: () => setRoomFilter("alles") },
+        ...rooms.map((r) => ({ id: r.id, label: r.name, selected: roomFilter === r.id, onSelect: () => setRoomFilter(r.id) })),
+      ],
+    },
+    {
+      label: "Duur",
+      ariaLabel: "Filter op duur",
+      options: DURATION_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label, selected: durationFilter === o.id, onSelect: () => setDurationFilter(o.id) })),
+    },
+  ];
 
   return (
     <div className="pb-8">
@@ -78,65 +93,14 @@ export function HuisPage() {
           {totalOpenCount > 0 && <span className="text-xs font-semibold ml-auto" style={{ color: SAGE }}>{totalOpenCount} open</span>}
         </div>
         <div className="space-y-4">
-          <div className="rounded-2xl bg-card-active border border-border/60 overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
-            <div className="flex items-center gap-1 pr-2">
-              <motion.button
-                whileTap={{ scale: 0.99 }}
-                onClick={() => setFiltersOpen((v) => !v)}
-                aria-expanded={filtersOpen}
-                aria-label={filtersOpen ? "Filters inklappen" : "Filters uitklappen"}
-                className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3.5 focus-ring">
-                <IconBadge icon={<SlidersHorizontal size={18} />} size={40} />
-                <div className="flex-1 min-w-0 text-left">
-                  <span className="inline-flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground">Filters</p>
-                    {activeFilterCount > 0 && <StatusBadge enter="slide">{activeFilterCount}</StatusBadge>}
-                  </span>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{filterSummary}</p>
-                </div>
-                <motion.span animate={{ rotate: filtersOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground flex-shrink-0">
-                  <ChevronDown size={15} aria-hidden="true" />
-                </motion.span>
-              </motion.button>
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => { setRoomFilter("alles"); setDurationFilter("alles"); }}
-                  className="text-xs font-medium text-muted-foreground px-2 py-1.5 rounded-lg focus-ring flex-shrink-0">
-                  Wis
-                </button>
-              )}
-            </div>
-            <AnimatePresence initial={false}>
-              {filtersOpen && (
-                <motion.div
-                  key="filters"
-                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.24 }} className="overflow-hidden">
-                  <div className="px-4 pb-4 space-y-3">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2">Kamer</p>
-                      <div role="group" aria-label="Filter op kamer" className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-                        <KeuzeChip selected={roomFilter === "alles"} onClick={() => setRoomFilter("alles")}>Alles</KeuzeChip>
-                        {rooms.map((r) => (
-                          <KeuzeChip key={r.id} selected={roomFilter === r.id} onClick={() => setRoomFilter(r.id)}>{r.name}</KeuzeChip>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2">Duur</p>
-                      <div role="group" aria-label="Filter op duur" className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-                        <KeuzeChip selected={durationFilter === "alles"} onClick={() => setDurationFilter("alles")}>Alles</KeuzeChip>
-                        <KeuzeChip selected={durationFilter === "kort"} onClick={() => setDurationFilter("kort")}>≤ 15 min</KeuzeChip>
-                        <KeuzeChip selected={durationFilter === "middel"} onClick={() => setDurationFilter("middel")}>15–45 min</KeuzeChip>
-                        <KeuzeChip selected={durationFilter === "lang"} onClick={() => setDurationFilter("lang")}>45+ min</KeuzeChip>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <FilterPanel
+            groups={filterGroups}
+            activeCount={activeFilterCount}
+            summary={filterSummary}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((v) => !v)}
+            onClear={() => { setRoomFilter("alles"); setDurationFilter("alles"); }}
+          />
 
           {filteredTasks.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 py-10 px-6 text-center">

@@ -21,3 +21,17 @@ export const DURATION_LABELS: Record<DurationFilter, string> = {
   middel: "15–45 min",
   lang: "45+ min",
 };
+
+/**
+ * The four duration chips in filter-option order, for the shared FilterPanel
+ * (shared.tsx) — "Alles" here rather than DURATION_LABELS.alles ("Alle duur"),
+ * matching the reset-option wording every other FilterPanel group uses (Huis'
+ * kamer group, Takenoverzicht's). Huis and Takenoverzicht both render this
+ * exact list instead of each hand-rolling their own four KeuzeChips.
+ */
+export const DURATION_FILTER_OPTIONS: { id: DurationFilter; label: string }[] = [
+  { id: "alles", label: "Alles" },
+  { id: "kort", label: DURATION_LABELS.kort },
+  { id: "middel", label: DURATION_LABELS.middel },
+  { id: "lang", label: DURATION_LABELS.lang },
+];
