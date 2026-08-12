@@ -46,8 +46,10 @@ export const KamerKaart = memo(function KamerKaart({
           narrowed content box and shrinks proportionally (real margin on all
           sides), instead of just squeezing the image into a distorted crop
           inside an unchanged-size square. bg-card-art matches RoomThumb's own
-          fill, so the margin reads as the same surface, not a second box. */}
-      <div className="w-full px-2.5 pt-2.5">
+          fill, so the margin reads as the same surface, not a second box — a
+          visible mat around the art rather than the art bleeding to the tile's
+          own edge. */}
+      <div className="w-full px-3.5 pt-3.5">
         <div className="relative w-full aspect-square">
           <RoomThumb ic={ic} color={c} className="w-full h-full" rounded="rounded-none" large />
           {openCount > 0 ? (

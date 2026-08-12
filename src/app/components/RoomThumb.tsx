@@ -107,7 +107,7 @@ export function RoomThumb({
   rounded?: string;
   /** Use the larger line icon in the fallback — for picker-sized tiles. */
   large?: boolean;
-  /** Slightly zoom artwork to fill compact thumbnails. */
+  /** Slightly zoom artwork to trim its cream margins (see RoomArt's matching 6%). */
   scaleImage?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
@@ -126,9 +126,12 @@ export function RoomThumb({
           aria-hidden="true"
           loading="lazy"
           onError={() => setFailed(true)}
-          // Slight zoom crops the art's cream margins away so the subject fills the small tile.
+          // Light zoom trims the art's cream margins so the subject fills the tile —
+          // same 6% figure as RoomArt's own margin-trim (below), which is the amount
+          // that's actually needed; this used to run at 18% here, aggressive enough
+          // to crop into the subject itself on some rooms instead of just the margin.
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ transform: scaleImage ? "scale(1.18)" : undefined }}
+          style={{ transform: scaleImage ? "scale(1.06)" : undefined }}
         />
       ) : (
         <>
