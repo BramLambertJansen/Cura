@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { AnimatePresence } from "motion/react";
+import { Clock } from "lucide-react";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useRoutineView } from "../../stores/useViews";
-import { TRIGGER_OPTIONS } from "../lib/constants";
+import { TRIGGER_IDS, TRIGGER_LABELS, TRIGGER_OPTIONS } from "../lib/constants";
 import { cadenceAndLabel } from "../lib/format";
-import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, KeuzeChip, VerwijderKnop, TaakToevoegRij } from "../components/shared";
+import { Sheet, SheetHeader, Kop, VeldInput, DubbelKnop, PickerField, VerwijderKnop, TaakToevoegRij } from "../components/shared";
 import { TaakDraftRij, type TaakDraftItem } from "./TaakDraftRij";
 
 export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onClose: () => void }) {
@@ -53,12 +54,16 @@ export function EditRoutineSheet({ bundleId, onClose }: { bundleId: string; onCl
       <VeldInput autoFocus value={name} onChange={setName} placeholder="Naam van de routine" ariaLabel="Naam van de routine" />
 
       <Kop><span className="mt-5 block">Wanneer</span></Kop>
-      <div role="group" aria-label="Wanneer" className="flex flex-wrap gap-2 mb-6">
-        {TRIGGER_OPTIONS.map((opt) => (
-          <KeuzeChip key={opt.id} selected={trigger === opt.id} onClick={() => setTrigger(opt.id)}>
-            {opt.label}
-          </KeuzeChip>
-        ))}
+      <div className="mb-6">
+        <PickerField
+          variant="row"
+          value={trigger}
+          options={TRIGGER_IDS}
+          labels={TRIGGER_LABELS}
+          onChange={setTrigger}
+          icon={<Clock size={15} aria-hidden="true" />}
+          ariaLabel="Wanneer kiezen"
+        />
       </div>
 
       <Kop>Taken</Kop>

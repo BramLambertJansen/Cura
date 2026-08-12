@@ -1,35 +1,19 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
-import { Check, ChevronDown, Plus, SlidersHorizontal } from "lucide-react";
+import { motion } from "motion/react";
+import { Check, Plus } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
 import { useRoomViews, useTaskViews } from "../../../stores/useViews";
 import { SAGE } from "../../lib/constants";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Card, IconBadge, KeuzeChip, StatusBadge, Kop, CollapsibleSection } from "../../components/shared";
+import { type DurationFilter, durationMatches, DURATION_LABELS, DURATION_FILTER_OPTIONS } from "../../lib/durationFilter";
+import { Card, Kop, CollapsibleSection, FilterPanel, type FilterGroup } from "../../components/shared";
 import { PageHero } from "../../components/PageHero";
 import { TaakRij } from "../../components/TaakRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { EmptyIllustration } from "../../components/EmptyIllustration";
 import { useSheets } from "../../sheetContext";
 import { useHuisTaskActions } from "./useHuisTaskActions";
-
-type DurationFilter = "alles" | "kort" | "middel" | "lang";
-
-function durationMatches(durationMin: number | undefined, filter: DurationFilter) {
-  if (filter === "alles") return true;
-  if (durationMin === undefined) return false;
-  if (filter === "kort") return durationMin <= 15;
-  if (filter === "middel") return durationMin > 15 && durationMin <= 45;
-  return durationMin > 45;
-}
-
-const DURATION_LABELS: Record<DurationFilter, string> = {
-  alles: "Alle duur",
-  kort: "≤ 15 min",
-  middel: "15–45 min",
-  lang: "45+ min",
-};
 
 /**
  * Huis's list view — the merged "Alle taken" + "Kamers" home. Room detail
@@ -81,6 +65,21 @@ export function HuisPage() {
     : [roomFilter === "alles" ? null : rooms.find((r) => r.id === roomFilter)?.name, durationFilter === "alles" ? null : DURATION_LABELS[durationFilter]]
         .filter(Boolean)
         .join(" · ");
+  const filterGroups: FilterGroup[] = [
+    {
+      label: "Kamer",
+      ariaLabel: "Filter op kamer",
+      options: [
+        { id: "alles", label: "Alles", selected: roomFilter === "alles", onSelect: () => setRoomFilter("alles") },
+        ...rooms.map((r) => ({ id: r.id, label: r.name, selected: roomFilter === r.id, onSelect: () => setRoomFilter(r.id) })),
+      ],
+    },
+    {
+      label: "Duur",
+      ariaLabel: "Filter op duur",
+      options: DURATION_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label, selected: durationFilter === o.id, onSelect: () => setDurationFilter(o.id) })),
+    },
+  ];
 
   return (
     <div className="pb-8">
@@ -94,65 +93,14 @@ export function HuisPage() {
           {totalOpenCount > 0 && <span className="text-xs font-semibold ml-auto" style={{ color: SAGE }}>{totalOpenCount} open</span>}
         </div>
         <div className="space-y-4">
-          <div className="rounded-2xl bg-card-active border border-border/60 overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
-            <div className="flex items-center gap-1 pr-2">
-              <motion.button
-                whileTap={{ scale: 0.99 }}
-                onClick={() => setFiltersOpen((v) => !v)}
-                aria-expanded={filtersOpen}
-                aria-label={filtersOpen ? "Filters inklappen" : "Filters uitklappen"}
-                className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3.5 focus-ring">
-                <IconBadge icon={<SlidersHorizontal size={18} />} size={40} />
-                <div className="flex-1 min-w-0 text-left">
-                  <span className="inline-flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground">Filters</p>
-                    {activeFilterCount > 0 && <StatusBadge enter="slide">{activeFilterCount}</StatusBadge>}
-                  </span>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{filterSummary}</p>
-                </div>
-                <motion.span animate={{ rotate: filtersOpen ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground flex-shrink-0">
-                  <ChevronDown size={15} aria-hidden="true" />
-                </motion.span>
-              </motion.button>
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => { setRoomFilter("alles"); setDurationFilter("alles"); }}
-                  className="text-xs font-medium text-muted-foreground px-2 py-1.5 rounded-lg focus-ring flex-shrink-0">
-                  Wis
-                </button>
-              )}
-            </div>
-            <AnimatePresence initial={false}>
-              {filtersOpen && (
-                <motion.div
-                  key="filters"
-                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.24 }} className="overflow-hidden">
-                  <div className="px-4 pb-4 space-y-3">
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2">Kamer</p>
-                      <div role="group" aria-label="Filter op kamer" className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-                        <KeuzeChip selected={roomFilter === "alles"} onClick={() => setRoomFilter("alles")}>Alles</KeuzeChip>
-                        {rooms.map((r) => (
-                          <KeuzeChip key={r.id} selected={roomFilter === r.id} onClick={() => setRoomFilter(r.id)}>{r.name}</KeuzeChip>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground mb-2">Duur</p>
-                      <div role="group" aria-label="Filter op duur" className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
-                        <KeuzeChip selected={durationFilter === "alles"} onClick={() => setDurationFilter("alles")}>Alles</KeuzeChip>
-                        <KeuzeChip selected={durationFilter === "kort"} onClick={() => setDurationFilter("kort")}>≤ 15 min</KeuzeChip>
-                        <KeuzeChip selected={durationFilter === "middel"} onClick={() => setDurationFilter("middel")}>15–45 min</KeuzeChip>
-                        <KeuzeChip selected={durationFilter === "lang"} onClick={() => setDurationFilter("lang")}>45+ min</KeuzeChip>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <FilterPanel
+            groups={filterGroups}
+            activeCount={activeFilterCount}
+            summary={filterSummary}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((v) => !v)}
+            onClear={() => { setRoomFilter("alles"); setDurationFilter("alles"); }}
+          />
 
           {filteredTasks.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 py-10 px-6 text-center">
@@ -195,11 +143,11 @@ export function HuisPage() {
       </section>
 
       <section>
-        {/* A vertical KamerKaart list, not the 3-column image-tile grid the frozen
-            Claude-Design mockup shows — deliberate: a full-bleed photo grid can't
-            carry the featured-badge/count text at WCAG AA contrast the way
-            an inset-art card can (CLAUDE.md §6), and rooms without art would need
-            a second, inconsistent tile treatment. */}
+        {/* Compact image-tile grid (CLAUDE.md §5 Huis), matching the Figma/Make
+            mockup. KamerKaart keeps featured/openCount legible at this size by
+            putting that text on the tile's own opaque surface below the art,
+            never over the photo itself — so WCAG AA contrast (§6) doesn't
+            depend on which watercolor happens to sit behind it. */}
         <Kop>Kamers</Kop>
         {rooms.length === 0 && (
           <div className="text-center pt-4 pb-6">
@@ -207,22 +155,18 @@ export function HuisPage() {
             <p className="text-sm text-muted-foreground mt-1">Nog geen kamers. Voeg er hieronder een toe.</p>
           </div>
         )}
-        <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-2.5">
+        <motion.div variants={stagger} initial="initial" animate="animate" className="grid grid-cols-2 gap-4">
           {sortedRooms.map((r) => (
             <motion.div key={r.id} variants={fadeUp}>
               <KamerKaart room={r} featured={r.id === featuredRoomId} onClick={() => navigate(`/huis/${r.id}`)} />
             </motion.div>
           ))}
-          <motion.div variants={fadeUp}>
-            <motion.button onClick={openNewRoom} whileTap={{ scale: 0.985 }}
-              className="w-full flex items-center gap-4 bg-card rounded-2xl px-4 py-3.5 border-2 border-dashed focus-ring"
+          <motion.div variants={fadeUp} className="h-full">
+            <motion.button onClick={openNewRoom} whileTap={{ scale: 0.97 }}
+              className="h-full w-full flex flex-col items-center justify-center gap-1.5 py-4 rounded-2xl border-2 border-dashed focus-ring"
               style={{ borderColor: "color-mix(in srgb, var(--border-color) 16%, transparent)", color: "var(--muted-foreground)" }}>
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-secondary">
-                <Plus size={20} strokeWidth={1.75} aria-hidden="true" />
-              </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium text-muted-foreground">Kamer toevoegen</p>
-              </div>
+              <Plus size={20} strokeWidth={1.75} aria-hidden="true" />
+              <span className="text-xs font-medium text-center leading-tight px-1">Kamer toevoegen</span>
             </motion.button>
           </motion.div>
         </motion.div>

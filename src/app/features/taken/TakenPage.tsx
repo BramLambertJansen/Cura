@@ -7,11 +7,12 @@ import { useTaskViews } from "../../../stores/useViews";
 import { toTaskOverview } from "../../../data/selectors";
 import type { TaskView } from "../../../data/types";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Kop, Leeg, KeuzeChip } from "../../components/shared";
+import { Kop, Leeg, FilterPanel, type FilterGroup } from "../../components/shared";
 import { PageHero } from "../../components/PageHero";
 import { TaakRij } from "../../components/TaakRij";
 import { useSheets } from "../../sheetContext";
 import { useStartFocus } from "../../lib/useStartFocus";
+import { type DurationFilter, durationMatches, DURATION_LABELS, DURATION_FILTER_OPTIONS } from "../../lib/durationFilter";
 
 const ALL = "all";
 const NONE = "none";
@@ -32,6 +33,8 @@ export function TakenPage() {
   const deleteTask = useCuraStore((s) => s.deleteTask);
   const tasks = useTaskViews();
   const [roomFilter, setRoomFilter] = useState<string>(ALL);
+  const [durationFilter, setDurationFilter] = useState<DurationFilter>("alles");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Room chips are built from the rooms present among open tasks, plus a
   // "Zonder kamer" option when some open task has no room.
@@ -43,21 +46,49 @@ export function TakenPage() {
     else hasRoomless = true;
   }
   const roomOptions = [
-    { id: ALL, label: "Alle" },
+    { id: ALL, label: "Alles" },
     ...[...roomsPresent].map(([id, label]) => ({ id, label })),
     ...(hasRoomless ? [{ id: NONE, label: "Zonder kamer" }] : []),
   ];
-  const showFilters = roomOptions.length > 2;
+  const showRoomFilter = roomOptions.length > 2;
+  // Duur-chips zijn er altijd zodra er open taken zijn, ongeacht welke duren daar
+  // toevallig onder zitten — zelfde vaste vier buckets als Huis, geen aparte
+  // "komt er wel iets uit"-berekening (die zou hier alleen inconsistent ogen).
+  const showDurationFilter = openTasks.length > 0;
+  const showFilters = showRoomFilter || showDurationFilter;
 
   // If the filtered room's last open task was just completed, it drops out of
   // roomOptions — fall back to "Alle" so we never strand the user on a false-empty
   // screen (worse still once the chips hide at ≤2 options, with no way to reset).
   const effectiveFilter = roomOptions.some((o) => o.id === roomFilter) ? roomFilter : ALL;
+  const filtersActive = effectiveFilter !== ALL || durationFilter !== "alles";
 
   const matchesRoom = (t: TaskView) =>
     effectiveFilter === ALL || (effectiveFilter === NONE ? !t.roomId : t.roomId === effectiveFilter);
+  const matchesDuration = (t: TaskView) => durationMatches(t.durationMin, durationFilter);
 
-  const { overdue, recurring, upcoming, undated } = toTaskOverview(tasks.filter(matchesRoom));
+  const { overdue, recurring, upcoming, undated } = toTaskOverview(tasks.filter((t) => matchesRoom(t) && matchesDuration(t)));
+
+  // Same shape as Huis' "Alle taken" filter card (FilterPanel, shared.tsx) —
+  // collapsed by default, a count badge + one-line summary, "Wis" to reset.
+  const activeFilterCount = (effectiveFilter !== ALL ? 1 : 0) + (durationFilter !== "alles" ? 1 : 0);
+  const filterSummary = activeFilterCount === 0
+    ? `Filter op ${[showRoomFilter && "kamer", showDurationFilter && "duur"].filter(Boolean).join(" en ")}`
+    : [effectiveFilter === ALL ? null : roomOptions.find((o) => o.id === effectiveFilter)?.label, durationFilter === "alles" ? null : DURATION_LABELS[durationFilter]]
+        .filter(Boolean)
+        .join(" · ");
+  const filterGroups: FilterGroup[] = [
+    ...(showRoomFilter ? [{
+      label: "Kamer",
+      ariaLabel: "Filter op kamer",
+      options: roomOptions.map((opt) => ({ id: opt.id, label: opt.label, selected: effectiveFilter === opt.id, onSelect: () => setRoomFilter(opt.id) })),
+    }] : []),
+    ...(showDurationFilter ? [{
+      label: "Duur",
+      ariaLabel: "Filter op duur",
+      options: DURATION_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label, selected: durationFilter === o.id, onSelect: () => setDurationFilter(o.id) })),
+    }] : []),
+  ];
 
   const groups: { label: string; tasks: TaskView[]; renew?: boolean }[] = [
     { label: "Al even blijven liggen", tasks: overdue, renew: true },
@@ -92,17 +123,22 @@ export function TakenPage() {
 
       <div className="px-5">
       {showFilters && (
-        <div role="group" aria-label="Filter op kamer" className="flex flex-wrap gap-2 mb-6">
-          {roomOptions.map((opt) => (
-            <KeuzeChip key={opt.id} selected={effectiveFilter === opt.id} onClick={() => setRoomFilter(opt.id)}>
-              {opt.label}
-            </KeuzeChip>
-          ))}
+        <div className="mb-6">
+          <FilterPanel
+            groups={filterGroups}
+            activeCount={activeFilterCount}
+            summary={filterSummary}
+            open={filtersOpen}
+            onToggle={() => setFiltersOpen((v) => !v)}
+            onClear={() => { setRoomFilter(ALL); setDurationFilter("alles"); }}
+          />
         </div>
       )}
 
       {nonEmpty.length === 0
-        ? <Leeg image="/states/empty-tasks.webp" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
+        ? filtersActive
+          ? <Leeg image="/states/empty-filter.webp" text="Geen taken binnen deze filters." />
+          : <Leeg image="/states/empty-tasks.webp" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
         : <div className="space-y-8">
             {nonEmpty.map((group) => (
               <section key={group.label}>

@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Bell, CalendarDays, Check, Clock, Play, RefreshCw, Sun } from "lucide-react";
+import { Bell, CalendarDays, Clock, Home, Play, RefreshCw, Sun } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { SAGE } from "../lib/constants";
 import { intervalLabel } from "../lib/format";
-import { Kop, Toggle, VeldTextarea, FieldShell, StatusBadge, OptieKaart, TaakToevoegRij, KeuzeChip, fieldBorderColor, fieldBoxShadow } from "../components/shared";
+import { Kop, Toggle, VeldTextarea, FieldShell, StatusBadge, PickerField, TaakToevoegRij, KeuzeChip, fieldBorderColor, fieldBoxShadow } from "../components/shared";
 import { IntervalKiezer } from "./IntervalKiezer";
 import { ChecklistItemRij } from "./ChecklistItemRij";
 import { Calendar } from "../components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import type { RoomView, ChecklistItem } from "../../data/types";
+
+/** Sentinel `PickerField` value for "no room" — a real room id is never this string. */
+const NONE_ROOM = "none";
 
 export interface TaskFormState {
   selectedRoomId: string | null;
@@ -138,46 +141,24 @@ export function TaskFormFields({
         </div>
       )}
 
-      {/* Room selection */}
-      <div className="grid grid-cols-2 gap-2 mb-6">
-        {rooms.map((r) => {
-          const active = selectedRoomId === r.id;
-          const color = r.color;
-          return (
-            <OptieKaart
-              key={r.id}
-              selected={active}
-              onClick={() => onRoomChange(active ? null : r.id)}
-              tint={color}
-              selectedBg={9}
-              selectedBorder={38}
-              ariaLabel={active ? `${r.name} deselecteren` : `${r.name} selecteren`}
-              className="flex items-center gap-2.5 px-4 py-3.5 text-left"
-            >
-              <motion.span
-                animate={{
-                  color: active ? "var(--foreground)" : "var(--muted-foreground)",
-                  fontWeight: active ? 600 : 500,
-                }}
-                transition={{ duration: 0.15 }}
-                className="text-sm"
-              >
-                {r.name}
-              </motion.span>
-              {active && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="ml-auto flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center"
-                  style={{ background: color }}
-                >
-                  <Check size={9} strokeWidth={3} className="text-white" aria-hidden="true" />
-                </motion.div>
-              )}
-            </OptieKaart>
-          );
-        })}
-      </div>
+      {/* Room selection — a PickerField dropdown rather than a tile grid:
+          exactly one room ever applies at a time, and a tile per room grew
+          with the household's room count. "Geen kamer" is a real entry
+          (not the placeholder state) so a chosen room stays deselectable. */}
+      {rooms.length > 0 && (
+        <div className="mb-6">
+          <Kop>Kamer <span style={{ fontStyle: "normal", opacity: 0.7 }}>(optioneel)</span></Kop>
+          <PickerField
+            variant="row"
+            value={selectedRoomId ?? NONE_ROOM}
+            options={[NONE_ROOM, ...rooms.map((r) => r.id)]}
+            labels={{ [NONE_ROOM]: "Geen kamer", ...Object.fromEntries(rooms.map((r) => [r.id, r.name])) }}
+            onChange={(v) => onRoomChange(v === NONE_ROOM ? null : v)}
+            icon={<Home size={15} aria-hidden="true" />}
+            ariaLabel="Kamer kiezen"
+          />
+        </div>
+      )}
 
       {showDagdeel && <DagdeelKiezer dagdeel={dagdeel} onDagdeelChange={onDagdeelChange} />}
 

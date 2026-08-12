@@ -1,9 +1,10 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { motion, AnimatePresence, useDragControls, useReducedMotion, useTransform, type MotionValue, type PanInfo } from "motion/react";
-import { Check, ChevronDown, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, SlidersHorizontal, X, Trash2, Plus, Eye, EyeOff } from "lucide-react";
 import { PRESS_TINT, PRIMARY_FG, SAGE, SHADOW } from "../lib/constants";
 import { useKeyboardInset } from "../lib/useKeyboardInset";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 // How far (as a fraction of the sheet's own height) or how fast (px/s) a
 // downward drag from the handle has to go before it counts as "let go of
@@ -359,6 +360,90 @@ export function OptieKaart({
       className={`rounded-2xl border-2 focus-ring ${className}`}>
       {children}
     </motion.button>
+  );
+}
+
+/**
+ * Collapsed "current value + chevron" trigger that opens a Popover list of
+ * options — for a field where exactly one value ever applies at a time
+ * (Eenheid/Categorie in BoodschapToevoegSheet, Wanneer in the routine
+ * sheets). The §7 alternative to a permanently-open row of KeuzeChip pills
+ * for such a field: with only one value ever selected, showing every option
+ * at once was more chrome than the choice needed (unlike kamer/duur filters
+ * elsewhere, which stay chip-rows because several can apply loosely at once).
+ *
+ * `variant="pill"` is the compact rounded-full trigger; `variant="row"` is
+ * the wider field-style row with a leading icon badge. Pass `placeholder`
+ * for a field that can start with nothing chosen yet (a `value` absent from
+ * `labels`) — shown muted instead of a blank trigger.
+ */
+export function PickerField<T extends string>({
+  variant, value, options, labels, onChange, icon, ariaLabel, contentWidth = "w-48", placeholder,
+}: {
+  variant: "pill" | "row";
+  value: T;
+  options: readonly T[];
+  labels: Record<T, string>;
+  onChange: (v: T) => void;
+  icon?: ReactNode;
+  ariaLabel: string;
+  contentWidth?: string;
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const borderColor = open ? SAGE : "var(--border-input)";
+  const selectedLabel = labels[value];
+  const displayLabel = selectedLabel ?? placeholder ?? "";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        {variant === "pill" ? (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            aria-label={ariaLabel}
+            className="w-full flex items-center justify-between gap-2 rounded-full px-4 py-3 text-[0.9375rem] text-foreground border transition-colors focus-ring"
+            style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
+            <span className="truncate" style={selectedLabel ? undefined : { color: "var(--muted-foreground)" }}>{displayLabel}</span>
+            <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex-shrink-0 text-muted-foreground" aria-hidden="true">
+              <ChevronDown size={16} />
+            </motion.span>
+          </motion.button>
+        ) : (
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.99 }}
+            aria-label={ariaLabel}
+            className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left border transition-colors focus-ring"
+            style={{ background: "var(--input-background)", borderColor, boxShadow: fieldBoxShadow({ active: open }) }}>
+            {icon && <IconBadge icon={icon} size={34} />}
+            <span className="flex-1 min-w-0 truncate text-[0.9375rem]" style={{ color: selectedLabel ? "var(--foreground)" : "var(--muted-foreground)" }}>{displayLabel}</span>
+            <ChevronRight size={16} className="flex-shrink-0 text-muted-foreground" aria-hidden="true" />
+          </motion.button>
+        )}
+      </PopoverTrigger>
+      <PopoverContent className={`${contentWidth} p-1.5`} align="start">
+        <div role="listbox" aria-label={ariaLabel} className="flex flex-col gap-0.5">
+          {options.map((key) => {
+            const selected = value === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => { onChange(key); setOpen(false); }}
+                className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-left transition-colors focus-ring hover:bg-secondary/70"
+                style={selected ? { background: "color-mix(in srgb, var(--primary) 10%, transparent)", color: SAGE, fontWeight: 600 } : { color: "var(--foreground)" }}>
+                {labels[key]}
+                {selected && <Check size={14} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -900,6 +985,100 @@ export function CollapsibleSection({
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.24 }} className="overflow-hidden">
             <div className="px-3 pb-3">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export interface FilterOption {
+  id: string;
+  label: string;
+  selected: boolean;
+  onSelect: () => void;
+}
+
+export interface FilterGroup {
+  /** Mini-label above the chip row ("Kamer", "Duur"). */
+  label: string;
+  ariaLabel: string;
+  options: FilterOption[];
+}
+
+/**
+ * Collapsible "Filters" card — icon, active-count badge and a one-line
+ * summary collapse into a chevron trigger; expanding reveals one KeuzeChip
+ * row per filter group, plus a "Wis" reset once anything is active. Started
+ * as Huis-only chrome for its kamer/duur filters; Takenoverzicht used to keep
+ * its own always-visible chip rows instead (no room-grid below eating
+ * vertical space the way Huis has), but that read as two different filter
+ * idioms for the same job, so this is now the one shared shell (CLAUDE.md §7
+ * drift class — same reasoning as durationFilter.ts). Each page supplies its
+ * own groups (which options exist, what's selected) — this only owns the
+ * expand/collapse shell and the chip rendering.
+ */
+export function FilterPanel({
+  groups, activeCount, summary, open, onToggle, onClear,
+}: {
+  groups: FilterGroup[];
+  activeCount: number;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  onClear: () => void;
+}) {
+  const contentId = useId();
+  return (
+    <div className="rounded-2xl bg-card-active border border-border/60 overflow-hidden" style={{ boxShadow: "var(--shadow-card)" }}>
+      <div className="flex items-center gap-1 pr-2">
+        <motion.button
+          whileTap={{ scale: 0.99 }}
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls={contentId}
+          aria-label={open ? "Filters inklappen" : "Filters uitklappen"}
+          className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3.5 focus-ring">
+          <IconBadge icon={<SlidersHorizontal size={18} />} size={40} />
+          <div className="flex-1 min-w-0 text-left">
+            <span className="inline-flex items-center gap-2">
+              <p className="text-sm font-semibold text-foreground">Filters</p>
+              {activeCount > 0 && <StatusBadge enter="slide">{activeCount}</StatusBadge>}
+            </span>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">{summary}</p>
+          </div>
+          <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 400, damping: 30 }} className="flex text-muted-foreground flex-shrink-0">
+            <ChevronDown size={15} aria-hidden="true" />
+          </motion.span>
+        </motion.button>
+        {activeCount > 0 && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="text-xs font-medium text-muted-foreground px-2 py-1.5 rounded-lg focus-ring flex-shrink-0">
+            Wis
+          </button>
+        )}
+      </div>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="filters"
+            id={contentId}
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.24 }} className="overflow-hidden">
+            <div className="px-4 pb-4 space-y-3">
+              {groups.map((group) => (
+                <div key={group.label}>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">{group.label}</p>
+                  <div role="group" aria-label={group.ariaLabel} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+                    {group.options.map((opt) => (
+                      <KeuzeChip key={opt.id} selected={opt.selected} onClick={opt.onSelect}>{opt.label}</KeuzeChip>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

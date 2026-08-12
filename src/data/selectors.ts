@@ -144,12 +144,9 @@ export function toTaskView(
   };
 }
 
-// ─── Room view + soft room hint ──────────────────────────────────────────────
+// ─── Room view ────────────────────────────────────────────────────────────
 
-/**
- * A room's hint is the gentlest of its tasks' states: if anything is clearly due,
- * say so softly; otherwise reassure. No counts, no timestamps.
- */
+/** A room's pooled view: its own tasks, mapped to view-models, plus the open count. */
 export function toRoomView(
   room: Room,
   tasks: Task[],
@@ -162,7 +159,6 @@ export function toRoomView(
     .filter((t) => t.roomId === room.id)
     .map((t) => toTaskView(t, latestByTask, [room], members, now, timeZone));
   const openCount = roomTasks.filter((t) => !t.done).length;
-  const anyDue = roomTasks.some((t) => t.dueHint === "Waarschijnlijk weer toe");
   return {
     id: room.id,
     name: room.name,
@@ -170,7 +166,6 @@ export function toRoomView(
     color: room.color,
     tasks: roomTasks,
     openCount,
-    hint: anyDue ? "Waarschijnlijk weer toe aan een beurt" : "Nog even goed",
     quickAddTemplates: room.quickAddTemplates,
   };
 }

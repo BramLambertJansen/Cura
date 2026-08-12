@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence } from "motion/react";
-import { Plus, Link2, Home, Bell, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
+import { Plus, Link2, Home, Bell, Clock, ChevronRight, ChevronLeft, ArrowLeft, X } from "lucide-react";
 import type { RoomView, RoutineView, TaskView } from "../../../data/types";
 import {
-  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, DubbelKnop, GroupCard, HintBanner, IconBadge, IconButton,
-  InstRij, KeuzeChip, Leeg, OptieKaart, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge,
+  Avatar, CARD_CHROME, Card, Checkbox, CollapsibleSection, DubbelKnop, FilterPanel, GroupCard, HintBanner, IconBadge, IconButton,
+  InstRij, KeuzeChip, Leeg, OptieKaart, PickerField, PillButton, PrimaryButton, RingProgress, Sheet, SheetHeader, StatusBadge,
   TaakToevoegRij, Toggle, VeldInput, VeldTextarea, VerwijderKnop,
 } from "../../components/shared";
 import { TaakRij } from "../../components/TaakRij";
@@ -23,6 +23,7 @@ import { PageBanner } from "../../components/PageBanner";
 import { JuridischFooter } from "../../components/JuridischFooter";
 import { RoutineKaart, RoutineKaartCompact } from "../../components/RoutineKaart";
 import { CardSkeleton, ListSkeleton } from "../../components/Skeletons";
+import { DURATION_FILTER_OPTIONS, type DurationFilter } from "../../lib/durationFilter";
 
 /**
  * Living style guide — not a tab, no route in BottomNav. Visit /dev/design-system
@@ -67,14 +68,14 @@ const demoTaskChecklist: TaskView = {
 
 const demoRoom: RoomView = {
   id: "r1", name: "Keuken", iconKey: "utensils", color: "#B8924A",
-  tasks: [demoTaskOpen], openCount: 2, hint: "Waarschijnlijk weer toe aan een beurt",
+  tasks: [demoTaskOpen], openCount: 2,
   quickAddTemplates: [],
 };
 
 // A room type without watercolor art — shows the tinted-icon fallback banner.
 const demoRoomNoArt: RoomView = {
   id: "r2", name: "Kantoor", iconKey: "monitor", color: "#7A6448",
-  tasks: [], openCount: 0, hint: "Nog even goed",
+  tasks: [], openCount: 0,
   quickAddTemplates: [],
 };
 
@@ -87,10 +88,15 @@ const demoRoutine: RoutineView = {
   doneInWindow: 11, windowSize: 14, windowLabel: "ochtenden", hint: "Gaat bijna elke keer door",
 };
 
+const PICKER_DEMO_LABELS: Record<string, string> = { ochtend: "'s Ochtends", middag: "'s Middags", avond: "'s Avonds" };
+const PICKER_DEMO_OPTIONS = Object.keys(PICKER_DEMO_LABELS);
+
 export function DesignSystemPage() {
   const [checked, setChecked] = useState(true);
   const [toggled, setToggled] = useState(false);
   const [chip, setChip] = useState("a");
+  const [pickerPill, setPickerPill] = useState("ochtend");
+  const [pickerRow, setPickerRow] = useState("");
   const [kamerKey, setKamerKey] = useState("utensils");
   const [veld, setVeld] = useState("");
   const [veldWachtwoord, setVeldWachtwoord] = useState("");
@@ -99,6 +105,9 @@ export function DesignSystemPage() {
   const [optie, setOptie] = useState(true);
   const [taak, setTaak] = useState("");
   const [collapsibleOpen, setCollapsibleOpen] = useState(true);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(true);
+  const [filterRoom, setFilterRoom] = useState("keuken");
+  const [filterDuration, setFilterDuration] = useState<DurationFilter>("alles");
 
   return (
     <div className="px-5 pt-14 pb-16 space-y-10">
@@ -226,6 +235,18 @@ export function DesignSystemPage() {
         </div>
       </Section>
 
+      <Section title="Pickerfield">
+        <p className="text-sm text-muted-foreground -mt-1">Ingeklapt "huidige waarde + chevron"-veld dat een Popover-lijst opent — voor een kies-er-precies-één-veld (Eenheid/Categorie in Boodschappen, Wanneer bij een routine). <code>variant="pill"</code> is compact en rounded-full; <code>variant="row"</code> is de bredere veldrij met een icoonbadge. <code>placeholder</code> toont een gedimde tekst zolang er nog niets gekozen is.</p>
+        <div className="flex gap-3">
+          <div className="w-40">
+            <PickerField variant="pill" value={pickerPill} options={PICKER_DEMO_OPTIONS} labels={PICKER_DEMO_LABELS} onChange={setPickerPill} ariaLabel="Moment kiezen (pill)" />
+          </div>
+          <div className="flex-1">
+            <PickerField variant="row" value={pickerRow} options={PICKER_DEMO_OPTIONS} labels={PICKER_DEMO_LABELS} onChange={setPickerRow} icon={<Clock size={15} aria-hidden="true" />} ariaLabel="Moment kiezen (row)" placeholder="Kies een moment" />
+          </div>
+        </div>
+      </Section>
+
       <Section title="Optiekaart">
         <p className="text-sm text-muted-foreground -mt-1">Grotere selecteerbare tegel (kamer-grid, interval-presets) — <code>border-2</code> + geanimeerde tint, kleurbaar via <code>tint</code>. De §7-vervanger voor eigen chip-varianten per sheet.</p>
         <div className="grid grid-cols-3 gap-2">
@@ -335,6 +356,39 @@ export function DesignSystemPage() {
         </CollapsibleSection>
       </Section>
 
+      <Section title="Filters (FilterPanel)">
+        <p className="text-sm text-muted-foreground -mt-1">Inklapbare "Filters"-kaart — icoon, telbadge en een samenvattingsregel klappen open naar één KeuzeChip-rij per filtergroep, met een "Wis"-knop zodra er iets actief is. Gedeeld door Huis' "Alle taken" en Takenoverzicht in plaats van elk hun eigen filterlook (CLAUDE.md §5/§7) — elke pagina levert alleen zijn eigen groepen (welke opties, wat is geselecteerd) aan.</p>
+        <FilterPanel
+          open={filterPanelOpen}
+          onToggle={() => setFilterPanelOpen((v) => !v)}
+          activeCount={(filterRoom !== "alles" ? 1 : 0) + (filterDuration !== "alles" ? 1 : 0)}
+          summary={
+            filterRoom === "alles" && filterDuration === "alles"
+              ? "Filter op kamer en duur"
+              : [filterRoom === "alles" ? null : filterRoom === "keuken" ? "Keuken" : "Badkamer", filterDuration === "alles" ? null : DURATION_FILTER_OPTIONS.find((o) => o.id === filterDuration)?.label]
+                  .filter(Boolean)
+                  .join(" · ")
+          }
+          onClear={() => { setFilterRoom("alles"); setFilterDuration("alles"); }}
+          groups={[
+            {
+              label: "Kamer",
+              ariaLabel: "Filter op kamer",
+              options: [
+                { id: "alles", label: "Alles", selected: filterRoom === "alles", onSelect: () => setFilterRoom("alles") },
+                { id: "keuken", label: "Keuken", selected: filterRoom === "keuken", onSelect: () => setFilterRoom("keuken") },
+                { id: "badkamer", label: "Badkamer", selected: filterRoom === "badkamer", onSelect: () => setFilterRoom("badkamer") },
+              ],
+            },
+            {
+              label: "Duur",
+              ariaLabel: "Filter op duur",
+              options: DURATION_FILTER_OPTIONS.map((o) => ({ id: o.id, label: o.label, selected: filterDuration === o.id, onSelect: () => setFilterDuration(o.id) })),
+            },
+          ]}
+        />
+      </Section>
+
       <Section title="Suggestie (Vandaag)">
         <p className="text-sm text-muted-foreground -mt-1">Zit genest in de "Misschien handig"-kaart — een vlakke --card-rij binnen de warmere --card-active van de kaart, geen eigen schaduw.</p>
         <div className="rounded-2xl bg-card-active border border-border/60 p-3" style={{ boxShadow: "var(--shadow-card)" }}>
@@ -354,8 +408,8 @@ export function DesignSystemPage() {
           </div>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-2">Kamerkaart — full-bleed aquarel links die naar de kaart vervaagt; valt terug op een getinte wash met lijn-icoon als er geen kunst is. De `featured`-variant markeert de kamer die op Huis het meest aandacht verdient met een badge + sterkere rand/schaduw</p>
-          <div className="space-y-3">
+          <p className="text-xs text-muted-foreground mb-2">Kamerkaart — compact image-tile kaart voor het Kamers-grid op Huis; valt terug op een getinte wash met lijn-icoon als er geen kunst is. De `featured`-variant markeert de kamer die op Huis het meest aandacht verdient met een sterkere rand/schaduw (de "verdient aandacht"-tekst zelf leeft alleen in de aria-label)</p>
+          <div className="grid grid-cols-3 gap-4">
             <KamerKaart room={demoRoom} featured onClick={() => {}} />
             <KamerKaart room={demoRoomNoArt} onClick={() => {}} />
           </div>

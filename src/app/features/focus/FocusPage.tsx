@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Check, Pause, Play, Plus, RotateCcw, Timer } from "lucide-react";
+import { ArrowLeft, Check, Pause, Play, Plus, Square, Timer } from "lucide-react";
 import { FOCUS_PRESETS_MIN, usePomodoroStore } from "../../../stores/usePomodoroStore";
 import { useTaskViews } from "../../../stores/useViews";
 import { splitPickedUpToday, toDagdelen } from "../../../data/selectors";
@@ -156,7 +156,7 @@ export function FocusPage() {
                 tone="card"
                 onClick={reset}
                 label="Timer stoppen"
-                icon={<RotateCcw size={16} className="text-muted-foreground" aria-hidden="true" />}
+                icon={<Square size={16} className="text-muted-foreground" aria-hidden="true" />}
               />
             </div>
 
