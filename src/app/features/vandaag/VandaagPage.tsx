@@ -163,11 +163,9 @@ export function VandaagPage() {
   return (
     <div className="relative">
       <PageHero
-        // The watercolor sunrise, not a headers/*.webp of its own: reusing the
-        // auth screen's art keeps opening the app and starting the day feeling
-        // like one moment (the same reason PageBanner used it here before), and
-        // its calm left-hand sky is the title room the other headers paint in.
-        src="/landing-header.webp"
+        // Own header in the same watercolor sunrise scale as the landing page:
+        // calm left-hand sky for the greeting, with soft daily context on the right.
+        src="/headers/vandaag-watercolor.webp"
         title={greeting.text}
         eyebrow={
           <span
@@ -205,7 +203,7 @@ export function VandaagPage() {
           )}
           {plannedOpen.length === 0 ? (
             <Leeg
-              image="/states/empty-plants.webp"
+              image="/states/empty-plants-watercolor.webp"
               text={allDone ? "Alles op je dag is afgevinkt." : "Nog niets op je dag. Tik op + of pak iets uit Huis."}
             />
           ) : (

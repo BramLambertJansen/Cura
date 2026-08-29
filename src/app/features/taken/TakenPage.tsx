@@ -115,7 +115,7 @@ export function TakenPage() {
   return (
     <div className="pb-8">
       <PageHero
-        src="/headers/taken.webp"
+        src="/headers/taken-watercolor.webp"
         title="Takenoverzicht"
         onBack={() => navigate("/meer")}
         backLabel="Terug naar Meer"
@@ -137,8 +137,8 @@ export function TakenPage() {
 
       {nonEmpty.length === 0
         ? filtersActive
-          ? <Leeg image="/states/empty-filter.webp" text="Geen taken binnen deze filters." />
-          : <Leeg image="/states/empty-tasks.webp" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
+          ? <Leeg image="/states/empty-filter-watercolor.webp" text="Geen taken binnen deze filters." />
+          : <Leeg image="/states/empty-tasks-watercolor.webp" text="Geen open taken. Nieuwe taken maak je aan met de + onderin." />
         : <div className="space-y-8">
             {nonEmpty.map((group) => (
               <section key={group.label}>

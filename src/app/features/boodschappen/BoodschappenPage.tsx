@@ -37,7 +37,7 @@ export function BoodschappenPage() {
   return (
     <div className="relative">
       <PageHero
-        src="/headers/boodschappen.webp"
+        src="/headers/boodschappen-watercolor.webp"
         title="Boodschappen"
         onBack={() => navigate("/meer")}
         backLabel="Terug naar Meer"
@@ -71,7 +71,7 @@ export function BoodschappenPage() {
             transition={{ duration: 0.32 }}
             className="rounded-3xl border border-border/60 bg-card px-5 py-12 text-center"
             style={{ boxShadow: SHADOW }}>
-            <EmptyIllustration src="/states/empty-shopping.webp" className="mb-2" />
+            <EmptyIllustration src="/states/empty-shopping-watercolor.webp" className="mb-2" />
             <p className="font-display italic text-[1.05rem] text-foreground">Nog niets op je lijst</p>
           </motion.div>
         ) : (

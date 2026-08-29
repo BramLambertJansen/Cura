@@ -178,7 +178,7 @@ export function RoutineSessionPage() {
               aria-live="polite"
               className="flex-1 flex flex-col items-center justify-center gap-4 text-center">
               <EmptyIllustration
-                src={allDone ? "/states/routine-complete.webp" : "/states/routine-skipped.webp"}
+                src={allDone ? "/states/routine-complete-watercolor.webp" : "/states/routine-skipped-watercolor.webp"}
                 className="!w-36 !h-36 -mb-2"
               />
               <div className="flex flex-col items-center gap-3">

@@ -276,7 +276,7 @@ export function DesignSystemPage() {
 
       <Section title="Routine-uitkomst">
         <p className="text-sm text-muted-foreground -mt-1">Custom "we zijn klaar"-illustratie — gereserveerd voor een echt sessie-afronding-moment. Zie <span className="font-mono">/routines/:bundleId/starten</span>'s afgeronde staat.</p>
-        <EmptyIllustration src="/states/routine-complete.webp" className="!w-36 !h-36" />
+        <EmptyIllustration src="/states/routine-complete-watercolor.webp" className="!w-36 !h-36" />
       </Section>
 
       <Section title="Focustimer">
@@ -317,9 +317,9 @@ export function DesignSystemPage() {
 
       <Section title="Lege staat">
         <p className="text-sm text-muted-foreground -mt-1">Elke lege staat gebruikt eigen, transparante Cura-kunst; als een bestand ontbreekt blijft de begeleidende tekst staan.</p>
-        <Leeg image="/states/empty-plants.webp" text="Niets op de planning." />
-        <Leeg image="/states/samen-mugs.webp" text="Nog niks gedaan vandaag." />
-        <Leeg image="/states/empty-tasks.webp" text="Geen open taken." />
+        <Leeg image="/states/empty-plants-watercolor.webp" text="Niets op de planning." />
+        <Leeg image="/states/samen-mugs-watercolor.webp" text="Nog niks gedaan vandaag." />
+        <Leeg image="/states/empty-tasks-watercolor.webp" text="Geen open taken." />
       </Section>
 
       <Section title="Laden">
