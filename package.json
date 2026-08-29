@@ -49,10 +49,5 @@
     "workbox-core": "7.4.1",
     "workbox-precaching": "7.4.1",
     "workbox-routing": "7.4.1"
-  },
-  "pnpm": {
-    "overrides": {
-      "vite": "6.3.5"
-    }
   }
 }

@@ -83,7 +83,7 @@ export function HuisPage() {
 
   return (
     <div className="pb-8">
-      <PageHero src="/headers/huis.webp" title="Huis" />
+      <PageHero src="/headers/huis-watercolor.webp" title="Huis" />
 
       <div className="px-5">
 
@@ -104,7 +104,7 @@ export function HuisPage() {
 
           {filteredTasks.length === 0 ? (
             <Card className="flex flex-col items-center gap-3 py-10 px-6 text-center">
-              <EmptyIllustration src="/states/empty-filter.webp" className="!w-32 !h-32 -my-2" />
+              <EmptyIllustration src="/states/empty-filter-watercolor.webp" className="!w-32 !h-32 -my-2" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Geen taken gevonden</p>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[240px]">Pas je filters aan of voeg een taak toe in een kamer.</p>
@@ -151,7 +151,7 @@ export function HuisPage() {
         <Kop>Kamers</Kop>
         {rooms.length === 0 && (
           <div className="text-center pt-4 pb-6">
-            <EmptyIllustration src="/states/empty-rooms.webp" />
+            <EmptyIllustration src="/states/empty-rooms-watercolor.webp" />
             <p className="text-sm text-muted-foreground mt-1">Nog geen kamers. Voeg er hieronder een toe.</p>
           </div>
         )}

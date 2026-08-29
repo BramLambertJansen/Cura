@@ -28,7 +28,7 @@ export function SamenPage() {
   return (
     <div className="pb-8">
       <PageHero
-        src="/headers/samen.webp"
+        src="/headers/samen-watercolor.webp"
         title="Samen"
         // replace, not push — Samen itself was reached with a push (from Vandaag's
         // preview card or Meer's list item), so pushing again here would leave a
@@ -40,7 +40,7 @@ export function SamenPage() {
 
       <div className="px-5">
       {completedToday.length === 0
-        ? <Leeg image="/states/samen-mugs.webp" text="Nog niks gedaan vandaag." />
+        ? <Leeg image="/states/samen-mugs-watercolor.webp" text="Nog niks gedaan vandaag." />
         : <motion.div variants={stagger} initial="initial" animate="animate" aria-live="polite" className="space-y-1.5 mb-8">
             {completedToday.map((activity, i) => {
               const activityKey = `${activity.taskId}-${activity.doneAt}`;

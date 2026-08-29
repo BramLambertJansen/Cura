@@ -84,7 +84,7 @@ export function RoomDetailPage() {
       <div className="px-5 pt-2 pb-28 space-y-3">
         {roomTasks.length === 0 ? (
           <div className="text-center pt-2 pb-4">
-            <EmptyIllustration src="/states/empty-room-tasks.webp" />
+            <EmptyIllustration src="/states/empty-room-tasks-watercolor.webp" />
             <p className="text-sm text-muted-foreground mt-1">Nog geen taken in deze kamer.</p>
           </div>
         ) : (

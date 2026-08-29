@@ -43,28 +43,28 @@ export interface IconOption {
   color: string;
   label: string;
   defaultName: string;
-  /** Optional watercolor room illustration (public/rooms/*). When present, cards/detail render it instead of the line icon; falls back to `icon` when the file is missing so partial art degrades gracefully. */
+  /** Optional watercolor room extract (public/rooms/extracts/*). Cards/buttons use it; detail headers derive the matching wide art from public/headers/rooms/*. */
   image?: string;
 }
 
 export const ICONS: IconOption[] = [
-  { key: "utensils", icon: <UtensilsCrossed size={18} />, iconLg: <UtensilsCrossed size={40} />, color: "#B8924A", label: "Keuken", defaultName: "Keuken", image: "/rooms/keuken.webp" },
-  { key: "droplets", icon: <Droplets size={18} />, iconLg: <Droplets size={40} />, color: "#5A8FA8", label: "Badkamer", defaultName: "Badkamer", image: "/rooms/badkamer.webp" },
-  { key: "toilet", icon: <Toilet size={18} />, iconLg: <Toilet size={40} />, color: "#6E8A72", label: "Toilet", defaultName: "Toilet", image: "/rooms/toilet.webp" },
-  { key: "sofa", icon: <Sofa size={18} />, iconLg: <Sofa size={40} />, color: "#8B6EA8", label: "Woonkamer", defaultName: "Woonkamer", image: "/rooms/woonkamer.webp" },
-  { key: "bed", icon: <BedDouble size={18} />, iconLg: <BedDouble size={40} />, color: "#496E46", label: "Slaapkamer", defaultName: "Slaapkamer", image: "/rooms/slaapkamer.webp" },
-  { key: "monitor", icon: <Monitor size={18} />, iconLg: <Monitor size={40} />, color: "#7A6448", label: "Kantoor", defaultName: "Kantoor", image: "/rooms/kantoor.webp" },
-  { key: "leaf", icon: <Leaf size={18} />, iconLg: <Leaf size={40} />, color: "#4E7A40", label: "Tuin", defaultName: "Tuin", image: "/rooms/tuin.webp" },
-  { key: "home", icon: <Home size={18} />, iconLg: <Home size={40} />, color: "#7A7068", label: "Hal", defaultName: "Hal", image: "/rooms/hal.webp" },
-  { key: "tv", icon: <Tv size={18} />, iconLg: <Tv size={40} />, color: "#5A6A7A", label: "TV-kamer", defaultName: "TV-kamer", image: "/rooms/tv-kamer.webp" },
-  { key: "book", icon: <BookOpen size={18} />, iconLg: <BookOpen size={40} />, color: "#7A5A48", label: "Studeerkamer", defaultName: "Studeerkamer", image: "/rooms/studeerkamer.webp" },
-  { key: "shirt", icon: <Shirt size={18} />, iconLg: <Shirt size={40} />, color: "#8A6878", label: "Wasruimte", defaultName: "Wasruimte", image: "/rooms/wasruimte.webp" },
-  { key: "coffee", icon: <Coffee size={18} />, iconLg: <Coffee size={40} />, color: "#9A7A5A", label: "Eetkamer", defaultName: "Eetkamer", image: "/rooms/eetkamer.webp" },
-  { key: "wind", icon: <Wind size={18} />, iconLg: <Wind size={40} />, color: "#6A8A88", label: "Balkon", defaultName: "Balkon", image: "/rooms/balkon.webp" },
-  { key: "basket", icon: <ShoppingBasket size={18} />, iconLg: <ShoppingBasket size={40} />, color: "#8A7A4A", label: "Berging", defaultName: "Berging", image: "/rooms/berging.webp" },
-  { key: "dumbbell", icon: <Dumbbell size={18} />, iconLg: <Dumbbell size={40} />, color: "#6A7A5A", label: "Fitnessruimte", defaultName: "Fitnessruimte", image: "/rooms/fitnessruimte.webp" },
-  { key: "baby", icon: <Baby size={18} />, iconLg: <Baby size={40} />, color: "#B88A8A", label: "Kinderkamer", defaultName: "Kinderkamer", image: "/rooms/kinderkamer.webp" },
-  { key: "sparkles", icon: <Sparkles size={18} />, iconLg: <Sparkles size={40} />, color: "#9A8A6A", label: "Overig", defaultName: "Overig", image: "/rooms/overig.webp" },
+  { key: "utensils", icon: <UtensilsCrossed size={18} />, iconLg: <UtensilsCrossed size={40} />, color: "#B8924A", label: "Keuken", defaultName: "Keuken", image: "/rooms/extracts/keuken-watercolor.webp" },
+  { key: "droplets", icon: <Droplets size={18} />, iconLg: <Droplets size={40} />, color: "#5A8FA8", label: "Badkamer", defaultName: "Badkamer", image: "/rooms/extracts/badkamer-watercolor.webp" },
+  { key: "toilet", icon: <Toilet size={18} />, iconLg: <Toilet size={40} />, color: "#6E8A72", label: "Toilet", defaultName: "Toilet", image: "/rooms/extracts/toilet-watercolor.webp" },
+  { key: "sofa", icon: <Sofa size={18} />, iconLg: <Sofa size={40} />, color: "#8B6EA8", label: "Woonkamer", defaultName: "Woonkamer", image: "/rooms/extracts/woonkamer-watercolor.webp" },
+  { key: "bed", icon: <BedDouble size={18} />, iconLg: <BedDouble size={40} />, color: "#496E46", label: "Slaapkamer", defaultName: "Slaapkamer", image: "/rooms/extracts/slaapkamer-watercolor.webp" },
+  { key: "monitor", icon: <Monitor size={18} />, iconLg: <Monitor size={40} />, color: "#7A6448", label: "Kantoor", defaultName: "Kantoor", image: "/rooms/extracts/kantoor-watercolor.webp" },
+  { key: "leaf", icon: <Leaf size={18} />, iconLg: <Leaf size={40} />, color: "#4E7A40", label: "Tuin", defaultName: "Tuin", image: "/rooms/extracts/tuin-watercolor.webp" },
+  { key: "home", icon: <Home size={18} />, iconLg: <Home size={40} />, color: "#7A7068", label: "Hal", defaultName: "Hal", image: "/rooms/extracts/hal-watercolor.webp" },
+  { key: "tv", icon: <Tv size={18} />, iconLg: <Tv size={40} />, color: "#5A6A7A", label: "TV-kamer", defaultName: "TV-kamer", image: "/rooms/extracts/tv-kamer-watercolor.webp" },
+  { key: "book", icon: <BookOpen size={18} />, iconLg: <BookOpen size={40} />, color: "#7A5A48", label: "Studeerkamer", defaultName: "Studeerkamer", image: "/rooms/extracts/studeerkamer-watercolor.webp" },
+  { key: "shirt", icon: <Shirt size={18} />, iconLg: <Shirt size={40} />, color: "#8A6878", label: "Wasruimte", defaultName: "Wasruimte", image: "/rooms/extracts/wasruimte-watercolor.webp" },
+  { key: "coffee", icon: <Coffee size={18} />, iconLg: <Coffee size={40} />, color: "#9A7A5A", label: "Eetkamer", defaultName: "Eetkamer", image: "/rooms/extracts/eetkamer-watercolor.webp" },
+  { key: "wind", icon: <Wind size={18} />, iconLg: <Wind size={40} />, color: "#6A8A88", label: "Balkon", defaultName: "Balkon", image: "/rooms/extracts/balkon-watercolor.webp" },
+  { key: "basket", icon: <ShoppingBasket size={18} />, iconLg: <ShoppingBasket size={40} />, color: "#8A7A4A", label: "Berging", defaultName: "Berging", image: "/rooms/extracts/berging-watercolor.webp" },
+  { key: "dumbbell", icon: <Dumbbell size={18} />, iconLg: <Dumbbell size={40} />, color: "#6A7A5A", label: "Fitnessruimte", defaultName: "Fitnessruimte", image: "/rooms/extracts/fitnessruimte-watercolor.webp" },
+  { key: "baby", icon: <Baby size={18} />, iconLg: <Baby size={40} />, color: "#B88A8A", label: "Kinderkamer", defaultName: "Kinderkamer", image: "/rooms/extracts/kinderkamer-watercolor.webp" },
+  { key: "sparkles", icon: <Sparkles size={18} />, iconLg: <Sparkles size={40} />, color: "#9A8A6A", label: "Overig", defaultName: "Overig", image: "/rooms/extracts/overig-watercolor.webp" },
 ];
 
 export const ICON_BY_KEY: Record<string, IconOption> = Object.fromEntries(ICONS.map((i) => [i.key, i]));

@@ -65,7 +65,7 @@ export function FocusPage() {
   return (
     <div className="relative min-h-full">
       <PageHero
-        src="/headers/focus.webp"
+        src="/headers/focus-watercolor.webp"
         title={idle ? "Eén taak, één timer" : status === "paused" ? "Gepauzeerd" : phase === "break" ? "Pauze" : "Aan het werk"}
         eyebrow={<p className="text-xs font-medium tracking-wide text-muted-foreground">Focustimer</p>}
         onBack={() => navigate(cameFrom, { replace: true })}

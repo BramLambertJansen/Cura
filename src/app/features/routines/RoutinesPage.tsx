@@ -16,7 +16,7 @@ export function RoutinesPage() {
   return (
     <div className="pb-8">
       <PageHero
-        src="/headers/routines.webp"
+        src="/headers/routines-watercolor.webp"
         title="Routines"
         topAction={
           <PillButton onClick={openNewRoutine} ariaLabel="Nieuwe routine aanmaken" icon={<Plus size={14} strokeWidth={2.5} aria-hidden="true" />}>
@@ -26,7 +26,7 @@ export function RoutinesPage() {
       />
       <div className="px-5">
       {routines.length === 0
-        ? <Leeg image="/states/empty-routines.webp" text="Nog geen routines. Bundel taken die je vaak samen doet, zoals opruimen voor het slapen." />
+        ? <Leeg image="/states/empty-routines-watercolor.webp" text="Nog geen routines. Bundel taken die je vaak samen doet, zoals opruimen voor het slapen." />
         : <motion.div variants={stagger} initial="initial" animate="animate" className="space-y-3.5">
             {routines.map((r) => (
               <motion.div key={r.id} variants={fadeUp}>

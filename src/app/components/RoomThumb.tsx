@@ -24,6 +24,9 @@ export function RoomHero({
 }) {
   const [failed, setFailed] = useState(false);
   const showImage = Boolean(ic.image) && !failed;
+  const headerImage = ic.image
+    ?.replace("/rooms/extracts/", "/headers/rooms/")
+    .replace("/rooms/", "/headers/rooms/");
 
   const controls = (over: boolean) => (
     <div className={`flex items-center justify-between px-5 ${over ? "absolute inset-x-0 top-0" : "pt-4"}`}
@@ -71,14 +74,13 @@ export function RoomHero({
         }}
       >
         <img
-          src={ic.image?.replace("/rooms/", "/headers/rooms/")}
+          src={headerImage}
           alt=""
           aria-hidden="true"
           loading="lazy"
           onError={() => setFailed(true)}
-          // The art is background-free, so there are no cream margins to zoom
-          // past — object-cover alone frames it; object-position keeps the
-          // painted subject centred in the short header strip.
+          // The wide watercolor already carries its own cream sky; object-cover
+          // frames the right-side room subject in the short header strip.
           className="absolute inset-0 w-full h-full object-cover"
           style={{ objectPosition: "right center" }}
         />
@@ -89,13 +91,12 @@ export function RoomHero({
 }
 
 /**
- * The square room avatar used on room cards, the room-detail header and the
- * artwork picker. Renders the watercolor illustration (`ic.image`) when it
- * exists and loads; otherwise — or when the file is still missing — falls back
- * to the tinted gradient tile with the line icon, so partial art degrades
- * gracefully (CLAUDE.md §3, "degrade gracefully with partial data"). Pass
- * `large` on bigger tiles (the picker) so the fallback uses the 40px `iconLg`
- * instead of the 18px avatar icon.
+ * The square room avatar used on room cards and the artwork picker. Renders
+ * the watercolor extract (`ic.image`) when it exists and loads; otherwise — or
+ * when the file is still missing — falls back to the tinted gradient tile with
+ * the line icon, so partial art degrades gracefully (CLAUDE.md §3, "degrade
+ * gracefully with partial data"). Pass `large` on bigger tiles (the picker) so
+ * the fallback uses the 40px `iconLg` instead of the 18px avatar icon.
  */
 export function RoomThumb({
   ic, color, className = "", rounded = "rounded-2xl", large = false, scaleImage = true,
@@ -114,9 +115,8 @@ export function RoomThumb({
   const showImage = Boolean(ic.image) && !failed;
 
   return (
-    // The room art is a transparent PNG, so the tile carries its own cream base
-    // (bg-card-art class). The fallback wash mixes the room's own colour, so that
-    // branch is genuinely dynamic and stays inline.
+    // The room extract has soft transparent watercolor edges. The fallback wash
+    // mixes the room's own colour, so that branch stays genuinely dynamic.
     <div className={`${className} ${rounded} flex items-center justify-center flex-shrink-0 relative overflow-hidden ${showImage ? "bg-card-art" : ""}`}
       style={showImage ? undefined : { background: `linear-gradient(145deg,color-mix(in srgb, ${color} 10%, var(--card-art)),color-mix(in srgb, ${color} 18%, var(--card-art)))` }}>
       {showImage ? (
