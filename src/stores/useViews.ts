@@ -50,6 +50,9 @@ export function useTaskViews(): TaskView[] {
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
     () => tasks.map((t) => toTaskView(t, latestByTask, rooms, members, undefined, timeZone)),
+    // `tick` isn't read in the body — it's here to force a re-derive every
+    // minute (see the file-level comment on the daily-task done-flip).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [tasks, latestByTask, rooms, members, timeZone, tick],
   );
 }
@@ -65,6 +68,8 @@ export function useRoomViews(): RoomView[] {
   const latestByTask = useMemo(() => buildLatestCompletionMap(completions), [completions]);
   return useMemo(
     () => rooms.map((r) => toRoomView(r, tasks, latestByTask, members, undefined, timeZone)),
+    // `tick` isn't read in the body — see useTaskViews above for why it's a dep anyway.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rooms, tasks, latestByTask, members, timeZone, tick],
   );
 }
@@ -83,6 +88,8 @@ export function useRoutineViews(): RoutineView[] {
   const completionsByBundle = useMemo(() => groupCompletionsByBundle(tasks, completions), [tasks, completions]);
   return useMemo(
     () => bundles.map((b) => toRoutineView(b, tasks, completionsByBundle.get(b.id) ?? [], latestByTask, members, undefined, timeZone)),
+    // `tick` isn't read in the body — see useTaskViews above for why it's a dep anyway.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [bundles, tasks, completionsByBundle, latestByTask, members, timeZone, tick],
   );
 }

@@ -13,9 +13,7 @@ Zie CONTRIBUTING.md voor de volledige workflow.
 
 ## Checklist
 
-- [ ] `pnpm typecheck` slaagt (verplicht bij data-layer wijzigingen)
-- [ ] `pnpm test` slaagt
-- [ ] `pnpm build` slaagt
+- [ ] `pnpm check:all` slaagt (lint + typecheck + test + build + check:data-layer + check:a11y)
 - [ ] Toegankelijk (toetsenbord + focus, `alt`/`aria-label`, WCAG AA-contrast) — zie CLAUDE.md §6
 - [ ] Component-based: hergebruikt bestaande componenten; nieuw herbruikbaar component staat ook op de design-system-pagina (CLAUDE.md §7)
 - [ ] Documentatie bijgewerkt waar nodig (CLAUDE.md §4/§5/§9, README)

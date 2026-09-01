@@ -36,6 +36,7 @@ Package manager: **pnpm**. Gebruik geen gemengde lockfiles; `pnpm-lock.yaml` is 
 
 - Node.js 20 of nieuwer
 - pnpm 9 of nieuwer
+- Eenmalig `npx playwright install chromium` voor `pnpm check:a11y` (CI installeert dit zelf, zie `.github/workflows/ci.yml`)
 - Optioneel: een Supabase-project voor `VITE_DATA_MODE=cloud`
 
 ## Inhoud
@@ -93,18 +94,20 @@ Keys zonder `VITE_` blijven server-side en mogen niet naar de client worden gele
 | `pnpm typecheck` | Draait `tsc --noEmit` (app) én `tsc --noEmit -p tsconfig.worker.json` (service worker). |
 | `pnpm test` | Draait Vitest (`vitest run`): pure domeinlogica, hook-tests en pagina-smoketests. |
 | `pnpm test:coverage` | Draait dezelfde tests met een v8-coveragerapport (nog geen thresholds). |
+| `pnpm lint` | ESLint (`--max-warnings 0`) — TS-recommended + `react-hooks` + `jsx-a11y/recommended`. |
+| `pnpm check:data-layer` | `scripts/check-data-layer.mjs` — scriptmatige gate op de data-laag-grens (zie `CLAUDE.md` §9). |
+| `pnpm check:a11y` | `playwright test` (`e2e/a11y.spec.ts`, axe-core) tegen de acht overzichtspagina's + `/privacy`/`/voorwaarden`, in `local`-datamodus. |
+| `pnpm check:all` | Alles hierboven na elkaar — de volledige poort vóór een PR (ook via de Husky pre-commit hook en in CI). |
 
 ## Standaard validatie vóór een PR
 
 Run minimaal:
 
 ```bash
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm check:all
 ```
 
-Bij data-layer wijzigingen is `pnpm typecheck` verplicht. Bij UI-wijzigingen is een lokale visuele check in de browser aanbevolen; bij merkbare webapp-wijzigingen hoort ook een screenshot in de werkcontext.
+Dat is `lint && typecheck && test && build && check:data-layer && check:a11y` — draait ook automatisch via de Husky pre-commit hook en in CI (`.github/workflows/ci.yml`) op elke PR. Bij data-layer wijzigingen is `pnpm typecheck` verplicht. Bij UI-wijzigingen is een lokale visuele check in de browser aanbevolen; bij merkbare webapp-wijzigingen hoort ook een screenshot in de werkcontext.
 
 ## Projectstructuur
 

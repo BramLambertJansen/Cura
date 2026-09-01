@@ -26,16 +26,17 @@ Een wijziging is pas "klaar" als:
 Run minimaal:
 
 ```bash
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm check:all
 ```
+
+Dat is `lint && typecheck && test && build && check:data-layer && check:a11y` (`CLAUDE.md` §9) — dezelfde poort die de Husky pre-commit hook en CI (`.github/workflows/ci.yml`) draaien.
 
 - `pnpm typecheck` (app + service worker) is **verplicht** bij elke data-layer wijziging (`CLAUDE.md` §8).
 - `pnpm test` (`vitest run`) dekt pure domeinlogica (selectors, reminders, schema's), de store/datalaag, en een dunne laag hook- en pagina-smoketests. Raakt je wijziging een selector, de store of een van de geteste schermen, voeg dan een test toe in dezelfde PR.
+- `pnpm check:data-layer` en `pnpm lint`'s `jsx-a11y`-regels zijn scriptmatige tegenhangers van regels die verderop in deze pagina en in `CLAUDE.md` §3/§6/§8 als proza staan — een treffer is een echte fout, geen vals alarm om te onderdrukken.
 - Bij UI-wijzigingen: doe een lokale visuele check in de browser; bij merkbare webapp-wijzigingen hoort ook een screenshot in de werkcontext.
 
-Er is nog geen lint-script of CI-workflow-bestand in deze repo; typecheck, test en build zijn de poort en je draait ze zelf. Voeg je linting/CI toe, werk dan `CLAUDE.md` §9 en `README.md` bij.
+Voeg je een nieuwe gate/script toe, werk dan `CLAUDE.md` §9 en `README.md` bij.
 
 ## Documentatie bijwerken
 

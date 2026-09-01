@@ -16,6 +16,7 @@ De UI/UX is gedesigned in Figma (via Make), op basis van het wireframe-brief in 
 | `.design-sync/NOTES.md` | Repo-specifieke gotchas voor het syncen van de design system naar claude.ai/design. Alleen relevant bij een `/design-sync`-run. |
 | `.github/pull_request_template.md` | PR-checklist (validatie + a11y). |
 | `ATTRIBUTIONS.md` | Licentievermeldingen voor meegeleverde componenten/assets (shadcn/ui, Unsplash) — overgenomen uit de oorspronkelijke Figma Make-export. Wijzig alleen als er nieuwe extern-gelicenseerde componenten/assets bijkomen. |
+| `.claude/agents/*.md` | Vijf rolgebonden system prompts voor de bouw-workflow (Architect → Developer → Reviewer → Tester → Docs) — zie §11 Werkstraat. |
 
 ## 1. De drie pijlers
 
@@ -372,7 +373,10 @@ We bouwen component-based: nieuwe UI is samengesteld uit herbruikbare, uniforme 
 - `localStore.test.ts`'s `LocalStore CRUD (#155)`-blok dekt `createRoom`/`createTask`/`updateTask`/`claimTask`/`assignTask`/`completeTask`/`deleteBundle` rechtstreeks op de class (niet via een gemockte `DataStore`). `supabaseStore.test.ts`'s `SupabaseStore retry-on-missing-column (#155)`-blok mockt `./supabaseClient`'s `supabase.from` om de degradeer-retry-lus zelf te bewijzen (niet alleen de pure `missingTaskColumns`/`missingShoppingColumns`-helpers eronder): een eerste `insert`/`update` die een PGRST204 "kolom ontbreekt" teruggeeft, gevolgd door een tweede poging zonder die ene kolom die wél slaagt, voor `createTask`/`updateTask`/`createShoppingItem` — plus een guard dat een niet-gerelateerde Postgres-fout meteen doorgooit zonder te retryen.
 - `useDailyLocalState` (`src/app/lib/useDailyLocalState.ts`) en `useLocalFlag` (`src/app/lib/useLocalFlag.ts`) zijn de gedeelde primitives achter de kleine device-lokale hooks — `useNietVandaag`/`useTaskDismissals` (beide `Set<string>`) bouwen op de eerste (dag-gescopeerde, JSON-backed React state, met een `decode`/`encode`-paar per hook omdat een `Set` niet native JSON-serialiseerbaar is); `useOnboardingSeen`/`useSwipeHint` bouwen op de tweede (eenmalige boolean-vlag, vaste key, geen dag-scoping) (#162; oorspronkelijk ook `useReacties`, maar die is inmiddels verwijderd met de hele "bedankjes"-reactiefunctie, #198). Elke publieke hook-naam/`localStorage`-sleutel/return-shape bleef ongewijzigd — alleen de intern gedupliceerde read/write-boilerplate is geconsolideerd. Sluit ook een reëel bug-risico: beide `useDailyLocalState`-hooks misten voorheen een `try/catch` rond de `setItem`-write (private browsing/volle quota gooide een onopgevangen throw uit een click-handler) — nu heeft elke write via de gedeelde primitives dezelfde guard. Getest in `useDailyLocalState.test.ts`/`useLocalFlag.test.ts` (jsdom, `renderHook`): lege start, persisteren + een verse hook-instantie die het teruglezen, de no-op-guard die een write overslaat als de updater dezelfde referentie teruggeeft, corrupte-JSON-fallback, en dat een gooiende write de in-memory state alsnog toepast.
 - `pnpm test:coverage` — `vitest run --coverage` (`@vitest/coverage-v8`, provider `v8`). Nog **geen thresholds** — rapportage eerst, gate pas zodra er een baseline is die het waard is af te dwingen.
-- Er is nog **geen lint-script en geen CI-workflow-bestand** in deze repo (`.github/` bevat alleen issue-/PR-templates) — `pnpm typecheck` + `pnpm test` + `pnpm build` zijn de handmatige poort vóór een PR. Voeg je linting/CI toe, werk deze sectie dan bij zodat dit overzicht klopt.
+- `pnpm lint` — ESLint (flat config, `eslint.config.js`): TS-recommended (niet type-checked, geen `tsconfig`-project nodig) + de twee stabiele React Hooks-regels (`rules-of-hooks`/`exhaustive-deps`, bewust niet `eslint-plugin-react-hooks`'s volledige v7-"recommended"-bundel, die is toegespitst op React Compiler-adoptie) + `jsx-a11y/recommended` (sluit aan bij §6). `--max-warnings 0` — een warning is een fout, zelfde filosofie als `check:a11y` hieronder.
+- `pnpm check:data-layer` — `scripts/check-data-layer.mjs`, een regex-based eerste-pass gate (zie `scripts/lib/scan.mjs` voor de beperking: geen echte AST) die drie regels uit dit document scriptmatig afdwingt: feature-code importeert nooit `localStorage`/`@supabase/supabase-js` buiten de data-laag (§3/§8, met de gedocumenteerde uitzonderingen erin genoemd), leest nooit een ruwe `src/data/schemas.ts`-entity (§8), en roept nooit de kale `new Notification()`-constructor aan (§5 → Wekker & duur op taken).
+- `pnpm check:a11y` — `playwright test` (`e2e/a11y.spec.ts`, `@axe-core/playwright`, `wcag2a`+`wcag2aa`-tags) scant de acht overzichtspagina's plus `/privacy`/`/voorwaarden` in `local`-datamodus (geen backend nodig). Zie `playwright.config.ts` voor hoe dit een sandbox's voorgeïnstalleerde Chromium hergebruikt wanneer aanwezig.
+- `pnpm check:all` — `lint && typecheck && test && build && check:data-layer && check:a11y`, de volledige poort vóór een PR. Draait ook via een Husky pre-commit hook (`.husky/pre-commit`, `"prepare": "husky"` in `package.json`) en in CI (`.github/workflows/ci.yml`, op elke PR en op pushes naar `main`).
 - **Deploy:** productie draait op Vercel met `VITE_DATA_MODE=cloud`, gekoppeld aan de repo (merge naar `main` = deploy). `vercel.json` regelt de SPA-rewrite (alles → `index.html`) en de CSP-header — die laatste staat op `script-src 'self'` en `connect-src 'self' https://*.supabase.co wss://*.supabase.co`, dus een nieuwe externe host (analytics, CDN, font-provider) moet daar expliciet bij, anders blokkeert de browser 'm stil. Migraties in `supabase/migrations/` worden **niet** meegedeployd; die draai je zelf via de Dashboard SQL-editor (zie `README.md` → Live zetten).
 - `supabase/config.toml` is de lokale Supabase-config. Let bij auth op `additional_redirect_urls`: `AuthProvider` stuurt `emailRedirectTo: window.location.href` (het volledige pad, bv. een magic link aangevraagd vanaf `/uitnodiging/:token`), dus elke origin heeft ook zijn `/**`-wildcard-variant nodig — een kale origin matcht alleen een redirect naar de root. Productie-origins zet je in de Auth-instellingen van het gehoste project, niet hier.
 - Omgevingsvariabelen staan in `.env.example`: client-side `VITE_`-vars (`VITE_DATA_MODE`, Supabase-keys, `VITE_VAPID_PUBLIC_KEY`). Server-side secrets (VAPID-privésleutel als `VAPID_KEYS`, `CRON_SECRET`, AI-keys voor Phase 4) blijven server-side — nooit `VITE_`-geprefixt — en worden via `supabase secrets set` gezet, niet in `.env`.
@@ -382,3 +386,22 @@ Volledige setup- en contributie-stappen staan in `README.md` en `CONTRIBUTING.md
 ## 10. Stack
 
 React 19, TypeScript, Vite 6, Tailwind v4, shadcn/ui (Radix), Zustand, Zod, react-router 7, motion (Framer Motion), sonner, date-fns, Supabase (Phase 3+), vite-plugin-pwa (+ `workbox-window`/`workbox-precaching` voor de `injectManifest`-service-worker). Testen met Vitest + `@testing-library/react`/jsdom. Hosting: Vercel. Package manager is `pnpm`.
+
+## 11. Werkstraat
+
+Vijf rollen, elk een system prompt in `.claude/agents/`: Architect → Developer
+→ Reviewer (merge gate) → Tester → Docs. Rolbeschrijvingen staan daar, niet
+hier — elke rol verwijst terug naar de secties hierboven in plaats van ze te
+herhalen.
+
+Geen enkele agent verzint een antwoord bij ontbrekende informatie. Ontbreekt
+een beslissing (toon, copy, gedrag bij een edge case, welke laag iets hoort)
+— de agent stelt de vraag aan Bram en wacht, in plaats van een aanname te
+kiezen en door te bouwen.
+
+Dit is bewust geen herstructurering van de rest van dit document: Cura kiest,
+anders dan het ABAS-project waar deze werkstraat van is afgeleid, voor één
+encyclopedisch CLAUDE.md in plaats van "regel over regels" + losse specs per
+feature (zie CONTRIBUTING.md). Wat de werkstraat wél overneemt van ABAS:
+regels die een script kan controleren, staan ook als script — zie §9 voor
+`pnpm lint`/`pnpm check:data-layer`/`pnpm check:a11y`.

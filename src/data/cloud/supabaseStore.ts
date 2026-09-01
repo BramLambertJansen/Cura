@@ -75,7 +75,9 @@ function parseRow<T>(parse: () => T, label: string): T {
   try {
     return parse();
   } catch (e) {
-    if (e instanceof ZodError) throw new Error(`Onverwachte data ontvangen bij ${label} — probeer het opnieuw.`);
+    if (e instanceof ZodError) {
+      throw new Error(`Onverwachte data ontvangen bij ${label} — probeer het opnieuw.`, { cause: e });
+    }
     throw e;
   }
 }
@@ -268,7 +270,6 @@ export function mapList<Row, T>(rows: readonly Row[], map: (r: Row) => T, label:
       // it can carry real household PII (names, task titles/descriptions)
       // that has no reason to sit in browser devtools console history (#170).
       const id = (row as { id?: unknown } | null)?.id;
-      // eslint-disable-next-line no-console
       console.error(`Overslaan van onleesbare ${label}-rij bij het laden`, id !== undefined ? { id } : "", e);
     }
   }

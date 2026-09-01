@@ -47,7 +47,7 @@ export function EditRoomSheet({ roomId, onClose }: { roomId: string; onClose: ()
     if (!name.trim()) return;
     updateRoom(roomId, {
       iconKey, color: ic.color, name: name.trim(),
-      ...(templatesDirty ? { quickAddTemplates: templates.map(({ key, ...t }) => t) } : {}),
+      ...(templatesDirty ? { quickAddTemplates: templates.map(({ key: _key, ...t }) => t) } : {}),
     });
     onClose();
   }
