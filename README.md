@@ -34,8 +34,8 @@ Package manager: **pnpm**. Gebruik geen gemengde lockfiles; `pnpm-lock.yaml` is 
 
 ## Vereisten
 
-- Node.js 20 of nieuwer
-- pnpm — versie gepind via `packageManager` in `package.json`, geen losse minimumversie om uit sync te laten lopen met de lockfile. `corepack enable` (standaard bij Node 20+) pakt 'm automatisch op.
+- Node.js **22.22.2 of nieuwer** (`engines.node` in `package.json`) — dit is jsdom 30's eigen minimum (`^22.22.2 || ^24.15.0 || >=26.0.0`), niet een losse Cura-eis; Node 20 kan jsdom 30 niet eens laden.
+- pnpm — versie gepind via `packageManager` in `package.json`, geen losse minimumversie om uit sync te laten lopen met de lockfile. `corepack enable` (standaard bij Node 22+) pakt 'm automatisch op.
 - Eenmalig `npx playwright install chromium` voor `pnpm check:a11y` (CI installeert dit zelf, zie `.github/workflows/ci.yml`)
 - Optioneel: een Supabase-project voor `VITE_DATA_MODE=cloud`
 
