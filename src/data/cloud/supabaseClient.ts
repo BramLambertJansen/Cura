@@ -5,7 +5,6 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  // eslint-disable-next-line no-console
   console.warn(
     "VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY are not set — Supabase calls will fail. " +
       "This module is loaded only by cloud-mode paths, but it still must not throw during " +

@@ -4,6 +4,8 @@ coverage/
 .env
 *.local
 .vercel
+playwright-report/
+test-results/
 
 # design-sync (Claude Design) scratch. Durable inputs under .design-sync/
 # (config.json, NOTES.md, conventions.md, previews/, ds-compiled.css) stay committed.

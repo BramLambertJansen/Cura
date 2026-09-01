@@ -75,7 +75,6 @@ export function RoutineSessionPage() {
   // task-to-task transition, just when it takes over the screen.
   useEffect(() => {
     headingRef.current?.focus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!routine) return null;

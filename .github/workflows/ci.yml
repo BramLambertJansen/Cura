@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check-all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `version:` input — reads the pinned version from package.json's
+      # `packageManager` field, so CI can never silently diverge from local
+      # dev's pnpm version (that drift is exactly what broke
+      # `pnpm install --frozen-lockfile` here originally).
+      - uses: pnpm/action-setup@v4
+
+      # jsdom 30's own `engines.node` is `^22.22.2 || ^24.15.0 || >=26.0.0` —
+      # Node 20 (this repo's stated floor until this fix) can't even load
+      # it (`webidl.util.markAsUncloneable is not a function` from
+      # undici@8.9.0, a jsdom dependency). See package.json's own
+      # `engines.node`.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.2
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit/component tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Data-layer boundary gate
+        run: pnpm check:data-layer
+
+      # No pre-installed browser in CI (unlike some local sandboxes —
+      # see playwright.config.ts) — Chromium is fetched explicitly.
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Accessibility gate
+        run: pnpm check:a11y
