@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Bundle, Household, Member, Task } from "../data/types";
+import type { Bundle, Household, Member, Task, TaskSuggestion } from "../data/types";
 import type { DataStore } from "../data/store";
 
 // useCuraStore owns a module-level DataStore singleton (getDataStore()/
@@ -31,6 +31,10 @@ const task = (overrides: Partial<Task> = {}): Task => ({
 });
 const bundle = (overrides: Partial<Bundle> = {}): Bundle => ({
   id: "b1", householdId: "h1", name: "Ochtendroutine", trigger: "'s ochtends", cadence: "daily", windowLabel: "ochtenden", ...overrides,
+});
+const taskSuggestion = (overrides: Partial<TaskSuggestion> = {}): TaskSuggestion => ({
+  id: "s1", householdId: "h1", title: "Tandarts bellen", sourceNote: "uit e-mail over de tandarts",
+  createdByMemberId: "m1", createdAt: "2026-01-15T08:00:00.000Z", ...overrides,
 });
 
 /** A fully-stubbed DataStore — every method is a vi.fn() with a harmless default, overridable per test. */
@@ -71,6 +75,11 @@ function makeStore(overrides: Partial<DataStore> = {}): DataStore {
     subscribeToChanges: vi.fn(() => () => {}),
     savePushSubscription: vi.fn().mockResolvedValue(undefined),
     deletePushSubscription: vi.fn().mockResolvedValue(undefined),
+    listTaskSuggestions: vi.fn().mockResolvedValue([]),
+    deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+    listMcpTokens: vi.fn().mockResolvedValue([]),
+    createMcpToken: vi.fn(),
+    revokeMcpToken: vi.fn().mockResolvedValue(undefined),
   } as unknown as DataStore;
   return { ...defaults, ...overrides };
 }
@@ -362,5 +371,108 @@ describe("withToastOnError", () => {
     await useCuraStore.getState().createRoom({ name: "Keuken", iconKey: "utensils", color: "#000" });
 
     expect(toastMock.error).toHaveBeenCalledWith("Toevoegen lukte niet");
+  });
+});
+
+describe("acceptTaskSuggestion", () => {
+  it("creates a real (pool-first) task via the existing createTask path, deletes the suggestion, and toasts", async () => {
+    const suggestion = taskSuggestion({ roomId: "r1", durationMin: 10, dagdeelSuggestion: "ochtend" });
+    const created = task({ id: "t-new", title: "Tandarts bellen", roomId: "r1", durationMin: 10, dagdeel: "ochtend" });
+    const store = makeStore({
+      createTask: vi.fn().mockResolvedValue(created),
+      deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+    });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion], tasks: [] });
+
+    await useCuraStore.getState().acceptTaskSuggestion("s1");
+
+    expect(store.createTask).toHaveBeenCalledExactlyOnceWith("h1", {
+      title: "Tandarts bellen", roomId: "r1", durationMin: 10, dueDate: undefined, dagdeel: "ochtend",
+    });
+    expect(store.deleteTaskSuggestion).toHaveBeenCalledExactlyOnceWith("s1");
+    expect(useCuraStore.getState().tasks).toEqual([created]);
+    expect(useCuraStore.getState().taskSuggestions).toEqual([]);
+    expect(toastMock.success).toHaveBeenCalledWith(`"Tandarts bellen" toegevoegd`, { description: "Staat onder Huis, bij alle taken" });
+  });
+
+  it("leaves the suggestion in place when createTask itself fails", async () => {
+    const suggestion = taskSuggestion();
+    const store = makeStore({
+      createTask: vi.fn().mockRejectedValue(new Error("network down")),
+      deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+    });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion], tasks: [] });
+
+    await useCuraStore.getState().acceptTaskSuggestion("s1");
+
+    expect(store.deleteTaskSuggestion).not.toHaveBeenCalled();
+    expect(useCuraStore.getState().taskSuggestions).toEqual([suggestion]);
+    expect(toastMock.error).toHaveBeenCalledWith("network down");
+  });
+});
+
+describe("dismissTaskSuggestion", () => {
+  it("deletes the suggestion outright — no archive", async () => {
+    const suggestion = taskSuggestion();
+    const store = makeStore({ deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined) });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion] });
+
+    await useCuraStore.getState().dismissTaskSuggestion("s1");
+
+    expect(store.deleteTaskSuggestion).toHaveBeenCalledExactlyOnceWith("s1");
+    expect(useCuraStore.getState().taskSuggestions).toEqual([]);
+    expect(toastMock).toHaveBeenCalledWith("Voorstel afgewezen");
+  });
+
+  it("keeps the suggestion when the delete fails", async () => {
+    const suggestion = taskSuggestion();
+    const store = makeStore({ deleteTaskSuggestion: vi.fn().mockRejectedValue(new Error("network down")) });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion] });
+
+    await useCuraStore.getState().dismissTaskSuggestion("s1");
+
+    expect(useCuraStore.getState().taskSuggestions).toEqual([suggestion]);
+    expect(toastMock.error).toHaveBeenCalledWith("network down");
+  });
+});
+
+describe("MCP-koppelingen (createMcpToken/revokeMcpToken/listMcpTokens)", () => {
+  it("createMcpToken returns the minted token + raw secret and toasts", async () => {
+    const created = { token: { id: "tok1", householdId: "h1", label: "Bram's Claude", createdByMemberId: "m1", createdAt: "2026-01-15T08:00:00.000Z" }, rawToken: "raw-secret" };
+    const store = makeStore({ createMcpToken: vi.fn().mockResolvedValue(created) });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1" });
+
+    const result = await useCuraStore.getState().createMcpToken("Bram's Claude");
+
+    expect(store.createMcpToken).toHaveBeenCalledExactlyOnceWith("h1", "Bram's Claude");
+    expect(result).toEqual(created);
+    expect(toastMock.success).toHaveBeenCalledWith("Koppeling aangemaakt");
+  });
+
+  it("revokeMcpToken calls through and toasts", async () => {
+    const store = makeStore({ revokeMcpToken: vi.fn().mockResolvedValue(undefined) });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1" });
+
+    await useCuraStore.getState().revokeMcpToken("tok1");
+
+    expect(store.revokeMcpToken).toHaveBeenCalledExactlyOnceWith("tok1");
+    expect(toastMock).toHaveBeenCalledWith("Koppeling ingetrokken");
+  });
+
+  it("listMcpTokens returns [] and toasts on failure instead of throwing", async () => {
+    const store = makeStore({ listMcpTokens: vi.fn().mockRejectedValue(new Error("network down")) });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1" });
+
+    const result = await useCuraStore.getState().listMcpTokens();
+
+    expect(result).toEqual([]);
+    expect(toastMock.error).toHaveBeenCalledWith("network down");
   });
 });

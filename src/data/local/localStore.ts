@@ -10,8 +10,8 @@ import {
   BundleSchema,
   ShoppingItemSchema,
 } from "../schemas";
-import type { Database, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
-import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type UpdateShoppingItemInput } from "../store";
+import type { Database, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem, TaskSuggestion, McpAccessToken } from "../types";
+import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type McpTokenCreated, type UpdateShoppingItemInput } from "../store";
 import { seedDatabase, LOCAL_USER_ID } from "./seed";
 
 const STORAGE_KEY = "cura:db:v1";
@@ -409,4 +409,31 @@ export class LocalStore implements DataStore {
   // in local mode the in-app poller (useTaskReminders) remains the only channel.
   async savePushSubscription(): Promise<void> {}
   async deletePushSubscription(): Promise<void> {}
+
+  // AI-voorstellen (Phase 4, MCP) need a deployed cloud backend for an
+  // external Claude to actually call — there is never a koppeling in local
+  // mode. listTaskSuggestions degrades to an empty list (same "nothing to
+  // show" shape as any other list); the rest throw the same clear,
+  // catchable "not available in local mode" error createInvite/revokeInvite
+  // already use, since nothing should ever call them here (the UI gates on
+  // resolveDataMode()).
+  async listTaskSuggestions(_householdId: string): Promise<TaskSuggestion[]> {
+    return [];
+  }
+
+  async deleteTaskSuggestion(_id: string): Promise<void> {
+    throw new Error("AI-voorstellen zijn niet beschikbaar in local mode (geen MCP-koppeling zonder cloud-backend).");
+  }
+
+  async listMcpTokens(_householdId: string): Promise<McpAccessToken[]> {
+    throw new Error("Koppelingen zijn niet beschikbaar in local mode (geen MCP-koppeling zonder cloud-backend).");
+  }
+
+  async createMcpToken(_householdId: string, _label: string): Promise<McpTokenCreated> {
+    throw new Error("Koppelingen zijn niet beschikbaar in local mode (geen MCP-koppeling zonder cloud-backend).");
+  }
+
+  async revokeMcpToken(_tokenId: string): Promise<void> {
+    throw new Error("Koppelingen zijn niet beschikbaar in local mode (geen MCP-koppeling zonder cloud-backend).");
+  }
 }

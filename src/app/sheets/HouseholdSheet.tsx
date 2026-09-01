@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { Check, ChevronRight, Pencil, Copy, Share2, Sparkles, UserRound } from "lucide-react";
+import { Check, ChevronRight, Pencil, Copy, Link2Off, Share2, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useCuraStore } from "../../stores/useCuraStore";
 import { useCurrentMember } from "../../stores/useViews";
 import { resolveDataMode } from "../../data/store";
+import { toMcpTokenView } from "../../data/selectors";
+import type { McpTokenView } from "../../data/types";
 import { SAGE, PRESS_TINT } from "../lib/constants";
 import { spring } from "../lib/motion";
-import { Sheet, SheetHeader, Kop, Avatar, GroupCard, PrimaryButton, IconBadge } from "../components/shared";
+import { Sheet, SheetHeader, Kop, Avatar, GroupCard, PrimaryButton, IconBadge, VeldInput, VerwijderKnop } from "../components/shared";
 
 export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void; onOpenProfiel?: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
@@ -16,6 +18,9 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
   const createInvite = useCuraStore((s) => s.createInvite);
   const updateHousehold = useCuraStore((s) => s.updateHousehold);
   const revokeInvite = useCuraStore((s) => s.revokeInvite);
+  const listMcpTokens = useCuraStore((s) => s.listMcpTokens);
+  const createMcpToken = useCuraStore((s) => s.createMcpToken);
+  const revokeMcpToken = useCuraStore((s) => s.revokeMcpToken);
   const me = useCurrentMember();
 
   const [naam, setNaam] = useState(household?.name ?? "");
@@ -30,8 +35,27 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // Koppelingen (MCP-tokens, Phase 4 — CLAUDE.md §5 → AI-voorstellen). Not
+  // part of useCuraStore's persisted state (admin-only, no realtime need) —
+  // this sheet owns its own fetch, same as the invite token above.
+  const [mcpTokens, setMcpTokens] = useState<McpTokenView[] | null>(null);
+  const [tokenLabel, setTokenLabel] = useState("");
+  const [creatingToken, setCreatingToken] = useState(false);
+  const [freshToken, setFreshToken] = useState<{ id: string; label: string; rawToken: string } | null>(null);
+  const [tokenCopied, setTokenCopied] = useState(false);
+
   const isLocal = resolveDataMode() === "local";
   const link = token ? `${window.location.origin}/uitnodiging/${token}` : null;
+
+  const refreshMcpTokens = useCallback(async () => {
+    const raw = await listMcpTokens();
+    setMcpTokens(raw.map((t) => toMcpTokenView(t, members)));
+  }, [listMcpTokens, members]);
+
+  useEffect(() => {
+    if (!isLocal) void refreshMcpTokens();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocal]);
 
   async function saveName() {
     const trimmed = naam.trim();
@@ -72,6 +96,40 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
     } catch {
       toast.error("Kopiëren lukte niet. Selecteer de link handmatig.");
     }
+  }
+
+  async function genMcpToken() {
+    const trimmed = tokenLabel.trim();
+    if (!trimmed || creatingToken) return;
+    setCreatingToken(true);
+    try {
+      const result = await createMcpToken(trimmed);
+      if (result) {
+        setFreshToken({ id: result.token.id, label: result.token.label, rawToken: result.rawToken });
+        setTokenLabel("");
+        await refreshMcpTokens();
+      }
+    } finally {
+      setCreatingToken(false);
+    }
+  }
+
+  async function copyMcpToken() {
+    if (!freshToken) return;
+    try {
+      await navigator.clipboard.writeText(freshToken.rawToken);
+      setTokenCopied(true);
+      toast("Token gekopieerd!");
+      setTimeout(() => setTokenCopied(false), 2000);
+    } catch {
+      toast.error("Kopiëren lukte niet. Selecteer het token handmatig.");
+    }
+  }
+
+  async function revokeMcp(tokenId: string) {
+    await revokeMcpToken(tokenId);
+    if (freshToken?.id === tokenId) setFreshToken(null);
+    await refreshMcpTokens();
   }
 
   return (
@@ -153,6 +211,72 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
                 </div>
               </motion.div>
           }
+        </>
+      )}
+
+      {/* Koppelingen — MCP-tokens voor een extern, "bring your own Claude"
+          (Phase 4, CLAUDE.md §5 → AI-voorstellen). Leeft hier, naast
+          Uitnodigen, niet op de AI-voorstellen-pagina zelf (die toont alleen
+          de voorstellenlijst). Copy hieronder is een eerste versie — nog niet
+          door Bram beoordeeld. */}
+      <Kop>Koppelingen</Kop>
+      {isLocal ? (
+        <p className="text-sm text-muted-foreground leading-relaxed">Koppelingen werken alleen met een online account. Nu staan je gegevens alleen op dit apparaat.</p>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">
+            Koppel een eigen Claude aan dit huishouden (via MCP), zodat die taken kan voorstellen. Een voorstel wordt pas een taak nadat iemand het hier accepteert.
+          </p>
+
+          {freshToken ? (
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}
+              className="rounded-2xl p-5 space-y-4 mb-5" style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)", border: `1px solid color-mix(in srgb, var(--primary) 17%, transparent)` }}>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Token voor "{freshToken.label}" — je ziet dit maar één keer</p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium truncate" style={{ color: SAGE }}>{freshToken.rawToken}</p>
+                  <motion.button whileTap={{ scale: 0.88 }} onClick={copyMcpToken}
+                    aria-label={tokenCopied ? "Token gekopieerd" : "Token kopiëren"}
+                    aria-live="polite"
+                    animate={{ backgroundColor: tokenCopied ? SAGE : "color-mix(in srgb, var(--primary) 12%, transparent)" }}
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 focus-ring">
+                    {tokenCopied ? <Check size={15} className="text-white" aria-hidden="true" /> : <Copy size={15} style={{ color: SAGE }} aria-hidden="true" />}
+                  </motion.button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">Plak dit token in de MCP-instellingen van je Claude. Sluit je dit scherm, dan is het niet meer op te vragen — herroep de koppeling en maak een nieuwe aan als je het kwijtraakt.</p>
+              <button onClick={() => setFreshToken(null)} className="text-xs text-center text-muted-foreground w-full focus-ring rounded-lg py-1">Sluiten</button>
+            </motion.div>
+          ) : (
+            <div className="flex gap-2 mb-5">
+              <VeldInput value={tokenLabel} onChange={setTokenLabel} placeholder="Naam, bv. Bram's Claude" onEnter={genMcpToken} />
+              <PrimaryButton onClick={genMcpToken} disabled={!tokenLabel.trim()} busy={creatingToken} fullWidth={false}>
+                {creatingToken ? "Even geduld…" : "Koppel"}
+              </PrimaryButton>
+            </div>
+          )}
+
+          {(mcpTokens ?? []).filter((t) => !t.revoked).length > 0 && (
+            <GroupCard>
+              {(mcpTokens ?? []).filter((t) => !t.revoked).map((t) => (
+                <div key={t.id} className="px-4 py-3.5">
+                  <div className="mb-2">
+                    <p className="text-sm font-semibold text-foreground truncate">{t.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      Aangemaakt door {t.createdBy} · {t.lastUsedAtLabel ? `laatst gebruikt ${t.lastUsedAtLabel}` : "nog niet gebruikt"}
+                    </p>
+                  </div>
+                  <VerwijderKnop
+                    label="Herroep koppeling"
+                    ariaLabel={`${t.label} herroepen`}
+                    confirmLabel="Ja, herroep"
+                    icon={<Link2Off size={14} aria-hidden="true" />}
+                    onConfirm={() => revokeMcp(t.id)}
+                  />
+                </div>
+              ))}
+            </GroupCard>
+          )}
         </>
       )}
     </Sheet>

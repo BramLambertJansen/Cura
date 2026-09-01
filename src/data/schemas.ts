@@ -205,6 +205,54 @@ export const ShoppingItemSchema = z.object({
   createdAt: Iso, // stable add-order
 });
 
+// ─── AI-voorstellen (Phase 4, MCP) ───────────────────────────────────────────
+// A pending suggestion from an external Claude connected via MCP (CLAUDE.md §5
+// "AI-voorstellen"). Deliberately its own entity, NOT a Task with a "pending"
+// status: every existing task consumer (toTaskView, toDagdelen, reminders,
+// routine density, Vandaag's suggestions, ...) would need a filter to ignore
+// it, and one missed filter would surface an unaccepted suggestion as a real
+// pool task. Accepting one creates a real Task via the existing createTask
+// path and deletes this row; rejecting deletes it directly — there is no
+// "dismissed"/archived state (a deliberate product decision, not an
+// oversight: see CLAUDE.md §5). The row's mere EXISTENCE means "pending", so
+// unlike ShoppingItem.checked/ChecklistItem.checked there's no derived-state
+// exception to document here — nothing is derived from this row at all.
+export const TaskSuggestionSchema = z.object({
+  id: Id,
+  householdId: Id,
+  title: z.string().min(1),
+  // Must be an existing Room in this household when set — enforced by the
+  // mcp-server edge function at write time (defense-in-depth, since that
+  // function bypasses RLS via the service role), not by this schema. Never a
+  // brand-new kamer name: a suggestion never creates a room.
+  roomId: Id.optional(),
+  durationMin: z.number().int().positive().optional(),
+  dueDateSuggestion: Iso.optional(),
+  dagdeelSuggestion: z.enum(["ochtend", "middag", "avond"]).optional(),
+  sourceNote: z.string().min(1), // "uit e-mail over de tandarts" — always shown, never empty (§2 honesty over precision)
+  createdByMemberId: Id, // the household member whose MCP token made this suggestion
+  createdAt: Iso,
+});
+
+// ─── MCP access tokens (Phase 4) ─────────────────────────────────────────────
+// Client-facing shape only. The actual secret is never stored anywhere (only
+// its sha-256 hash lives server-side, on a column this schema deliberately
+// omits), and the rate-limit bookkeeping (a rolling-window start + count,
+// CLAUDE.md §5 → AI-voorstellen) is server-only too — neither ever needs to
+// reach the client, so neither is modeled here. The raw secret itself is
+// returned to the caller exactly once, at creation time (create_mcp_token).
+export const McpAccessTokenSchema = z.object({
+  id: Id,
+  householdId: Id,
+  label: z.string().min(1), // "Bram's Claude" — what the household sees
+  createdByMemberId: Id,
+  createdAt: Iso,
+  lastUsedAt: Iso.optional(),
+  // Soft-revoke, never a delete — keeps "Voorgesteld door …" attribution on
+  // suggestions this token already made truthful even after revocation.
+  revokedAt: Iso.optional(),
+});
+
 // ─── The whole persisted snapshot (what local mode reads/writes) ─────────────
 
 export const DatabaseSchema = z.object({

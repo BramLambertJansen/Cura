@@ -13,6 +13,8 @@ import {
   ShoppingItemSchema,
   ShoppingUnitSchema,
   ShoppingCategorySchema,
+  TaskSuggestionSchema,
+  McpAccessTokenSchema,
   DatabaseSchema,
 } from "./schemas";
 
@@ -44,6 +46,8 @@ export type TaskCompletion = z.infer<typeof TaskCompletionSchema>;
 export type Bundle = z.infer<typeof BundleSchema>;
 export type ShoppingItem = z.infer<typeof ShoppingItemSchema>;
 export type ShoppingUnitKey = z.infer<typeof ShoppingUnitSchema>;
+export type TaskSuggestion = z.infer<typeof TaskSuggestionSchema>;
+export type McpAccessToken = z.infer<typeof McpAccessTokenSchema>;
 export type Database = z.infer<typeof DatabaseSchema>;
 
 // ─── View-models (derived, what screens consume) ─────────────────────────────
@@ -174,4 +178,33 @@ export interface ActivityView {
   doneBy: string; // resolved member display name
   doneById?: string; // raw member id, for "is this mine?" checks — never displayed
   doneAt: string; // ISO; the view formats it
+}
+
+/**
+ * A pending AI-voorstel as a screen sees it — room/creator resolved to names,
+ * date/dagdeel suggestions formatted the same soft way as TaskView's own
+ * wekkerLabel/dagdeel. Never carries done/claimed state (TaskSuggestion has
+ * none — see the schema comment).
+ */
+export interface TaskSuggestionView {
+  id: string;
+  title: string;
+  roomId?: string;
+  room?: string; // resolved room name
+  duration?: string; // formatted, e.g. "10 min"
+  dueDateLabel?: string; // soft, calm label — same format as TaskView.wekkerLabel's one-off case
+  dagdeel?: "ochtend" | "middag" | "avond";
+  sourceNote: string; // always present — the honest "why this was suggested" line
+  createdBy: string; // resolved member display name, for the "Voorgesteld door …" attribution
+  createdAt: string; // raw ISO — not for display
+}
+
+/** An MCP access token as HouseholdSheet's koppelingenbeheer renders it — creator resolved to a name, dates formatted. */
+export interface McpTokenView {
+  id: string;
+  label: string;
+  createdBy: string; // resolved member display name
+  createdAtLabel: string; // formatted, e.g. "wo 2 jul, 15:00"
+  lastUsedAtLabel?: string; // formatted, or absent if never used
+  revoked: boolean;
 }

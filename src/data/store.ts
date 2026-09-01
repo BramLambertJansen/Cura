@@ -11,6 +11,8 @@ import type {
   ShoppingItem,
   ShoppingCategoryKey,
   ShoppingUnitKey,
+  TaskSuggestion,
+  McpAccessToken,
 } from "./types";
 
 /**
@@ -83,6 +85,17 @@ export interface PushSubscriptionInput {
   endpoint: string;
   p256dh: string;
   auth: string;
+}
+
+/**
+ * Result of minting a new MCP access token. `rawToken` is the actual secret
+ * to paste into an external Claude's MCP config — it is returned ONLY this
+ * one time (only its hash is ever persisted, server-side) and can never be
+ * retrieved again after this call returns.
+ */
+export interface McpTokenCreated {
+  token: McpAccessToken;
+  rawToken: string;
 }
 
 export interface DataStore {
@@ -209,6 +222,30 @@ export interface DataStore {
   savePushSubscription(householdId: string, userId: string, sub: PushSubscriptionInput): Promise<void>;
   /** Remove a subscription by its endpoint (e.g. the user turned meldingen off, or it expired). */
   deletePushSubscription(endpoint: string): Promise<void>;
+
+  // ── AI-voorstellen (Phase 4, MCP — CLAUDE.md §5 "AI-voorstellen") ────────
+  /**
+   * Pending suggestions from an externally-connected Claude (via the
+   * mcp-server edge function). Always [] in local mode — there is never an
+   * MCP koppeling without a deployed cloud backend to call.
+   */
+  listTaskSuggestions(householdId: string): Promise<TaskSuggestion[]>;
+  /**
+   * Removes a suggestion outright. Used directly for "afwijzen", and — after
+   * a successful createTask — for "accepteren" too: there is no archived/
+   * "dismissed" third state, the row's existence IS "pending" (see
+   * TaskSuggestionSchema).
+   */
+  deleteTaskSuggestion(id: string): Promise<void>;
+
+  // ── MCP access tokens (cloud-only) ───────────────────────────────────────
+  // Disabled in local mode (no deployed server for an external Claude to
+  // call) — implementations should throw a clear, catchable error there,
+  // same as createInvite/revokeInvite.
+  listMcpTokens(householdId: string): Promise<McpAccessToken[]>;
+  createMcpToken(householdId: string, label: string): Promise<McpTokenCreated>;
+  /** Soft-revoke (sets revokedAt) — never a delete, so attribution on suggestions this token already made stays truthful. */
+  revokeMcpToken(tokenId: string): Promise<void>;
 }
 
 /**

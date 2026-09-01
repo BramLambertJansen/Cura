@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { Heart, Link2, UserRound, ListChecks, Timer, ShoppingCart, ShieldCheck, ScrollText, ChevronRight } from "lucide-react";
+import { Heart, Link2, UserRound, ListChecks, Timer, ShoppingCart, ShieldCheck, ScrollText, ChevronRight, Sparkles } from "lucide-react";
 import { useSheets } from "../../sheetContext";
+import { useCuraStore } from "../../../stores/useCuraStore";
 import { useHasHousemate } from "../../../stores/useViews";
 import { stagger, fadeUp } from "../../lib/motion";
-import { Kop, IconBadge, Card } from "../../components/shared";
+import { Kop, IconBadge, Card, StatusBadge } from "../../components/shared";
 import { PageHero } from "../../components/PageHero";
 
 interface MeerItem {
@@ -13,6 +14,8 @@ interface MeerItem {
   label: string;
   hint: string;
   onClick: () => void;
+  /** Optional count badge next to the label — currently only AI-voorstellen uses this (# pending). */
+  badge?: number;
 }
 
 interface MeerGroup {
@@ -24,6 +27,9 @@ export function MeerPage() {
   const navigate = useNavigate();
   const { openHousehold, openProfiel } = useSheets();
   const hasHousemate = useHasHousemate();
+  // A plain count, not a full view-model — this only ever renders a number
+  // next to the label, no other TaskSuggestion field is read here.
+  const pendingSuggestionCount = useCuraStore((s) => s.taskSuggestions.length);
 
   const groups: MeerGroup[] = [
     // Alleen zichtbaar zodra er echt een huisgenoot is toegevoegd — zonder
@@ -42,6 +48,13 @@ export function MeerPage() {
         { icon: <Timer size={16} />, label: "Focustimer", hint: "Timer voor één taak", onClick: () => navigate("/focus") },
         { icon: <ListChecks size={16} />, label: "Takenoverzicht", hint: "Alle open taken: blijven liggen, weer toe, later, zonder datum", onClick: () => navigate("/taken") },
         { icon: <ShoppingCart size={16} />, label: "Boodschappen", hint: "Wat er nog gehaald moet worden", onClick: () => navigate("/boodschappen") },
+        {
+          icon: <Sparkles size={16} />,
+          label: "AI-voorstellen",
+          hint: "Taken die een gekoppelde Claude heeft voorgesteld",
+          onClick: () => navigate("/ai-voorstellen"),
+          badge: pendingSuggestionCount > 0 ? pendingSuggestionCount : undefined,
+        },
       ],
     },
     {
@@ -69,10 +82,17 @@ export function MeerPage() {
             <Kop>{group.title}</Kop>
             <div className="space-y-2.5">
               {group.items.map((item) => (
-                <Card key={item.label} onClick={item.onClick} className="flex items-center gap-3.5 px-4 py-4" ariaLabel={item.label}>
+                <Card
+                  key={item.label}
+                  onClick={item.onClick}
+                  className="flex items-center gap-3.5 px-4 py-4"
+                  ariaLabel={item.badge ? `${item.label}, ${item.badge} nieuw` : item.label}>
                   <IconBadge icon={item.icon} size={36} />
                   <span className="flex-1 text-left">
-                    <span className="block text-sm font-semibold text-foreground">{item.label}</span>
+                    <span className="inline-flex items-center gap-2">
+                      <span className="block text-sm font-semibold text-foreground">{item.label}</span>
+                      {!!item.badge && <StatusBadge>{item.badge}</StatusBadge>}
+                    </span>
                     <span className="block text-xs text-muted-foreground mt-0.5">{item.hint}</span>
                   </span>
                   <ChevronRight size={15} className="text-muted-foreground" aria-hidden="true" />

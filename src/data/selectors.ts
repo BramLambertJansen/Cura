@@ -15,6 +15,10 @@ import type {
   ShoppingListView,
   ShoppingCategoryKey,
   ShoppingUnitKey,
+  TaskSuggestion,
+  McpAccessToken,
+  TaskSuggestionView,
+  McpTokenView,
 } from "./types";
 import { buildLatestCompletionMap, isDone, getDueReminders } from "./reminders";
 
@@ -563,4 +567,46 @@ export function toActivityFeed(
         doneAt: c.completedAt,
       };
     });
+}
+
+// ─── AI-voorstellen (Phase 4, MCP) ────────────────────────────────────────────
+
+/** Soft "date, time" label — the same one-off format toTaskView's wekkerLabel uses, minus the recurring branch (a suggestion is always one-off, CLAUDE.md §5 → AI-voorstellen decision 2). */
+function suggestionDateLabel(iso: string): string {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+  const dateLabel = d.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
+  return `${dateLabel}, ${time}`;
+}
+
+/** A pending AI-voorstel as a screen sees it. No completions/done-state involved, so this is NOT built on top of toTaskView. */
+export function toTaskSuggestionView(
+  suggestion: TaskSuggestion,
+  rooms: Room[],
+  members: Member[],
+): TaskSuggestionView {
+  return {
+    id: suggestion.id,
+    title: suggestion.title,
+    roomId: suggestion.roomId,
+    room: rooms.find((r) => r.id === suggestion.roomId)?.name,
+    duration: formatDuration(suggestion.durationMin),
+    dueDateLabel: suggestion.dueDateSuggestion ? suggestionDateLabel(suggestion.dueDateSuggestion) : undefined,
+    dagdeel: suggestion.dagdeelSuggestion,
+    sourceNote: suggestion.sourceNote,
+    createdBy: memberName(members, suggestion.createdByMemberId) ?? "Onbekend",
+    createdAt: suggestion.createdAt,
+  };
+}
+
+/** An MCP access token as HouseholdSheet's koppelingenbeheer renders it. */
+export function toMcpTokenView(token: McpAccessToken, members: Member[]): McpTokenView {
+  return {
+    id: token.id,
+    label: token.label,
+    createdBy: memberName(members, token.createdByMemberId) ?? "Onbekend",
+    createdAtLabel: suggestionDateLabel(token.createdAt),
+    lastUsedAtLabel: token.lastUsedAt ? suggestionDateLabel(token.lastUsedAt) : undefined,
+    revoked: !!token.revokedAt,
+  };
 }
