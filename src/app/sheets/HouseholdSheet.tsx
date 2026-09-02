@@ -11,6 +11,15 @@ import { SAGE, PRESS_TINT } from "../lib/constants";
 import { spring } from "../lib/motion";
 import { Sheet, SheetHeader, Kop, Avatar, GroupCard, PrimaryButton, IconBadge, VeldInput, VerwijderKnop } from "../components/shared";
 
+// The MCP endpoint a connected Claude needs alongside the token itself — a
+// token alone isn't enough to complete a connection (review finding: the
+// UI only showed the secret, never where to send it). VITE_SUPABASE_URL is
+// already public (shipped in the client bundle for the Supabase client
+// itself), so surfacing it here isn't a new exposure — same precedent as
+// usePushSubscription.ts reading VITE_VAPID_PUBLIC_KEY directly.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const MCP_SERVER_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/mcp-server` : undefined;
+
 export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void; onOpenProfiel?: () => void }) {
   const household = useCuraStore((s) => s.households[0]);
   const members = useCuraStore((s) => s.members);
@@ -232,6 +241,10 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={spring}
               className="rounded-2xl p-5 space-y-4 mb-5" style={{ background: "color-mix(in srgb, var(--primary) 7%, transparent)", border: `1px solid color-mix(in srgb, var(--primary) 17%, transparent)` }}>
               <div>
+                <p className="text-xs text-muted-foreground mb-1">Server-URL voor de MCP-instellingen van je Claude</p>
+                <p className="text-sm font-medium truncate" style={{ color: SAGE }}>{MCP_SERVER_URL ?? "Onbekend — probeer het later opnieuw"}</p>
+              </div>
+              <div>
                 <p className="text-xs text-muted-foreground mb-1">Token voor "{freshToken.label}" — je ziet dit maar één keer</p>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-medium truncate" style={{ color: SAGE }}>{freshToken.rawToken}</p>
@@ -244,7 +257,7 @@ export function HouseholdSheet({ onClose, onOpenProfiel }: { onClose: () => void
                   </motion.button>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">Plak dit token in de MCP-instellingen van je Claude. Sluit je dit scherm, dan is het niet meer op te vragen — herroep de koppeling en maak een nieuwe aan als je het kwijtraakt.</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">Vul in Claude's MCP-instellingen de server-URL in en stuur het token mee als "Authorization: Bearer"-header. Sluit je dit scherm, dan is het token niet meer op te vragen — herroep de koppeling en maak een nieuwe aan als je het kwijtraakt.</p>
               <button onClick={() => setFreshToken(null)} className="text-xs text-center text-muted-foreground w-full focus-ring rounded-lg py-1">Sluiten</button>
             </motion.div>
           ) : (

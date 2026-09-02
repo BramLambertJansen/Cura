@@ -231,12 +231,18 @@ export interface DataStore {
    */
   listTaskSuggestions(householdId: string): Promise<TaskSuggestion[]>;
   /**
-   * Removes a suggestion outright. Used directly for "afwijzen", and — after
-   * a successful createTask — for "accepteren" too: there is no archived/
-   * "dismissed" third state, the row's existence IS "pending" (see
-   * TaskSuggestionSchema).
+   * Removes a suggestion outright — there is no archived/"dismissed" third
+   * state, the row's existence IS "pending" (see TaskSuggestionSchema).
+   * Used directly for "afwijzen". For "accepteren", this is called FIRST
+   * (claiming the row) and createTask only runs if it returns true — review
+   * finding: create-then-delete let two concurrent accepts (or a retry after
+   * a failed delete) both create a task before either delete landed. Resolves
+   * `true` if this call actually removed the row, `false` if it was already
+   * gone (a race with another accept/dismiss, e.g. a housemate acting on the
+   * same suggestion, or a stale local list) — the caller must treat `false`
+   * as "already resolved elsewhere", never retry the delete or proceed.
    */
-  deleteTaskSuggestion(id: string): Promise<void>;
+  deleteTaskSuggestion(id: string): Promise<boolean>;
 
   // ── MCP access tokens (cloud-only) ───────────────────────────────────────
   // Disabled in local mode (no deployed server for an external Claude to

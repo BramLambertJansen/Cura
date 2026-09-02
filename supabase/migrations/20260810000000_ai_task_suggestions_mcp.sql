@@ -25,10 +25,17 @@
 --     insert/update this table directly either.
 --
 -- pgcrypto is required for the token secret itself (gen_random_bytes)
--- and its hash (digest) inside create_mcp_token below.
+-- and its hash (digest) inside create_mcp_token below. Supabase hosted
+-- projects install extensions into the `extensions` schema by default —
+-- naming it explicitly here means a fresh project gets it there too,
+-- rather than defaulting to `public` — and create_mcp_token's own
+-- search_path includes BOTH schemas (review finding), so this resolves
+-- correctly whether pgcrypto ends up newly installed here or was already
+-- present in either schema on an existing project (`if not exists` is a
+-- no-op by extension name regardless of which schema it already lives in).
 -- ============================================================
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 -- ─── Tables ──────────────────────────────────────────────────
 
@@ -107,7 +114,12 @@ create or replace function public.create_mcp_token(
   p_label text
 )
 returns jsonb language plpgsql security definer
-set search_path = public as $$
+-- Both schemas: pgcrypto's gen_random_bytes/digest live in `extensions`
+-- (see the create extension comment above), but a search_path restricted to
+-- only `public` made those calls unqualified-unresolvable at runtime on a
+-- project where pgcrypto sits in `extensions` (review finding) — this
+-- function is the only one in this file that needs pgcrypto.
+set search_path = public, extensions as $$
 declare
   new_id text;
   raw_token text;
@@ -171,3 +183,56 @@ end;
 $$;
 
 grant execute on function public.revoke_mcp_token(text) to authenticated;
+
+-- bump_mcp_rate_limit: atomic check-and-increment for the mcp-server edge
+-- function's rolling-window rate limit (CLAUDE.md §5 → AI-voorstellen,
+-- SUGGESTIONS_PER_TOKEN_PER_DAY in mcp-server/index.ts). Replaces an
+-- earlier read-then-write in application code: two round trips let
+-- concurrent suggest_task calls all read the same counter, all pass the
+-- check, and all write the same incremented value — defeating the cap
+-- (review finding). A single UPDATE statement is atomic against that race:
+-- concurrent updates to the same row serialize on Postgres' row lock, so
+-- the second call's WHERE/SET always sees the first call's committed
+-- result, never a stale read.
+--
+-- Called by the edge function with the SERVICE ROLE key (never a client
+-- session), and takes no household/member context of its own — it must
+-- never be reachable by anon/authenticated, hence the explicit revoke+grant
+-- below, unlike create_mcp_token/revoke_mcp_token, which check
+-- is_household_member themselves and are meant for authenticated clients.
+create or replace function public.bump_mcp_rate_limit(
+  p_token_id text,
+  p_limit integer,
+  p_window_ms bigint
+)
+returns boolean language plpgsql security definer
+set search_path = public as $$
+declare
+  did_update boolean;
+begin
+  update public.mcp_access_tokens
+  set
+    window_started_at = case
+      when window_started_at is null or now() - window_started_at >= make_interval(secs => p_window_ms / 1000.0)
+        then now()
+      else window_started_at
+    end,
+    requests_in_window = case
+      when window_started_at is null or now() - window_started_at >= make_interval(secs => p_window_ms / 1000.0)
+        then 1
+      else requests_in_window + 1
+    end
+  where id = p_token_id
+    and (
+      window_started_at is null
+      or now() - window_started_at >= make_interval(secs => p_window_ms / 1000.0)
+      or requests_in_window < p_limit
+    )
+  returning true into did_update;
+
+  return coalesce(did_update, false);
+end;
+$$;
+
+revoke all on function public.bump_mcp_rate_limit(text, integer, bigint) from public;
+grant execute on function public.bump_mcp_rate_limit(text, integer, bigint) to service_role;

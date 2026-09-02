@@ -14,6 +14,18 @@
 -- mcp_access_tokens deliberately does NOT go into the publication —
 -- token management doesn't need to live-sync (CLAUDE.md §5 →
 -- AI-voorstellen).
+--
+-- REPLICA IDENTITY FULL (review finding): Postgres' default replica
+-- identity only includes primary-key columns in a DELETE's logical-
+-- replication payload, but Realtime's server-side `filter` needs the
+-- filtered column (household_id here) to actually be present in that
+-- payload to evaluate against it. Without FULL, deleting a suggestion —
+-- which is how BOTH "accepteren" and "afwijzen" resolve one (there is no
+-- separate archived/dismissed state, see TaskSuggestionSchema) — would
+-- never match this table's `household_id=eq.…` filter, so another open
+-- session would keep rendering an already-resolved suggestion as
+-- actionable until a foreground/manual refresh.
 -- ============================================================
 
+alter table public.task_suggestions replica identity full;
 alter publication supabase_realtime add table public.task_suggestions;

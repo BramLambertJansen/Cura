@@ -76,7 +76,7 @@ function makeStore(overrides: Partial<DataStore> = {}): DataStore {
     savePushSubscription: vi.fn().mockResolvedValue(undefined),
     deletePushSubscription: vi.fn().mockResolvedValue(undefined),
     listTaskSuggestions: vi.fn().mockResolvedValue([]),
-    deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+    deleteTaskSuggestion: vi.fn().mockResolvedValue(true),
     listMcpTokens: vi.fn().mockResolvedValue([]),
     createMcpToken: vi.fn(),
     revokeMcpToken: vi.fn().mockResolvedValue(undefined),
@@ -375,18 +375,23 @@ describe("withToastOnError", () => {
 });
 
 describe("acceptTaskSuggestion", () => {
-  it("creates a real (pool-first) task via the existing createTask path, deletes the suggestion, and toasts", async () => {
+  it("claims the suggestion (delete) FIRST, then creates a real (pool-first) task via the existing createTask path, and toasts", async () => {
     const suggestion = taskSuggestion({ roomId: "r1", durationMin: 10, dagdeelSuggestion: "ochtend" });
     const created = task({ id: "t-new", title: "Tandarts bellen", roomId: "r1", durationMin: 10, dagdeel: "ochtend" });
+    const callOrder: string[] = [];
     const store = makeStore({
-      createTask: vi.fn().mockResolvedValue(created),
-      deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+      createTask: vi.fn().mockImplementation(async () => { callOrder.push("createTask"); return created; }),
+      deleteTaskSuggestion: vi.fn().mockImplementation(async () => { callOrder.push("deleteTaskSuggestion"); return true; }),
     });
     createDataStoreMock.mockResolvedValue(store);
     useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion], tasks: [] });
 
     await useCuraStore.getState().acceptTaskSuggestion("s1");
 
+    // Delete-then-create, not create-then-delete (review finding: the reverse
+    // order let two concurrent accepts each create a task before either
+    // delete landed).
+    expect(callOrder).toEqual(["deleteTaskSuggestion", "createTask"]);
     expect(store.createTask).toHaveBeenCalledExactlyOnceWith("h1", {
       title: "Tandarts bellen", roomId: "r1", durationMin: 10, dueDate: undefined, dagdeel: "ochtend",
     });
@@ -396,26 +401,53 @@ describe("acceptTaskSuggestion", () => {
     expect(toastMock.success).toHaveBeenCalledWith(`"Tandarts bellen" toegevoegd`, { description: "Staat onder Huis, bij alle taken" });
   });
 
-  it("leaves the suggestion in place when createTask itself fails", async () => {
+  it("is a no-op — no task created — when deleteTaskSuggestion reports the suggestion was already claimed elsewhere", async () => {
+    // Two housemates tapping "overnemen" on the same suggestion at once: only
+    // one delete can actually remove the row. The loser must not create a
+    // duplicate task, and must not toast an error — this is a normal outcome,
+    // not a failure.
     const suggestion = taskSuggestion();
     const store = makeStore({
-      createTask: vi.fn().mockRejectedValue(new Error("network down")),
-      deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+      createTask: vi.fn(),
+      deleteTaskSuggestion: vi.fn().mockResolvedValue(false),
     });
     createDataStoreMock.mockResolvedValue(store);
     useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion], tasks: [] });
 
     await useCuraStore.getState().acceptTaskSuggestion("s1");
 
-    expect(store.deleteTaskSuggestion).not.toHaveBeenCalled();
-    expect(useCuraStore.getState().taskSuggestions).toEqual([suggestion]);
+    expect(store.createTask).not.toHaveBeenCalled();
+    expect(useCuraStore.getState().taskSuggestions).toEqual([]);
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
+
+  it("drops the suggestion from local state even when createTask fails after a successful claim", async () => {
+    // The row is already gone server-side once deleteTaskSuggestion resolves
+    // true — a createTask failure after that must not leave a suggestion
+    // still offering "accepteren" (it would only fail again). This trades a
+    // rare double-fault (claim succeeds, createTask then fails) for closing
+    // the far more likely double-accept race — a deliberate tradeoff, not an
+    // oversight.
+    const suggestion = taskSuggestion();
+    const store = makeStore({
+      createTask: vi.fn().mockRejectedValue(new Error("network down")),
+      deleteTaskSuggestion: vi.fn().mockResolvedValue(true),
+    });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion], tasks: [] });
+
+    await useCuraStore.getState().acceptTaskSuggestion("s1");
+
+    expect(store.deleteTaskSuggestion).toHaveBeenCalledExactlyOnceWith("s1");
+    expect(useCuraStore.getState().taskSuggestions).toEqual([]);
+    expect(useCuraStore.getState().tasks).toEqual([]);
     expect(toastMock.error).toHaveBeenCalledWith("network down");
   });
 
-  it("is a no-op when the suggestion is already gone (e.g. a housemate accepted/dismissed it first)", async () => {
+  it("is a no-op when the suggestion is already gone locally (e.g. a housemate accepted/dismissed it first)", async () => {
     // Realtime hasn't necessarily refetched yet, so a stale local list can
     // still show a suggestion someone else already resolved — tapping
-    // "accepteren" on it must not create a duplicate task.
+    // "accepteren" on it must not even reach the backend.
     const store = makeStore({ createTask: vi.fn(), deleteTaskSuggestion: vi.fn() });
     createDataStoreMock.mockResolvedValue(store);
     useCuraStore.setState({ householdId: "h1", taskSuggestions: [], tasks: [] });
@@ -435,7 +467,7 @@ describe("acceptTaskSuggestion", () => {
     const created = task({ id: "t-new" });
     const store = makeStore({
       createTask: vi.fn().mockResolvedValue(created),
-      deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+      deleteTaskSuggestion: vi.fn().mockResolvedValue(true),
     });
     createDataStoreMock.mockResolvedValue(store);
     useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion], tasks: [] });
@@ -451,7 +483,7 @@ describe("acceptTaskSuggestion", () => {
 describe("dismissTaskSuggestion", () => {
   it("deletes the suggestion outright — no archive", async () => {
     const suggestion = taskSuggestion();
-    const store = makeStore({ deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined) });
+    const store = makeStore({ deleteTaskSuggestion: vi.fn().mockResolvedValue(true) });
     createDataStoreMock.mockResolvedValue(store);
     useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion] });
 
@@ -476,7 +508,7 @@ describe("dismissTaskSuggestion", () => {
 
   it("ignores a second dismiss for the same suggestion while the first is still in flight", async () => {
     const suggestion = taskSuggestion();
-    const store = makeStore({ deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined) });
+    const store = makeStore({ deleteTaskSuggestion: vi.fn().mockResolvedValue(true) });
     createDataStoreMock.mockResolvedValue(store);
     useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion] });
 

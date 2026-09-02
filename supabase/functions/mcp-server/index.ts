@@ -50,6 +50,19 @@ import type { Task, TaskCompletion } from "../_shared/types.ts";
 /** Aanpasbare constante (CLAUDE.md §5 → AI-voorstellen, beslissing 4) — nooit op drie plekken hardcoded. */
 const SUGGESTIONS_PER_TOKEN_PER_DAY = 30;
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+/**
+ * Mirrors MAX_TASK_INTERVAL_DAYS (src/data/selectors.ts) — the client's own
+ * completions fetch (`completionsSince()`, useCuraStore.ts) bounds by the
+ * same window for the same reason: `isDone` only ever needs a task's LATEST
+ * completion, and no task's own interval can exceed this. Without a bound
+ * here, a long-lived household's full completion history could exceed
+ * PostgREST's max-row setting with no ordering guaranteeing the latest
+ * completion per task survives the cut (review finding) — this function
+ * can't import the constant across the src/ boundary (Deno can't reach
+ * past it, same reason `_shared/reminders.ts` is a byte-identical copy, not
+ * an import), so keep this in sync by hand if that value ever changes.
+ */
+const COMPLETION_LOOKBACK_DAYS = 365;
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -98,43 +111,42 @@ async function validateToken(supabase: ReturnType<typeof createClient>, authHead
     .maybeSingle();
   if (error || !data) return null;
   const row = data as { id: string; household_id: string; created_by_member_id: string };
-  void supabase.from("mcp_access_tokens").update({ last_used_at: new Date().toISOString() }).eq("id", row.id);
+  // Best-effort, not awaited — but supabase-js query builders are lazy
+  // thenables that only actually send the request once `.then()` (or an
+  // `await`) is invoked; `void`-ing the builder itself, as this used to do,
+  // discarded it before that ever happened, so last_used_at silently never
+  // updated (review finding). `.then()` triggers the request while staying
+  // fire-and-forget — its own rejection is swallowed, matching "best-effort".
+  supabase.from("mcp_access_tokens").update({ last_used_at: new Date().toISOString() }).eq("id", row.id).then(
+    () => {},
+    () => {},
+  );
   return { tokenId: row.id, householdId: row.household_id, createdByMemberId: row.created_by_member_id };
 }
 
 /**
  * Rolling 24h window, reset once older than that (CLAUDE.md §5 →
- * AI-voorstellen decision 4). Fails CLOSED: if the current window/count
- * can't be read or the bumped value can't be written, the caller treats
- * this as "not allowed" rather than silently letting an unbounded write
- * through — this is the one place an unauthenticated-to-Supabase caller
- * can write at all, so the safer failure direction is "refuse", not "allow".
+ * AI-voorstellen decision 4). Delegates to the bump_mcp_rate_limit Postgres
+ * function (20260810000000_ai_task_suggestions_mcp.sql) instead of doing a
+ * read-then-write here: two application-level round trips let concurrent
+ * suggest_task calls all read the same counter and all pass the check
+ * before any of them wrote back, so parallel batches could blow well past
+ * the cap while barely advancing it (review finding) — a single atomic SQL
+ * UPDATE closes that race (concurrent updates to the same row serialize on
+ * Postgres' own row lock). Still fails CLOSED: if the RPC call itself
+ * errors, the caller treats this as "not allowed" rather than letting an
+ * unbounded write through — this is the one place an
+ * unauthenticated-to-Supabase caller can write at all, so the safer failure
+ * direction is "refuse", not "allow".
  */
 async function checkAndBumpRateLimit(supabase: ReturnType<typeof createClient>, tokenId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from("mcp_access_tokens")
-    .select("window_started_at, requests_in_window")
-    .eq("id", tokenId)
-    .single();
-  if (error || !data) return false;
-  const row = data as { window_started_at: string | null; requests_in_window: number };
-
-  const now = Date.now();
-  const windowStartedMs = row.window_started_at ? new Date(row.window_started_at).getTime() : null;
-  const windowExpired = windowStartedMs === null || now - windowStartedMs >= RATE_LIMIT_WINDOW_MS;
-
-  if (!windowExpired && row.requests_in_window >= SUGGESTIONS_PER_TOKEN_PER_DAY) {
-    return false;
-  }
-
-  const nextWindowStartedAt = windowExpired ? new Date(now).toISOString() : row.window_started_at;
-  const nextCount = windowExpired ? 1 : row.requests_in_window + 1;
-
-  const { error: updateError } = await supabase
-    .from("mcp_access_tokens")
-    .update({ window_started_at: nextWindowStartedAt, requests_in_window: nextCount })
-    .eq("id", tokenId);
-  return !updateError;
+  const { data, error } = await supabase.rpc("bump_mcp_rate_limit", {
+    p_token_id: tokenId,
+    p_limit: SUGGESTIONS_PER_TOKEN_PER_DAY,
+    p_window_ms: RATE_LIMIT_WINDOW_MS,
+  });
+  if (error) return false;
+  return data === true;
 }
 
 // ─── Tools ───────────────────────────────────────────────────────────────
@@ -203,10 +215,12 @@ async function listOpenTasks(supabase: ReturnType<typeof createClient>, househol
   if (taskError) throw new Error(taskError.message);
   const rows = (taskRows ?? []) as any[];
 
+  const sinceIso = new Date(Date.now() - COMPLETION_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const { data: compRows, error: compError } = await supabase
     .from("task_completions")
     .select("task_id, completed_at, tasks!inner(household_id)")
-    .eq("tasks.household_id", householdId);
+    .eq("tasks.household_id", householdId)
+    .gte("completed_at", sinceIso);
   if (compError) throw new Error(compError.message);
   const completions: TaskCompletion[] = ((compRows ?? []) as any[]).map((r) => ({ taskId: r.task_id, completedAt: r.completed_at }));
   const latestByTask = buildLatestCompletionMap(completions);

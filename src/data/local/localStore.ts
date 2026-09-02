@@ -421,7 +421,7 @@ export class LocalStore implements DataStore {
     return [];
   }
 
-  async deleteTaskSuggestion(_id: string): Promise<void> {
+  async deleteTaskSuggestion(_id: string): Promise<boolean> {
     throw new Error("AI-voorstellen zijn niet beschikbaar in local mode (geen MCP-koppeling zonder cloud-backend).");
   }
 

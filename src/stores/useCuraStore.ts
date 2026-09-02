@@ -908,6 +908,23 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         if (!householdId) return;
         const suggestion = taskSuggestions.find((s) => s.id === id);
         if (!suggestion) return;
+        // Claim the suggestion FIRST — delete-then-create, not create-then-
+        // delete (review finding): the old order let two concurrent accepts
+        // (e.g. both housemates tapping "overnemen" on the same suggestion),
+        // or a retry after a failed delete, each create their own task before
+        // either delete landed. `deleteTaskSuggestion` resolves `false` when
+        // someone else's delete already won that race — treat it exactly
+        // like the "already gone" guard above: no task, no error.
+        const claimed = await store.deleteTaskSuggestion(id);
+        if (!claimed) {
+          set({ taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
+          return;
+        }
+        // The row is gone from the backend now regardless of what happens
+        // next — drop it from local state immediately so a createTask
+        // failure below can't leave a suggestion still offering "accepteren"
+        // that would only fail again (it's already been claimed/consumed).
+        set({ taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
         // Reuses the existing pool-first createTask path (CLAUDE.md §2): lands
         // in Huis, planned stays false, no auto-claim — same as any other task
         // that starts life in the pool rather than "Zet op mijn dag".
@@ -918,9 +935,8 @@ export const useCuraStore = create<CuraState>((set, get) => ({
           dueDate: suggestion.dueDateSuggestion,
           dagdeel: suggestion.dagdeelSuggestion,
         });
-        await store.deleteTaskSuggestion(id);
         toast.success(`"${created.title}" toegevoegd`, { description: "Staat onder Huis, bij alle taken" });
-        set({ tasks: [...get().tasks, created], taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
+        set({ tasks: [...get().tasks, created] });
       }, "Overnemen lukte niet");
     } finally {
       resolvingTaskSuggestions.delete(id);

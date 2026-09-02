@@ -277,14 +277,27 @@ describe("SupabaseStore AI-voorstellen/MCP (Phase 4)", () => {
     errorSpy.mockRestore();
   });
 
-  it("deleteTaskSuggestion deletes the row by id", async () => {
-    const eqMock = vi.fn(() => Promise.resolve({ error: null }));
+  it("deleteTaskSuggestion deletes the row by id and reports true when a row was actually removed", async () => {
+    const selectMock = vi.fn(() => Promise.resolve({ data: [{ id: "s1" }], error: null }));
+    const eqMock = vi.fn(() => ({ select: selectMock }));
     fromMock.mockReturnValueOnce({ delete: vi.fn(() => ({ eq: eqMock })) });
 
     const store = new SupabaseStore();
-    await store.deleteTaskSuggestion("s1");
+    const result = await store.deleteTaskSuggestion("s1");
 
     expect(eqMock).toHaveBeenCalledWith("id", "s1");
+    expect(result).toBe(true);
+  });
+
+  it("deleteTaskSuggestion reports false when the row was already gone (lost a race with a concurrent accept/dismiss)", async () => {
+    const selectMock = vi.fn(() => Promise.resolve({ data: [], error: null }));
+    const eqMock = vi.fn(() => ({ select: selectMock }));
+    fromMock.mockReturnValueOnce({ delete: vi.fn(() => ({ eq: eqMock })) });
+
+    const store = new SupabaseStore();
+    const result = await store.deleteTaskSuggestion("s1");
+
+    expect(result).toBe(false);
   });
 
   it("listMcpTokens never selects the server-only token_hash/rate-limit columns", async () => {

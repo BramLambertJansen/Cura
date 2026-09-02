@@ -821,9 +821,14 @@ export class SupabaseStore implements DataStore {
     return mapList((data ?? []) as TaskSuggestionRow[], mapTaskSuggestion, "AI-voorstel");
   }
 
-  async deleteTaskSuggestion(id: string): Promise<void> {
-    const { error } = await supabase.from("task_suggestions").delete().eq("id", id);
+  async deleteTaskSuggestion(id: string): Promise<boolean> {
+    // .select("id") makes PostgREST return the deleted row(s) so we can tell
+    // "actually deleted" (data.length > 0) apart from "already gone" (data
+    // is []) — the caller (acceptTaskSuggestion) uses this to detect losing a
+    // race against a concurrent accept/dismiss instead of assuming success.
+    const { data, error } = await supabase.from("task_suggestions").delete().eq("id", id).select("id");
     if (error) throw new Error(error.message);
+    return (data ?? []).length > 0;
   }
 
   // ── MCP access tokens ────────────────────────────────────────────────────

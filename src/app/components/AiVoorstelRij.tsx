@@ -25,11 +25,16 @@ export const AiVoorstelRij = memo(function AiVoorstelRij({
       <div className="min-w-0 flex-1">
         <p className="text-[0.9375rem] font-medium text-foreground leading-snug">{suggestion.title}</p>
         {/* The honest "why" first, then room/duration/wanneer — same order as
-            SuggestieRij's reden-regel, only what actually exists. */}
+            SuggestieRij's reden-regel, only what actually exists. dueDateLabel
+            and dagdeel are shown here too (review finding): accepting copies
+            both straight into the real task, so a one-tap accept must not be
+            the first time either becomes visible. */}
         <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
           {suggestion.sourceNote}
           {suggestion.room && ` · ${suggestion.room}`}
           {suggestion.duration && ` · ${suggestion.duration}`}
+          {suggestion.dueDateLabel && ` · ${suggestion.dueDateLabel}`}
+          {suggestion.dagdeel && ` · ${suggestion.dagdeel.charAt(0).toUpperCase() + suggestion.dagdeel.slice(1)}`}
         </p>
         <p className="text-[0.6875rem] text-muted-foreground/75 mt-1 leading-snug">
           Voorgesteld door {suggestion.createdBy}
