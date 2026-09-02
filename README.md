@@ -14,6 +14,7 @@ De UI-taal is Nederlands en de toon is warm, vergevingsgezind en praktisch: liev
 - **Boodschappen** — gedeelde lijst met categorieën en aantallen/eenheden.
 - **Focustimer** — zachte pomodoro-achtige timer, vrij of vanaf een taak.
 - **Wekkers & push** — taakherinneringen in de app, en echte Web Push (cloud mode) als de app dicht is, met stille uren per persoon.
+- **AI-voorstellen** — een extern gekoppelde Claude ("bring your own Claude", via MCP) kan taken voorstellen; een huishoudlid accepteert of wijst ze af. Cloud mode alleen; koppelingen beheer je via Huishouden beheren.
 - **PWA-platform** — vaste app-shell, safe-area-aware layout, offline/update-UX en app-icon/splash-assets.
 - **Data modes** — lokaal via `localStorage` of cloud via Supabase.
 
@@ -162,9 +163,10 @@ Voor cloud mode is alleen het invullen van `.env` niet genoeg: de database moet 
 1. Maak of kies een Supabase-project.
 2. Zet `VITE_DATA_MODE=cloud`, `VITE_SUPABASE_URL` en `VITE_SUPABASE_ANON_KEY` in `.env`.
 3. Pas de SQL-migraties uit `supabase/migrations/` toe op het project, in bestandsnaam-volgorde.
-4. Controleer dat Realtime-publications zijn ingericht voor de tabellen die de app live wil verversen (`tasks`, `rooms`, `bundles`, `members`, `shopping_items`, `task_completions`) — zonder de `supabase_realtime`-publicatie vuurt `postgres_changes` nooit.
+4. Controleer dat Realtime-publications zijn ingericht voor de tabellen die de app live wil verversen (`tasks`, `rooms`, `bundles`, `members`, `shopping_items`, `task_completions`, `task_suggestions`) — zonder de `supabase_realtime`-publicatie vuurt `postgres_changes` nooit.
 5. Zet de redirect-URL's van je omgeving in de Auth-instellingen van het project, inclusief de `/**`-wildcardvorm — magic links en bevestigingsmails sturen terug naar het volledige pad, niet naar de root (zie de toelichting in `supabase/config.toml`).
-6. Start de app opnieuw met `pnpm dev`.
+6. Deploy de edge functions apart (worden niet meegedeployed met de rest van de app): `supabase functions deploy send-reminders` en `supabase functions deploy mcp-server`. Beide staan met `verify_jwt = false` in `supabase/config.toml` — dat moet zo blijven, ze authenticeren zichzelf (resp. `CRON_SECRET` en een MCP-bearer-token), niet via een Supabase-sessie. `mcp-server` is Phase 4's AI-voorstellen-koppeling; zie `CLAUDE.md` §4/§5 → AI-voorstellen voor het volledige tokenmodel.
+7. Start de app opnieuw met `pnpm dev`.
 
 Gebruik `local` mode voor snel product- en UI-werk wanneer Supabase niet nodig is.
 
@@ -187,7 +189,7 @@ VITE_VAPID_PUBLIC_KEY=...
 
 **3. Database in sync houden** — migraties in `supabase/migrations/` worden **niet automatisch toegepast**; elke nieuwe migratie moet je zelf via de Supabase Dashboard SQL-editor draaien op het productieproject nadat de PR gemerged is. Controleer na elke merge die een nieuw bestand in `supabase/migrations/` bevat of die stap ook echt is gebeurd — een migratie die alleen in de repo staat heeft in productie geen effect. Controleer daarbij ook dat de betrokken tabellen in de `supabase_realtime`-publicatie zitten als de migratie een nieuwe tabel toevoegt die live moet verversen (§3/§4 in `CLAUDE.md`).
 
-Omdat migraties handmatig gaan, is er ook geen `supabase_migrations`-tabel die bijhoudt wat er al gedraaid heeft. Gebruik daarvoor **[`supabase/check_migrations.sql`](./supabase/check_migrations.sql)**: plak dat bestand in de SQL-editor en draai het (read-only). Je krijgt één rij per migratie met `OK` of `ONTBREEKT` plus welk object er precies mist, zodat je gericht alleen de ontbrekende migratiebestanden hoeft na te draaien — in bestandsnaam-volgorde. Werk dat script bij zodra je een migratie toevoegt.
+Omdat migraties handmatig gaan, is er ook geen `supabase_migrations`-tabel die bijhoudt wat er al gedraaid heeft. Gebruik daarvoor **[`supabase/check_migrations.sql`](./supabase/check_migrations.sql)**: plak dat bestand in de SQL-editor en draai het (read-only). Je krijgt één rij per migratie met `OK` of `ONTBREEKT` plus welk object er precies mist, zodat je gericht alleen de ontbrekende migratiebestanden hoeft na te draaien — in bestandsnaam-volgorde. Werk dat script bij zodra je een migratie toevoegt. **Op het moment van schrijven dekt het script de twee Phase 4-migraties (`20260810000000_ai_task_suggestions_mcp.sql`, `20260810010000_ai_task_suggestions_realtime.sql`) nog niet** — controleer die twee dus los in de Dashboard SQL-editor totdat het script is bijgewerkt.
 
 **4. Na een deploy** — een snelle rooktest: inloggen, een taak aanmaken/afvinken, en (in cloud mode) controleren dat Realtime tussen twee sessies werkt en dat een testmelding via de wekker-flow aankomt.
 

@@ -2,8 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useCuraStore } from "./useCuraStore";
-import { useCurrentMember } from "./useViews";
-import type { Member } from "../data/types";
+import { useCurrentMember, useTaskSuggestionViews } from "./useViews";
+import type { Member, Room, TaskSuggestion } from "../data/types";
 
 /** Regression guard for #157: the "who am I" lookup, now shared by 6 call sites. */
 
@@ -53,5 +53,45 @@ describe("useCurrentMember", () => {
     rerender();
 
     expect(result.current?.id).toBe("m2");
+  });
+});
+
+/** Phase 4 (AI-voorstellen, CLAUDE.md §5) — the view-model hook backing Vandaag/AiVoorstellenPage. */
+describe("useTaskSuggestionViews", () => {
+  const room: Room = { id: "r1", householdId: "h1", name: "Keuken", iconKey: "keuken", color: "#ccc", quickAddTemplates: [] };
+  const me: Member = { id: "m1", householdId: "h1", displayName: "Bram", userId: "u1" };
+  const suggestion: TaskSuggestion = {
+    id: "s1", householdId: "h1", title: "Tandarts bellen", roomId: "r1",
+    sourceNote: "uit e-mail over de tandarts", createdByMemberId: "m1", createdAt: "2026-01-15T08:00:00.000Z",
+  };
+
+  it("maps pending suggestions to view-models, resolving room/creator names", () => {
+    useCuraStore.setState({ taskSuggestions: [suggestion], rooms: [room], members: [me] });
+
+    const { result } = renderHook(() => useTaskSuggestionViews());
+
+    expect(result.current).toEqual([
+      expect.objectContaining({ id: "s1", title: "Tandarts bellen", room: "Keuken", createdBy: "Bram" }),
+    ]);
+  });
+
+  it("returns an empty list when there are no pending suggestions", () => {
+    useCuraStore.setState({ taskSuggestions: [], rooms: [room], members: [me] });
+
+    const { result } = renderHook(() => useTaskSuggestionViews());
+
+    expect(result.current).toEqual([]);
+  });
+
+  it("re-derives when a suggestion is accepted/dismissed (removed from the store)", () => {
+    useCuraStore.setState({ taskSuggestions: [suggestion], rooms: [room], members: [me] });
+
+    const { result, rerender } = renderHook(() => useTaskSuggestionViews());
+    expect(result.current).toHaveLength(1);
+
+    useCuraStore.setState({ taskSuggestions: [] });
+    rerender();
+
+    expect(result.current).toHaveLength(0);
   });
 });

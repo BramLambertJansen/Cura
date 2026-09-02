@@ -411,6 +411,15 @@ deno_version = 2
 [functions.send-reminders]
 verify_jwt = false
 
+# mcp-server is invoked by an externally-connected Claude (Phase 4, CLAUDE.md
+# §5 "AI-voorstellen"), not a signed-in Supabase user — it can't carry a user
+# JWT either. Disable JWT verification and guard it with its own
+# `Authorization: Bearer <mcp-token>` header, validated inside the function
+# against mcp_access_tokens (hash + lookup), same pattern as send-reminders'
+# CRON_SECRET check.
+[functions.mcp-server]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

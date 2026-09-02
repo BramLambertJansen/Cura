@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
-import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sun, Sunrise, Undo2, X } from "lucide-react";
+import { Check, ChevronRight, Heart, Moon, Pencil, Plus, Sparkles, Sun, Sunrise, Undo2, X } from "lucide-react";
 import { useCuraStore } from "../../../stores/useCuraStore";
-import { useActivityFeed, useCurrentMember, useHasHousemate, useRoutineViews, useTaskViews } from "../../../stores/useViews";
+import { useActivityFeed, useCurrentMember, useHasHousemate, useRoutineViews, useTaskSuggestionViews, useTaskViews } from "../../../stores/useViews";
 import { toSuggestions, toDagdelen, dagdeelForHour, splitDagdelen, splitPickedUpToday } from "../../../data/selectors";
 import type { DagdeelGroup } from "../../../data/types";
 import { getGreeting } from "../../lib/format";
@@ -17,6 +17,7 @@ import { Avatar, Card, CARD_CHROME, CollapsibleSection, IconBadge, IconButton, K
 import { PageHero } from "../../components/PageHero";
 import { TijdlijnTaakRij } from "../../components/TijdlijnTaakRij";
 import { SuggestieRij } from "../../components/SuggestieRij";
+import { AiVoorstelRij } from "../../components/AiVoorstelRij";
 import { RoutineKaartCompact } from "../../components/RoutineKaart";
 import { useSheets } from "../../sheetContext";
 
@@ -33,11 +34,14 @@ export function VandaagPage() {
   const { openEditTask } = useSheets();
   const toggleTask = useCuraStore((s) => s.toggleTask);
   const updateTask = useCuraStore((s) => s.updateTask);
+  const acceptTaskSuggestion = useCuraStore((s) => s.acceptTaskSuggestion);
+  const dismissTaskSuggestion = useCuraStore((s) => s.dismissTaskSuggestion);
   const me = useCurrentMember();
   // Geen huisgenoot = geen Samen-kaart (zie useHasHousemate).
   const hasHousemate = useHasHousemate();
   const tasks = useTaskViews();
   const routines = useRoutineViews();
+  const aiSuggestions = useTaskSuggestionViews();
   const { isDismissed, dismiss, restore } = useNietVandaag();
   const { isDismissed: isTaskDismissed, dismiss: dismissTask, restore: restoreTask } = useTaskDismissals();
   const swipeHint = useSwipeHint();
@@ -66,6 +70,7 @@ export function VandaagPage() {
   // (afgerond) starts closed — secondary information with no prior default
   // to preserve.
   const [suggestiesOpen, setSuggestiesOpen] = useState(true);
+  const [aiOpen, setAiOpen] = useState(true);
   const [afgerondOpen, setAfgerondOpen] = useState(false);
   const [laterOpen, setLaterOpen] = useState(false);
 
@@ -343,6 +348,33 @@ export function VandaagPage() {
                       task={task}
                       onPlan={() => { updateTask(task.id, { planned: true }); toast("Op je dag gezet", { description: `${task.title} staat nu bij je taken van vandaag.` }); }}
                       onNietVandaag={() => { dismiss(task.id); toast("Uitgesteld", { description: `${task.title} komt morgen weer bij de suggesties.`, action: { label: "Ongedaan maken", onClick: () => restore(task.id) } }); }}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            </CollapsibleSection>
+          </section>
+        )}
+
+        {aiSuggestions.length > 0 && (
+          <section>
+            {/* Visueel duidelijk onderscheiden van "Suggesties voor vandaag" hierboven
+                (CLAUDE.md §5 → AI-voorstellen): eigen icoon (Sparkles i.p.v. geen icoon),
+                geen tone="active" (blijft op de neutrale muted-chrome van CollapsibleSection). */}
+            <CollapsibleSection
+              title="AI-voorstellen"
+              count={aiSuggestions.length}
+              icon={<Sparkles size={13} style={{ color: SAGE }} aria-hidden="true" />}
+              open={aiOpen}
+              onToggle={() => setAiOpen((v) => !v)}>
+              <div className="space-y-2">
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {aiSuggestions.map((suggestion) => (
+                    <AiVoorstelRij
+                      key={suggestion.id}
+                      suggestion={suggestion}
+                      onAccept={() => acceptTaskSuggestion(suggestion.id)}
+                      onDismiss={() => dismissTaskSuggestion(suggestion.id)}
                     />
                   ))}
                 </AnimatePresence>

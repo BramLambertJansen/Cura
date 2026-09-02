@@ -8,7 +8,8 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 // that loop directly: first call errors with a PGRST204 "missing column", the
 // class strips only that column and retries, second call succeeds.
 const fromMock = vi.hoisted(() => vi.fn());
-vi.mock("./supabaseClient", () => ({ supabase: { from: fromMock } }));
+const rpcMock = vi.hoisted(() => vi.fn());
+vi.mock("./supabaseClient", () => ({ supabase: { from: fromMock, rpc: rpcMock } }));
 
 import { isMissingShoppingColumn, mapList, missingShoppingColumns, missingTaskColumns, shoppingItemUpdateRow, SupabaseStore } from "./supabaseStore";
 import { TaskSchema } from "../schemas";
@@ -242,5 +243,102 @@ describe("SupabaseStore retry-on-missing-column (#155)", () => {
     expect(insertAttempt1.mock.calls[0][0]).toMatchObject({ quick_add_templates: [{ title: "Afwassen" }] });
     expect(insertAttempt2.mock.calls[0][0]).not.toHaveProperty("quick_add_templates");
     expect(room.name).toBe("Keuken");
+  });
+});
+
+describe("SupabaseStore AI-voorstellen/MCP (Phase 4)", () => {
+  afterEach(() => {
+    fromMock.mockReset();
+    rpcMock.mockReset();
+  });
+
+  it("listTaskSuggestions maps rows via mapList, tolerating a bad row (#150 bugclass)", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const eqMock = vi.fn(() =>
+      Promise.resolve({
+        data: [
+          {
+            id: "s1", household_id: "h1", title: "Tandarts bellen", room_id: null,
+            duration_min: null, due_date_suggestion: null, dagdeel_suggestion: null,
+            source_note: "uit e-mail over de tandarts", created_by_member_id: "m1", created_at: "2026-01-15T08:00:00.000Z",
+          },
+          // Invalid: title fails the min(1) check — this row should be skipped, not the rest.
+          { id: "s2", household_id: "h1", title: "", source_note: "iets", created_by_member_id: "m1", created_at: "2026-01-15T08:00:00.000Z" },
+        ],
+        error: null,
+      }),
+    );
+    fromMock.mockReturnValueOnce({ select: vi.fn(() => ({ eq: eqMock })) });
+
+    const store = new SupabaseStore();
+    const result = await store.listTaskSuggestions("h1");
+
+    expect(result.map((s) => s.id)).toEqual(["s1"]);
+    errorSpy.mockRestore();
+  });
+
+  it("deleteTaskSuggestion deletes the row by id and reports true when a row was actually removed", async () => {
+    const selectMock = vi.fn(() => Promise.resolve({ data: [{ id: "s1" }], error: null }));
+    const eqMock = vi.fn(() => ({ select: selectMock }));
+    fromMock.mockReturnValueOnce({ delete: vi.fn(() => ({ eq: eqMock })) });
+
+    const store = new SupabaseStore();
+    const result = await store.deleteTaskSuggestion("s1");
+
+    expect(eqMock).toHaveBeenCalledWith("id", "s1");
+    expect(result).toBe(true);
+  });
+
+  it("deleteTaskSuggestion reports false when the row was already gone (lost a race with a concurrent accept/dismiss)", async () => {
+    const selectMock = vi.fn(() => Promise.resolve({ data: [], error: null }));
+    const eqMock = vi.fn(() => ({ select: selectMock }));
+    fromMock.mockReturnValueOnce({ delete: vi.fn(() => ({ eq: eqMock })) });
+
+    const store = new SupabaseStore();
+    const result = await store.deleteTaskSuggestion("s1");
+
+    expect(result).toBe(false);
+  });
+
+  it("listMcpTokens never selects the server-only token_hash/rate-limit columns", async () => {
+    const selectMock = vi.fn((_columns: string) => ({ eq: vi.fn(() => Promise.resolve({ data: [], error: null })) }));
+    fromMock.mockReturnValueOnce({ select: selectMock });
+
+    const store = new SupabaseStore();
+    await store.listMcpTokens("h1");
+
+    const selectedColumns = selectMock.mock.calls[0][0];
+    expect(selectedColumns).not.toContain("token_hash");
+    expect(selectedColumns).not.toContain("window_started_at");
+    expect(selectedColumns).not.toContain("requests_in_window");
+  });
+
+  it("createMcpToken routes through the create_mcp_token RPC and surfaces the raw secret exactly once", async () => {
+    rpcMock.mockResolvedValueOnce({
+      data: {
+        token: {
+          id: "tok1", household_id: "h1", label: "Bram's Claude", created_by_member_id: "m1",
+          created_at: "2026-01-15T08:00:00.000Z", last_used_at: null, revoked_at: null,
+        },
+        raw_token: "raw-secret",
+      },
+      error: null,
+    });
+
+    const store = new SupabaseStore();
+    const result = await store.createMcpToken("h1", "Bram's Claude");
+
+    expect(rpcMock).toHaveBeenCalledWith("create_mcp_token", { p_household_id: "h1", p_label: "Bram's Claude" });
+    expect(result.rawToken).toBe("raw-secret");
+    expect(result.token).toMatchObject({ id: "tok1", label: "Bram's Claude" });
+  });
+
+  it("revokeMcpToken routes through the revoke_mcp_token RPC", async () => {
+    rpcMock.mockResolvedValueOnce({ data: null, error: null });
+
+    const store = new SupabaseStore();
+    await store.revokeMcpToken("tok1");
+
+    expect(rpcMock).toHaveBeenCalledWith("revoke_mcp_token", { p_token_id: "tok1" });
   });
 });

@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 import { supabase } from "./supabaseClient";
-import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../store";
-import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem } from "../types";
+import { normalizeShoppingItemPatch, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type McpTokenCreated, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../store";
+import type { Household, HouseholdInvite, Member, Room, Task, TaskCompletion, Bundle, ShoppingItem, TaskSuggestion, McpAccessToken } from "../types";
 import {
   HouseholdSchema,
   MemberSchema,
@@ -11,6 +11,8 @@ import {
   TaskCompletionSchema,
   BundleSchema,
   ShoppingItemSchema,
+  TaskSuggestionSchema,
+  McpAccessTokenSchema,
 } from "../schemas";
 
 const uid = (): string => crypto.randomUUID();
@@ -47,6 +49,18 @@ interface ShoppingItemRow {
 interface PushSubscriptionRow {
   id: string; household_id: string; member_id: string;
   endpoint: string; p256dh: string; auth: string; created_at: string;
+}
+interface TaskSuggestionRow {
+  id: string; household_id: string; title: string; room_id: string | null;
+  duration_min: number | null; due_date_suggestion: string | null;
+  dagdeel_suggestion: string | null; source_note: string;
+  created_by_member_id: string; created_at: string;
+}
+// Deliberately never selects token_hash/window_started_at/requests_in_window
+// (server-only columns) — see McpAccessTokenSchema's comment.
+interface McpAccessTokenRow {
+  id: string; household_id: string; label: string; created_by_member_id: string;
+  created_at: string; last_used_at: string | null; revoked_at: string | null;
 }
 
 // Email/password signup stores the chosen name under `displayName`; Google
@@ -130,6 +144,20 @@ function mapShoppingItem(r: ShoppingItemRow): ShoppingItem {
     amount: r.amount ?? undefined, unit: r.unit ?? undefined, description: r.description ?? undefined,
     category: r.category ?? undefined, checked: r.checked, createdAt: r.created_at,
   }), "boodschap");
+}
+function mapTaskSuggestion(r: TaskSuggestionRow): TaskSuggestion {
+  return parseRow(() => TaskSuggestionSchema.parse({
+    id: r.id, householdId: r.household_id, title: r.title, roomId: r.room_id ?? undefined,
+    durationMin: r.duration_min ?? undefined, dueDateSuggestion: r.due_date_suggestion ?? undefined,
+    dagdeelSuggestion: (r.dagdeel_suggestion as "ochtend" | "middag" | "avond" | null) ?? undefined,
+    sourceNote: r.source_note, createdByMemberId: r.created_by_member_id, createdAt: r.created_at,
+  }), "AI-voorstel");
+}
+function mapMcpAccessToken(r: McpAccessTokenRow): McpAccessToken {
+  return parseRow(() => McpAccessTokenSchema.parse({
+    id: r.id, householdId: r.household_id, label: r.label, createdByMemberId: r.created_by_member_id,
+    createdAt: r.created_at, lastUsedAt: r.last_used_at ?? undefined, revokedAt: r.revoked_at ?? undefined,
+  }), "koppeling");
 }
 
 // Optional shopping_items columns added after the initial table (category,
@@ -709,8 +737,8 @@ export class SupabaseStore implements DataStore {
 
   // ── Realtime (Phase 3+) ──────────────────────────────────────────────────
   // One channel per household, subscribed to every table the household view
-  // depends on. tasks/rooms/bundles/members/shopping_items carry household_id
-  // and are filtered server-side; task_completions has no household_id of its own
+  // depends on. tasks/rooms/bundles/members/shopping_items/task_suggestions
+  // carry household_id and are filtered server-side; task_completions has no household_id of its own
   // (only via a join to tasks), so it's subscribed unfiltered and relies on
   // the same RLS policy (task_completions_select) that gates normal reads —
   // Supabase's Realtime "postgres_changes" feed is RLS-aware for the
@@ -733,6 +761,7 @@ export class SupabaseStore implements DataStore {
         .on("postgres_changes", { event: "*", schema: "public", table: "bundles", filter: `household_id=eq.${householdId}` }, () => onChange("bundles"))
         .on("postgres_changes", { event: "*", schema: "public", table: "members", filter: `household_id=eq.${householdId}` }, () => onChange("members"))
         .on("postgres_changes", { event: "*", schema: "public", table: "shopping_items", filter: `household_id=eq.${householdId}` }, () => onChange("shopping_items"))
+        .on("postgres_changes", { event: "*", schema: "public", table: "task_suggestions", filter: `household_id=eq.${householdId}` }, () => onChange("task_suggestions"))
         .on("postgres_changes", { event: "*", schema: "public", table: "task_completions" }, () => onChange("task_completions"))
         .subscribe((status) => {
           // A channel that errors or times out would otherwise leave this
@@ -780,6 +809,51 @@ export class SupabaseStore implements DataStore {
 
   async deletePushSubscription(endpoint: string): Promise<void> {
     const { error } = await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── AI-voorstellen (Phase 4, MCP) ──────────────────────────────────────
+  // Reads go through normal RLS (task_suggestions_select, household-scoped) —
+  // the ONLY writer is the mcp-server edge function, via the service role.
+  async listTaskSuggestions(householdId: string): Promise<TaskSuggestion[]> {
+    const { data, error } = await supabase.from("task_suggestions").select("*").eq("household_id", householdId);
+    if (error) throw new Error(error.message);
+    return mapList((data ?? []) as TaskSuggestionRow[], mapTaskSuggestion, "AI-voorstel");
+  }
+
+  async deleteTaskSuggestion(id: string): Promise<boolean> {
+    // .select("id") makes PostgREST return the deleted row(s) so we can tell
+    // "actually deleted" (data.length > 0) apart from "already gone" (data
+    // is []) — the caller (acceptTaskSuggestion) uses this to detect losing a
+    // race against a concurrent accept/dismiss instead of assuming success.
+    const { data, error } = await supabase.from("task_suggestions").delete().eq("id", id).select("id");
+    if (error) throw new Error(error.message);
+    return (data ?? []).length > 0;
+  }
+
+  // ── MCP access tokens ────────────────────────────────────────────────────
+  async listMcpTokens(householdId: string): Promise<McpAccessToken[]> {
+    const { data, error } = await supabase
+      .from("mcp_access_tokens")
+      .select("id, household_id, label, created_by_member_id, created_at, last_used_at, revoked_at")
+      .eq("household_id", householdId);
+    if (error) throw new Error(error.message);
+    return mapList((data ?? []) as McpAccessTokenRow[], mapMcpAccessToken, "koppeling");
+  }
+
+  async createMcpToken(householdId: string, label: string): Promise<McpTokenCreated> {
+    // Routed through create_mcp_token (security definer), exactly the
+    // create_invite pattern: the raw secret + its hash are generated
+    // server-side, only the hash is persisted, and the raw value comes back
+    // in this one response — never retrievable again after this call.
+    const { data, error } = await supabase.rpc("create_mcp_token", { p_household_id: householdId, p_label: label });
+    if (error || !data) throw new Error(error?.message ?? "Koppeling aanmaken mislukt.");
+    const row = data as { token: McpAccessTokenRow; raw_token: string };
+    return { token: mapMcpAccessToken(row.token), rawToken: row.raw_token };
+  }
+
+  async revokeMcpToken(tokenId: string): Promise<void> {
+    const { error } = await supabase.rpc("revoke_mcp_token", { p_token_id: tokenId });
     if (error) throw new Error(error.message);
   }
 }

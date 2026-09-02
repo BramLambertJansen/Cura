@@ -3,11 +3,14 @@ import AxeBuilder from "@axe-core/playwright";
 
 // check:a11y — CLAUDE.md §6: every screen must be accessible, not as
 // after-the-fact polish. Scans every screen the app is willing to land a
-// fresh visitor on: the eight app-overzichten (CLAUDE.md §"Gedeelde
+// fresh visitor on: the app-overzichten (CLAUDE.md §"Gedeelde
 // overzichtsheaders") plus the two juridische pages that render outside the
 // Gate. Runs against `local` data mode (see playwright.config.ts) — no
 // backend, no auth, the seeded demo household (with its second demo member,
 // which is why /samen is reachable here — CLAUDE.md §5 → Samen) is enough.
+// /ai-voorstellen renders its empty state in local mode (no MCP koppeling
+// without a deployed cloud backend, CLAUDE.md §5 → AI-voorstellen) — still
+// worth scanning, since that empty state is real, shipped UI.
 const APP_ROUTES = [
   "/vandaag",
   "/huis",
@@ -17,6 +20,7 @@ const APP_ROUTES = [
   "/taken",
   "/boodschappen",
   "/focus",
+  "/ai-voorstellen",
 ];
 
 const STANDALONE_ROUTES = ["/privacy", "/voorwaarden"];

@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { toast } from "sonner";
-import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../data/store";
-import type { Bundle, Household, HouseholdInvite, Member, Room, Task, TaskCompletion, TaskTemplate, ShoppingItem } from "../data/types";
+import { createDataStore, type CreateTaskInput, type CreateShoppingItemInput, type DataStore, type McpTokenCreated, type PushSubscriptionInput, type UpdateShoppingItemInput } from "../data/store";
+import type { Bundle, Household, HouseholdInvite, McpAccessToken, Member, Room, Task, TaskCompletion, TaskSuggestion, TaskTemplate, ShoppingItem } from "../data/types";
 import { MAX_TASK_INTERVAL_DAYS } from "../data/selectors";
 
 type AcceptInviteResult = { ok: true } | { ok: false; reason: "already_member" | "invalid" | "expired" };
 
-/** Keys of the six household-scoped lists this store fetches/refetches. */
-type ListKey = "members" | "rooms" | "tasks" | "completions" | "bundles" | "shoppingItems";
+/** Keys of the seven household-scoped lists this store fetches/refetches. */
+type ListKey = "members" | "rooms" | "tasks" | "completions" | "bundles" | "shoppingItems" | "taskSuggestions";
 
 // Supabase's realtime payload names which table changed; not every list needs
 // refetching on every remote write (#174) — a task_completions insert
@@ -19,6 +19,7 @@ const TABLE_TO_LIST_KEY: Record<string, ListKey> = {
   members: "members",
   shopping_items: "shoppingItems",
   task_completions: "completions",
+  task_suggestions: "taskSuggestions",
 };
 
 /** A routine-taak zoals ingevoerd in NewRoutineSheet/EditRoutineSheet, vóór opslaan. */
@@ -49,6 +50,7 @@ interface CuraState {
   completions: TaskCompletion[];
   bundles: Bundle[];
   shoppingItems: ShoppingItem[];
+  taskSuggestions: TaskSuggestion[];
 
   init: () => Promise<void>;
   /**
@@ -115,6 +117,21 @@ interface CuraState {
    */
   savePushSubscription: (sub: PushSubscriptionInput) => Promise<void>;
   deletePushSubscription: (endpoint: string) => Promise<void>;
+
+  /**
+   * "Overnemen" — creates a real Task via the existing pool-first createTask
+   * path (planned stays false) and then removes the suggestion row. No
+   * separate DataStore "accept" method: this is exactly what CLAUDE.md §5
+   * describes as reusing the createTask path.
+   */
+  acceptTaskSuggestion: (id: string) => Promise<void>;
+  /** "Afwijzen" — a direct, permanent delete. No archive/"genegeerd"-list (see TaskSuggestionSchema). */
+  dismissTaskSuggestion: (id: string) => Promise<void>;
+
+  /** MCP-koppelingen (HouseholdSheet) — cloud-only; local mode's DataStore throws. Not part of the persisted state above (no realtime need, admin-only). */
+  listMcpTokens: () => Promise<McpAccessToken[]>;
+  createMcpToken: (label: string) => Promise<McpTokenCreated | undefined>;
+  revokeMcpToken: (tokenId: string) => Promise<void>;
 }
 
 let dataStorePromise: Promise<DataStore> | null = null;
@@ -174,6 +191,14 @@ const assignSeq = new Map<string, number>();
 // anders pakte dit al op" toast to the very person who tapped twice, while
 // discarding the first (successful) response as "stale".
 const claiming = new Set<string>();
+
+// Suggestions currently mid-accept/-dismiss (Phase 4, AI-voorstellen) — same
+// "ignore a second tap while the first is in flight" shape as `toggling`
+// above. Both actions end by removing the suggestion from local state, but
+// that only happens after an await; a rapid double-tap on "overnemen" before
+// that update lands could otherwise fire createTask twice for the same
+// suggestion (Tester #phase4-mcp finding — flagged, not silently guessed at).
+const resolvingTaskSuggestions = new Set<string>();
 
 // Realtime (Phase 3+, cloud mode only — a no-op subscription in local mode).
 // A burst of remote postgres_changes events collapses into one refetch instead
@@ -248,6 +273,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   completions: [],
   bundles: [],
   shoppingItems: [],
+  taskSuggestions: [],
 
   async init() {
     try {
@@ -274,8 +300,9 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         withTimeout(store.listCompletions(household.id, completionsSince()), LIST_TIMEOUT_MS),
         withTimeout(store.listBundles(household.id), LIST_TIMEOUT_MS),
         withTimeout(store.listShoppingItems(household.id), LIST_TIMEOUT_MS),
+        withTimeout(store.listTaskSuggestions(household.id), LIST_TIMEOUT_MS),
       ]);
-      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR] = results;
+      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR, taskSuggestionsR] = results;
       // A total loss (every list failed — network down, dead proxy) is the one
       // case worth surfacing as a retryable error; a partial loss degrades
       // gracefully with empty slices for just the lists that failed, instead
@@ -292,6 +319,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         completions: completionsR.status === "fulfilled" ? completionsR.value : [],
         bundles: bundlesR.status === "fulfilled" ? bundlesR.value : [],
         shoppingItems: shoppingItemsR.status === "fulfilled" ? shoppingItemsR.value : [],
+        taskSuggestions: taskSuggestionsR.status === "fulfilled" ? taskSuggestionsR.value : [],
       });
 
       // A list that failed here has no "previous value" to fall back to the
@@ -312,6 +340,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       if (completionsR.status === "rejected") failedKeys.add("completions");
       if (bundlesR.status === "rejected") failedKeys.add("bundles");
       if (shoppingItemsR.status === "rejected") failedKeys.add("shoppingItems");
+      if (taskSuggestionsR.status === "rejected") failedKeys.add("taskSuggestions");
       if (failedKeys.size > 0) void get().refresh(failedKeys);
 
       // Re-init (e.g. after accepting an invite) replaces any earlier subscription.
@@ -349,10 +378,11 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         want("completions") ? withTimeout(store.listCompletions(householdId, completionsSince()), LIST_TIMEOUT_MS) : Promise.resolve(null),
         want("bundles") ? withTimeout(store.listBundles(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
         want("shoppingItems") ? withTimeout(store.listShoppingItems(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
+        want("taskSuggestions") ? withTimeout(store.listTaskSuggestions(householdId), LIST_TIMEOUT_MS) : Promise.resolve(null),
       ]);
       // Household changed while the fetch was in flight (sign-out/re-init) — discard.
       if (get().householdId !== householdId) return;
-      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR] = results;
+      const [membersR, roomsR, tasksR, completionsR, bundlesR, shoppingItemsR, taskSuggestionsR] = results;
       // Apply whichever lists succeeded and keep the previous value for
       // whichever didn't — a flaky single endpoint must not throw away data
       // that DID come back, especially since a realtime refetch relies on
@@ -365,6 +395,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
         completions: completionsR.status === "fulfilled" && completionsR.value !== null ? completionsR.value : current.completions,
         bundles: bundlesR.status === "fulfilled" && bundlesR.value !== null ? bundlesR.value : current.bundles,
         shoppingItems: shoppingItemsR.status === "fulfilled" && shoppingItemsR.value !== null ? shoppingItemsR.value : current.shoppingItems,
+        taskSuggestions: taskSuggestionsR.status === "fulfilled" && taskSuggestionsR.value !== null ? taskSuggestionsR.value : current.taskSuggestions,
       });
     } catch {
       // Silent — a transient refresh failure isn't worth interrupting the session over; the next refresh retries.
@@ -439,7 +470,7 @@ export const useCuraStore = create<CuraState>((set, get) => ({
       clearTimeout(realtimeRefreshTimer);
       realtimeRefreshTimer = null;
     }
-    set({ ready: false, initError: null, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [], shoppingItems: [] });
+    set({ ready: false, initError: null, householdId: null, currentUserId: null, members: [], households: [], rooms: [], tasks: [], completions: [], bundles: [], shoppingItems: [], taskSuggestions: [] });
     dataStorePromise = null;
   },
 
@@ -865,5 +896,96 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   async deletePushSubscription(endpoint) {
     const store = await getDataStore();
     await store.deletePushSubscription(endpoint);
+  },
+
+  async acceptTaskSuggestion(id) {
+    if (resolvingTaskSuggestions.has(id)) return;
+    resolvingTaskSuggestions.add(id);
+    try {
+      return await withToastOnError(async () => {
+        const store = await getDataStore();
+        const { householdId, taskSuggestions } = get();
+        if (!householdId) return;
+        const suggestion = taskSuggestions.find((s) => s.id === id);
+        if (!suggestion) return;
+        // Claim the suggestion FIRST — delete-then-create, not create-then-
+        // delete (review finding): the old order let two concurrent accepts
+        // (e.g. both housemates tapping "overnemen" on the same suggestion),
+        // or a retry after a failed delete, each create their own task before
+        // either delete landed. `deleteTaskSuggestion` resolves `false` when
+        // someone else's delete already won that race — treat it exactly
+        // like the "already gone" guard above: no task, no error.
+        const claimed = await store.deleteTaskSuggestion(id);
+        if (!claimed) {
+          set({ taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
+          return;
+        }
+        // The row is gone from the backend now regardless of what happens
+        // next — drop it from local state immediately so a createTask
+        // failure below can't leave a suggestion still offering "accepteren"
+        // that would only fail again (it's already been claimed/consumed).
+        set({ taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
+        // Reuses the existing pool-first createTask path (CLAUDE.md §2): lands
+        // in Huis, planned stays false, no auto-claim — same as any other task
+        // that starts life in the pool rather than "Zet op mijn dag".
+        const created = await store.createTask(householdId, {
+          title: suggestion.title,
+          roomId: suggestion.roomId,
+          durationMin: suggestion.durationMin,
+          dueDate: suggestion.dueDateSuggestion,
+          dagdeel: suggestion.dagdeelSuggestion,
+        });
+        toast.success(`"${created.title}" toegevoegd`, { description: "Staat onder Huis, bij alle taken" });
+        set({ tasks: [...get().tasks, created] });
+      }, "Overnemen lukte niet");
+    } finally {
+      resolvingTaskSuggestions.delete(id);
+    }
+  },
+
+  async dismissTaskSuggestion(id) {
+    if (resolvingTaskSuggestions.has(id)) return;
+    resolvingTaskSuggestions.add(id);
+    try {
+      return await withToastOnError(async () => {
+        const store = await getDataStore();
+        await store.deleteTaskSuggestion(id);
+        set({ taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
+        toast("Voorstel afgewezen");
+      }, "Afwijzen lukte niet");
+    } finally {
+      resolvingTaskSuggestions.delete(id);
+    }
+  },
+
+  async listMcpTokens() {
+    const store = await getDataStore();
+    const { householdId } = get();
+    if (!householdId) return [];
+    try {
+      return await store.listMcpTokens(householdId);
+    } catch (e) {
+      toast.error(friendlyMessage(e, "Laden van koppelingen lukte niet"));
+      return [];
+    }
+  },
+
+  async createMcpToken(label) {
+    return withToastOnError(async () => {
+      const store = await getDataStore();
+      const { householdId } = get();
+      if (!householdId) return undefined;
+      const result = await store.createMcpToken(householdId, label);
+      toast.success("Koppeling aangemaakt");
+      return result;
+    }, "Aanmaken lukte niet");
+  },
+
+  async revokeMcpToken(tokenId) {
+    return withToastOnError(async () => {
+      const store = await getDataStore();
+      await store.revokeMcpToken(tokenId);
+      toast("Koppeling ingetrokken");
+    }, "Intrekken lukte niet");
   },
 }));

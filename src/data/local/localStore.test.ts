@@ -156,6 +156,21 @@ describe("LocalStore CRUD (#155)", () => {
   });
 });
 
+describe("LocalStore AI-voorstellen/MCP (Phase 4 — never available in local mode)", () => {
+  it("listTaskSuggestions is always an empty list", async () => {
+    const store = new LocalStore();
+    await expect(store.listTaskSuggestions("h1")).resolves.toEqual([]);
+  });
+
+  it("deleteTaskSuggestion/listMcpTokens/createMcpToken/revokeMcpToken all throw a clear, catchable error", async () => {
+    const store = new LocalStore();
+    await expect(store.deleteTaskSuggestion("s1")).rejects.toThrow();
+    await expect(store.listMcpTokens("h1")).rejects.toThrow();
+    await expect(store.createMcpToken("h1", "Bram's Claude")).rejects.toThrow();
+    await expect(store.revokeMcpToken("tok1")).rejects.toThrow();
+  });
+});
+
 describe("LocalStore write-time validation (Codex review on #202)", () => {
   it("rejects updateTask when the patch would produce an empty title, leaving the task unchanged", async () => {
     const store = new LocalStore();

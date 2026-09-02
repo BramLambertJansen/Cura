@@ -12,6 +12,7 @@ import { TaakRij } from "../../components/TaakRij";
 import { TijdlijnTaakRij } from "../../components/TijdlijnTaakRij";
 import { TimerDisplay } from "../../components/TimerDisplay";
 import { SuggestieRij } from "../../components/SuggestieRij";
+import { AiVoorstelRij } from "../../components/AiVoorstelRij";
 import { KamerKaart } from "../../components/KamerKaart";
 import { KamerKunstKiezer } from "../../components/KamerKunstKiezer";
 import { RoomHero, RoomThumb } from "../../components/RoomThumb";
@@ -77,6 +78,18 @@ const demoRoomNoArt: RoomView = {
   id: "r2", name: "Kantoor", iconKey: "monitor", color: "#7A6448",
   tasks: [], openCount: 0,
   quickAddTemplates: [],
+};
+
+const demoAiSuggestion = {
+  id: "ai1",
+  title: "Tandarts bellen",
+  room: undefined,
+  duration: undefined,
+  dueDateLabel: undefined,
+  dagdeel: undefined,
+  sourceNote: "uit e-mail over de tandarts",
+  createdBy: "Bram",
+  createdAt: new Date().toISOString(),
 };
 
 const demoRoutine: RoutineView = {
@@ -394,6 +407,11 @@ export function DesignSystemPage() {
         <div className="rounded-2xl bg-card-active border border-border/60 p-3" style={{ boxShadow: "var(--shadow-card)" }}>
           <SuggestieRij task={{ ...demoTaskOpen, dueHint: "Waarschijnlijk weer toe" }} onPlan={() => {}} onNietVandaag={() => {}} />
         </div>
+      </Section>
+
+      <Section title="AI-voorstel (Vandaag / AI-voorstellen)">
+        <p className="text-sm text-muted-foreground -mt-1">Een pending AI-voorstel van een gekoppelde Claude (Phase 4, CLAUDE.md §5 → AI-voorstellen) — titel, de verplichte "reden"-regel, en een attributieregel, met accepteren/afwijzen als twee ronde IconButtons. Bewust géén variant van SuggestieRij: ander brondata-type, andere acties.</p>
+        <AiVoorstelRij suggestion={demoAiSuggestion} onAccept={() => {}} onDismiss={() => {}} />
       </Section>
 
       <Section title="Kaarten">

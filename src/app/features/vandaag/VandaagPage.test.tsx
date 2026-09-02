@@ -177,6 +177,43 @@ describe("VandaagPage", () => {
     expect(screen.getByRole("button", { name: /^samen/i })).toBeInTheDocument();
   });
 
+  it("shows a pending AI-voorstel and wires accept/dismiss to the store actions", async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    setTasks([], {
+      taskSuggestions: [
+        {
+          id: "s1",
+          householdId: "h1",
+          title: "Tandarts bellen",
+          sourceNote: "uit e-mail over de tandarts",
+          createdByMemberId: "m1",
+          createdAt: "2026-01-15T08:00:00.000Z",
+        },
+      ],
+      acceptTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+      dismissTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+    });
+
+    renderVandaag();
+
+    expect(screen.getByText("Tandarts bellen")).toBeInTheDocument();
+    expect(screen.getByText(/uit e-mail over de tandarts/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /tandarts bellen overnemen/i }));
+    expect(useCuraStore.getState().acceptTaskSuggestion).toHaveBeenCalledWith("s1");
+
+    await user.click(screen.getByRole("button", { name: /tandarts bellen afwijzen/i }));
+    expect(useCuraStore.getState().dismissTaskSuggestion).toHaveBeenCalledWith("s1");
+  });
+
+  it("hides the AI-voorstellen section when there are no pending suggestions", () => {
+    setTasks([]); // setTasks defaults taskSuggestions to whatever the reset initial state has ([])
+
+    renderVandaag();
+
+    expect(screen.queryByText("AI-voorstellen")).not.toBeInTheDocument();
+  });
+
   it("hides the Routines section when the household has no routines", () => {
     setTasks([]); // setTasks defaults bundles to []
 

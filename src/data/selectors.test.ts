@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Task, TaskCompletion, Room, Bundle, Member, ShoppingItem, TaskView } from "./types";
+import type { Task, TaskCompletion, Room, Bundle, Member, ShoppingItem, TaskSuggestion, McpAccessToken, TaskView } from "./types";
 import {
   buildLatestCompletionMap,
   toTaskView,
@@ -14,6 +14,8 @@ import {
   splitDagdelen,
   splitPickedUpToday,
   formatShoppingAmount,
+  toTaskSuggestionView,
+  toMcpTokenView,
 } from "./selectors";
 
 const DAY_MS = 86_400_000;
@@ -740,5 +742,84 @@ describe("Vandaag opgepakt — same-day Huis-pool claims, split from the timelin
     const { pickedUpToday, rest } = splitPickedUpToday([plannedFromSuggestion], now);
     expect(pickedUpToday).toEqual([]);
     expect(rest.map((t) => t.id)).toEqual(["t1"]);
+  });
+});
+
+describe("toTaskSuggestionView", () => {
+  const suggestion = (overrides: Partial<TaskSuggestion> = {}): TaskSuggestion => ({
+    id: "s1",
+    householdId: "h1",
+    title: "Tandarts bellen",
+    sourceNote: "uit e-mail over de tandarts",
+    createdByMemberId: "m1",
+    createdAt: "2026-01-15T08:00:00.000Z",
+    ...overrides,
+  });
+
+  it("resolves room/creator names and formats duration/date, and never fabricates a sourceNote", () => {
+    const view = toTaskSuggestionView(
+      suggestion({ roomId: "r1", durationMin: 10, dueDateSuggestion: "2026-01-20T15:00:00.000Z" }),
+      [room()],
+      [member()],
+    );
+    expect(view.room).toBe("Keuken");
+    expect(view.duration).toBe("10 min");
+    expect(view.dueDateLabel).toContain("15:00");
+    expect(view.sourceNote).toBe("uit e-mail over de tandarts");
+    expect(view.createdBy).toBe("Bram");
+  });
+
+  it("degrades gracefully when the room/creator can't be resolved", () => {
+    const view = toTaskSuggestionView(suggestion({ roomId: "gone", createdByMemberId: "ghost" }), [], []);
+    expect(view.room).toBeUndefined();
+    expect(view.createdBy).toBe("Onbekend");
+  });
+
+  it("carries the dagdeel suggestion through untouched", () => {
+    const view = toTaskSuggestionView(suggestion({ dagdeelSuggestion: "ochtend" }), [], [member()]);
+    expect(view.dagdeel).toBe("ochtend");
+  });
+
+  it("leaves every optional field undefined for a bare-minimum suggestion (no roomId, no duration, no due date/dagdeel)", () => {
+    // A suggest_task call only ever has to supply title + sourceNote (the MCP
+    // tool's own required list) — everything else is genuinely absent, not
+    // "present but unresolved" like the roomId/createdByMemberId case above.
+    const view = toTaskSuggestionView(suggestion(), [room()], [member()]);
+    expect(view.roomId).toBeUndefined();
+    expect(view.room).toBeUndefined();
+    expect(view.duration).toBeUndefined();
+    expect(view.dueDateLabel).toBeUndefined();
+    expect(view.dagdeel).toBeUndefined();
+    expect(view.title).toBe("Tandarts bellen");
+    expect(view.sourceNote).toBe("uit e-mail over de tandarts");
+  });
+});
+
+describe("toMcpTokenView", () => {
+  const token = (overrides: Partial<McpAccessToken> = {}): McpAccessToken => ({
+    id: "tok1",
+    householdId: "h1",
+    label: "Bram's Claude",
+    createdByMemberId: "m1",
+    createdAt: "2026-01-15T08:00:00.000Z",
+    ...overrides,
+  });
+
+  it("resolves the creator's name and formats the dates", () => {
+    const view = toMcpTokenView(token({ lastUsedAt: "2026-01-20T09:30:00.000Z" }), [member()]);
+    expect(view.createdBy).toBe("Bram");
+    expect(view.createdAtLabel).toContain("08:00");
+    expect(view.lastUsedAtLabel).toContain("09:30");
+    expect(view.revoked).toBe(false);
+  });
+
+  it("has no lastUsedAtLabel when the token has never been used", () => {
+    const view = toMcpTokenView(token(), [member()]);
+    expect(view.lastUsedAtLabel).toBeUndefined();
+  });
+
+  it("marks a soft-revoked token as revoked", () => {
+    const view = toMcpTokenView(token({ revokedAt: "2026-02-01T00:00:00.000Z" }), [member()]);
+    expect(view.revoked).toBe(true);
   });
 });

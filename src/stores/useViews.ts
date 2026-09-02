@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useCuraStore } from "./useCuraStore";
-import { buildLatestCompletionMap, groupCompletionsByBundle, toActivityFeed, toRoomView, toRoutineView, toShoppingList, toTaskView } from "../data/selectors";
+import { buildLatestCompletionMap, groupCompletionsByBundle, toActivityFeed, toRoomView, toRoutineView, toShoppingList, toTaskSuggestionView, toTaskView } from "../data/selectors";
 import { useMinuteTick } from "../app/lib/useMinuteTick";
-import type { ActivityView, Member, RoomView, RoutineView, ShoppingListView, TaskView } from "../data/types";
+import type { ActivityView, Member, RoomView, RoutineView, ShoppingListView, TaskSuggestionView, TaskView } from "../data/types";
 
 /**
  * The acting user's own Member row, resolved via currentUserId — the "who am
@@ -116,6 +116,25 @@ export function useRoutineView(bundleId: string): RoutineView | undefined {
 export function useShoppingList(): ShoppingListView {
   const shoppingItems = useCuraStore((s) => s.shoppingItems);
   return useMemo(() => toShoppingList(shoppingItems), [shoppingItems]);
+}
+
+/**
+ * Pending AI-voorstellen as view-models. Included on the shared
+ * `useMinuteTick` convention like the other view-model hooks above — the
+ * time-sensitivity is minimal here (nothing in TaskSuggestionView reads the
+ * clock today), but consistency with the pattern matters more than the
+ * exact necessity (CLAUDE.md §5 → AI-voorstellen deliverables).
+ */
+export function useTaskSuggestionViews(): TaskSuggestionView[] {
+  const taskSuggestions = useCuraStore((s) => s.taskSuggestions);
+  const rooms = useCuraStore((s) => s.rooms);
+  const members = useCuraStore((s) => s.members);
+  const tick = useMinuteTick();
+  return useMemo(
+    () => taskSuggestions.map((s) => toTaskSuggestionView(s, rooms, members)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [taskSuggestions, rooms, members, tick],
+  );
 }
 
 /** Recent completions as a calm chronological feed for Samen. */
