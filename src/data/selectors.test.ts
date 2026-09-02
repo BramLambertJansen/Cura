@@ -779,6 +779,20 @@ describe("toTaskSuggestionView", () => {
     const view = toTaskSuggestionView(suggestion({ dagdeelSuggestion: "ochtend" }), [], [member()]);
     expect(view.dagdeel).toBe("ochtend");
   });
+
+  it("leaves every optional field undefined for a bare-minimum suggestion (no roomId, no duration, no due date/dagdeel)", () => {
+    // A suggest_task call only ever has to supply title + sourceNote (the MCP
+    // tool's own required list) — everything else is genuinely absent, not
+    // "present but unresolved" like the roomId/createdByMemberId case above.
+    const view = toTaskSuggestionView(suggestion(), [room()], [member()]);
+    expect(view.roomId).toBeUndefined();
+    expect(view.room).toBeUndefined();
+    expect(view.duration).toBeUndefined();
+    expect(view.dueDateLabel).toBeUndefined();
+    expect(view.dagdeel).toBeUndefined();
+    expect(view.title).toBe("Tandarts bellen");
+    expect(view.sourceNote).toBe("uit e-mail over de tandarts");
+  });
 });
 
 describe("toMcpTokenView", () => {

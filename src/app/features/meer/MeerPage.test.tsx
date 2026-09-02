@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { MeerPage } from "./MeerPage";
 import { useCuraStore } from "../../../stores/useCuraStore";
@@ -64,5 +64,38 @@ describe("MeerPage", () => {
     renderMeer([ME, HOUSEMATE]);
 
     expect(screen.getByRole("button", { name: "Samen" })).toBeInTheDocument();
+  });
+});
+
+/** Phase 4 (AI-voorstellen, CLAUDE.md §5) — the "Meer" list entry's pending-count badge. */
+describe("MeerPage — AI-voorstellen badge", () => {
+  it("shows no count badge when there are no pending suggestions", () => {
+    renderMeer([ME]);
+
+    const item = screen.getByRole("button", { name: "AI-voorstellen" });
+    expect(item).toBeInTheDocument();
+    expect(within(item).queryByText(/^\d+$/)).not.toBeInTheDocument();
+  });
+
+  it("shows the pending count as a badge and folds it into the accessible name", () => {
+    useCuraStore.setState({
+      ...useCuraStore.getState(),
+      households: [HOUSEHOLD],
+      members: [ME],
+      currentUserId: ME.userId,
+      taskSuggestions: [
+        { id: "s1", householdId: "h1", title: "Tandarts bellen", sourceNote: "uit e-mail", createdByMemberId: "m1", createdAt: "2026-01-15T08:00:00.000Z" },
+        { id: "s2", householdId: "h1", title: "Planten water geven", sourceNote: "uit e-mail", createdByMemberId: "m1", createdAt: "2026-01-15T08:00:00.000Z" },
+      ],
+    });
+    render(
+      <MemoryRouter>
+        <SheetContext.Provider value={sheetActions()}>
+          <MeerPage />
+        </SheetContext.Provider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: "AI-voorstellen, 2 nieuw" })).toBeInTheDocument();
   });
 });

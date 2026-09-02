@@ -411,6 +411,21 @@ describe("acceptTaskSuggestion", () => {
     expect(useCuraStore.getState().taskSuggestions).toEqual([suggestion]);
     expect(toastMock.error).toHaveBeenCalledWith("network down");
   });
+
+  it("is a no-op when the suggestion is already gone (e.g. a housemate accepted/dismissed it first)", async () => {
+    // Realtime hasn't necessarily refetched yet, so a stale local list can
+    // still show a suggestion someone else already resolved — tapping
+    // "accepteren" on it must not create a duplicate task.
+    const store = makeStore({ createTask: vi.fn(), deleteTaskSuggestion: vi.fn() });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", taskSuggestions: [], tasks: [] });
+
+    await useCuraStore.getState().acceptTaskSuggestion("s1");
+
+    expect(store.createTask).not.toHaveBeenCalled();
+    expect(store.deleteTaskSuggestion).not.toHaveBeenCalled();
+    expect(toastMock.error).not.toHaveBeenCalled();
+  });
 });
 
 describe("dismissTaskSuggestion", () => {
@@ -474,5 +489,17 @@ describe("MCP-koppelingen (createMcpToken/revokeMcpToken/listMcpTokens)", () => 
 
     expect(result).toEqual([]);
     expect(toastMock.error).toHaveBeenCalledWith("network down");
+  });
+
+  it("listMcpTokens resolves with the store's tokens on success, without touching toast", async () => {
+    const tokens = [{ id: "tok1", householdId: "h1", label: "Bram's Claude", createdByMemberId: "m1", createdAt: "2026-01-15T08:00:00.000Z" }];
+    const store = makeStore({ listMcpTokens: vi.fn().mockResolvedValue(tokens) });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1" });
+
+    const result = await useCuraStore.getState().listMcpTokens();
+
+    expect(result).toEqual(tokens);
+    expect(toastMock.error).not.toHaveBeenCalled();
   });
 });
