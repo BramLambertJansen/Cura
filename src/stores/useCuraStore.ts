@@ -192,6 +192,14 @@ const assignSeq = new Map<string, number>();
 // discarding the first (successful) response as "stale".
 const claiming = new Set<string>();
 
+// Suggestions currently mid-accept/-dismiss (Phase 4, AI-voorstellen) — same
+// "ignore a second tap while the first is in flight" shape as `toggling`
+// above. Both actions end by removing the suggestion from local state, but
+// that only happens after an await; a rapid double-tap on "overnemen" before
+// that update lands could otherwise fire createTask twice for the same
+// suggestion (Tester #phase4-mcp finding — flagged, not silently guessed at).
+const resolvingTaskSuggestions = new Set<string>();
+
 // Realtime (Phase 3+, cloud mode only — a no-op subscription in local mode).
 // A burst of remote postgres_changes events collapses into one refetch instead
 // of one per row (someone completing several tasks shouldn't fire N refetches).
@@ -891,35 +899,47 @@ export const useCuraStore = create<CuraState>((set, get) => ({
   },
 
   async acceptTaskSuggestion(id) {
-    return withToastOnError(async () => {
-      const store = await getDataStore();
-      const { householdId, taskSuggestions } = get();
-      if (!householdId) return;
-      const suggestion = taskSuggestions.find((s) => s.id === id);
-      if (!suggestion) return;
-      // Reuses the existing pool-first createTask path (CLAUDE.md §2): lands
-      // in Huis, planned stays false, no auto-claim — same as any other task
-      // that starts life in the pool rather than "Zet op mijn dag".
-      const created = await store.createTask(householdId, {
-        title: suggestion.title,
-        roomId: suggestion.roomId,
-        durationMin: suggestion.durationMin,
-        dueDate: suggestion.dueDateSuggestion,
-        dagdeel: suggestion.dagdeelSuggestion,
-      });
-      await store.deleteTaskSuggestion(id);
-      toast.success(`"${created.title}" toegevoegd`, { description: "Staat onder Huis, bij alle taken" });
-      set({ tasks: [...get().tasks, created], taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
-    }, "Overnemen lukte niet");
+    if (resolvingTaskSuggestions.has(id)) return;
+    resolvingTaskSuggestions.add(id);
+    try {
+      return await withToastOnError(async () => {
+        const store = await getDataStore();
+        const { householdId, taskSuggestions } = get();
+        if (!householdId) return;
+        const suggestion = taskSuggestions.find((s) => s.id === id);
+        if (!suggestion) return;
+        // Reuses the existing pool-first createTask path (CLAUDE.md §2): lands
+        // in Huis, planned stays false, no auto-claim — same as any other task
+        // that starts life in the pool rather than "Zet op mijn dag".
+        const created = await store.createTask(householdId, {
+          title: suggestion.title,
+          roomId: suggestion.roomId,
+          durationMin: suggestion.durationMin,
+          dueDate: suggestion.dueDateSuggestion,
+          dagdeel: suggestion.dagdeelSuggestion,
+        });
+        await store.deleteTaskSuggestion(id);
+        toast.success(`"${created.title}" toegevoegd`, { description: "Staat onder Huis, bij alle taken" });
+        set({ tasks: [...get().tasks, created], taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
+      }, "Overnemen lukte niet");
+    } finally {
+      resolvingTaskSuggestions.delete(id);
+    }
   },
 
   async dismissTaskSuggestion(id) {
-    return withToastOnError(async () => {
-      const store = await getDataStore();
-      await store.deleteTaskSuggestion(id);
-      set({ taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
-      toast("Voorstel afgewezen");
-    }, "Afwijzen lukte niet");
+    if (resolvingTaskSuggestions.has(id)) return;
+    resolvingTaskSuggestions.add(id);
+    try {
+      return await withToastOnError(async () => {
+        const store = await getDataStore();
+        await store.deleteTaskSuggestion(id);
+        set({ taskSuggestions: get().taskSuggestions.filter((s) => s.id !== id) });
+        toast("Voorstel afgewezen");
+      }, "Afwijzen lukte niet");
+    } finally {
+      resolvingTaskSuggestions.delete(id);
+    }
   },
 
   async listMcpTokens() {

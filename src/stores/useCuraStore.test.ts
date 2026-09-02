@@ -426,6 +426,26 @@ describe("acceptTaskSuggestion", () => {
     expect(store.deleteTaskSuggestion).not.toHaveBeenCalled();
     expect(toastMock.error).not.toHaveBeenCalled();
   });
+
+  it("ignores a second accept for the same suggestion while the first is still in flight", async () => {
+    // Same shape as toggleTask's double-tap guard: fired back-to-back with no
+    // await in between, before createTask's own await settles, so a rapid
+    // double-tap on "overnemen" can't fire createTask twice for one suggestion.
+    const suggestion = taskSuggestion();
+    const created = task({ id: "t-new" });
+    const store = makeStore({
+      createTask: vi.fn().mockResolvedValue(created),
+      deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined),
+    });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion], tasks: [] });
+
+    const p1 = useCuraStore.getState().acceptTaskSuggestion("s1");
+    const p2 = useCuraStore.getState().acceptTaskSuggestion("s1"); // double-tap — should no-op
+    await Promise.all([p1, p2]);
+
+    expect(store.createTask).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("dismissTaskSuggestion", () => {
@@ -452,6 +472,19 @@ describe("dismissTaskSuggestion", () => {
 
     expect(useCuraStore.getState().taskSuggestions).toEqual([suggestion]);
     expect(toastMock.error).toHaveBeenCalledWith("network down");
+  });
+
+  it("ignores a second dismiss for the same suggestion while the first is still in flight", async () => {
+    const suggestion = taskSuggestion();
+    const store = makeStore({ deleteTaskSuggestion: vi.fn().mockResolvedValue(undefined) });
+    createDataStoreMock.mockResolvedValue(store);
+    useCuraStore.setState({ householdId: "h1", taskSuggestions: [suggestion] });
+
+    const p1 = useCuraStore.getState().dismissTaskSuggestion("s1");
+    const p2 = useCuraStore.getState().dismissTaskSuggestion("s1"); // double-tap — should no-op
+    await Promise.all([p1, p2]);
+
+    expect(store.deleteTaskSuggestion).toHaveBeenCalledTimes(1);
   });
 });
 
